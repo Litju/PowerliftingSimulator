@@ -52,9 +52,9 @@ NO_GAMEPLAY_CODE=PASS; no athlete, barbell, lift, rules, UI, camera, audio, repl
 NO_DOUBLE_PHYSICS_STEP=PASS; exactly one production .Simulate call and PhysicsOwnershipContractTests pass
 NO_SKILL_SPAM=PASS; exactly one new project-local skill; pre-existing Codex skill catalog and skills-lock.json remain uncommitted
 
-KNOWN_LIMITATIONS=Linear connector/integration was unavailable; existing Unity tutorial/default SampleScene camera and audio content was retained unchanged; deterministic mutation/Terminus harness is intentionally deferred to GAM-3
+KNOWN_LIMITATIONS=Existing Unity tutorial/default SampleScene camera and audio content was retained unchanged; deterministic mutation/Terminus harness is intentionally deferred to GAM-3
 
-STATUS=PASS_WITH_LIMITATIONS
+STATUS=PASS
 ```
 
 ## Resolved validation incident
