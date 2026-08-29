@@ -1,0 +1,17 @@
+{
+    "name": "PowerliftingSimulator.Foundation.Unity",
+    "rootNamespace": "PowerliftingSimulator",
+    "references": [
+        "PowerliftingSimulator.Foundation",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,14 @@
+{
+    "name": "PowerliftingSimulator.Foundation.Tests.EditMode",
+    "rootNamespace": "PowerliftingSimulator",
+    "references": [
+        "PowerliftingSimulator.Foundation",
+        "PowerliftingSimulator.Foundation.Unity"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ]
+}

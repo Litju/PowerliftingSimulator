@@ -1,0 +1,12 @@
+{
+    "name": "PowerliftingSimulator.Foundation.Tests.PlayMode",
+    "rootNamespace": "PowerliftingSimulator",
+    "references": [
+        "PowerliftingSimulator.Foundation",
+        "PowerliftingSimulator.Foundation.Unity"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": []
+}
