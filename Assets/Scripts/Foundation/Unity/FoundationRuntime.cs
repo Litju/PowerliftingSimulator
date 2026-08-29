@@ -11,6 +11,7 @@ namespace PowerliftingSimulator.Foundation.Unity
 
         private AuthoritativePhysicsScene _authoritativeScene;
         private PhysicsTickDriver _tickDriver;
+        private InputTimeDomain _inputTimeDomain;
 
         public bool IsInitialized => _tickDriver != null && _authoritativeScene != null && _authoritativeScene.IsValid;
 
@@ -29,6 +30,15 @@ namespace PowerliftingSimulator.Foundation.Unity
             {
                 EnsureInitialized();
                 return _tickDriver.InputBuffer;
+            }
+        }
+
+        public InputTimeDomain InputTimeDomain
+        {
+            get
+            {
+                EnsureInitialized();
+                return _inputTimeDomain;
             }
         }
 
@@ -93,7 +103,8 @@ namespace PowerliftingSimulator.Foundation.Unity
 
             _authoritativeScene = new AuthoritativePhysicsScene();
             _authoritativeScene.Initialize(physicsSceneName);
-            _tickDriver = new PhysicsTickDriver(_authoritativeScene);
+            _inputTimeDomain = new InputTimeDomain();
+            _tickDriver = new PhysicsTickDriver(_authoritativeScene, _inputTimeDomain);
         }
 
         public void RegisterPrimaryBody(Rigidbody body, string bodyId)
@@ -126,6 +137,7 @@ namespace PowerliftingSimulator.Foundation.Unity
                 return null;
 
             _tickDriver = null;
+            _inputTimeDomain = null;
             AsyncOperation unloadOperation = _authoritativeScene.Shutdown();
             _authoritativeScene = null;
             return unloadOperation;

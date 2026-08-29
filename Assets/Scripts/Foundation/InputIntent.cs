@@ -19,6 +19,53 @@ namespace PowerliftingSimulator.Foundation
         Released
     }
 
+    public sealed class InputTimeDomain
+    {
+        private bool _hasRealTimestamp;
+        private double _lastRealTimestampSeconds;
+        private double _mappedSimulationTimeSeconds;
+
+        public bool HasEpoch => _hasRealTimestamp;
+
+        public double LastMappedTimestampSeconds => _mappedSimulationTimeSeconds;
+
+        public double Map(double realTimestampSeconds)
+        {
+            ValidateTimestamp(realTimestampSeconds);
+
+            if (!_hasRealTimestamp)
+            {
+                _hasRealTimestamp = true;
+                _lastRealTimestampSeconds = realTimestampSeconds;
+                return _mappedSimulationTimeSeconds;
+            }
+
+            if (realTimestampSeconds < _lastRealTimestampSeconds)
+                throw new InvalidOperationException("Input timestamps must be monotonic.");
+
+            double elapsedSeconds = realTimestampSeconds - _lastRealTimestampSeconds;
+            _lastRealTimestampSeconds = realTimestampSeconds;
+            _mappedSimulationTimeSeconds += Math.Min(
+                elapsedSeconds,
+                SimulationConstants.MaxAccumulatedTimeSeconds);
+            return _mappedSimulationTimeSeconds;
+        }
+
+        public void Reset(double simulationTimeSeconds = 0d)
+        {
+            ValidateTimestamp(simulationTimeSeconds);
+            _hasRealTimestamp = false;
+            _lastRealTimestampSeconds = 0d;
+            _mappedSimulationTimeSeconds = simulationTimeSeconds;
+        }
+
+        private static void ValidateTimestamp(double timestampSeconds)
+        {
+            if (double.IsNaN(timestampSeconds) || double.IsInfinity(timestampSeconds))
+                throw new ArgumentOutOfRangeException(nameof(timestampSeconds));
+        }
+    }
+
     [Flags]
     public enum IntentEdgeFlags : ushort
     {
@@ -167,40 +214,48 @@ namespace PowerliftingSimulator.Foundation
 
     public sealed class IntentBuffer
     {
-        private enum SampleKind : byte
+        private readonly struct BufferedEdge
         {
-            Edge,
-            Continuous
-        }
-
-        private readonly struct BufferedSample
-        {
-            public BufferedSample(IntentAction action, SampleKind kind, IntentEdgeKind edgeKind, float value, double timestampSeconds)
+            public BufferedEdge(IntentAction action, IntentEdgeKind edgeKind, double timestampSeconds)
             {
                 Action = action;
-                Kind = kind;
                 EdgeKind = edgeKind;
-                Value = value;
                 TimestampSeconds = timestampSeconds;
             }
 
             public IntentAction Action { get; }
-            public SampleKind Kind { get; }
             public IntentEdgeKind EdgeKind { get; }
-            public float Value { get; }
             public double TimestampSeconds { get; }
         }
 
-        private readonly BufferedSample[] _samples;
+        private readonly BufferedEdge[] _edges;
         private int _head;
         private int _count;
-        private double _lastEnqueuedTimestampSeconds;
+        private double _lastInputTimestampSeconds;
         private double _lastSampleEndSeconds;
+
         private float _brace01;
         private float _yield01;
         private float _drive01;
         private float _balanceX;
         private float _grip01;
+
+        private bool _braceContinuousPending;
+        private bool _yieldContinuousPending;
+        private bool _driveContinuousPending;
+        private bool _balanceContinuousPending;
+        private bool _gripContinuousPending;
+        private float _braceContinuous01;
+        private float _yieldContinuous01;
+        private float _driveContinuous01;
+        private float _balanceContinuousX;
+        private float _gripContinuous01;
+        private double _braceContinuousTimestampSeconds;
+        private double _yieldContinuousTimestampSeconds;
+        private double _driveContinuousTimestampSeconds;
+        private double _balanceContinuousTimestampSeconds;
+        private double _gripContinuousTimestampSeconds;
+
         private bool _braceHeld;
         private bool _yieldHeld;
         private bool _driveHeld;
@@ -214,16 +269,21 @@ namespace PowerliftingSimulator.Foundation
             if (capacity < 1)
                 throw new ArgumentOutOfRangeException(nameof(capacity));
 
-            _samples = new BufferedSample[capacity];
+            _edges = new BufferedEdge[capacity];
             Reset();
         }
 
-        public int PendingSampleCount => _count;
+        public int PendingSampleCount => _count +
+            (_braceContinuousPending ? 1 : 0) +
+            (_yieldContinuousPending ? 1 : 0) +
+            (_driveContinuousPending ? 1 : 0) +
+            (_balanceContinuousPending ? 1 : 0) +
+            (_gripContinuousPending ? 1 : 0);
 
         public void PushEdge(IntentAction action, IntentEdgeKind edgeKind, double timestampSeconds)
         {
             ValidateTimestamp(timestampSeconds);
-            Enqueue(new BufferedSample(action, SampleKind.Edge, edgeKind, 0f, timestampSeconds));
+            EnqueueEdge(new BufferedEdge(action, edgeKind, timestampSeconds));
         }
 
         public void SetContinuous(IntentAction action, float value, double timestampSeconds)
@@ -237,7 +297,42 @@ namespace PowerliftingSimulator.Foundation
             float clamped = action == IntentAction.Balance
                 ? Math.Max(-1f, Math.Min(1f, value))
                 : Math.Max(0f, Math.Min(1f, value));
-            Enqueue(new BufferedSample(action, SampleKind.Continuous, IntentEdgeKind.Pressed, clamped, timestampSeconds));
+
+            if (timestampSeconds < _lastInputTimestampSeconds)
+                throw new InvalidOperationException("Input samples must be enqueued in timestamp order.");
+
+            switch (action)
+            {
+                case IntentAction.Brace:
+                    _braceContinuous01 = clamped;
+                    _braceContinuousTimestampSeconds = timestampSeconds;
+                    _braceContinuousPending = true;
+                    break;
+                case IntentAction.Yield:
+                    _yieldContinuous01 = clamped;
+                    _yieldContinuousTimestampSeconds = timestampSeconds;
+                    _yieldContinuousPending = true;
+                    break;
+                case IntentAction.Drive:
+                    _driveContinuous01 = clamped;
+                    _driveContinuousTimestampSeconds = timestampSeconds;
+                    _driveContinuousPending = true;
+                    break;
+                case IntentAction.Balance:
+                    _balanceContinuousX = clamped;
+                    _balanceContinuousTimestampSeconds = timestampSeconds;
+                    _balanceContinuousPending = true;
+                    break;
+                case IntentAction.Grip:
+                    _gripContinuous01 = clamped;
+                    _gripContinuousTimestampSeconds = timestampSeconds;
+                    _gripContinuousPending = true;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(action), action, null);
+            }
+
+            _lastInputTimestampSeconds = timestampSeconds;
         }
 
         public PlayerIntentFrame SampleForTick(ulong tick, double tickStartSeconds, double tickEndSeconds)
@@ -250,17 +345,16 @@ namespace PowerliftingSimulator.Foundation
                 throw new InvalidOperationException("Intent ticks must be sampled in strictly increasing time order.");
 
             IntentEdgeFlags edges = IntentEdgeFlags.None;
-            while (_count > 0 && _samples[_head].TimestampSeconds <= tickEndSeconds)
+            double eligibleThroughSeconds = tickEndSeconds + FoundationTolerances.SimulationTimeMapping;
+            while (_count > 0 && _edges[_head].TimestampSeconds <= eligibleThroughSeconds)
             {
-                BufferedSample sample = _samples[_head];
-                _head = (_head + 1) % _samples.Length;
+                BufferedEdge edge = _edges[_head];
+                _head = (_head + 1) % _edges.Length;
                 _count--;
-
-                if (sample.Kind == SampleKind.Edge)
-                    edges |= ApplyEdge(sample.Action, sample.EdgeKind);
-                else
-                    ApplyContinuous(sample.Action, sample.Value);
+                edges |= ApplyEdge(edge.Action, edge.EdgeKind);
             }
+
+            ApplyPendingContinuous(eligibleThroughSeconds);
 
             _lastSampleEndSeconds = tickEndSeconds;
             return new PlayerIntentFrame(
@@ -285,13 +379,28 @@ namespace PowerliftingSimulator.Foundation
         {
             _head = 0;
             _count = 0;
-            _lastEnqueuedTimestampSeconds = double.NegativeInfinity;
+            _lastInputTimestampSeconds = double.NegativeInfinity;
             _lastSampleEndSeconds = double.NegativeInfinity;
             _brace01 = 0f;
             _yield01 = 0f;
             _drive01 = 0f;
             _balanceX = 0f;
             _grip01 = 0f;
+            _braceContinuous01 = 0f;
+            _yieldContinuous01 = 0f;
+            _driveContinuous01 = 0f;
+            _balanceContinuousX = 0f;
+            _gripContinuous01 = 0f;
+            _braceContinuousPending = false;
+            _yieldContinuousPending = false;
+            _driveContinuousPending = false;
+            _balanceContinuousPending = false;
+            _gripContinuousPending = false;
+            _braceContinuousTimestampSeconds = 0d;
+            _yieldContinuousTimestampSeconds = 0d;
+            _driveContinuousTimestampSeconds = 0d;
+            _balanceContinuousTimestampSeconds = 0d;
+            _gripContinuousTimestampSeconds = 0d;
             _braceHeld = false;
             _yieldHeld = false;
             _driveHeld = false;
@@ -301,17 +410,17 @@ namespace PowerliftingSimulator.Foundation
             _abortHeld = false;
         }
 
-        private void Enqueue(BufferedSample sample)
+        private void EnqueueEdge(BufferedEdge edge)
         {
-            if (sample.TimestampSeconds < _lastEnqueuedTimestampSeconds)
+            if (edge.TimestampSeconds < _lastInputTimestampSeconds)
                 throw new InvalidOperationException("Input samples must be enqueued in timestamp order.");
-            if (_count == _samples.Length)
+            if (_count == _edges.Length)
                 throw new InvalidOperationException("Input buffer capacity exceeded.");
 
-            int tail = (_head + _count) % _samples.Length;
-            _samples[tail] = sample;
+            int tail = (_head + _count) % _edges.Length;
+            _edges[tail] = edge;
             _count++;
-            _lastEnqueuedTimestampSeconds = sample.TimestampSeconds;
+            _lastInputTimestampSeconds = edge.TimestampSeconds;
         }
 
         private void ValidateTimestamp(double timestampSeconds)
@@ -353,27 +462,32 @@ namespace PowerliftingSimulator.Foundation
             return PlayerIntentFrame.GetEdgeFlag(action, edgeKind);
         }
 
-        private void ApplyContinuous(IntentAction action, float value)
+        private void ApplyPendingContinuous(double tickEndSeconds)
         {
-            switch (action)
+            if (_braceContinuousPending && _braceContinuousTimestampSeconds <= tickEndSeconds)
             {
-                case IntentAction.Brace:
-                    _brace01 = value;
-                    break;
-                case IntentAction.Yield:
-                    _yield01 = value;
-                    break;
-                case IntentAction.Drive:
-                    _drive01 = value;
-                    break;
-                case IntentAction.Balance:
-                    _balanceX = value;
-                    break;
-                case IntentAction.Grip:
-                    _grip01 = value;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(action), action, null);
+                _brace01 = _braceContinuous01;
+                _braceContinuousPending = false;
+            }
+            if (_yieldContinuousPending && _yieldContinuousTimestampSeconds <= tickEndSeconds)
+            {
+                _yield01 = _yieldContinuous01;
+                _yieldContinuousPending = false;
+            }
+            if (_driveContinuousPending && _driveContinuousTimestampSeconds <= tickEndSeconds)
+            {
+                _drive01 = _driveContinuous01;
+                _driveContinuousPending = false;
+            }
+            if (_balanceContinuousPending && _balanceContinuousTimestampSeconds <= tickEndSeconds)
+            {
+                _balanceX = _balanceContinuousX;
+                _balanceContinuousPending = false;
+            }
+            if (_gripContinuousPending && _gripContinuousTimestampSeconds <= tickEndSeconds)
+            {
+                _grip01 = _gripContinuous01;
+                _gripContinuousPending = false;
             }
         }
 

@@ -22,7 +22,7 @@ namespace PowerliftingSimulator.Foundation.Unity
             _inputAdapter = new UnityIntentInputAdapter(
                 inputActions,
                 _runtime.InputBuffer,
-                Time.realtimeSinceStartupAsDouble);
+                _runtime.InputTimeDomain);
             _inputAdapter.Enable();
         }
 

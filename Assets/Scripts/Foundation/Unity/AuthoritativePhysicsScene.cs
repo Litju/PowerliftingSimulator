@@ -11,7 +11,6 @@ namespace PowerliftingSimulator.Foundation.Unity
 
         private Scene _scene;
         private PhysicsScene _physicsScene;
-        private SimulationMode _previousSimulationMode;
         private Rigidbody _primaryBody;
         private RigidbodyResetState _primaryBodyResetState;
         private string _primaryBodyId;
@@ -48,9 +47,6 @@ namespace PowerliftingSimulator.Foundation.Unity
             if (string.IsNullOrWhiteSpace(sceneName))
                 throw new ArgumentException("A physics scene name is required.", nameof(sceneName));
 
-            _previousSimulationMode = Physics.simulationMode;
-            Physics.simulationMode = SimulationMode.Script;
-
             try
             {
                 _scene = SceneManager.CreateScene(sceneName, new CreateSceneParameters(LocalPhysicsMode.Physics3D));
@@ -66,7 +62,6 @@ namespace PowerliftingSimulator.Foundation.Unity
                 if (_scene.IsValid())
                     SceneManager.UnloadSceneAsync(_scene);
 
-                Physics.simulationMode = _previousSimulationMode;
                 _scene = default(Scene);
                 _physicsScene = default(PhysicsScene);
                 throw;
@@ -154,7 +149,6 @@ namespace PowerliftingSimulator.Foundation.Unity
             AsyncOperation unloadOperation = sceneToUnload.IsValid()
                 ? SceneManager.UnloadSceneAsync(sceneToUnload)
                 : null;
-            Physics.simulationMode = _previousSimulationMode;
             return unloadOperation;
         }
 

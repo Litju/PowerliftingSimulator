@@ -15,16 +15,14 @@ namespace PowerliftingSimulator.Foundation.Unity
         private InputAction _drive;
         private InputAction _balance;
         private InputAction _grip;
-        private readonly double _timestampOriginSeconds;
+        private readonly InputTimeDomain _inputTimeDomain;
         private bool _enabled;
 
-        public UnityIntentInputAdapter(InputActionAsset actions, IntentBuffer intentBuffer, double timestampOriginSeconds)
+        public UnityIntentInputAdapter(InputActionAsset actions, IntentBuffer intentBuffer, InputTimeDomain inputTimeDomain)
         {
             _actions = actions;
             _intentBuffer = intentBuffer ?? throw new ArgumentNullException(nameof(intentBuffer));
-            if (double.IsNaN(timestampOriginSeconds) || double.IsInfinity(timestampOriginSeconds))
-                throw new ArgumentOutOfRangeException(nameof(timestampOriginSeconds));
-            _timestampOriginSeconds = timestampOriginSeconds;
+            _inputTimeDomain = inputTimeDomain ?? throw new ArgumentNullException(nameof(inputTimeDomain));
         }
 
         public void Enable()
@@ -48,12 +46,12 @@ namespace PowerliftingSimulator.Foundation.Unity
             if (!_enabled)
                 return;
 
-            double relativeTimestampSeconds = timestampSeconds - _timestampOriginSeconds;
-            _intentBuffer.SetContinuous(IntentAction.Brace, _brace.ReadValue<float>(), relativeTimestampSeconds);
-            _intentBuffer.SetContinuous(IntentAction.Yield, _yield.ReadValue<float>(), relativeTimestampSeconds);
-            _intentBuffer.SetContinuous(IntentAction.Drive, _drive.ReadValue<float>(), relativeTimestampSeconds);
-            _intentBuffer.SetContinuous(IntentAction.Balance, _balance.ReadValue<float>(), relativeTimestampSeconds);
-            _intentBuffer.SetContinuous(IntentAction.Grip, _grip.ReadValue<float>(), relativeTimestampSeconds);
+            double simulationTimestampSeconds = _inputTimeDomain.Map(timestampSeconds);
+            _intentBuffer.SetContinuous(IntentAction.Brace, _brace.ReadValue<float>(), simulationTimestampSeconds);
+            _intentBuffer.SetContinuous(IntentAction.Yield, _yield.ReadValue<float>(), simulationTimestampSeconds);
+            _intentBuffer.SetContinuous(IntentAction.Drive, _drive.ReadValue<float>(), simulationTimestampSeconds);
+            _intentBuffer.SetContinuous(IntentAction.Balance, _balance.ReadValue<float>(), simulationTimestampSeconds);
+            _intentBuffer.SetContinuous(IntentAction.Grip, _grip.ReadValue<float>(), simulationTimestampSeconds);
         }
 
         public void Disable()
@@ -71,13 +69,13 @@ namespace PowerliftingSimulator.Foundation.Unity
         private void OnActionTriggered(InputAction.CallbackContext context)
         {
             IntentAction action = ToIntentAction(context.action.name);
-            double relativeTimestampSeconds = context.time - _timestampOriginSeconds;
+            double simulationTimestampSeconds = _inputTimeDomain.Map(context.time);
             if (context.phase == InputActionPhase.Started)
-                _intentBuffer.PushEdge(action, IntentEdgeKind.Pressed, relativeTimestampSeconds);
+                _intentBuffer.PushEdge(action, IntentEdgeKind.Pressed, simulationTimestampSeconds);
             else if (context.phase == InputActionPhase.Canceled)
-                _intentBuffer.PushEdge(action, IntentEdgeKind.Released, relativeTimestampSeconds);
+                _intentBuffer.PushEdge(action, IntentEdgeKind.Released, simulationTimestampSeconds);
             else if (context.phase == InputActionPhase.Performed && IsContinuous(action))
-                _intentBuffer.SetContinuous(action, context.ReadValue<float>(), relativeTimestampSeconds);
+                _intentBuffer.SetContinuous(action, context.ReadValue<float>(), simulationTimestampSeconds);
         }
 
         private static bool IsContinuous(IntentAction action) => action != IntentAction.Confirm && action != IntentAction.Abort;

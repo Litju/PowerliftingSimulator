@@ -8,14 +8,16 @@ namespace PowerliftingSimulator.Foundation.Unity
     {
         private readonly AuthoritativePhysicsScene _authoritativeScene;
         private readonly IntentBuffer _intentBuffer;
+        private readonly InputTimeDomain _inputTimeDomain;
         private readonly SimulationClock _clock;
         private readonly ObservationExchange _observations;
         private double _accumulatedRenderTimeSeconds;
         private bool _stepInProgress;
 
-        internal PhysicsTickDriver(AuthoritativePhysicsScene authoritativeScene)
+        internal PhysicsTickDriver(AuthoritativePhysicsScene authoritativeScene, InputTimeDomain inputTimeDomain)
         {
             _authoritativeScene = authoritativeScene ?? throw new ArgumentNullException(nameof(authoritativeScene));
+            _inputTimeDomain = inputTimeDomain ?? throw new ArgumentNullException(nameof(inputTimeDomain));
             _intentBuffer = new IntentBuffer();
             _clock = new SimulationClock();
             _observations = new ObservationExchange();
@@ -89,6 +91,7 @@ namespace PowerliftingSimulator.Foundation.Unity
 
             _authoritativeScene.ResetBodies();
             _intentBuffer.Reset();
+            _inputTimeDomain.Reset();
             _clock.Reset();
             _observations.Reset();
             LastIntentFrame = PlayerIntentFrame.Empty;

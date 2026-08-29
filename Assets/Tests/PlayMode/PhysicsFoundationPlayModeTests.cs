@@ -15,6 +15,7 @@ namespace PowerliftingSimulator.Tests
         [UnityTest]
         public IEnumerator CreatesAnIsolatedManualPhysicsScene()
         {
+            SimulationMode simulationModeBeforeRuntime = Physics.simulationMode;
             _runtime = CreateRuntime();
             Scene mainScene = SceneManager.GetActiveScene();
 
@@ -23,7 +24,8 @@ namespace PowerliftingSimulator.Tests
             Assert.That(_runtime.AuthoritativeScene, Is.Not.EqualTo(mainScene));
             Assert.That(_runtime.AuthoritativeScene.GetPhysicsScene().IsValid(), Is.True);
             Assert.That(_runtime.AuthoritativeScene.GetPhysicsScene(), Is.Not.EqualTo(Physics.defaultPhysicsScene));
-            Assert.That(Physics.simulationMode, Is.EqualTo(SimulationMode.Script));
+            Assert.That(Physics.simulationMode, Is.EqualTo(simulationModeBeforeRuntime));
+            Assert.That(Physics.simulationMode, Is.EqualTo(SimulationMode.FixedUpdate));
             yield return null;
         }
 
@@ -61,6 +63,54 @@ namespace PowerliftingSimulator.Tests
             Assert.That(_runtime.CurrentTime.Tick, Is.EqualTo(4ul));
             Assert.That(_runtime.CurrentTime.SimulationTimeSeconds, Is.EqualTo(0.04d));
             Assert.That(_runtime.AccumulatedRenderTimeSeconds, Is.EqualTo(0d));
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator SLOW_FRAME_TIME_DOMAIN()
+        {
+            _runtime = CreateRuntime();
+            InputTimeDomain inputTimeDomain = _runtime.InputTimeDomain;
+
+            Assert.That(inputTimeDomain.Map(20d), Is.EqualTo(0d));
+            double slowFrameTimestamp = inputTimeDomain.Map(21d);
+            Assert.That(slowFrameTimestamp, Is.EqualTo(SimulationConstants.MaxAccumulatedTimeSeconds));
+            _runtime.InputBuffer.SetContinuous(IntentAction.Drive, 0.75f, slowFrameTimestamp);
+            _runtime.InputBuffer.PushEdge(IntentAction.Confirm, IntentEdgeKind.Pressed, slowFrameTimestamp);
+
+            Assert.That(_runtime.AdvanceRenderFrame(0.1d), Is.EqualTo(SimulationConstants.MaxCatchUpTicksPerRenderFrame));
+            Assert.That(_runtime.LastIntentFrame.Drive01, Is.EqualTo(0.75f));
+            Assert.That(_runtime.LastIntentFrame.WasPressed(IntentAction.Confirm), Is.True);
+            Assert.That(_runtime.InputBuffer.PendingSampleCount, Is.EqualTo(0));
+
+            double freshTimestamp = inputTimeDomain.Map(21.01d);
+            Assert.That(freshTimestamp, Is.EqualTo(0.05d).Within(FoundationTolerances.SimulationTimeMapping));
+            _runtime.InputBuffer.SetContinuous(IntentAction.Drive, 1f, freshTimestamp);
+            _runtime.InputBuffer.PushEdge(IntentAction.Abort, IntentEdgeKind.Pressed, freshTimestamp);
+
+            Assert.That(_runtime.AdvanceRenderFrame(0.01d), Is.EqualTo(1));
+            Assert.That(_runtime.LastIntentFrame.Drive01, Is.EqualTo(1f));
+            Assert.That(_runtime.LastIntentFrame.WasPressed(IntentAction.Abort), Is.True);
+            Assert.That(_runtime.AdvanceRenderFrame(0.01d), Is.EqualTo(1));
+            Assert.That(_runtime.LastIntentFrame.WasPressed(IntentAction.Abort), Is.False);
+
+            int maximumPendingSamples = 0;
+            for (int capture = 1; capture <= 32; capture++)
+            {
+                double mappedTimestamp = inputTimeDomain.Map(21.01d + capture * 0.01d);
+                _runtime.InputBuffer.SetContinuous(IntentAction.Brace, 1f, mappedTimestamp);
+                _runtime.InputBuffer.SetContinuous(IntentAction.Yield, 0.5f, mappedTimestamp);
+                _runtime.InputBuffer.SetContinuous(IntentAction.Drive, 0.5f, mappedTimestamp);
+                _runtime.InputBuffer.SetContinuous(IntentAction.Balance, -0.5f, mappedTimestamp);
+                _runtime.InputBuffer.SetContinuous(IntentAction.Grip, 1f, mappedTimestamp);
+                if (_runtime.InputBuffer.PendingSampleCount > maximumPendingSamples)
+                    maximumPendingSamples = _runtime.InputBuffer.PendingSampleCount;
+
+                Assert.That(_runtime.AdvanceRenderFrame(0.01d), Is.EqualTo(1));
+            }
+
+            Assert.That(maximumPendingSamples, Is.EqualTo(5));
+            Assert.That(_runtime.InputBuffer.PendingSampleCount, Is.EqualTo(0));
             yield return null;
         }
 
@@ -104,6 +154,33 @@ namespace PowerliftingSimulator.Tests
 
             _runtime = CreateRuntime();
             Assert.That(_runtime.IsInitialized, Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator RESET_NONZERO_WALL_TIME()
+        {
+            _runtime = CreateRuntime();
+            InputTimeDomain inputTimeDomain = _runtime.InputTimeDomain;
+            inputTimeDomain.Map(12d);
+            double oldInputTimestamp = inputTimeDomain.Map(13d);
+            _runtime.InputBuffer.SetContinuous(IntentAction.Drive, 0.25f, oldInputTimestamp);
+            _runtime.InputBuffer.PushEdge(IntentAction.Abort, IntentEdgeKind.Pressed, oldInputTimestamp);
+            _runtime.InputBuffer.SampleForTick(4, 0.03d, 0.04d);
+
+            _runtime.Reset();
+
+            double freshInputTimestamp = inputTimeDomain.Map(13.01d);
+            _runtime.InputBuffer.SetContinuous(IntentAction.Drive, 1f, freshInputTimestamp);
+            _runtime.InputBuffer.PushEdge(IntentAction.Confirm, IntentEdgeKind.Pressed, freshInputTimestamp);
+            _runtime.StepOne();
+
+            Assert.That(freshInputTimestamp, Is.EqualTo(0d));
+            Assert.That(_runtime.LastIntentFrame.Drive01, Is.EqualTo(1f));
+            Assert.That(_runtime.LastIntentFrame.WasPressed(IntentAction.Confirm), Is.True);
+            Assert.That(_runtime.LastIntentFrame.IsHeld(IntentAction.Abort), Is.False);
+            Assert.That(_runtime.LastIntentFrame.WasPressed(IntentAction.Abort), Is.False);
+            Assert.That(_runtime.InputBuffer.PendingSampleCount, Is.EqualTo(0));
+            yield return null;
         }
 
         [UnityTest]

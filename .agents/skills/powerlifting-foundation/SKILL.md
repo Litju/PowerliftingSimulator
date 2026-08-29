@@ -59,16 +59,25 @@ observation. Render catch-up is capped at four ticks and 0.04 s; there is no
 
 # Physics Scene Ownership
 
-`AuthoritativePhysicsScene` creates a `LocalPhysicsMode.Physics3D` scene,
-sets `Physics.simulationMode` to `SimulationMode.Script`, and permits only one
-active owner. The production `PhysicsScene.Simulate` call is in
-`Assets/Scripts/Foundation/Unity/PhysicsTickDriver.cs`; the ownership contract
-test checks that source contains exactly one call. Reset restores the small
-registered probe at the reset boundary and shutdown unloads the local scene.
+`AuthoritativePhysicsScene` creates a `LocalPhysicsMode.Physics3D` scene without
+changing the global `Physics.simulationMode`. Project settings retain ordinary
+automatic default-scene ownership (`m_AutoSimulation: 1`); the local scene is
+explicitly stepped by `PhysicsTickDriver.StepOne`. A Unity 6000.3.22f1 fixture
+with simple Rigidbody/SphereCollider probes verified both independent advance
+and a bounded Script-mode transition without double-stepping the default scene.
+The production-wide ownership test excludes test/generated/build paths and
+requires exactly one `.Simulate(...)` call at that `StepOne` owner. Reset
+restores the small registered probe at the reset boundary and shutdown unloads
+the local scene.
 
 # Input Boundary
 
-`IntentBuffer` is the pure timestamped ring boundary. It consumes edge events
+`InputTimeDomain` maps monotonic realtime samples into the simulation timestamp
+domain. The first sample after construction or reset anchors at the current
+simulation epoch; each positive wall-time gap contributes at most the 0.04 s
+catch-up bound. `IntentBuffer` keeps edge events in a fixed-capacity ordered
+ring and coalesces each continuous channel to its latest pending state, so
+continuous captures cannot exhaust the edge capacity. It consumes edge events
 once, carries held state forward, and clamps continuous values to their
 semantic ranges. `UnityIntentInputAdapter` is the only Input System boundary;
 it maps the `Gameplay` actions `Brace`, `Yield`, `Drive`, `Balance`, `Grip`,
@@ -105,7 +114,7 @@ From the repository root:
   and `skills-lock.json`; stage only the single project skill created for
   GAM-2.
 
-# Accepted Lessons
+# Verified Lessons
 
 - Keep the pure assembly separate because dependency direction is a useful
   executable boundary even before a non-Unity consumer exists.
@@ -114,6 +123,11 @@ From the repository root:
   stage.
 - Treat floating-point accumulator comparisons with an explicit small tolerance
   while deriving authoritative simulation time from integer ticks.
+- In Unity 6000.3.22f1, a local `PhysicsScene` can be explicitly stepped while
+  the default scene remains under `FixedUpdate`; preserve that result with the
+  minimal fixture and production-wide ownership test.
+- Reset the input mapper and buffer together at an attempt boundary so fresh
+  realtime samples re-anchor instead of being compared with the prior epoch.
 
 # Evolution Rules
 
@@ -125,5 +139,7 @@ tested; do not pre-seed future architecture here.
 
 # Last Verified
 
-2026-08-29 after Unity 6000.3.22f1 compile/import, EditMode 14/14, PlayMode
-6/6, master-spec verification PASS, and the GAM-2 review pass.
+2026-08-29 after Unity 6000.3.22f1 compile/import, the ownership fixture,
+EditMode 16/16, PlayMode 10/10, and master-spec verification PASS. These are
+repository validation results for the current repair evidence; they do not
+replace owner review or decide later architecture.
