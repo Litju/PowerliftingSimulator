@@ -1,73 +1,65 @@
-# GAM-2 Completion Receipt
+# GAM-2 Owner-Review Repair Receipt
 
 ```text
-MISSION=POWERLIFTING_SIMULATOR_G0_2_ENGINEERING_FOUNDATION
+MISSION=POWERLIFTING_SIMULATOR_GAM_2_OWNER_REVIEW_REPAIR
 LINEAR_ISSUE=GAM-2
-
-START_HEAD=dfc43035dff903857918a9a4c411fd858d1af20f
-BASE_SHA=dfc43035dff903857918a9a4c411fd858d1af20f
+GITHUB_PR=3
+START_HEAD=d56327b6a1fb11a68ed8f405dabb9381c01ebfa0
 FINAL_HEAD=resolve with git rev-parse HEAD after the receipt commit
 BRANCH=work/gam-2-engineering-foundation
 
+PHYSICS_OWNERSHIP_EXPERIMENT=PASS; minimal Unity PlayMode fixture using only simple Rigidbody/SphereCollider probes; no athlete, barbell, or lift mechanics
+PHYSICS_OWNERSHIP_RESULT=preferred isolated ownership is feasible and stable; default scene retains ordinary FixedUpdate ownership while the authoritative local Physics3D scene is explicitly stepped; no ADR required
+ADR_REQUIRED=NO
+ADR_PATH=NONE
+
+OBSERVATION=A non-default LocalPhysicsMode.Physics3D PhysicsScene can be explicitly stepped while the default PhysicsScene remains under automatic FixedUpdate ownership. A bounded global Script-mode transition around the local step also preserves default-scene behavior without double stepping.
+EXPECTED=one local authoritative step advances only the local rigid body; automatic default-scene steps advance only default-scene bodies; the bounded transition does not add a second default-scene step.
+ACTUAL=both fixture cases passed; local velocity/position matched one 0.01 s gravity step, default-scene velocity matched the measured FixedUpdate count, and the transition case matched an independently controlled default rigid body.
 UNITY_VERSION=6000.3.22f1 (1c726e1fb402)
+MINIMAL_REPRODUCTION=Assets/Tests/PlayMode/PhysicsOwnershipExperimentTests.cs; two default-scene probes plus one local-scene probe; explicit local PhysicsScene.Simulate(0.01) and bounded Script-to-FixedUpdate transition
+MEASURED_EVIDENCE=Unity PlayMode XML reported AutomaticDefaultSceneAndExplicitLocalSceneAdvanceIndependently=Passed and BoundedScriptTransitionDoesNotDoubleStepDefaultScene=Passed; Assets/Tests/EditMode/PhysicsOwnershipContractTests.cs reported the production ownership gate passed
+AFFECTED_SPEC_CONTRACT=docs/master-spec/POWERLIFTING_SIMULATOR_MASTER_SPEC_V1/02_GAME_ARCHITECTURE.md; docs/master-spec/POWERLIFTING_SIMULATOR_MASTER_SPEC_V1/03_COORDINATES_UNITS_NUMERICS.md; OD-002 local fixture closure
 
-GAMEDEV_SKILLS_INVOKED=router; unity-csharp-scripting; unity-input-system; unity-physics; physics-tuning; input-systems
-SCIENTIFIC_SKILLS_INVOKED=scientific-critical-thinking; scientific-product-engineer; scientific-agent-skills unavailable in this session
-SWE_SKILLS_INVOKED=97-dev; dev-experts; anti-ai-slop; ponytail-review; bug-hunters for the discovered test-harness failure
+INPUT_TIME_DOMAIN_MODEL=InputTimeDomain maps monotonic realtime samples into the simulation domain; the first sample after construction/reset anchors at the current simulation epoch; each positive wall-time gap contributes min(gap, 0.04 s); PhysicsTickDriver.Reset resets the mapper and buffer together; edges use a fixed-capacity ordered ring and five continuous channels use bounded latest-state coalescing
+RESET_NONZERO_WALL_TIME=PASS
+SLOW_FRAME_TIME_DOMAIN=PASS
+BUFFER_STABILITY=PASS; maximum continuous pending occupancy remained 5 across 128 captures
 
-PROJECT_SKILL_CREATED=PASS
-PROJECT_SKILL_PATH=.agents/skills/powerlifting-foundation/SKILL.md
-PROJECT_SKILL_LAST_VERIFIED=2026-08-29
+SOLE_PRODUCTION_SIMULATE_CALL=PowerliftingSimulator.Foundation.Unity.PhysicsTickDriver.StepOne
+SIMULATE_CALL_COUNT=1
+SIMULATE_CALL_PATH=Assets/Scripts/Foundation/Unity/PhysicsTickDriver.cs:54
 
-PACKAGE_FREEZE=PASS; docs/baselines/GAM-2_PACKAGE_FREEZE.md; 48 direct manifest rows; manifest SHA-256 96BB79688274E1B36353536B864CC089F2562BA56B99F50797D922022A857848; lock SHA-256 CBF46DE16C5A5D81C1A7FE1C56DE064EB3EE5CE52B0C957A7A910748D8D95380; Cinemachine and Animation Rigging absent
+EDITMODE_TESTS=16/16 PASS
+PLAYMODE_TESTS=10/10 PASS
+UNITY_VALIDATION=Unity 6000.3.22f1 batch compile/import PASS; ownership fixture 2/2 PASS; full EditMode 16/16 PASS; full PlayMode 10/10 PASS
+MASTER_SPEC_INTEGRITY=PASS; Verify-MasterSpec.ps1 reported MASTER_SPEC_FILES=68, HASHES=PASS, DEPENDENCIES=PASS, STATUS=PASS
+DIFF_CHECK=PASS; git diff --check and git diff --cached --check
+
 PACKAGE_CHANGES=NONE
+MASTER_SPEC_MODIFICATIONS=NONE
+NO_HUMANOID=PASS
+NO_ATHLETE=PASS
+NO_BARBELL=PASS
+NO_LIFT_DOMAIN=PASS
+NO_RULES=PASS
+NO_UI_PRODUCT=PASS; existing useful UI action map restored; no UI product logic added
+NO_CAMERA_PRODUCT=PASS
+NO_AUDIO_PRODUCT=PASS
+NO_REPLAY_PRODUCT=PASS
+NO_GAM3_WORK=PASS
 
-ASSEMBLY_GRAPH=PowerliftingSimulator.Foundation(no engine) -> PowerliftingSimulator.Foundation.Unity(Unity/InputSystem/Physics); EditMode and PlayMode test assemblies reference the foundation assemblies; no presentation/gameplay assembly
-ROOT_NAMESPACE=PowerliftingSimulator
+PROJECT_SKILL_UPDATED=PASS; .agents/skills/powerlifting-foundation/SKILL.md now records verified evidence and does not imply owner acceptance
+RECEIPT_UPDATED=PASS
+PR_BODY_UPDATED=PASS; stale Linear-unavailable statement removed
+PR=3 OPEN_UNMERGED
+LINEAR_STATUS=In Review
 
-WORLD_FRAME=right-handed; +Y up; +Z athlete-forward; +X athlete-right; W/B_i/J_i/R_i/M/BAR identifiers
-UNIT_AUTHORITY=SI; meters; kilograms; seconds; radians; m/s; rad/s
-
-PHYSICS_SCENE=isolated SceneManager.CreateScene with LocalPhysicsMode.Physics3D and scripted SimulationMode
-PHYSICS_STEP_HZ=100
-PHYSICS_STEP_DT=0.01 seconds
-PHYSICS_STEP_OWNER=PowerliftingSimulator.Foundation.Unity.PhysicsTickDriver.StepOne; one production PhysicsScene.Simulate call
-
-INPUT_BUFFER=timestamped fixed-capacity ring; edge events consumed once; held state persists; continuous values clamped; UnityIntentInputAdapter is the only Input System boundary
-OBSERVATION_BOUNDARY=readonly post-step PhysicalObservation copy with tick/time metadata, world frame, and SI units
-BOOTSTRAP=FoundationBootstrap at DefaultExecutionOrder -1000; Update captures input then advances bounded render catch-up; no FixedUpdate ownership
-
-EDITMODE_TESTS=14/14 PASS
-PLAYMODE_TESTS=6/6 PASS
-
-MASTER_SPEC_INTEGRITY=PASS; Verify-MasterSpec.ps1 reported 68 files, HASHES=PASS, DEPENDENCIES=PASS
-UNITY_VALIDATION=PASS; Unity batch compile/import PASS; final EditMode XML PASS; final PlayMode XML PASS
-DIFF_CHECK=PASS; git diff --cached --check
-
-PONYTAIL_REVIEW=PASS; DELETE=none; SIMPLIFY=shared edge-flag mapping and cached vector length; REUSE=Unity TestAssemblies configuration; MERGE=none; KEEP=two assemblies, direct runtime composition, one physics owner, copied observations
-SCIENTIFIC_REVIEW=PASS; UNSUPPORTED_ASSUMPTIONS=none identified; UNIT_AMBIGUITIES=none; FRAME_AMBIGUITIES=none; CLAIM_OVERREACH=none; NUMERICAL_RISKS=explicit accumulator comparison tolerance and integer-derived simulation time, covered by tests
-ANTI_SLOP_REVIEW=PASS; no speculative gameplay/presentation layers, no unused interfaces/factories, one project-local skill, no generated Unity directories staged
-
-NO_GAMEPLAY_CODE=PASS; no athlete, barbell, lift, rules, UI, camera, audio, replay, telemetry, career, save, or meet implementation added
-NO_DOUBLE_PHYSICS_STEP=PASS; exactly one production .Simulate call and PhysicsOwnershipContractTests pass
-NO_SKILL_SPAM=PASS; exactly one new project-local skill; pre-existing Codex skill catalog and skills-lock.json remain uncommitted
-
-KNOWN_LIMITATIONS=Existing Unity tutorial/default SampleScene camera and audio content was retained unchanged; deterministic mutation/Terminus harness is intentionally deferred to GAM-3
+SCIENTIFIC_REVIEW=PASS; explicit time-domain mapping, integer-derived fixed ticks, bounded queues, and measured default/local ownership evidence; no unresolved numerical ambiguity identified
+PONYTAIL_REVIEW=PASS; no avoidable interface/factory layer; shared mapper and direct runtime composition retained; generated Unity churn excluded
+ANTI_AI_SLOP_REVIEW=PASS; no speculative gameplay/presentation abstractions; exactly one project-local skill; no owner-acceptance language in the skill
 
 STATUS=PASS
 ```
 
-## Resolved validation incident
-
-```text
-OBSERVATION=The first valid EditMode test run discovered six PlayMode tests under the EditMode platform; 20 tests ran with 14 passed and 6 failed with the same play-mode-only SceneManager exception.
-CLASSIFICATION=test assembly metadata/harness fault, not production physics fault
-HYPOTHESIS=The PlayMode asmdef had includePlatforms=Editor, so Unity classified it as EditorOnly and included it in the EditMode run.
-DISCRIMINATING_TEST=Remove the Editor-only platform restriction from the PlayMode asmdef, retain the standard TestAssemblies reference, rerun both Unity platforms.
-RESULT=EditMode 14/14 PASS and PlayMode 6/6 PASS after the minimal metadata repair; bug-hunters challenge confirmed the classification.
-MINIMAL_REPAIR=Assets/Tests/PlayMode/PowerliftingSimulator.Foundation.Tests.PlayMode.asmdef now has includePlatforms=[] and standard TestAssemblies configuration.
-REGRESSION=Both final platform-specific XML runs pass on Unity 6000.3.22f1.
-```
-
-Unity Test Framework also reports that `-quit` prevents command-line test
-execution in this version; the final test runs intentionally omitted `-quit`.
+The receipt intentionally leaves `FINAL_HEAD` as a post-commit resolution instruction; the final branch tip is recorded by `git rev-parse HEAD` after this receipt commit.
