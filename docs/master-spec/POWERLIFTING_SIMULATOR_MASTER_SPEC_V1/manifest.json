@@ -1,0 +1,2160 @@
+{
+  "bundle": "POWERLIFTING_SIMULATOR_MASTER_SPEC_V1",
+  "manifest_version": "1.0.0",
+  "generated_utc_date": "2026-08-28",
+  "authority": "MASTER_GAME_DESIGN_AND_ENGINEERING_AUTHORITY",
+  "execution_mode": "DESIGN_ONLY_NO_REPOSITORY_ACCESS",
+  "status": "PASS_WITH_OPEN_DECISIONS",
+  "product": {
+    "engine_target": "Unity 6000.3.22f1 LTS (repository verification required)",
+    "render_target": "URP 17.3 (repository verification required)",
+    "canonical_visible_athlete": "Quaternius Superhero_Male_FullBody",
+    "physics_authority": "Unity PhysX through one manually stepped local PhysicsScene",
+    "fixed_step_seconds": 0.01,
+    "render_target_fps": 60,
+    "lifts": [
+      "SQUAT",
+      "BENCH",
+      "CONVENTIONAL_DEADLIFT"
+    ]
+  },
+  "central_principles": [
+    "THIS IS A GAME.",
+    "Everything deterministic that can be done deterministically should be done deterministically.",
+    "Use the simplest model that produces the required physical and game behavior.",
+    "One physical authority; PhysX determines realized motion.",
+    "Actual humanoid plus reference intent plus finite powered joints plus physical bar/contact.",
+    "Shared physical substrate is not a shared exercise model.",
+    "Scientific claims are proportional to evidence.",
+    "Recorded-state replay, immutable rule snapshots, and evidence-backed milestone terminus."
+  ],
+  "artifact_count": {
+    "canonical_markdown": 67,
+    "manifest": 1,
+    "total_canonical": 68
+  },
+  "topological_read_order": [
+    "00_READ_ME_FIRST.md",
+    "01_PRODUCT_CONSTITUTION.md",
+    "02_GAME_ARCHITECTURE.md",
+    "03_COORDINATES_UNITS_NUMERICS.md",
+    "04_HUMANOID_PHYSICAL_ATHLETE.md",
+    "07_PHYSICAL_BARBELL_AND_EQUIPMENT.md",
+    "08_INPUT_AND_PLAYER_INTENT.md",
+    "05_POWERED_JOINT_MODEL.md",
+    "BENCH/20_BENCH_PRODUCT_SPEC.md",
+    "DEADLIFT/30_DEADLIFT_PRODUCT_SPEC.md",
+    "ENGINEERING/60_RUNTIME_EXECUTION_ORDER.md",
+    "SQUAT/10_SQUAT_PRODUCT_SPEC.md",
+    "06_ATHLETE_CAPACITY_MODEL.md",
+    "BENCH/21_BENCH_BIOMECHANICS.md",
+    "DEADLIFT/31_DEADLIFT_BIOMECHANICS.md",
+    "PRESENTATION/50_RENDER_ARCHITECTURE.md",
+    "SQUAT/11_SQUAT_BIOMECHANICS.md",
+    "BENCH/22_BENCH_PHYSICS.md",
+    "BENCH/23_BENCH_REFERENCE_MOTION.md",
+    "DEADLIFT/32_DEADLIFT_PHYSICS.md",
+    "DEADLIFT/33_DEADLIFT_REFERENCE_MOTION.md",
+    "PRESENTATION/51_CHARACTER_PRESENTATION.md",
+    "SQUAT/12_SQUAT_PHYSICS.md",
+    "SQUAT/13_SQUAT_REFERENCE_MOTION.md",
+    "BENCH/24_BENCH_CONTROL_MODEL.md",
+    "DEADLIFT/34_DEADLIFT_CONTROL_MODEL.md",
+    "SQUAT/14_SQUAT_CONTROL_MODEL.md",
+    "BENCH/25_BENCH_RULES.md",
+    "DEADLIFT/35_DEADLIFT_RULES.md",
+    "SQUAT/15_SQUAT_RULES.md",
+    "BENCH/26_BENCH_FAILURE_MODEL.md",
+    "DEADLIFT/36_DEADLIFT_FAILURE_MODEL.md",
+    "GAME/40_MEET_SYSTEM.md",
+    "SQUAT/16_SQUAT_FAILURE_MODEL.md",
+    "BENCH/27_BENCH_TELEMETRY.md",
+    "DEADLIFT/37_DEADLIFT_TELEMETRY.md",
+    "GAME/41_GAMEPLAY_AND_DIFFICULTY.md",
+    "PRESENTATION/52_CAMERA_AND_BROADCAST.md",
+    "SQUAT/17_SQUAT_TELEMETRY.md",
+    "BENCH/28_BENCH_TEST_SPEC.md",
+    "DEADLIFT/38_DEADLIFT_TEST_SPEC.md",
+    "GAME/42_ATHLETE_PROGRESSION.md",
+    "PRESENTATION/56_VISUAL_QUALITY_GATES.md",
+    "GAME/43_SPORTS_SCIENCE_ANALYSIS.md",
+    "SQUAT/18_SQUAT_TEST_SPEC.md",
+    "ENGINEERING/65_CLAIMS_PROVENANCE.md",
+    "GAME/44_REPLAY_SYSTEM.md",
+    "PRESENTATION/53_UI_UX.md",
+    "ENGINEERING/62_TESTING_AND_TERMINUS.md",
+    "ENGINEERING/61_STATE_SNAPSHOTS_AND_REPLAY.md",
+    "GAME/45_SAVE_AND_CAREER.md",
+    "PRESENTATION/54_AUDIO.md",
+    "PRESENTATION/55_VISUAL_DIRECTION.md",
+    "ENGINEERING/63_PERFORMANCE_BUDGET.md",
+    "ENGINEERING/67_ARCHITECTURE_DECISIONS.md",
+    "ENGINEERING/66_FAILURE_OBSERVABILITY.md",
+    "GAME/46_GAME_LOOP_AND_CONTENT.md",
+    "ENGINEERING/64_BUILD_RELEASE_AND_CI.md",
+    "ROADMAP/70_MASTER_GAME_ROADMAP.md",
+    "ROADMAP/71_M3_SQUAT_IMPLEMENTATION_PLAN.md",
+    "ROADMAP/72_M4_BENCH_IMPLEMENTATION_PLAN.md",
+    "ROADMAP/73_M4_DEADLIFT_IMPLEMENTATION_PLAN.md",
+    "ROADMAP/74_M5_MEET_BROADCAST_PLAN.md",
+    "ROADMAP/78_LUNA_IMPLEMENTATION_WAVES.md",
+    "ROADMAP/75_M6_REPLAY_ANALYSIS_PLAN.md",
+    "ROADMAP/76_M7_PRODUCT_GAME_LOOP_PLAN.md",
+    "ROADMAP/77_M8_POLISH_RELEASE_PLAN.md"
+  ],
+  "dependency_edges": [
+    {
+      "from": "00_READ_ME_FIRST.md",
+      "to": "01_PRODUCT_CONSTITUTION.md"
+    },
+    {
+      "from": "00_READ_ME_FIRST.md",
+      "to": "02_GAME_ARCHITECTURE.md"
+    },
+    {
+      "from": "01_PRODUCT_CONSTITUTION.md",
+      "to": "02_GAME_ARCHITECTURE.md"
+    },
+    {
+      "from": "00_READ_ME_FIRST.md",
+      "to": "03_COORDINATES_UNITS_NUMERICS.md"
+    },
+    {
+      "from": "02_GAME_ARCHITECTURE.md",
+      "to": "03_COORDINATES_UNITS_NUMERICS.md"
+    },
+    {
+      "from": "02_GAME_ARCHITECTURE.md",
+      "to": "04_HUMANOID_PHYSICAL_ATHLETE.md"
+    },
+    {
+      "from": "03_COORDINATES_UNITS_NUMERICS.md",
+      "to": "04_HUMANOID_PHYSICAL_ATHLETE.md"
+    },
+    {
+      "from": "03_COORDINATES_UNITS_NUMERICS.md",
+      "to": "07_PHYSICAL_BARBELL_AND_EQUIPMENT.md"
+    },
+    {
+      "from": "02_GAME_ARCHITECTURE.md",
+      "to": "07_PHYSICAL_BARBELL_AND_EQUIPMENT.md"
+    },
+    {
+      "from": "01_PRODUCT_CONSTITUTION.md",
+      "to": "08_INPUT_AND_PLAYER_INTENT.md"
+    },
+    {
+      "from": "03_COORDINATES_UNITS_NUMERICS.md",
+      "to": "08_INPUT_AND_PLAYER_INTENT.md"
+    },
+    {
+      "from": "03_COORDINATES_UNITS_NUMERICS.md",
+      "to": "05_POWERED_JOINT_MODEL.md"
+    },
+    {
+      "from": "04_HUMANOID_PHYSICAL_ATHLETE.md",
+      "to": "05_POWERED_JOINT_MODEL.md"
+    },
+    {
+      "from": "01_PRODUCT_CONSTITUTION.md",
+      "to": "BENCH/20_BENCH_PRODUCT_SPEC.md"
+    },
+    {
+      "from": "02_GAME_ARCHITECTURE.md",
+      "to": "BENCH/20_BENCH_PRODUCT_SPEC.md"
+    },
+    {
+      "from": "08_INPUT_AND_PLAYER_INTENT.md",
+      "to": "BENCH/20_BENCH_PRODUCT_SPEC.md"
+    },
+    {
+      "from": "01_PRODUCT_CONSTITUTION.md",
+      "to": "DEADLIFT/30_DEADLIFT_PRODUCT_SPEC.md"
+    },
+    {
+      "from": "02_GAME_ARCHITECTURE.md",
+      "to": "DEADLIFT/30_DEADLIFT_PRODUCT_SPEC.md"
+    },
+    {
+      "from": "08_INPUT_AND_PLAYER_INTENT.md",
+      "to": "DEADLIFT/30_DEADLIFT_PRODUCT_SPEC.md"
+    },
+    {
+      "from": "02_GAME_ARCHITECTURE.md",
+      "to": "ENGINEERING/60_RUNTIME_EXECUTION_ORDER.md"
+    },
+    {
+      "from": "03_COORDINATES_UNITS_NUMERICS.md",
+      "to": "ENGINEERING/60_RUNTIME_EXECUTION_ORDER.md"
+    },
+    {
+      "from": "08_INPUT_AND_PLAYER_INTENT.md",
+      "to": "ENGINEERING/60_RUNTIME_EXECUTION_ORDER.md"
+    },
+    {
+      "from": "01_PRODUCT_CONSTITUTION.md",
+      "to": "SQUAT/10_SQUAT_PRODUCT_SPEC.md"
+    },
+    {
+      "from": "02_GAME_ARCHITECTURE.md",
+      "to": "SQUAT/10_SQUAT_PRODUCT_SPEC.md"
+    },
+    {
+      "from": "08_INPUT_AND_PLAYER_INTENT.md",
+      "to": "SQUAT/10_SQUAT_PRODUCT_SPEC.md"
+    },
+    {
+      "from": "05_POWERED_JOINT_MODEL.md",
+      "to": "06_ATHLETE_CAPACITY_MODEL.md"
+    },
+    {
+      "from": "01_PRODUCT_CONSTITUTION.md",
+      "to": "06_ATHLETE_CAPACITY_MODEL.md"
+    },
+    {
+      "from": "BENCH/20_BENCH_PRODUCT_SPEC.md",
+      "to": "BENCH/21_BENCH_BIOMECHANICS.md"
+    },
+    {
+      "from": "04_HUMANOID_PHYSICAL_ATHLETE.md",
+      "to": "BENCH/21_BENCH_BIOMECHANICS.md"
+    },
+    {
+      "from": "07_PHYSICAL_BARBELL_AND_EQUIPMENT.md",
+      "to": "BENCH/21_BENCH_BIOMECHANICS.md"
+    },
+    {
+      "from": "DEADLIFT/30_DEADLIFT_PRODUCT_SPEC.md",
+      "to": "DEADLIFT/31_DEADLIFT_BIOMECHANICS.md"
+    },
+    {
+      "from": "04_HUMANOID_PHYSICAL_ATHLETE.md",
+      "to": "DEADLIFT/31_DEADLIFT_BIOMECHANICS.md"
+    },
+    {
+      "from": "07_PHYSICAL_BARBELL_AND_EQUIPMENT.md",
+      "to": "DEADLIFT/31_DEADLIFT_BIOMECHANICS.md"
+    },
+    {
+      "from": "02_GAME_ARCHITECTURE.md",
+      "to": "PRESENTATION/50_RENDER_ARCHITECTURE.md"
+    },
+    {
+      "from": "04_HUMANOID_PHYSICAL_ATHLETE.md",
+      "to": "PRESENTATION/50_RENDER_ARCHITECTURE.md"
+    },
+    {
+      "from": "ENGINEERING/60_RUNTIME_EXECUTION_ORDER.md",
+      "to": "PRESENTATION/50_RENDER_ARCHITECTURE.md"
+    },
+    {
+      "from": "SQUAT/10_SQUAT_PRODUCT_SPEC.md",
+      "to": "SQUAT/11_SQUAT_BIOMECHANICS.md"
+    },
+    {
+      "from": "04_HUMANOID_PHYSICAL_ATHLETE.md",
+      "to": "SQUAT/11_SQUAT_BIOMECHANICS.md"
+    },
+    {
+      "from": "07_PHYSICAL_BARBELL_AND_EQUIPMENT.md",
+      "to": "SQUAT/11_SQUAT_BIOMECHANICS.md"
+    },
+    {
+      "from": "BENCH/21_BENCH_BIOMECHANICS.md",
+      "to": "BENCH/22_BENCH_PHYSICS.md"
+    },
+    {
+      "from": "04_HUMANOID_PHYSICAL_ATHLETE.md",
+      "to": "BENCH/22_BENCH_PHYSICS.md"
+    },
+    {
+      "from": "05_POWERED_JOINT_MODEL.md",
+      "to": "BENCH/22_BENCH_PHYSICS.md"
+    },
+    {
+      "from": "07_PHYSICAL_BARBELL_AND_EQUIPMENT.md",
+      "to": "BENCH/22_BENCH_PHYSICS.md"
+    },
+    {
+      "from": "BENCH/21_BENCH_BIOMECHANICS.md",
+      "to": "BENCH/23_BENCH_REFERENCE_MOTION.md"
+    },
+    {
+      "from": "05_POWERED_JOINT_MODEL.md",
+      "to": "BENCH/23_BENCH_REFERENCE_MOTION.md"
+    },
+    {
+      "from": "08_INPUT_AND_PLAYER_INTENT.md",
+      "to": "BENCH/23_BENCH_REFERENCE_MOTION.md"
+    },
+    {
+      "from": "DEADLIFT/31_DEADLIFT_BIOMECHANICS.md",
+      "to": "DEADLIFT/32_DEADLIFT_PHYSICS.md"
+    },
+    {
+      "from": "04_HUMANOID_PHYSICAL_ATHLETE.md",
+      "to": "DEADLIFT/32_DEADLIFT_PHYSICS.md"
+    },
+    {
+      "from": "05_POWERED_JOINT_MODEL.md",
+      "to": "DEADLIFT/32_DEADLIFT_PHYSICS.md"
+    },
+    {
+      "from": "07_PHYSICAL_BARBELL_AND_EQUIPMENT.md",
+      "to": "DEADLIFT/32_DEADLIFT_PHYSICS.md"
+    },
+    {
+      "from": "DEADLIFT/31_DEADLIFT_BIOMECHANICS.md",
+      "to": "DEADLIFT/33_DEADLIFT_REFERENCE_MOTION.md"
+    },
+    {
+      "from": "05_POWERED_JOINT_MODEL.md",
+      "to": "DEADLIFT/33_DEADLIFT_REFERENCE_MOTION.md"
+    },
+    {
+      "from": "08_INPUT_AND_PLAYER_INTENT.md",
+      "to": "DEADLIFT/33_DEADLIFT_REFERENCE_MOTION.md"
+    },
+    {
+      "from": "04_HUMANOID_PHYSICAL_ATHLETE.md",
+      "to": "PRESENTATION/51_CHARACTER_PRESENTATION.md"
+    },
+    {
+      "from": "PRESENTATION/50_RENDER_ARCHITECTURE.md",
+      "to": "PRESENTATION/51_CHARACTER_PRESENTATION.md"
+    },
+    {
+      "from": "05_POWERED_JOINT_MODEL.md",
+      "to": "PRESENTATION/51_CHARACTER_PRESENTATION.md"
+    },
+    {
+      "from": "SQUAT/11_SQUAT_BIOMECHANICS.md",
+      "to": "SQUAT/12_SQUAT_PHYSICS.md"
+    },
+    {
+      "from": "04_HUMANOID_PHYSICAL_ATHLETE.md",
+      "to": "SQUAT/12_SQUAT_PHYSICS.md"
+    },
+    {
+      "from": "05_POWERED_JOINT_MODEL.md",
+      "to": "SQUAT/12_SQUAT_PHYSICS.md"
+    },
+    {
+      "from": "07_PHYSICAL_BARBELL_AND_EQUIPMENT.md",
+      "to": "SQUAT/12_SQUAT_PHYSICS.md"
+    },
+    {
+      "from": "SQUAT/11_SQUAT_BIOMECHANICS.md",
+      "to": "SQUAT/13_SQUAT_REFERENCE_MOTION.md"
+    },
+    {
+      "from": "05_POWERED_JOINT_MODEL.md",
+      "to": "SQUAT/13_SQUAT_REFERENCE_MOTION.md"
+    },
+    {
+      "from": "08_INPUT_AND_PLAYER_INTENT.md",
+      "to": "SQUAT/13_SQUAT_REFERENCE_MOTION.md"
+    },
+    {
+      "from": "BENCH/23_BENCH_REFERENCE_MOTION.md",
+      "to": "BENCH/24_BENCH_CONTROL_MODEL.md"
+    },
+    {
+      "from": "05_POWERED_JOINT_MODEL.md",
+      "to": "BENCH/24_BENCH_CONTROL_MODEL.md"
+    },
+    {
+      "from": "06_ATHLETE_CAPACITY_MODEL.md",
+      "to": "BENCH/24_BENCH_CONTROL_MODEL.md"
+    },
+    {
+      "from": "08_INPUT_AND_PLAYER_INTENT.md",
+      "to": "BENCH/24_BENCH_CONTROL_MODEL.md"
+    },
+    {
+      "from": "DEADLIFT/33_DEADLIFT_REFERENCE_MOTION.md",
+      "to": "DEADLIFT/34_DEADLIFT_CONTROL_MODEL.md"
+    },
+    {
+      "from": "05_POWERED_JOINT_MODEL.md",
+      "to": "DEADLIFT/34_DEADLIFT_CONTROL_MODEL.md"
+    },
+    {
+      "from": "06_ATHLETE_CAPACITY_MODEL.md",
+      "to": "DEADLIFT/34_DEADLIFT_CONTROL_MODEL.md"
+    },
+    {
+      "from": "08_INPUT_AND_PLAYER_INTENT.md",
+      "to": "DEADLIFT/34_DEADLIFT_CONTROL_MODEL.md"
+    },
+    {
+      "from": "SQUAT/13_SQUAT_REFERENCE_MOTION.md",
+      "to": "SQUAT/14_SQUAT_CONTROL_MODEL.md"
+    },
+    {
+      "from": "05_POWERED_JOINT_MODEL.md",
+      "to": "SQUAT/14_SQUAT_CONTROL_MODEL.md"
+    },
+    {
+      "from": "06_ATHLETE_CAPACITY_MODEL.md",
+      "to": "SQUAT/14_SQUAT_CONTROL_MODEL.md"
+    },
+    {
+      "from": "08_INPUT_AND_PLAYER_INTENT.md",
+      "to": "SQUAT/14_SQUAT_CONTROL_MODEL.md"
+    },
+    {
+      "from": "BENCH/21_BENCH_BIOMECHANICS.md",
+      "to": "BENCH/25_BENCH_RULES.md"
+    },
+    {
+      "from": "BENCH/24_BENCH_CONTROL_MODEL.md",
+      "to": "BENCH/25_BENCH_RULES.md"
+    },
+    {
+      "from": "03_COORDINATES_UNITS_NUMERICS.md",
+      "to": "BENCH/25_BENCH_RULES.md"
+    },
+    {
+      "from": "DEADLIFT/31_DEADLIFT_BIOMECHANICS.md",
+      "to": "DEADLIFT/35_DEADLIFT_RULES.md"
+    },
+    {
+      "from": "DEADLIFT/34_DEADLIFT_CONTROL_MODEL.md",
+      "to": "DEADLIFT/35_DEADLIFT_RULES.md"
+    },
+    {
+      "from": "03_COORDINATES_UNITS_NUMERICS.md",
+      "to": "DEADLIFT/35_DEADLIFT_RULES.md"
+    },
+    {
+      "from": "SQUAT/11_SQUAT_BIOMECHANICS.md",
+      "to": "SQUAT/15_SQUAT_RULES.md"
+    },
+    {
+      "from": "SQUAT/14_SQUAT_CONTROL_MODEL.md",
+      "to": "SQUAT/15_SQUAT_RULES.md"
+    },
+    {
+      "from": "03_COORDINATES_UNITS_NUMERICS.md",
+      "to": "SQUAT/15_SQUAT_RULES.md"
+    },
+    {
+      "from": "BENCH/24_BENCH_CONTROL_MODEL.md",
+      "to": "BENCH/26_BENCH_FAILURE_MODEL.md"
+    },
+    {
+      "from": "BENCH/25_BENCH_RULES.md",
+      "to": "BENCH/26_BENCH_FAILURE_MODEL.md"
+    },
+    {
+      "from": "03_COORDINATES_UNITS_NUMERICS.md",
+      "to": "BENCH/26_BENCH_FAILURE_MODEL.md"
+    },
+    {
+      "from": "DEADLIFT/34_DEADLIFT_CONTROL_MODEL.md",
+      "to": "DEADLIFT/36_DEADLIFT_FAILURE_MODEL.md"
+    },
+    {
+      "from": "DEADLIFT/35_DEADLIFT_RULES.md",
+      "to": "DEADLIFT/36_DEADLIFT_FAILURE_MODEL.md"
+    },
+    {
+      "from": "03_COORDINATES_UNITS_NUMERICS.md",
+      "to": "DEADLIFT/36_DEADLIFT_FAILURE_MODEL.md"
+    },
+    {
+      "from": "SQUAT/15_SQUAT_RULES.md",
+      "to": "GAME/40_MEET_SYSTEM.md"
+    },
+    {
+      "from": "BENCH/25_BENCH_RULES.md",
+      "to": "GAME/40_MEET_SYSTEM.md"
+    },
+    {
+      "from": "DEADLIFT/35_DEADLIFT_RULES.md",
+      "to": "GAME/40_MEET_SYSTEM.md"
+    },
+    {
+      "from": "07_PHYSICAL_BARBELL_AND_EQUIPMENT.md",
+      "to": "GAME/40_MEET_SYSTEM.md"
+    },
+    {
+      "from": "SQUAT/14_SQUAT_CONTROL_MODEL.md",
+      "to": "SQUAT/16_SQUAT_FAILURE_MODEL.md"
+    },
+    {
+      "from": "SQUAT/15_SQUAT_RULES.md",
+      "to": "SQUAT/16_SQUAT_FAILURE_MODEL.md"
+    },
+    {
+      "from": "03_COORDINATES_UNITS_NUMERICS.md",
+      "to": "SQUAT/16_SQUAT_FAILURE_MODEL.md"
+    },
+    {
+      "from": "BENCH/21_BENCH_BIOMECHANICS.md",
+      "to": "BENCH/27_BENCH_TELEMETRY.md"
+    },
+    {
+      "from": "BENCH/25_BENCH_RULES.md",
+      "to": "BENCH/27_BENCH_TELEMETRY.md"
+    },
+    {
+      "from": "BENCH/26_BENCH_FAILURE_MODEL.md",
+      "to": "BENCH/27_BENCH_TELEMETRY.md"
+    },
+    {
+      "from": "03_COORDINATES_UNITS_NUMERICS.md",
+      "to": "BENCH/27_BENCH_TELEMETRY.md"
+    },
+    {
+      "from": "DEADLIFT/31_DEADLIFT_BIOMECHANICS.md",
+      "to": "DEADLIFT/37_DEADLIFT_TELEMETRY.md"
+    },
+    {
+      "from": "DEADLIFT/35_DEADLIFT_RULES.md",
+      "to": "DEADLIFT/37_DEADLIFT_TELEMETRY.md"
+    },
+    {
+      "from": "DEADLIFT/36_DEADLIFT_FAILURE_MODEL.md",
+      "to": "DEADLIFT/37_DEADLIFT_TELEMETRY.md"
+    },
+    {
+      "from": "03_COORDINATES_UNITS_NUMERICS.md",
+      "to": "DEADLIFT/37_DEADLIFT_TELEMETRY.md"
+    },
+    {
+      "from": "01_PRODUCT_CONSTITUTION.md",
+      "to": "GAME/41_GAMEPLAY_AND_DIFFICULTY.md"
+    },
+    {
+      "from": "08_INPUT_AND_PLAYER_INTENT.md",
+      "to": "GAME/41_GAMEPLAY_AND_DIFFICULTY.md"
+    },
+    {
+      "from": "06_ATHLETE_CAPACITY_MODEL.md",
+      "to": "GAME/41_GAMEPLAY_AND_DIFFICULTY.md"
+    },
+    {
+      "from": "GAME/40_MEET_SYSTEM.md",
+      "to": "GAME/41_GAMEPLAY_AND_DIFFICULTY.md"
+    },
+    {
+      "from": "PRESENTATION/50_RENDER_ARCHITECTURE.md",
+      "to": "PRESENTATION/52_CAMERA_AND_BROADCAST.md"
+    },
+    {
+      "from": "GAME/40_MEET_SYSTEM.md",
+      "to": "PRESENTATION/52_CAMERA_AND_BROADCAST.md"
+    },
+    {
+      "from": "SQUAT/11_SQUAT_BIOMECHANICS.md",
+      "to": "SQUAT/17_SQUAT_TELEMETRY.md"
+    },
+    {
+      "from": "SQUAT/15_SQUAT_RULES.md",
+      "to": "SQUAT/17_SQUAT_TELEMETRY.md"
+    },
+    {
+      "from": "SQUAT/16_SQUAT_FAILURE_MODEL.md",
+      "to": "SQUAT/17_SQUAT_TELEMETRY.md"
+    },
+    {
+      "from": "03_COORDINATES_UNITS_NUMERICS.md",
+      "to": "SQUAT/17_SQUAT_TELEMETRY.md"
+    },
+    {
+      "from": "BENCH/22_BENCH_PHYSICS.md",
+      "to": "BENCH/28_BENCH_TEST_SPEC.md"
+    },
+    {
+      "from": "BENCH/25_BENCH_RULES.md",
+      "to": "BENCH/28_BENCH_TEST_SPEC.md"
+    },
+    {
+      "from": "BENCH/26_BENCH_FAILURE_MODEL.md",
+      "to": "BENCH/28_BENCH_TEST_SPEC.md"
+    },
+    {
+      "from": "BENCH/27_BENCH_TELEMETRY.md",
+      "to": "BENCH/28_BENCH_TEST_SPEC.md"
+    },
+    {
+      "from": "DEADLIFT/32_DEADLIFT_PHYSICS.md",
+      "to": "DEADLIFT/38_DEADLIFT_TEST_SPEC.md"
+    },
+    {
+      "from": "DEADLIFT/35_DEADLIFT_RULES.md",
+      "to": "DEADLIFT/38_DEADLIFT_TEST_SPEC.md"
+    },
+    {
+      "from": "DEADLIFT/36_DEADLIFT_FAILURE_MODEL.md",
+      "to": "DEADLIFT/38_DEADLIFT_TEST_SPEC.md"
+    },
+    {
+      "from": "DEADLIFT/37_DEADLIFT_TELEMETRY.md",
+      "to": "DEADLIFT/38_DEADLIFT_TEST_SPEC.md"
+    },
+    {
+      "from": "06_ATHLETE_CAPACITY_MODEL.md",
+      "to": "GAME/42_ATHLETE_PROGRESSION.md"
+    },
+    {
+      "from": "GAME/41_GAMEPLAY_AND_DIFFICULTY.md",
+      "to": "GAME/42_ATHLETE_PROGRESSION.md"
+    },
+    {
+      "from": "PRESENTATION/50_RENDER_ARCHITECTURE.md",
+      "to": "PRESENTATION/56_VISUAL_QUALITY_GATES.md"
+    },
+    {
+      "from": "PRESENTATION/51_CHARACTER_PRESENTATION.md",
+      "to": "PRESENTATION/56_VISUAL_QUALITY_GATES.md"
+    },
+    {
+      "from": "PRESENTATION/52_CAMERA_AND_BROADCAST.md",
+      "to": "PRESENTATION/56_VISUAL_QUALITY_GATES.md"
+    },
+    {
+      "from": "SQUAT/17_SQUAT_TELEMETRY.md",
+      "to": "GAME/43_SPORTS_SCIENCE_ANALYSIS.md"
+    },
+    {
+      "from": "BENCH/27_BENCH_TELEMETRY.md",
+      "to": "GAME/43_SPORTS_SCIENCE_ANALYSIS.md"
+    },
+    {
+      "from": "DEADLIFT/37_DEADLIFT_TELEMETRY.md",
+      "to": "GAME/43_SPORTS_SCIENCE_ANALYSIS.md"
+    },
+    {
+      "from": "SQUAT/12_SQUAT_PHYSICS.md",
+      "to": "SQUAT/18_SQUAT_TEST_SPEC.md"
+    },
+    {
+      "from": "SQUAT/15_SQUAT_RULES.md",
+      "to": "SQUAT/18_SQUAT_TEST_SPEC.md"
+    },
+    {
+      "from": "SQUAT/16_SQUAT_FAILURE_MODEL.md",
+      "to": "SQUAT/18_SQUAT_TEST_SPEC.md"
+    },
+    {
+      "from": "SQUAT/17_SQUAT_TELEMETRY.md",
+      "to": "SQUAT/18_SQUAT_TEST_SPEC.md"
+    },
+    {
+      "from": "00_READ_ME_FIRST.md",
+      "to": "ENGINEERING/65_CLAIMS_PROVENANCE.md"
+    },
+    {
+      "from": "03_COORDINATES_UNITS_NUMERICS.md",
+      "to": "ENGINEERING/65_CLAIMS_PROVENANCE.md"
+    },
+    {
+      "from": "GAME/43_SPORTS_SCIENCE_ANALYSIS.md",
+      "to": "ENGINEERING/65_CLAIMS_PROVENANCE.md"
+    },
+    {
+      "from": "GAME/43_SPORTS_SCIENCE_ANALYSIS.md",
+      "to": "GAME/44_REPLAY_SYSTEM.md"
+    },
+    {
+      "from": "PRESENTATION/52_CAMERA_AND_BROADCAST.md",
+      "to": "GAME/44_REPLAY_SYSTEM.md"
+    },
+    {
+      "from": "03_COORDINATES_UNITS_NUMERICS.md",
+      "to": "GAME/44_REPLAY_SYSTEM.md"
+    },
+    {
+      "from": "08_INPUT_AND_PLAYER_INTENT.md",
+      "to": "PRESENTATION/53_UI_UX.md"
+    },
+    {
+      "from": "GAME/40_MEET_SYSTEM.md",
+      "to": "PRESENTATION/53_UI_UX.md"
+    },
+    {
+      "from": "GAME/43_SPORTS_SCIENCE_ANALYSIS.md",
+      "to": "PRESENTATION/53_UI_UX.md"
+    },
+    {
+      "from": "PRESENTATION/52_CAMERA_AND_BROADCAST.md",
+      "to": "PRESENTATION/53_UI_UX.md"
+    },
+    {
+      "from": "SQUAT/18_SQUAT_TEST_SPEC.md",
+      "to": "ENGINEERING/62_TESTING_AND_TERMINUS.md"
+    },
+    {
+      "from": "BENCH/28_BENCH_TEST_SPEC.md",
+      "to": "ENGINEERING/62_TESTING_AND_TERMINUS.md"
+    },
+    {
+      "from": "DEADLIFT/38_DEADLIFT_TEST_SPEC.md",
+      "to": "ENGINEERING/62_TESTING_AND_TERMINUS.md"
+    },
+    {
+      "from": "PRESENTATION/56_VISUAL_QUALITY_GATES.md",
+      "to": "ENGINEERING/62_TESTING_AND_TERMINUS.md"
+    },
+    {
+      "from": "ENGINEERING/60_RUNTIME_EXECUTION_ORDER.md",
+      "to": "ENGINEERING/61_STATE_SNAPSHOTS_AND_REPLAY.md"
+    },
+    {
+      "from": "03_COORDINATES_UNITS_NUMERICS.md",
+      "to": "ENGINEERING/61_STATE_SNAPSHOTS_AND_REPLAY.md"
+    },
+    {
+      "from": "GAME/44_REPLAY_SYSTEM.md",
+      "to": "ENGINEERING/61_STATE_SNAPSHOTS_AND_REPLAY.md"
+    },
+    {
+      "from": "GAME/40_MEET_SYSTEM.md",
+      "to": "GAME/45_SAVE_AND_CAREER.md"
+    },
+    {
+      "from": "GAME/42_ATHLETE_PROGRESSION.md",
+      "to": "GAME/45_SAVE_AND_CAREER.md"
+    },
+    {
+      "from": "GAME/44_REPLAY_SYSTEM.md",
+      "to": "GAME/45_SAVE_AND_CAREER.md"
+    },
+    {
+      "from": "PRESENTATION/51_CHARACTER_PRESENTATION.md",
+      "to": "PRESENTATION/54_AUDIO.md"
+    },
+    {
+      "from": "PRESENTATION/52_CAMERA_AND_BROADCAST.md",
+      "to": "PRESENTATION/54_AUDIO.md"
+    },
+    {
+      "from": "GAME/44_REPLAY_SYSTEM.md",
+      "to": "PRESENTATION/54_AUDIO.md"
+    },
+    {
+      "from": "01_PRODUCT_CONSTITUTION.md",
+      "to": "PRESENTATION/55_VISUAL_DIRECTION.md"
+    },
+    {
+      "from": "PRESENTATION/50_RENDER_ARCHITECTURE.md",
+      "to": "PRESENTATION/55_VISUAL_DIRECTION.md"
+    },
+    {
+      "from": "PRESENTATION/51_CHARACTER_PRESENTATION.md",
+      "to": "PRESENTATION/55_VISUAL_DIRECTION.md"
+    },
+    {
+      "from": "PRESENTATION/53_UI_UX.md",
+      "to": "PRESENTATION/55_VISUAL_DIRECTION.md"
+    },
+    {
+      "from": "03_COORDINATES_UNITS_NUMERICS.md",
+      "to": "ENGINEERING/63_PERFORMANCE_BUDGET.md"
+    },
+    {
+      "from": "ENGINEERING/60_RUNTIME_EXECUTION_ORDER.md",
+      "to": "ENGINEERING/63_PERFORMANCE_BUDGET.md"
+    },
+    {
+      "from": "PRESENTATION/50_RENDER_ARCHITECTURE.md",
+      "to": "ENGINEERING/63_PERFORMANCE_BUDGET.md"
+    },
+    {
+      "from": "ENGINEERING/62_TESTING_AND_TERMINUS.md",
+      "to": "ENGINEERING/63_PERFORMANCE_BUDGET.md"
+    },
+    {
+      "from": "00_READ_ME_FIRST.md",
+      "to": "ENGINEERING/67_ARCHITECTURE_DECISIONS.md"
+    },
+    {
+      "from": "02_GAME_ARCHITECTURE.md",
+      "to": "ENGINEERING/67_ARCHITECTURE_DECISIONS.md"
+    },
+    {
+      "from": "ENGINEERING/60_RUNTIME_EXECUTION_ORDER.md",
+      "to": "ENGINEERING/67_ARCHITECTURE_DECISIONS.md"
+    },
+    {
+      "from": "ENGINEERING/62_TESTING_AND_TERMINUS.md",
+      "to": "ENGINEERING/67_ARCHITECTURE_DECISIONS.md"
+    },
+    {
+      "from": "ENGINEERING/65_CLAIMS_PROVENANCE.md",
+      "to": "ENGINEERING/67_ARCHITECTURE_DECISIONS.md"
+    },
+    {
+      "from": "SQUAT/16_SQUAT_FAILURE_MODEL.md",
+      "to": "ENGINEERING/66_FAILURE_OBSERVABILITY.md"
+    },
+    {
+      "from": "BENCH/26_BENCH_FAILURE_MODEL.md",
+      "to": "ENGINEERING/66_FAILURE_OBSERVABILITY.md"
+    },
+    {
+      "from": "DEADLIFT/36_DEADLIFT_FAILURE_MODEL.md",
+      "to": "ENGINEERING/66_FAILURE_OBSERVABILITY.md"
+    },
+    {
+      "from": "ENGINEERING/61_STATE_SNAPSHOTS_AND_REPLAY.md",
+      "to": "ENGINEERING/66_FAILURE_OBSERVABILITY.md"
+    },
+    {
+      "from": "GAME/40_MEET_SYSTEM.md",
+      "to": "GAME/46_GAME_LOOP_AND_CONTENT.md"
+    },
+    {
+      "from": "GAME/41_GAMEPLAY_AND_DIFFICULTY.md",
+      "to": "GAME/46_GAME_LOOP_AND_CONTENT.md"
+    },
+    {
+      "from": "GAME/42_ATHLETE_PROGRESSION.md",
+      "to": "GAME/46_GAME_LOOP_AND_CONTENT.md"
+    },
+    {
+      "from": "GAME/43_SPORTS_SCIENCE_ANALYSIS.md",
+      "to": "GAME/46_GAME_LOOP_AND_CONTENT.md"
+    },
+    {
+      "from": "GAME/44_REPLAY_SYSTEM.md",
+      "to": "GAME/46_GAME_LOOP_AND_CONTENT.md"
+    },
+    {
+      "from": "GAME/45_SAVE_AND_CAREER.md",
+      "to": "GAME/46_GAME_LOOP_AND_CONTENT.md"
+    },
+    {
+      "from": "ENGINEERING/62_TESTING_AND_TERMINUS.md",
+      "to": "ENGINEERING/64_BUILD_RELEASE_AND_CI.md"
+    },
+    {
+      "from": "ENGINEERING/63_PERFORMANCE_BUDGET.md",
+      "to": "ENGINEERING/64_BUILD_RELEASE_AND_CI.md"
+    },
+    {
+      "from": "ENGINEERING/65_CLAIMS_PROVENANCE.md",
+      "to": "ENGINEERING/64_BUILD_RELEASE_AND_CI.md"
+    },
+    {
+      "from": "GAME/45_SAVE_AND_CAREER.md",
+      "to": "ENGINEERING/64_BUILD_RELEASE_AND_CI.md"
+    },
+    {
+      "from": "00_READ_ME_FIRST.md",
+      "to": "ROADMAP/70_MASTER_GAME_ROADMAP.md"
+    },
+    {
+      "from": "ENGINEERING/62_TESTING_AND_TERMINUS.md",
+      "to": "ROADMAP/70_MASTER_GAME_ROADMAP.md"
+    },
+    {
+      "from": "ENGINEERING/67_ARCHITECTURE_DECISIONS.md",
+      "to": "ROADMAP/70_MASTER_GAME_ROADMAP.md"
+    },
+    {
+      "from": "ROADMAP/70_MASTER_GAME_ROADMAP.md",
+      "to": "ROADMAP/71_M3_SQUAT_IMPLEMENTATION_PLAN.md"
+    },
+    {
+      "from": "SQUAT/18_SQUAT_TEST_SPEC.md",
+      "to": "ROADMAP/71_M3_SQUAT_IMPLEMENTATION_PLAN.md"
+    },
+    {
+      "from": "ENGINEERING/60_RUNTIME_EXECUTION_ORDER.md",
+      "to": "ROADMAP/71_M3_SQUAT_IMPLEMENTATION_PLAN.md"
+    },
+    {
+      "from": "ROADMAP/71_M3_SQUAT_IMPLEMENTATION_PLAN.md",
+      "to": "ROADMAP/72_M4_BENCH_IMPLEMENTATION_PLAN.md"
+    },
+    {
+      "from": "BENCH/28_BENCH_TEST_SPEC.md",
+      "to": "ROADMAP/72_M4_BENCH_IMPLEMENTATION_PLAN.md"
+    },
+    {
+      "from": "ROADMAP/71_M3_SQUAT_IMPLEMENTATION_PLAN.md",
+      "to": "ROADMAP/73_M4_DEADLIFT_IMPLEMENTATION_PLAN.md"
+    },
+    {
+      "from": "DEADLIFT/38_DEADLIFT_TEST_SPEC.md",
+      "to": "ROADMAP/73_M4_DEADLIFT_IMPLEMENTATION_PLAN.md"
+    },
+    {
+      "from": "ROADMAP/72_M4_BENCH_IMPLEMENTATION_PLAN.md",
+      "to": "ROADMAP/74_M5_MEET_BROADCAST_PLAN.md"
+    },
+    {
+      "from": "ROADMAP/73_M4_DEADLIFT_IMPLEMENTATION_PLAN.md",
+      "to": "ROADMAP/74_M5_MEET_BROADCAST_PLAN.md"
+    },
+    {
+      "from": "GAME/40_MEET_SYSTEM.md",
+      "to": "ROADMAP/74_M5_MEET_BROADCAST_PLAN.md"
+    },
+    {
+      "from": "PRESENTATION/52_CAMERA_AND_BROADCAST.md",
+      "to": "ROADMAP/74_M5_MEET_BROADCAST_PLAN.md"
+    },
+    {
+      "from": "ROADMAP/70_MASTER_GAME_ROADMAP.md",
+      "to": "ROADMAP/78_LUNA_IMPLEMENTATION_WAVES.md"
+    },
+    {
+      "from": "ROADMAP/71_M3_SQUAT_IMPLEMENTATION_PLAN.md",
+      "to": "ROADMAP/78_LUNA_IMPLEMENTATION_WAVES.md"
+    },
+    {
+      "from": "ROADMAP/72_M4_BENCH_IMPLEMENTATION_PLAN.md",
+      "to": "ROADMAP/78_LUNA_IMPLEMENTATION_WAVES.md"
+    },
+    {
+      "from": "ROADMAP/73_M4_DEADLIFT_IMPLEMENTATION_PLAN.md",
+      "to": "ROADMAP/78_LUNA_IMPLEMENTATION_WAVES.md"
+    },
+    {
+      "from": "ENGINEERING/62_TESTING_AND_TERMINUS.md",
+      "to": "ROADMAP/78_LUNA_IMPLEMENTATION_WAVES.md"
+    },
+    {
+      "from": "ROADMAP/74_M5_MEET_BROADCAST_PLAN.md",
+      "to": "ROADMAP/75_M6_REPLAY_ANALYSIS_PLAN.md"
+    },
+    {
+      "from": "GAME/43_SPORTS_SCIENCE_ANALYSIS.md",
+      "to": "ROADMAP/75_M6_REPLAY_ANALYSIS_PLAN.md"
+    },
+    {
+      "from": "GAME/44_REPLAY_SYSTEM.md",
+      "to": "ROADMAP/75_M6_REPLAY_ANALYSIS_PLAN.md"
+    },
+    {
+      "from": "ENGINEERING/65_CLAIMS_PROVENANCE.md",
+      "to": "ROADMAP/75_M6_REPLAY_ANALYSIS_PLAN.md"
+    },
+    {
+      "from": "ROADMAP/75_M6_REPLAY_ANALYSIS_PLAN.md",
+      "to": "ROADMAP/76_M7_PRODUCT_GAME_LOOP_PLAN.md"
+    },
+    {
+      "from": "GAME/42_ATHLETE_PROGRESSION.md",
+      "to": "ROADMAP/76_M7_PRODUCT_GAME_LOOP_PLAN.md"
+    },
+    {
+      "from": "GAME/45_SAVE_AND_CAREER.md",
+      "to": "ROADMAP/76_M7_PRODUCT_GAME_LOOP_PLAN.md"
+    },
+    {
+      "from": "GAME/46_GAME_LOOP_AND_CONTENT.md",
+      "to": "ROADMAP/76_M7_PRODUCT_GAME_LOOP_PLAN.md"
+    },
+    {
+      "from": "ROADMAP/76_M7_PRODUCT_GAME_LOOP_PLAN.md",
+      "to": "ROADMAP/77_M8_POLISH_RELEASE_PLAN.md"
+    },
+    {
+      "from": "PRESENTATION/56_VISUAL_QUALITY_GATES.md",
+      "to": "ROADMAP/77_M8_POLISH_RELEASE_PLAN.md"
+    },
+    {
+      "from": "ENGINEERING/63_PERFORMANCE_BUDGET.md",
+      "to": "ROADMAP/77_M8_POLISH_RELEASE_PLAN.md"
+    },
+    {
+      "from": "ENGINEERING/64_BUILD_RELEASE_AND_CI.md",
+      "to": "ROADMAP/77_M8_POLISH_RELEASE_PLAN.md"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "00_READ_ME_FIRST.md",
+      "document_id": "00",
+      "title": "Read Me First — Executive Freeze",
+      "category": "FOUNDATION",
+      "status": "FROZEN",
+      "description": "The shipping product is a human-centered powerlifting game whose mechanical truth comes from one finite, physical athlete and one physical barbell simulated by PhysX. The player supplies lift-specific intent. A hidden reference rig describes the technique the athlete is attempting; force-limited powered joints attempt to follow that reference; contacts, gravity, load, geometry and finite authority determine what…",
+      "dependencies": [],
+      "sha256": "aa5b121a89492ed3ac7004c10db47f0d5299f776caceefaee19a9d8c02ef936b",
+      "bytes_utf8": 14786,
+      "lines": 238,
+      "canonical": true
+    },
+    {
+      "path": "01_PRODUCT_CONSTITUTION.md",
+      "document_id": "01",
+      "title": "Product Constitution",
+      "category": "FOUNDATION",
+      "status": "FROZEN",
+      "description": "Working product: a single-player, physics-based powerlifting game centered on squat, bench press and conventional deadlift. Player fantasy: be the lifter; select attempts; execute technique under load; obey commands; manage a meet; improve an athlete; study performance. Product promise: a visible human, a physical bar and understandable causality. A light lift should look and feel controlled. A near-maximal lift…",
+      "dependencies": [
+        "00_READ_ME_FIRST.md"
+      ],
+      "sha256": "0b95fb613905168af9d8f7e0d92e84276e17f4bb2ea430834159b993e6ad894a",
+      "bytes_utf8": 5474,
+      "lines": 146,
+      "canonical": true
+    },
+    {
+      "path": "02_GAME_ARCHITECTURE.md",
+      "document_id": "02",
+      "title": "Game Architecture",
+      "category": "FOUNDATION",
+      "status": "FROZEN",
+      "description": "The game uses layered, snapshot-driven physical gameplay .",
+      "dependencies": [
+        "00_READ_ME_FIRST.md",
+        "01_PRODUCT_CONSTITUTION.md"
+      ],
+      "sha256": "9e0c10df67159078df63806abc1c2c77908c84aef2b392a53effe1071e09bc3d",
+      "bytes_utf8": 5240,
+      "lines": 167,
+      "canonical": true
+    },
+    {
+      "path": "03_COORDINATES_UNITS_NUMERICS.md",
+      "document_id": "PSMS-03",
+      "title": "Coordinates, Units, Time, and Numerical Contract",
+      "category": "FOUNDATION",
+      "status": "FROZEN",
+      "description": "Freeze one mathematical language for the whole product. Every simulation, rule, telemetry, replay, and presentation system must be able to state which frame, unit, time domain, tolerance class, and source class it uses. This contract prevents the historical class of sign, axis, degree/radian, duplicate-step, and tolerance-leak bugs. INPUTS - Unity transforms, rigid-body states, collider contacts, and configured…",
+      "dependencies": [
+        "00_READ_ME_FIRST.md",
+        "02_GAME_ARCHITECTURE.md"
+      ],
+      "sha256": "733626d4a3f9d5c3da8fc2f84d09261f4e9bf58d557ae9d0993645c9a271f748",
+      "bytes_utf8": 11886,
+      "lines": 323,
+      "canonical": true
+    },
+    {
+      "path": "04_HUMANOID_PHYSICAL_ATHLETE.md",
+      "document_id": "PSMS-04",
+      "title": "Humanoid Physical Athlete",
+      "category": "FOUNDATION",
+      "status": "FROZEN",
+      "description": "Create one anthropometrically informed powered rigid-body athlete that drives the actual visible Superhero Male FullBody character without allowing animation to overwrite physical truth. INPUTS - Imported humanoid transform hierarchy and calibrated neutral pose. - Athlete body mass and authored height/scale. - Winter-inspired segment mass fractions. - Joint-family configuration, collider recipes, and reference-rig…",
+      "dependencies": [
+        "02_GAME_ARCHITECTURE.md",
+        "03_COORDINATES_UNITS_NUMERICS.md"
+      ],
+      "sha256": "c3d32c3193e767ea13cc98a14d4afa5226ac51922b2b21c8e20d73b3671a8a5d",
+      "bytes_utf8": 9723,
+      "lines": 264,
+      "canonical": true
+    },
+    {
+      "path": "07_PHYSICAL_BARBELL_AND_EQUIPMENT.md",
+      "document_id": "PSMS-07",
+      "title": "Physical Barbell and Competition Equipment",
+      "category": "FOUNDATION",
+      "status": "FROZEN",
+      "description": "Define one authoritative physical barbell and stable competition equipment that participate in contact and load transfer without double physics or presentation-driven bar motion. INPUTS Attempt load; plate inventory; rack/bench/platform configuration; lift setup pose; grip/back coupling requests; collision material calibration; rulebook version. OUTPUTS One bar rigid-body state; compound collision geometry; mass and…",
+      "dependencies": [
+        "03_COORDINATES_UNITS_NUMERICS.md",
+        "02_GAME_ARCHITECTURE.md"
+      ],
+      "sha256": "82631394dde7b2a08f2bc47862b206820bb974a150f87059c510a5e291dd3421",
+      "bytes_utf8": 7536,
+      "lines": 214,
+      "canonical": true
+    },
+    {
+      "path": "08_INPUT_AND_PLAYER_INTENT.md",
+      "document_id": "PSMS-08",
+      "title": "Input and Player Intent",
+      "category": "FOUNDATION",
+      "status": "FROZEN",
+      "description": "Translate human input into buffered, fixed-step intent. The player commands bracing, yielding, driving, balance, grip, and competition actions—not bone rotations, raw forces, or bar velocity. INPUTS Unity Input System events/polls; keyboard/gamepad controls; UI focus; current lift state; real-time timestamps. OUTPUTS Immutable PlayerIntentFrame consumed once per physics tick; edge events; held analog values;…",
+      "dependencies": [
+        "01_PRODUCT_CONSTITUTION.md",
+        "03_COORDINATES_UNITS_NUMERICS.md"
+      ],
+      "sha256": "d27eae6822a64b904d0466a492197f4d49ec4f58f70f507c7a2b923d0099bea9",
+      "bytes_utf8": 6488,
+      "lines": 197,
+      "canonical": true
+    },
+    {
+      "path": "05_POWERED_JOINT_MODEL.md",
+      "document_id": "PSMS-05",
+      "title": "Finite Powered Joint Model",
+      "category": "FOUNDATION",
+      "status": "FROZEN",
+      "description": "Turn lift-specific target pose intent into finite, diagnosable physical authority without claiming that Unity's implicit joint drive is an exact biological torque source. INPUTS Current/target joint orientations; current/target relative angular velocity; athlete capacity; activation; joint family parameters; phase-specific target-rate limits; joint limit state. OUTPUTS Configured targetRotation,…",
+      "dependencies": [
+        "03_COORDINATES_UNITS_NUMERICS.md",
+        "04_HUMANOID_PHYSICAL_ATHLETE.md"
+      ],
+      "sha256": "47e56182690c94296fe377be4be4c5f79152dee85f1f81cad84262ead7a48b79",
+      "bytes_utf8": 8428,
+      "lines": 237,
+      "canonical": true
+    },
+    {
+      "path": "BENCH/20_BENCH_PRODUCT_SPEC.md",
+      "document_id": "PSMS-BP-20",
+      "title": "Bench Press Product Specification",
+      "category": "BENCH",
+      "status": "FROZEN",
+      "description": "The player will create a stable competition setup, receive the bar, lower it under control, hold it motionless on the chest, press through the sticking region and lock both arms. The lift must look recognizably human, respond to load, expose a readable grind, obey competition-style commands, and fail for physical or control reasons that can be explained after the attempt.",
+      "dependencies": [
+        "01_PRODUCT_CONSTITUTION.md",
+        "02_GAME_ARCHITECTURE.md",
+        "08_INPUT_AND_PLAYER_INTENT.md"
+      ],
+      "sha256": "ca36564f323375f637ae1d8711e0bdf488f77dfd01ab64f33a8773a99caaaf00",
+      "bytes_utf8": 5971,
+      "lines": 107,
+      "canonical": true
+    },
+    {
+      "path": "DEADLIFT/30_DEADLIFT_PRODUCT_SPEC.md",
+      "document_id": "PSMS-DL-30",
+      "title": "Deadlift Product Specification",
+      "category": "DEADLIFT",
+      "status": "FROZEN",
+      "description": "The player will set over a grounded bar, create tension, break it from the floor, keep it close, extend knees and hips to a controlled lockout, then return it on command. The lift must look recognizably human, respond to load, expose a readable grind, obey competition-style commands, and fail for physical or control reasons that can be explained after the attempt.",
+      "dependencies": [
+        "01_PRODUCT_CONSTITUTION.md",
+        "02_GAME_ARCHITECTURE.md",
+        "08_INPUT_AND_PLAYER_INTENT.md"
+      ],
+      "sha256": "56c152b26e11e7fcd4fa3d5904f02777fbc21a8da72eecb3c72b3d893bcc02fd",
+      "bytes_utf8": 6023,
+      "lines": 107,
+      "canonical": true
+    },
+    {
+      "path": "ENGINEERING/60_RUNTIME_EXECUTION_ORDER.md",
+      "document_id": "PSMS-ENG-60",
+      "title": "Runtime Execution Order",
+      "category": "ENGINEERING",
+      "status": "FROZEN",
+      "description": "Freeze a single, testable order for input, lift logic, reference motion, finite drives, PhysX, observation, rules, failure, snapshots, telemetry, rendering, camera, UI, and audio. INPUTS Real-time delta, Input System device events, meet/rule command events, previous immutable physics snapshot, active lift controller, local PhysicsScene, presentation state. OUTPUTS Exactly one simulated fixed tick per tick request;…",
+      "dependencies": [
+        "02_GAME_ARCHITECTURE.md",
+        "03_COORDINATES_UNITS_NUMERICS.md",
+        "08_INPUT_AND_PLAYER_INTENT.md"
+      ],
+      "sha256": "bbf25e66ac4e5ba2b670f86a7ab3b6601fd8a9373c5d047f91b09a5a26031d47",
+      "bytes_utf8": 7556,
+      "lines": 229,
+      "canonical": true
+    },
+    {
+      "path": "SQUAT/10_SQUAT_PRODUCT_SPEC.md",
+      "document_id": "PSMS-SQ-10",
+      "title": "Squat Product Specification",
+      "category": "SQUAT",
+      "status": "FROZEN",
+      "description": "The player will carry a loaded bar on the upper back, obey the referee, descend under control to legal depth, reverse and stand up without losing the bar or balance. The lift must look recognizably human, respond to load, expose a readable grind, obey competition-style commands, and fail for physical or control reasons that can be explained after the attempt.",
+      "dependencies": [
+        "01_PRODUCT_CONSTITUTION.md",
+        "02_GAME_ARCHITECTURE.md",
+        "08_INPUT_AND_PLAYER_INTENT.md"
+      ],
+      "sha256": "755c50db22acb9cdd0b918c46f9f1d364ade614ebd4b506e7d378060ab807ff9",
+      "bytes_utf8": 5699,
+      "lines": 107,
+      "canonical": true
+    },
+    {
+      "path": "06_ATHLETE_CAPACITY_MODEL.md",
+      "document_id": "PSMS-06",
+      "title": "Athlete Capacity and Fatigue Model",
+      "category": "FOUNDATION",
+      "status": "FROZEN",
+      "description": "Provide finite capability that maps player-visible athlete attributes into physical joint-drive authority and makes light, heavy, grinding, and failed attempts emerge without a binary scripted load threshold. INPUTS Athlete mass; global strength; lift specialization; technique; bracing; stability; grip; fatigue/recovery state; joint family; lift phase; intent activation; optional recent modeled demand. OUTPUTS…",
+      "dependencies": [
+        "05_POWERED_JOINT_MODEL.md",
+        "01_PRODUCT_CONSTITUTION.md"
+      ],
+      "sha256": "9b0c12b84d4e1049732bd117787383994c6349deb210a946f04753b5a7055565",
+      "bytes_utf8": 7884,
+      "lines": 242,
+      "canonical": true
+    },
+    {
+      "path": "BENCH/21_BENCH_BIOMECHANICS.md",
+      "document_id": "PSMS-BP-21",
+      "title": "Bench Press Biomechanics",
+      "category": "BENCH",
+      "status": "FROZEN",
+      "description": "Constrain bench-specific setup, bar path, touch/pause, bilateral press mechanics, and contact legality without pretending that a simplified humanoid reproduces detailed shoulder/scapular physiology. INPUTS Bar and hand states, shoulder/elbow/wrist frames, chest/abdomen touch volume, bench/head/upper-back/glute/foot contacts, authored arch, player leg-drive/balance intent, phase. OUTPUTS Bar-to-joint moment-arm…",
+      "dependencies": [
+        "BENCH/20_BENCH_PRODUCT_SPEC.md",
+        "04_HUMANOID_PHYSICAL_ATHLETE.md",
+        "07_PHYSICAL_BARBELL_AND_EQUIPMENT.md"
+      ],
+      "sha256": "f913af984b7c66443bf1e0f399c7707e55bbaf2dc8fef42920ea0ff65e8071c7",
+      "bytes_utf8": 6995,
+      "lines": 176,
+      "canonical": true
+    },
+    {
+      "path": "DEADLIFT/31_DEADLIFT_BIOMECHANICS.md",
+      "document_id": "PSMS-DL-31",
+      "title": "Deadlift Biomechanics",
+      "category": "DEADLIFT",
+      "status": "FROZEN",
+      "description": "Constrain conventional deadlift setup, grounded-to-free transition, bar proximity, coordinated knee/hip extension, grip, and lockout using lift-specific mechanics. INPUTS Bar/floor contacts and clearance, foot support, hand grip states, hip/knee/trunk/shoulder frames, bar-to-leg distances, front-deltoid and lockout landmarks, player brace/slack/pull/bar-close intent, phase. OUTPUTS…",
+      "dependencies": [
+        "DEADLIFT/30_DEADLIFT_PRODUCT_SPEC.md",
+        "04_HUMANOID_PHYSICAL_ATHLETE.md",
+        "07_PHYSICAL_BARBELL_AND_EQUIPMENT.md"
+      ],
+      "sha256": "6edd2f8346bf19b2ceab8762986ce4fcf4ecca8674201f54c1efd08e8f8c9545",
+      "bytes_utf8": 7146,
+      "lines": 180,
+      "canonical": true
+    },
+    {
+      "path": "PRESENTATION/50_RENDER_ARCHITECTURE.md",
+      "document_id": "PSMS-PRES-50",
+      "title": "Render Architecture",
+      "category": "PRESENTATION",
+      "status": "FROZEN",
+      "description": "Render a polished human-centered powerlifting game from recorded physical state while preserving strict simulation/ presentation ownership and a stable 60 fps target. INPUTS Interpolated physical snapshots, visible-rig bind map, bar/equipment state, venue scene, presentation state, cameras, lights, VFX, UI, graphics settings. OUTPUTS Final URP frame, shadows/lighting, skinned athlete, equipment, venue, overlays,…",
+      "dependencies": [
+        "02_GAME_ARCHITECTURE.md",
+        "04_HUMANOID_PHYSICAL_ATHLETE.md",
+        "ENGINEERING/60_RUNTIME_EXECUTION_ORDER.md"
+      ],
+      "sha256": "a18a10a683ac5672aa208f454d5bab2ef5861fbcea77fd0feb24e9df301b6e56",
+      "bytes_utf8": 6048,
+      "lines": 190,
+      "canonical": true
+    },
+    {
+      "path": "SQUAT/11_SQUAT_BIOMECHANICS.md",
+      "document_id": "PSMS-SQ-11",
+      "title": "Squat Biomechanics",
+      "category": "SQUAT",
+      "status": "FROZEN",
+      "description": "Constrain squat reference motion, balance, legal depth, and load-dependent failure using defensible multisegment mechanics while allowing legitimate powerlifting technique variation. INPUTS Measured segment mass/COM, bar mass/pose, foot support polygons, hip/knee/ankle/trunk orientations and velocities, bilateral hip-crease and knee-top landmarks, player balance intent, phase state. OUTPUTS Athlete-plus-bar COM, COM…",
+      "dependencies": [
+        "SQUAT/10_SQUAT_PRODUCT_SPEC.md",
+        "04_HUMANOID_PHYSICAL_ATHLETE.md",
+        "07_PHYSICAL_BARBELL_AND_EQUIPMENT.md"
+      ],
+      "sha256": "f7be9def6f1e2f34df4b042cea928b22558fd7e3fc728f6be6060652e0f2834c",
+      "bytes_utf8": 7413,
+      "lines": 177,
+      "canonical": true
+    },
+    {
+      "path": "BENCH/22_BENCH_PHYSICS.md",
+      "document_id": "PSMS-BP-22",
+      "title": "Bench Press Physics",
+      "category": "BENCH",
+      "status": "FROZEN",
+      "description": "Define the bench-only constrained multibody system: body supported by bench/floor while two compliant hands mechanically carry one free bar. INPUTS Physical athlete, bench/floor/rack, bar, bilateral grip adapter targets/capacities, bench reference pose, required contacts. OUTPUTS Bar/arm/body motion, bench/foot contacts, grip slip/break, unrack/rerack transitions, physical failure. STATE Bench support contacts, two…",
+      "dependencies": [
+        "BENCH/21_BENCH_BIOMECHANICS.md",
+        "04_HUMANOID_PHYSICAL_ATHLETE.md",
+        "05_POWERED_JOINT_MODEL.md",
+        "07_PHYSICAL_BARBELL_AND_EQUIPMENT.md"
+      ],
+      "sha256": "e74f936eb3655ebd7e0fe17e12e4d0901a0c02356476e75242bbfbfe9904b73d",
+      "bytes_utf8": 5675,
+      "lines": 149,
+      "canonical": true
+    },
+    {
+      "path": "BENCH/23_BENCH_REFERENCE_MOTION.md",
+      "document_id": "PSMS-BP-23",
+      "title": "Bench Press Reference Motion",
+      "category": "BENCH",
+      "status": "FROZEN",
+      "description": "Produce bench-only setup, descent, touch, pause, press, and lockout targets, including a physical-bar-aware hand reference, without borrowing squat phase semantics. INPUTS Bench state, s b, player setup/grip/yield/drive/leg-drive intent, physical bar/grip observation, athlete proportions, contact state. OUTPUTS Torso/leg setup pose, bilateral shoulder/elbow/wrist targets, grip anchor targets, bar-path intent, target…",
+      "dependencies": [
+        "BENCH/21_BENCH_BIOMECHANICS.md",
+        "05_POWERED_JOINT_MODEL.md",
+        "08_INPUT_AND_PLAYER_INTENT.md"
+      ],
+      "sha256": "31435e13a4e809e0cc38a4222a4cafdb731b987c623391777c7defd3affacd64",
+      "bytes_utf8": 6100,
+      "lines": 159,
+      "canonical": true
+    },
+    {
+      "path": "DEADLIFT/32_DEADLIFT_PHYSICS.md",
+      "document_id": "PSMS-DL-32",
+      "title": "Deadlift Physics",
+      "category": "DEADLIFT",
+      "status": "FROZEN",
+      "description": "Define the deadlift-only physical topology, including the critical transition from a floor-supported bar to a freely carried bar through finite grips. INPUTS Physical athlete, bar/platform, bilateral grips, conventional setup reference, capacity/intent, floor and leg contacts. OUTPUTS Grounded/slack/free contact modes, physically emerging floor break, bar/athlete motion, grip failure, controlled descent/ground…",
+      "dependencies": [
+        "DEADLIFT/31_DEADLIFT_BIOMECHANICS.md",
+        "04_HUMANOID_PHYSICAL_ATHLETE.md",
+        "05_POWERED_JOINT_MODEL.md",
+        "07_PHYSICAL_BARBELL_AND_EQUIPMENT.md"
+      ],
+      "sha256": "9b1d60b87ed2d9814bf69400396cc0ee7639b3b5fea15317b180cf404a15c852",
+      "bytes_utf8": 5867,
+      "lines": 146,
+      "canonical": true
+    },
+    {
+      "path": "DEADLIFT/33_DEADLIFT_REFERENCE_MOTION.md",
+      "document_id": "PSMS-DL-33",
+      "title": "Deadlift Reference Motion",
+      "category": "DEADLIFT",
+      "status": "FROZEN",
+      "description": "Produce a conventional deadlift setup-to-lockout reference with a separate grounded/pre-tension stage, close-bar intent, and post-command descent. INPUTS Deadlift state, s d, brace/slack/drive/bar-close intent, physical grounded/bar/grip observation, athlete proportions. OUTPUTS Conventional setup, pre-tension, knee/hip/trunk/shoulder targets, hand grip targets, bar-close reference, target rates and phase-ready…",
+      "dependencies": [
+        "DEADLIFT/31_DEADLIFT_BIOMECHANICS.md",
+        "05_POWERED_JOINT_MODEL.md",
+        "08_INPUT_AND_PLAYER_INTENT.md"
+      ],
+      "sha256": "619f899fb8876f23734a6d31cd701754efba74e0c0182012ea2196a4771d4871",
+      "bytes_utf8": 6068,
+      "lines": 159,
+      "canonical": true
+    },
+    {
+      "path": "PRESENTATION/51_CHARACTER_PRESENTATION.md",
+      "document_id": "PSMS-PRES-51",
+      "title": "Character Presentation",
+      "category": "PRESENTATION",
+      "status": "FROZEN",
+      "description": "Make the actual visible powerlifter look intentional, alive, strained, and readable while every load-bearing pose remains rooted in the physical athlete. INPUTS Interpolated physical bone poses, reference tracking error, modeled demand/fatigue, lift state, commands, failure record, athlete cosmetic/profile data. OUTPUTS Visible body pose, bounded hands/fingers/head/face corrections, breathing/strain layers,…",
+      "dependencies": [
+        "04_HUMANOID_PHYSICAL_ATHLETE.md",
+        "PRESENTATION/50_RENDER_ARCHITECTURE.md",
+        "05_POWERED_JOINT_MODEL.md"
+      ],
+      "sha256": "b283ee26282fe46ff1e7c34113ae453e64e6d882a15756882fa879368fbd6908",
+      "bytes_utf8": 5605,
+      "lines": 183,
+      "canonical": true
+    },
+    {
+      "path": "SQUAT/12_SQUAT_PHYSICS.md",
+      "document_id": "PSMS-SQ-12",
+      "title": "Squat Physics",
+      "category": "SQUAT",
+      "status": "FROZEN",
+      "description": "Define the exact rigid-body/contact/coupling system that realizes a squat and preserves load-dependent deviation without kinematic support. INPUTS Physical athlete rig, bar rigid body, rack/platform, squat reference targets, finite capacities, contact observations, setup state. OUTPUTS PhysX motion, foot/platform contacts, upper-back/bar coupling, rack transitions, bar and athlete state, physics-fault events. STATE…",
+      "dependencies": [
+        "SQUAT/11_SQUAT_BIOMECHANICS.md",
+        "04_HUMANOID_PHYSICAL_ATHLETE.md",
+        "05_POWERED_JOINT_MODEL.md",
+        "07_PHYSICAL_BARBELL_AND_EQUIPMENT.md"
+      ],
+      "sha256": "77b9451ac4cc17a580c1a1a7cc438cdddba243fc32549c135ee5947030d144cd",
+      "bytes_utf8": 5605,
+      "lines": 145,
+      "canonical": true
+    },
+    {
+      "path": "SQUAT/13_SQUAT_REFERENCE_MOTION.md",
+      "document_id": "PSMS-SQ-13",
+      "title": "Squat Reference Motion",
+      "category": "SQUAT",
+      "status": "FROZEN",
+      "description": "Produce a squat-only target pose and target-rate trajectory on the actual humanoid that expresses intended descent, bottom, reversal, and ascent without moving physical transforms. INPUTS Squat state, s q, player Yield/Drive/Brace/Balance, measured asset proportions, technique profile, previous physical observation. OUTPUTS Joint target orientations/rates, desired COM/bar relation, hand visual targets, bounded…",
+      "dependencies": [
+        "SQUAT/11_SQUAT_BIOMECHANICS.md",
+        "05_POWERED_JOINT_MODEL.md",
+        "08_INPUT_AND_PLAYER_INTENT.md"
+      ],
+      "sha256": "1c43815c5f7de807947ebecb0ed841910b4844483b470d84d70d05b6a500ca8f",
+      "bytes_utf8": 6037,
+      "lines": 152,
+      "canonical": true
+    },
+    {
+      "path": "BENCH/24_BENCH_CONTROL_MODEL.md",
+      "document_id": "PSMS-BP-24",
+      "title": "Bench Press Control Model",
+      "category": "BENCH",
+      "status": "FROZEN",
+      "description": "Own the bench-only sequence from setup through rack, coordinate bilateral reference/capacity and compliant grips, and keep touch/pause/commands physically grounded. INPUTS Previous bench observation, intent, rules state, grip/bench contacts, reference and capacity profiles. OUTPUTS Bench state, s b, setup/arm/hand targets, grip capacity, press activation, rule/failure events. STATE Setup/arch/grip selections; state…",
+      "dependencies": [
+        "BENCH/23_BENCH_REFERENCE_MOTION.md",
+        "05_POWERED_JOINT_MODEL.md",
+        "06_ATHLETE_CAPACITY_MODEL.md",
+        "08_INPUT_AND_PLAYER_INTENT.md"
+      ],
+      "sha256": "8ae472a05da4a2ba748a2cd215d1825c3ff3c83f3c0217a731ba912115312d4a",
+      "bytes_utf8": 5933,
+      "lines": 159,
+      "canonical": true
+    },
+    {
+      "path": "DEADLIFT/34_DEADLIFT_CONTROL_MODEL.md",
+      "document_id": "PSMS-DL-34",
+      "title": "Deadlift Control Model",
+      "category": "DEADLIFT",
+      "status": "FROZEN",
+      "description": "Own conventional deadlift setup, grip, brace, pre-tension, physical floor-break gating, pull, lockout, Down command, and controlled return. INPUTS Previous deadlift observation, intent, rules state, floor/grip/bar proximity state, reference/capacity. OUTPUTS Deadlift state, s d, slack/preload request, grip and joint capacity/activation, close-bar reference bias, failure/rule events. STATE State machine; s d; slack…",
+      "dependencies": [
+        "DEADLIFT/33_DEADLIFT_REFERENCE_MOTION.md",
+        "05_POWERED_JOINT_MODEL.md",
+        "06_ATHLETE_CAPACITY_MODEL.md",
+        "08_INPUT_AND_PLAYER_INTENT.md"
+      ],
+      "sha256": "c7389d5e6bde264210b00fecfce44920be1295459c96253e8a4e1ff6b5219d6b",
+      "bytes_utf8": 5807,
+      "lines": 159,
+      "canonical": true
+    },
+    {
+      "path": "SQUAT/14_SQUAT_CONTROL_MODEL.md",
+      "document_id": "PSMS-SQ-14",
+      "title": "Squat Control Model",
+      "category": "SQUAT",
+      "status": "FROZEN",
+      "description": "Own all squat state transitions, interpret player intent, advance squat reference phase, request finite capacity, and detect physical readiness/failure without applying a second torque/force layer. INPUTS Previous squat observation, current sampled intent, rules state, attempt clock, squat reference asset, athlete capacity state. OUTPUTS Next squat state, s q, corrected reference pose, activation requests, drive…",
+      "dependencies": [
+        "SQUAT/13_SQUAT_REFERENCE_MOTION.md",
+        "05_POWERED_JOINT_MODEL.md",
+        "06_ATHLETE_CAPACITY_MODEL.md",
+        "08_INPUT_AND_PLAYER_INTENT.md"
+      ],
+      "sha256": "65342a40fcd9cfa1bb18933e080e167e5da543040f483e780cc5bd74f03e0336",
+      "bytes_utf8": 6423,
+      "lines": 164,
+      "canonical": true
+    },
+    {
+      "path": "BENCH/25_BENCH_RULES.md",
+      "document_id": "PSMS-BP-25",
+      "title": "Bench Press Competition Rules",
+      "category": "BENCH",
+      "status": "FROZEN",
+      "description": "V1 targets the IPF Technical Rules Book, Version 3, effective 1 March 2026 . This version includes the current competition bottom-position criterion based on the underside of both elbow joints relative to the top of the respective shoulder joint. Luna must verify the official PDF/page language before freezing constants.",
+      "dependencies": [
+        "BENCH/21_BENCH_BIOMECHANICS.md",
+        "BENCH/24_BENCH_CONTROL_MODEL.md",
+        "03_COORDINATES_UNITS_NUMERICS.md"
+      ],
+      "sha256": "1dcea53213ece8705df0639c8e16fadb3580a6d7149e842894251f8265f73db4",
+      "bytes_utf8": 4390,
+      "lines": 94,
+      "canonical": true
+    },
+    {
+      "path": "DEADLIFT/35_DEADLIFT_RULES.md",
+      "document_id": "PSMS-DL-35",
+      "title": "Deadlift Competition Rules",
+      "category": "DEADLIFT",
+      "status": "FROZEN",
+      "description": "V1 targets the IPF Technical Rules Book, Version 3, effective 1 March 2026 , verified at implementation time.",
+      "dependencies": [
+        "DEADLIFT/31_DEADLIFT_BIOMECHANICS.md",
+        "DEADLIFT/34_DEADLIFT_CONTROL_MODEL.md",
+        "03_COORDINATES_UNITS_NUMERICS.md"
+      ],
+      "sha256": "10aefe7a375e8f4b18f8f52ae4389f66d00f149026d38ba82cdcdcd35f0307aa",
+      "bytes_utf8": 3870,
+      "lines": 85,
+      "canonical": true
+    },
+    {
+      "path": "SQUAT/15_SQUAT_RULES.md",
+      "document_id": "PSMS-SQ-15",
+      "title": "Squat Competition Rules",
+      "category": "SQUAT",
+      "status": "FROZEN",
+      "description": "V1 targets the IPF Technical Rules Book, Version 3, effective 1 March 2026 , subject to implementation-time verification against the official PDF. The game stores ruleSetId, source version, effective date, and any declared simplification. Existing qualified M1 rule behavior is preserved when compatible.",
+      "dependencies": [
+        "SQUAT/11_SQUAT_BIOMECHANICS.md",
+        "SQUAT/14_SQUAT_CONTROL_MODEL.md",
+        "03_COORDINATES_UNITS_NUMERICS.md"
+      ],
+      "sha256": "6edcaa8b59b45d8f8083b0d45901134f2031fbe780657d20bc62ef89c1b3cf97",
+      "bytes_utf8": 4762,
+      "lines": 103,
+      "canonical": true
+    },
+    {
+      "path": "BENCH/26_BENCH_FAILURE_MODEL.md",
+      "document_id": "PSMS-BP-26",
+      "title": "Bench Press Failure Model",
+      "category": "BENCH",
+      "status": "FROZEN",
+      "description": "Detect bench-specific support, grip, touch, bilateral press, stall, reversal, and lockout failures, then hand off to safe bar presentation without altering truth. INPUTS Bench observation/trace, state/commands, grip states, bar/chest/rack/support contacts, bilateral demand. OUTPUTS Latched BenchFailureRecord, cause hierarchy, safety catch request, player-facing explanation. STATE Support-contact counters; left/right…",
+      "dependencies": [
+        "BENCH/24_BENCH_CONTROL_MODEL.md",
+        "BENCH/25_BENCH_RULES.md",
+        "03_COORDINATES_UNITS_NUMERICS.md"
+      ],
+      "sha256": "66d37fb0c5aae8b4bbd90b2c9ac45e4793ecdbb7d4a0c16a45e89fb9eb6458a4",
+      "bytes_utf8": 4903,
+      "lines": 126,
+      "canonical": true
+    },
+    {
+      "path": "DEADLIFT/36_DEADLIFT_FAILURE_MODEL.md",
+      "document_id": "PSMS-DL-36",
+      "title": "Deadlift Failure Model",
+      "category": "DEADLIFT",
+      "status": "FROZEN",
+      "description": "Detect deadlift-specific floor, grip, bar-path, zone-stall, reversal, lockout, and return failures while preserving the grounded/free physical truth. INPUTS Deadlift observation/trace, state/commands, floor mode, bar position/velocity, grip, joint posture/demand. OUTPUTS Latched DeadliftFailureRecord, stall zone/cause, rule/control secondary reasons, safety/drop handling. STATE Floor-stall, below-knee, knee-level,…",
+      "dependencies": [
+        "DEADLIFT/34_DEADLIFT_CONTROL_MODEL.md",
+        "DEADLIFT/35_DEADLIFT_RULES.md",
+        "03_COORDINATES_UNITS_NUMERICS.md"
+      ],
+      "sha256": "fbd4642199f96f0861bf2d6637241731a0bd5f37f6e569285ec4e04ca3c23e96",
+      "bytes_utf8": 5014,
+      "lines": 132,
+      "canonical": true
+    },
+    {
+      "path": "GAME/40_MEET_SYSTEM.md",
+      "document_id": "PSMS-GAME-40",
+      "title": "Meet System",
+      "category": "GAME",
+      "status": "FROZEN",
+      "description": "Orchestrate a competition from weigh-in/entry through nine attempts, commands, referee judgments, totals, placing, broadcast flow, and results while keeping each lift's physical and rule domains independent.",
+      "dependencies": [
+        "SQUAT/15_SQUAT_RULES.md",
+        "BENCH/25_BENCH_RULES.md",
+        "DEADLIFT/35_DEADLIFT_RULES.md",
+        "07_PHYSICAL_BARBELL_AND_EQUIPMENT.md"
+      ],
+      "sha256": "508e0a35e8647aa39df4ab9cca698532fa3e5c347673b14b9514bf6a5598c8ce",
+      "bytes_utf8": 6420,
+      "lines": 173,
+      "canonical": true
+    },
+    {
+      "path": "SQUAT/16_SQUAT_FAILURE_MODEL.md",
+      "document_id": "PSMS-SQ-16",
+      "title": "Squat Failure Model",
+      "category": "SQUAT",
+      "status": "FROZEN",
+      "description": "Classify and detect squat-specific physical, rule, and player-control failures early enough for truthful analysis and safe presentation without scripting failure from load. INPUTS Squat observation/trace, state, intent, rule result, joint demand/limits, foot/bar/saddle contacts. OUTPUTS Latched SquatFailureRecord, primary/secondary causes, failure tick/state, safety handoff, analysis message. STATE Per-detector…",
+      "dependencies": [
+        "SQUAT/14_SQUAT_CONTROL_MODEL.md",
+        "SQUAT/15_SQUAT_RULES.md",
+        "03_COORDINATES_UNITS_NUMERICS.md"
+      ],
+      "sha256": "71748bedcc80610d42cd64c33b1cd4188bf3fa9241696e84b5cd78beeb73b1db",
+      "bytes_utf8": 5434,
+      "lines": 134,
+      "canonical": true
+    },
+    {
+      "path": "BENCH/27_BENCH_TELEMETRY.md",
+      "document_id": "PSMS-BP-27",
+      "title": "Bench Press Telemetry and Analysis",
+      "category": "BENCH",
+      "status": "FROZEN",
+      "description": "Define authoritative bench trace and metrics for setup contacts, touch, pause, bar path, bilateral press, grip, joint kinematics, sticking, commands, rules, and failure. INPUTS Post-physics athlete/bar/grip/contact state, bench landmarks, state/intent/commands/rules/failure. OUTPUTS BenchObservationSnapshot, raw trace, finalized analysis, replay/overlay channels. STATE 100 Hz samples;…",
+      "dependencies": [
+        "BENCH/21_BENCH_BIOMECHANICS.md",
+        "BENCH/25_BENCH_RULES.md",
+        "BENCH/26_BENCH_FAILURE_MODEL.md",
+        "03_COORDINATES_UNITS_NUMERICS.md"
+      ],
+      "sha256": "f9f8ea140d67fe634b40e4e06c2ce7128c835de65a8079b3c4864f8fe78600fb",
+      "bytes_utf8": 6046,
+      "lines": 152,
+      "canonical": true
+    },
+    {
+      "path": "DEADLIFT/37_DEADLIFT_TELEMETRY.md",
+      "document_id": "PSMS-DL-37",
+      "title": "Deadlift Telemetry and Analysis",
+      "category": "DEADLIFT",
+      "status": "FROZEN",
+      "description": "Define authoritative deadlift trace and metrics for setup/slack, physical floor break, bar path and proximity, velocity by zone, grip, lockout, Down command, return, rules, and failure. INPUTS Post-physics bar/floor/grip/athlete state, deadlift landmarks, state/intent/commands/rules/failure. OUTPUTS DeadliftObservationSnapshot, raw trace, finalized analysis with zones, replay/overlay channels. STATE 100 Hz samples;…",
+      "dependencies": [
+        "DEADLIFT/31_DEADLIFT_BIOMECHANICS.md",
+        "DEADLIFT/35_DEADLIFT_RULES.md",
+        "DEADLIFT/36_DEADLIFT_FAILURE_MODEL.md",
+        "03_COORDINATES_UNITS_NUMERICS.md"
+      ],
+      "sha256": "672f40de0ea25accf9018d4f41345a7595aa871958d4e1664a00b5e29613c25b",
+      "bytes_utf8": 6161,
+      "lines": 150,
+      "canonical": true
+    },
+    {
+      "path": "GAME/41_GAMEPLAY_AND_DIFFICULTY.md",
+      "document_id": "PSMS-GAME-41",
+      "title": "Gameplay and Difficulty",
+      "category": "GAME",
+      "status": "FROZEN",
+      "description": "Create a skill game in which the player reads the visible athlete/bar, times intent, manages balance and capacity, selects loads intelligently, and learns competition procedure. Difficulty must not be manufactured by input lag, random failure, opaque stat checks, or fake physics.",
+      "dependencies": [
+        "01_PRODUCT_CONSTITUTION.md",
+        "08_INPUT_AND_PLAYER_INTENT.md",
+        "06_ATHLETE_CAPACITY_MODEL.md",
+        "GAME/40_MEET_SYSTEM.md"
+      ],
+      "sha256": "a675fe546803038f85a1848124d6ee294872585d13d363ed0f65866f0ca2d6a4",
+      "bytes_utf8": 5905,
+      "lines": 152,
+      "canonical": true
+    },
+    {
+      "path": "PRESENTATION/52_CAMERA_AND_BROADCAST.md",
+      "document_id": "PSMS-PRES-52",
+      "title": "Camera and Broadcast",
+      "category": "PRESENTATION",
+      "status": "FROZEN",
+      "description": "Present each attempt like a readable powerlifting broadcast: show the human, bar, commands, legal positions, struggle, failure, and judgment without hiding rule-critical information or disturbing physics.",
+      "dependencies": [
+        "PRESENTATION/50_RENDER_ARCHITECTURE.md",
+        "GAME/40_MEET_SYSTEM.md"
+      ],
+      "sha256": "8305117cb58dbc8e974d291f85b1820a82b9309f7d4f816480793518d4ac5f64",
+      "bytes_utf8": 4484,
+      "lines": 128,
+      "canonical": true
+    },
+    {
+      "path": "SQUAT/17_SQUAT_TELEMETRY.md",
+      "document_id": "PSMS-SQ-17",
+      "title": "Squat Telemetry and Analysis",
+      "category": "SQUAT",
+      "status": "FROZEN",
+      "description": "Define authoritative squat observations and a post-attempt record for depth, COM/support, bar motion, joint kinematics, phase timing, modeled demand, and failure/rule provenance. INPUTS Post-physics athlete/bar states, contacts, calibrated landmarks, squat state/intent/commands, rules, failure detector, and capacity diagnostics. OUTPUTS SquatObservationSnapshot, raw SquatTrace, finalized SquatAnalysis, replay…",
+      "dependencies": [
+        "SQUAT/11_SQUAT_BIOMECHANICS.md",
+        "SQUAT/15_SQUAT_RULES.md",
+        "SQUAT/16_SQUAT_FAILURE_MODEL.md",
+        "03_COORDINATES_UNITS_NUMERICS.md"
+      ],
+      "sha256": "e825ab6eda0f6ac5519d1c43859f308818545373e622c95f41d56760abac3811",
+      "bytes_utf8": 6351,
+      "lines": 154,
+      "canonical": true
+    },
+    {
+      "path": "BENCH/28_BENCH_TEST_SPEC.md",
+      "document_id": "PSMS-BP-28",
+      "title": "Bench Press Test Specification",
+      "category": "BENCH",
+      "status": "FROZEN",
+      "description": "Independent bench suite. It cannot inherit squat expectations for contacts, phases, biomechanics, grip, or rules.",
+      "dependencies": [
+        "BENCH/22_BENCH_PHYSICS.md",
+        "BENCH/25_BENCH_RULES.md",
+        "BENCH/26_BENCH_FAILURE_MODEL.md",
+        "BENCH/27_BENCH_TELEMETRY.md"
+      ],
+      "sha256": "5dedc3515ae74b916e97f0ff998c9e1004ac13575c167e515106c5eefdb516da",
+      "bytes_utf8": 3661,
+      "lines": 82,
+      "canonical": true
+    },
+    {
+      "path": "DEADLIFT/38_DEADLIFT_TEST_SPEC.md",
+      "document_id": "PSMS-DL-38",
+      "title": "Deadlift Test Specification",
+      "category": "DEADLIFT",
+      "status": "FROZEN",
+      "description": "Independent conventional-deadlift suite. No squat phase, contact, balance, bar saddle, or rule abstraction may satisfy it.",
+      "dependencies": [
+        "DEADLIFT/32_DEADLIFT_PHYSICS.md",
+        "DEADLIFT/35_DEADLIFT_RULES.md",
+        "DEADLIFT/36_DEADLIFT_FAILURE_MODEL.md",
+        "DEADLIFT/37_DEADLIFT_TELEMETRY.md"
+      ],
+      "sha256": "9f5a560ef3832c774ac664be89d2192e58b56aab153056af0c7ab46cdf923eee",
+      "bytes_utf8": 3620,
+      "lines": 82,
+      "canonical": true
+    },
+    {
+      "path": "GAME/42_ATHLETE_PROGRESSION.md",
+      "document_id": "PSMS-GAME-42",
+      "title": "Athlete Progression",
+      "category": "GAME",
+      "status": "FROZEN",
+      "description": "Turn play, training choices, meet outcomes, and recovery into understandable long-term growth while keeping the physical capacity model finite and explicitly game-calibrated. INPUTS Completed session/meet records, training focus, successful/failed loads, modeled demand exposure, technical-quality score, career time, recovery resources, current athlete profile. OUTPUTS Progress points, bounded attribute changes,…",
+      "dependencies": [
+        "06_ATHLETE_CAPACITY_MODEL.md",
+        "GAME/41_GAMEPLAY_AND_DIFFICULTY.md"
+      ],
+      "sha256": "28f1e43d5dfa878492e06f851a55cc83f8e6ae1a597f8b1d7ac922645b8fc6d3",
+      "bytes_utf8": 5696,
+      "lines": 192,
+      "canonical": true
+    },
+    {
+      "path": "PRESENTATION/56_VISUAL_QUALITY_GATES.md",
+      "document_id": "PSMS-PRES-56",
+      "title": "Visual Quality Gates",
+      "category": "PRESENTATION",
+      "status": "FROZEN",
+      "description": "Automated tests cannot certify a believable human powerlifter. Every milestone therefore includes deterministic visual evidence reviewed against explicit gates. A green test suite with broken hands, feet, spine, bar, or camera is a fail.",
+      "dependencies": [
+        "PRESENTATION/50_RENDER_ARCHITECTURE.md",
+        "PRESENTATION/51_CHARACTER_PRESENTATION.md",
+        "PRESENTATION/52_CAMERA_AND_BROADCAST.md"
+      ],
+      "sha256": "91de588b78b2cc9ce07dc8aa6e95475c397ac059e57362755c7c67bd9f1c4ac8",
+      "bytes_utf8": 4940,
+      "lines": 136,
+      "canonical": true
+    },
+    {
+      "path": "GAME/43_SPORTS_SCIENCE_ANALYSIS.md",
+      "document_id": "PSMS-GAME-43",
+      "title": "Sports-Science-Style Analysis",
+      "category": "GAME",
+      "status": "FROZEN",
+      "description": "The analysis layer makes the game legible and scientifically honest. It converts recorded simulation state into well-defined kinematic, temporal, geometric, and modeled-control summaries. It is not a force-plate, motion-capture, musculoskeletal, clinical, or coaching-validation system.",
+      "dependencies": [
+        "SQUAT/17_SQUAT_TELEMETRY.md",
+        "BENCH/27_BENCH_TELEMETRY.md",
+        "DEADLIFT/37_DEADLIFT_TELEMETRY.md"
+      ],
+      "sha256": "add105f12823b0d5bc9bac7703a233aad2716b8a492ae8c9d8d48300cefbe9b9",
+      "bytes_utf8": 6164,
+      "lines": 173,
+      "canonical": true
+    },
+    {
+      "path": "SQUAT/18_SQUAT_TEST_SPEC.md",
+      "document_id": "PSMS-SQ-18",
+      "title": "Squat Test Specification",
+      "category": "SQUAT",
+      "status": "FROZEN",
+      "description": "This suite qualifies only the squat domain. Passing bench/deadlift tests cannot substitute. Every scenario uses a frozen athlete profile, bar load, reference/calibration versions, input trace, initial pose, random seed, Unity/PhysX settings, and expected observations.",
+      "dependencies": [
+        "SQUAT/12_SQUAT_PHYSICS.md",
+        "SQUAT/15_SQUAT_RULES.md",
+        "SQUAT/16_SQUAT_FAILURE_MODEL.md",
+        "SQUAT/17_SQUAT_TELEMETRY.md"
+      ],
+      "sha256": "4ee1ff5ed31d2981fbced4a926f45296933a0e75d1d8cf2ee8e7a1bd5fa80aeb",
+      "bytes_utf8": 4603,
+      "lines": 107,
+      "canonical": true
+    },
+    {
+      "path": "ENGINEERING/65_CLAIMS_PROVENANCE.md",
+      "document_id": "PSMS-ENG-65",
+      "title": "Claims and Provenance",
+      "category": "ENGINEERING",
+      "status": "FROZEN",
+      "description": "Every scientific/rule/engineering metric or user-facing explanatory statement is traceable through",
+      "dependencies": [
+        "00_READ_ME_FIRST.md",
+        "03_COORDINATES_UNITS_NUMERICS.md",
+        "GAME/43_SPORTS_SCIENCE_ANALYSIS.md"
+      ],
+      "sha256": "93f3a495faad4518a4540cee3d0c0866f54e1f6e0dcfd3b5cd7e55f6fa99139a",
+      "bytes_utf8": 9542,
+      "lines": 173,
+      "canonical": true
+    },
+    {
+      "path": "GAME/44_REPLAY_SYSTEM.md",
+      "document_id": "PSMS-GAME-44",
+      "title": "Replay System",
+      "category": "GAME",
+      "status": "FROZEN",
+      "description": "Provide exact, inspectable playback of what the simulation recorded, including athlete/bar state, commands, phases, rules, failures, and analysis overlays, without nondeterministic re-simulation. INPUTS Finalized attempt snapshot stream, event stream, schema/calibration/ruleset IDs, presentation camera script, optional analysis channels. OUTPUTS Scrubbable replay timeline, normal/slow/pause/frame-step playback,…",
+      "dependencies": [
+        "GAME/43_SPORTS_SCIENCE_ANALYSIS.md",
+        "PRESENTATION/52_CAMERA_AND_BROADCAST.md",
+        "03_COORDINATES_UNITS_NUMERICS.md"
+      ],
+      "sha256": "c04d9e1544d31b5ad096bbec6eedbbcdae386b015c740af4bb763c4a5cfa52e3",
+      "bytes_utf8": 5167,
+      "lines": 173,
+      "canonical": true
+    },
+    {
+      "path": "PRESENTATION/53_UI_UX.md",
+      "document_id": "PSMS-PRES-53",
+      "title": "UI and UX",
+      "category": "PRESENTATION",
+      "status": "FROZEN",
+      "description": "A new player understands what to do now; an experienced player sees the athlete and bar, not a dashboard; a technical player can inspect definitions, traces, and provenance after the attempt.",
+      "dependencies": [
+        "08_INPUT_AND_PLAYER_INTENT.md",
+        "GAME/40_MEET_SYSTEM.md",
+        "GAME/43_SPORTS_SCIENCE_ANALYSIS.md",
+        "PRESENTATION/52_CAMERA_AND_BROADCAST.md"
+      ],
+      "sha256": "effc0cb79c22f239c1eaccf044e430a709f45b5a5a1f48f2df00fa93829719d1",
+      "bytes_utf8": 4280,
+      "lines": 139,
+      "canonical": true
+    },
+    {
+      "path": "ENGINEERING/62_TESTING_AND_TERMINUS.md",
+      "document_id": "PSMS-ENG-62",
+      "title": "Testing and Terminus",
+      "category": "ENGINEERING",
+      "status": "FROZEN",
+      "description": "A milestone is complete only when architecture, deterministic tests, physical scenarios, mutation resistance, visual evidence, performance, build smoke, logs, provenance, and owner review agree. “The editor compiles” or “tests are green” is insufficient.",
+      "dependencies": [
+        "SQUAT/18_SQUAT_TEST_SPEC.md",
+        "BENCH/28_BENCH_TEST_SPEC.md",
+        "DEADLIFT/38_DEADLIFT_TEST_SPEC.md",
+        "PRESENTATION/56_VISUAL_QUALITY_GATES.md"
+      ],
+      "sha256": "b63c21111e5b6dde3eed0bda36d9d46645244ceaea9936252dca15df69bbd1a6",
+      "bytes_utf8": 5663,
+      "lines": 189,
+      "canonical": true
+    },
+    {
+      "path": "ENGINEERING/61_STATE_SNAPSHOTS_AND_REPLAY.md",
+      "document_id": "PSMS-ENG-61",
+      "title": "State Snapshots and Replay",
+      "category": "ENGINEERING",
+      "status": "FROZEN",
+      "description": "Define the immutable state boundary used by controllers, rules, failure diagnostics, telemetry, reset evidence, and recorded-state replay. INPUTS Post-physics raw state, lift-specific observations, rule/failure results, events, intent, configuration/ruleset/calibration IDs. OUTPUTS SimulationSnapshot, AttemptTrace, event stream, hashes, replay container, reset/checkpoint record. STATE Snapshot sequence keyed by…",
+      "dependencies": [
+        "ENGINEERING/60_RUNTIME_EXECUTION_ORDER.md",
+        "03_COORDINATES_UNITS_NUMERICS.md",
+        "GAME/44_REPLAY_SYSTEM.md"
+      ],
+      "sha256": "e37a5f5b0b82ae1a94068e172a15bc9853dd8f7d7e85fcea9e841e017212a7b1",
+      "bytes_utf8": 5966,
+      "lines": 199,
+      "canonical": true
+    },
+    {
+      "path": "GAME/45_SAVE_AND_CAREER.md",
+      "document_id": "PSMS-GAME-45",
+      "title": "Save and Career",
+      "category": "GAME",
+      "status": "FROZEN",
+      "description": "Persist athlete, career, settings, records, meets, unlocks, and replay references safely across releases without storing mutable Unity assets or allowing partial/corrupt writes.",
+      "dependencies": [
+        "GAME/40_MEET_SYSTEM.md",
+        "GAME/42_ATHLETE_PROGRESSION.md",
+        "GAME/44_REPLAY_SYSTEM.md"
+      ],
+      "sha256": "ef93b693d0970a59d7a5bdb55df0c6b296d16322bcddbed1477c1ab58b3e8766",
+      "bytes_utf8": 4081,
+      "lines": 131,
+      "canonical": true
+    },
+    {
+      "path": "PRESENTATION/54_AUDIO.md",
+      "document_id": "PSMS-PRES-54",
+      "title": "Audio",
+      "category": "PRESENTATION",
+      "status": "FROZEN",
+      "description": "Make load, contact, effort, command, venue, failure, and success readable through a layered powerlifting soundscape while never making audio the only source of gameplay information.",
+      "dependencies": [
+        "PRESENTATION/51_CHARACTER_PRESENTATION.md",
+        "PRESENTATION/52_CAMERA_AND_BROADCAST.md",
+        "GAME/44_REPLAY_SYSTEM.md"
+      ],
+      "sha256": "1fff0fee4fa80d2737091370fef7615e54c4870f0e23be1525fb02cf41c81367",
+      "bytes_utf8": 3867,
+      "lines": 117,
+      "canonical": true
+    },
+    {
+      "path": "PRESENTATION/55_VISUAL_DIRECTION.md",
+      "document_id": "PSMS-PRES-55",
+      "title": "Visual Direction",
+      "category": "PRESENTATION",
+      "status": "FROZEN",
+      "description": "Broadcast powerlifting meets engineering clarity. The athlete is real and visible, the bar feels heavy, the platform feels official, and analysis is clean and credible. The game is stylized enough to match the Quaternius hero character, but lighting/materials/camera sell weight and contact. It should not look like a robotics laboratory, medical simulator, debug mannequin, or mobile clicker.",
+      "dependencies": [
+        "01_PRODUCT_CONSTITUTION.md",
+        "PRESENTATION/50_RENDER_ARCHITECTURE.md",
+        "PRESENTATION/51_CHARACTER_PRESENTATION.md",
+        "PRESENTATION/53_UI_UX.md"
+      ],
+      "sha256": "6d35f6eaa76374e46625a812f1f1df4311981b55528805545528f7345fec156a",
+      "bytes_utf8": 3912,
+      "lines": 99,
+      "canonical": true
+    },
+    {
+      "path": "ENGINEERING/63_PERFORMANCE_BUDGET.md",
+      "document_id": "PSMS-ENG-63",
+      "title": "Performance Budget",
+      "category": "ENGINEERING",
+      "status": "FROZEN",
+      "description": "Reference target: Windows desktop, 1920×1080, 60 fps presentation, 100 Hz physics, one hero athlete/bar, competition venue, replay/analysis. Hardware floor is frozen during implementation after measuring the actual target market and current project.",
+      "dependencies": [
+        "03_COORDINATES_UNITS_NUMERICS.md",
+        "ENGINEERING/60_RUNTIME_EXECUTION_ORDER.md",
+        "PRESENTATION/50_RENDER_ARCHITECTURE.md",
+        "ENGINEERING/62_TESTING_AND_TERMINUS.md"
+      ],
+      "sha256": "93c3ec8d281b82ae2d6f9e184e2125b65408b673bbd6b4b07d3b5c230faf2fe7",
+      "bytes_utf8": 4858,
+      "lines": 137,
+      "canonical": true
+    },
+    {
+      "path": "ENGINEERING/67_ARCHITECTURE_DECISIONS.md",
+      "document_id": "PSMS-ENG-67",
+      "title": "Architecture Decisions and Adversarial Review",
+      "category": "ENGINEERING",
+      "status": "FROZEN",
+      "description": "Each ADR states decision, context, alternatives, consequences, verification, and reversal trigger. The list below is the frozen V1 authority.",
+      "dependencies": [
+        "00_READ_ME_FIRST.md",
+        "02_GAME_ARCHITECTURE.md",
+        "ENGINEERING/60_RUNTIME_EXECUTION_ORDER.md",
+        "ENGINEERING/62_TESTING_AND_TERMINUS.md",
+        "ENGINEERING/65_CLAIMS_PROVENANCE.md"
+      ],
+      "sha256": "abe522398d35036fc8a941f89e86fb4be0f4677aa5da7cca143d7c139f2da898",
+      "bytes_utf8": 9708,
+      "lines": 213,
+      "canonical": true
+    },
+    {
+      "path": "ENGINEERING/66_FAILURE_OBSERVABILITY.md",
+      "document_id": "PSMS-ENG-66",
+      "title": "Failure Observability",
+      "category": "ENGINEERING",
+      "status": "FROZEN",
+      "description": "Make every architecture fault, initialization fault, physical failure, rule failure, control failure, and presentation fault distinguishable and reproducible. “The athlete fell” is not enough.",
+      "dependencies": [
+        "SQUAT/16_SQUAT_FAILURE_MODEL.md",
+        "BENCH/26_BENCH_FAILURE_MODEL.md",
+        "DEADLIFT/36_DEADLIFT_FAILURE_MODEL.md",
+        "ENGINEERING/61_STATE_SNAPSHOTS_AND_REPLAY.md"
+      ],
+      "sha256": "083e60b1f676b960d75ea2bc37df54c4ba6ebb42636cc0ef00fa8d6a309b145d",
+      "bytes_utf8": 4595,
+      "lines": 160,
+      "canonical": true
+    },
+    {
+      "path": "GAME/46_GAME_LOOP_AND_CONTENT.md",
+      "document_id": "PSMS-GAME-46",
+      "title": "Game Loop and Content Plan",
+      "category": "GAME",
+      "status": "FROZEN",
+      "description": "The physical lift is the dramatic center; menus and analysis serve it.",
+      "dependencies": [
+        "GAME/40_MEET_SYSTEM.md",
+        "GAME/41_GAMEPLAY_AND_DIFFICULTY.md",
+        "GAME/42_ATHLETE_PROGRESSION.md",
+        "GAME/43_SPORTS_SCIENCE_ANALYSIS.md",
+        "GAME/44_REPLAY_SYSTEM.md",
+        "GAME/45_SAVE_AND_CAREER.md"
+      ],
+      "sha256": "ce54dda001cda9f7ebee75311e2296600f7adde290f840106acc587f5760d745",
+      "bytes_utf8": 4818,
+      "lines": 148,
+      "canonical": true
+    },
+    {
+      "path": "ENGINEERING/64_BUILD_RELEASE_AND_CI.md",
+      "document_id": "PSMS-ENG-64",
+      "title": "Build, Release, and CI",
+      "category": "ENGINEERING",
+      "status": "FROZEN",
+      "description": "Produce repeatable tested Windows builds with frozen Unity/package/configuration state, preserved evidence, license/claim audit, and no editor-only dependency.",
+      "dependencies": [
+        "ENGINEERING/62_TESTING_AND_TERMINUS.md",
+        "ENGINEERING/63_PERFORMANCE_BUDGET.md",
+        "ENGINEERING/65_CLAIMS_PROVENANCE.md",
+        "GAME/45_SAVE_AND_CAREER.md"
+      ],
+      "sha256": "97c66fb9dce5eb831753085792e374666cfb87ed48d47d8ffbf9af851bb58761",
+      "bytes_utf8": 4819,
+      "lines": 154,
+      "canonical": true
+    },
+    {
+      "path": "ROADMAP/70_MASTER_GAME_ROADMAP.md",
+      "document_id": "PSMS-RM-70",
+      "title": "Master Game Roadmap",
+      "category": "ROADMAP",
+      "status": "FROZEN",
+      "description": "Ship one vertical, visible, physically coherent, independently qualified product slice at a time. No milestone starts by rewriting everything, and no future lift is used to excuse an incomplete current one.",
+      "dependencies": [
+        "00_READ_ME_FIRST.md",
+        "ENGINEERING/62_TESTING_AND_TERMINUS.md",
+        "ENGINEERING/67_ARCHITECTURE_DECISIONS.md"
+      ],
+      "sha256": "54080ab861b6b1840e7ba930c5110c10409264984dab96cbc03cc90890c9f437",
+      "bytes_utf8": 5284,
+      "lines": 135,
+      "canonical": true
+    },
+    {
+      "path": "ROADMAP/71_M3_SQUAT_IMPLEMENTATION_PLAN.md",
+      "document_id": "PSMS-RM-71",
+      "title": "M3 Squat Implementation Plan",
+      "category": "ROADMAP",
+      "status": "FROZEN",
+      "description": "Ship the actual humanoid performing a physically realized, competition-rule-aware squat with finite capability, physical bar/contact, load-dependent grind/failure, replayable trace, and polished presentation.",
+      "dependencies": [
+        "ROADMAP/70_MASTER_GAME_ROADMAP.md",
+        "SQUAT/18_SQUAT_TEST_SPEC.md",
+        "ENGINEERING/60_RUNTIME_EXECUTION_ORDER.md"
+      ],
+      "sha256": "80633b9470a46182c5e41cd750053a458897c98f5253f3f88ea7986b4b2efd19",
+      "bytes_utf8": 5254,
+      "lines": 166,
+      "canonical": true
+    },
+    {
+      "path": "ROADMAP/72_M4_BENCH_IMPLEMENTATION_PLAN.md",
+      "document_id": "PSMS-RM-72",
+      "title": "M4A Bench Implementation Plan",
+      "category": "ROADMAP",
+      "status": "FROZEN",
+      "description": "Add an independently designed physical bench press on the accepted powered-athlete substrate: setup/arch/contacts, two compliant grips, physical bar, Start/touch/pause/Press/lockout/Rack, load-dependent failure, telemetry, replay, and presentation.",
+      "dependencies": [
+        "ROADMAP/71_M3_SQUAT_IMPLEMENTATION_PLAN.md",
+        "BENCH/28_BENCH_TEST_SPEC.md"
+      ],
+      "sha256": "5b56878bebbafe406e4c55f279f424c914f360a98cfb6a29c1072a8fa92f979b",
+      "bytes_utf8": 3649,
+      "lines": 123,
+      "canonical": true
+    },
+    {
+      "path": "ROADMAP/73_M4_DEADLIFT_IMPLEMENTATION_PLAN.md",
+      "document_id": "PSMS-RM-73",
+      "title": "M4B Conventional Deadlift Implementation Plan",
+      "category": "ROADMAP",
+      "status": "FROZEN",
+      "description": "Add an independent conventional deadlift with physical grounded-to-free bar transition, finite grips, brace/slack/pull, close path, zone-specific grind/failure, legal lockout/Down/return, telemetry, replay, and presentation.",
+      "dependencies": [
+        "ROADMAP/71_M3_SQUAT_IMPLEMENTATION_PLAN.md",
+        "DEADLIFT/38_DEADLIFT_TEST_SPEC.md"
+      ],
+      "sha256": "bd083f0c883957932e41c94b1eeb20476f5c975e69570a067395530470138553",
+      "bytes_utf8": 3531,
+      "lines": 121,
+      "canonical": true
+    },
+    {
+      "path": "ROADMAP/74_M5_MEET_BROADCAST_PLAN.md",
+      "document_id": "PSMS-RM-74",
+      "title": "M5 Meet and Broadcast Plan",
+      "category": "ROADMAP",
+      "status": "FROZEN",
+      "description": "Combine the three accepted lift domains into a coherent single-player meet with declarations, attempts, commands, judgments, totals/placing, opponents, cameras, UI, audio, lights, and results—without modifying the lift physics to fit the meet.",
+      "dependencies": [
+        "ROADMAP/72_M4_BENCH_IMPLEMENTATION_PLAN.md",
+        "ROADMAP/73_M4_DEADLIFT_IMPLEMENTATION_PLAN.md",
+        "GAME/40_MEET_SYSTEM.md",
+        "PRESENTATION/52_CAMERA_AND_BROADCAST.md"
+      ],
+      "sha256": "48ce3d0a28971aa7f58093061f365c2f6cb9e0181ed69bd048b9ba2ea2b6198d",
+      "bytes_utf8": 2811,
+      "lines": 100,
+      "canonical": true
+    },
+    {
+      "path": "ROADMAP/78_LUNA_IMPLEMENTATION_WAVES.md",
+      "document_id": "PSMS-RM-78",
+      "title": "Luna Implementation Waves",
+      "category": "ROADMAP",
+      "status": "FROZEN",
+      "description": "GPT-5.6 Luna is the repository-access coding model. This document tells it how to implement without inventing architecture. Luna must inspect reality, make bounded changes, run local evidence loops, and stop at milestone gates.",
+      "dependencies": [
+        "ROADMAP/70_MASTER_GAME_ROADMAP.md",
+        "ROADMAP/71_M3_SQUAT_IMPLEMENTATION_PLAN.md",
+        "ROADMAP/72_M4_BENCH_IMPLEMENTATION_PLAN.md",
+        "ROADMAP/73_M4_DEADLIFT_IMPLEMENTATION_PLAN.md",
+        "ENGINEERING/62_TESTING_AND_TERMINUS.md"
+      ],
+      "sha256": "9007307c8dbffd2e00c8dc749d8cf4bd0eea6c2c6dc579fab5de70ca4f69ce3d",
+      "bytes_utf8": 5272,
+      "lines": 188,
+      "canonical": true
+    },
+    {
+      "path": "ROADMAP/75_M6_REPLAY_ANALYSIS_PLAN.md",
+      "document_id": "PSMS-RM-75",
+      "title": "M6 Replay and Analysis Plan",
+      "category": "ROADMAP",
+      "status": "FROZEN",
+      "description": "Deliver recorded-state replay and trustworthy lift-specific analysis for every attempt, with clear definitions, filtering, provenance, quality, comparison, and claim limits.",
+      "dependencies": [
+        "ROADMAP/74_M5_MEET_BROADCAST_PLAN.md",
+        "GAME/43_SPORTS_SCIENCE_ANALYSIS.md",
+        "GAME/44_REPLAY_SYSTEM.md",
+        "ENGINEERING/65_CLAIMS_PROVENANCE.md"
+      ],
+      "sha256": "1bc1eaf503053e8d042fe065b4119aaaac82433df4b4a81bff3007dd2869b0cf",
+      "bytes_utf8": 2616,
+      "lines": 85,
+      "canonical": true
+    },
+    {
+      "path": "ROADMAP/76_M7_PRODUCT_GAME_LOOP_PLAN.md",
+      "document_id": "PSMS-RM-76",
+      "title": "M7 Product Game Loop Plan",
+      "category": "ROADMAP",
+      "status": "FROZEN",
+      "description": "Turn the qualified simulation/meet/replay systems into a complete game: onboarding, practice/training, career, athlete progression, records, opponents, saves, content progression, settings, and replayable reasons to continue.",
+      "dependencies": [
+        "ROADMAP/75_M6_REPLAY_ANALYSIS_PLAN.md",
+        "GAME/42_ATHLETE_PROGRESSION.md",
+        "GAME/45_SAVE_AND_CAREER.md",
+        "GAME/46_GAME_LOOP_AND_CONTENT.md"
+      ],
+      "sha256": "d29c05a50f9ff791fcfe31ed5918c1b8b0ff47c098df2cbfe124225a8842af70",
+      "bytes_utf8": 2733,
+      "lines": 95,
+      "canonical": true
+    },
+    {
+      "path": "ROADMAP/77_M8_POLISH_RELEASE_PLAN.md",
+      "document_id": "PSMS-RM-77",
+      "title": "M8 Polish and Release Plan",
+      "category": "ROADMAP",
+      "status": "FROZEN",
+      "description": "Qualify and ship the complete V1 product. No new mechanical subsystem unless it fixes a release blocker through an approved ADR.",
+      "dependencies": [
+        "ROADMAP/76_M7_PRODUCT_GAME_LOOP_PLAN.md",
+        "PRESENTATION/56_VISUAL_QUALITY_GATES.md",
+        "ENGINEERING/63_PERFORMANCE_BUDGET.md",
+        "ENGINEERING/64_BUILD_RELEASE_AND_CI.md"
+      ],
+      "sha256": "fc111c307c942d404dd43796d39f4e03d4c804968e3a6d34913763a774040515",
+      "bytes_utf8": 3224,
+      "lines": 99,
+      "canonical": true
+    }
+  ],
+  "milestone_order": [
+    "M3_PHYSICAL_ATHLETE_AND_SQUAT",
+    "M4A_BENCH",
+    "M4B_CONVENTIONAL_DEADLIFT",
+    "M5_MEET_BROADCAST",
+    "M6_REPLAY_ANALYSIS",
+    "M7_PRODUCT_GAME_LOOP",
+    "M8_V1_RELEASE"
+  ],
+  "repository_verification_points": [
+    "Exact imported humanoid hierarchy, proportions, asset package, and license.",
+    "Current repository scene/prefab/assembly/runtime/test/build architecture.",
+    "Exact Unity/PhysX drive response, joint conventions, solver settings, and performance.",
+    "Final lift coupling degrees of freedom and finite capacities.",
+    "Current IPF Technical Rules Book locators, equipment constants, ordering/tie/scoring rules.",
+    "Reference/minimum hardware, build backend, platform/store requirements.",
+    "Third-party asset, audio, font, and package license inventory.",
+    "Human playtest and owner visual acceptance."
+  ],
+  "final_status_contract": {
+    "MISSION": "POWERLIFTING_SIMULATOR_MASTER_GAME_SPEC_V1",
+    "DESIGN_BUNDLE": "COMPLETE",
+    "ARCHITECTURE": "FROZEN_WITH_REPOSITORY_VERIFICATION_POINTS",
+    "M3_IMPLEMENTED": "NO",
+    "M4A_IMPLEMENTED": "NO",
+    "M4B_IMPLEMENTED": "NO",
+    "M5_IMPLEMENTED": "NO",
+    "M6_IMPLEMENTED": "NO",
+    "M7_IMPLEMENTED": "NO",
+    "M8_IMPLEMENTED": "NO",
+    "STATUS": "PASS_WITH_OPEN_DECISIONS",
+    "NEXT_ACTION": "LUNA_REPOSITORY_REALITY_MAP_THEN_M3_WAVE_0",
+    "STOP": true
+  }
+}
