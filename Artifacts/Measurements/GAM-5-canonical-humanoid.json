@@ -1,0 +1,782 @@
+{
+    "mission": "POWERLIFTING_SIMULATOR_GAM_5_CANONICAL_HUMANOID",
+    "asset": {
+        "provider": "Quaternius",
+        "pack": "Universal Base Characters[Standard]",
+        "packRelease": "August 2025",
+        "sourceUrl": "https://quaternius.com/packs/universalbasecharacters.html",
+        "archiveFilename": "Universal Base Characters[Standard].zip",
+        "archiveSha256": "fdbf1804c90dfc1ea03e992bff7da2dfd1a79318e13270a660180f9308455f40",
+        "modelPath": "Assets/Characters/Athlete/Source/Superhero_Male_FullBody.fbx",
+        "modelSha256": "79344418d754a59730b79d1874752e9592143db34abe8adf138fa9a92a4768e9"
+    },
+    "unityVersion": "6000.3.22f1",
+    "modelImporter": {
+        "globalScale": 1.0,
+        "useFileScale": true,
+        "bakeAxisConversion": false,
+        "animationType": "Human",
+        "avatarSetup": "CreateFromThisModel",
+        "importAnimation": false,
+        "materialImportMode": "None"
+    },
+    "calibrationPose": {
+        "id": "QUATERNIUS_SUPERHERO_MALE_IMPORT_BIND_POSE_V1",
+        "rootPosition_m": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "rootRotation_xyzw": {
+            "x": 0.0,
+            "y": 1.0,
+            "z": 0.0,
+            "w": -4.371138828673793e-8
+        },
+        "importedModelLocalPosition_m": {
+            "x": 0.0,
+            "y": 0.101737380027771,
+            "z": 0.0
+        },
+        "importedModelLocalRotation_xyzw": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0,
+            "w": 1.0
+        },
+        "upAxis": "+Y",
+        "forwardAxis": "+Z",
+        "poseSource": "Imported FBX bind/reference pose; no animation controller and no root motion"
+    },
+    "avatar": {
+        "valid": true,
+        "human": true,
+        "name": "Superhero_Male_FullBodyAvatar"
+    },
+    "boneMap": [
+        {
+            "logicalName": "Hips",
+            "humanBodyBones": "Hips",
+            "transformName": "pelvis",
+            "hierarchyPath": "Armature/root/pelvis",
+            "parent": "root",
+            "worldPosition_m": {
+                "x": -3.759167643835326e-9,
+                "y": 1.050837516784668,
+                "z": -0.042999863624572757
+            },
+            "localRotation_xyzw": {
+                "x": 0.800571084022522,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 0.5992377996444702
+            },
+            "worldRotation_xyzw": {
+                "x": -0.14236414432525636,
+                "y": -4.326616220851065e-8,
+                "z": 6.222934612054587e-9,
+                "w": -0.9898144006729126
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "Spine",
+            "humanBodyBones": "Spine",
+            "transformName": "spine_01",
+            "hierarchyPath": "Armature/root/pelvis/spine_01",
+            "parent": "pelvis",
+            "worldPosition_m": {
+                "x": -6.032024879587539e-10,
+                "y": 1.1737375259399415,
+                "z": -0.006899833679199219
+            },
+            "localRotation_xyzw": {
+                "x": -0.09185642749071121,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 0.9957723021507263
+            },
+            "worldRotation_xyzw": {
+                "x": -0.05084142088890076,
+                "y": -4.3654861059394537e-8,
+                "z": 2.2223491935591257e-9,
+                "w": -0.9987068176269531
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "Chest",
+            "humanBodyBones": "Chest",
+            "transformName": "spine_02",
+            "hierarchyPath": "Armature/root/pelvis/spine_01/spine_02",
+            "parent": "spine_01",
+            "worldPosition_m": {
+                "x": 3.4096386825055449e-10,
+                "y": 1.2795376777648926,
+                "z": 0.00390017032623291
+            },
+            "localRotation_xyzw": {
+                "x": -0.03958515077829361,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 0.9992161989212036
+            },
+            "worldRotation_xyzw": {
+                "x": -0.011267662048339844,
+                "y": -4.370862072278214e-8,
+                "z": 4.925251873011405e-10,
+                "w": -0.9999366998672485
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "Head",
+            "humanBodyBones": "Head",
+            "transformName": "Head",
+            "hierarchyPath": "Armature/root/pelvis/spine_01/spine_02/spine_03/neck_01/Head",
+            "parent": "neck_01",
+            "worldPosition_m": {
+                "x": -1.5211375492540924e-9,
+                "y": 1.7015377283096314,
+                "z": -0.01739978790283203
+            },
+            "localRotation_xyzw": {
+                "x": -0.13207003474235536,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 0.9912404417991638
+            },
+            "worldRotation_xyzw": {
+                "x": -0.014484554529190064,
+                "y": -4.3706812391519637e-8,
+                "z": 6.331400403958298e-10,
+                "w": -0.9998953342437744
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "LeftUpperArm",
+            "humanBodyBones": "LeftUpperArm",
+            "transformName": "upperarm_l",
+            "hierarchyPath": "Armature/root/pelvis/spine_01/spine_02/spine_03/clavicle_l/upperarm_l",
+            "parent": "clavicle_l",
+            "worldPosition_m": {
+                "x": -0.2120116800069809,
+                "y": 1.5572373867034913,
+                "z": -0.06539987027645111
+            },
+            "localRotation_xyzw": {
+                "x": 0.14980190992355348,
+                "y": -0.6911311149597168,
+                "z": 0.14938737452030183,
+                "w": 0.6910720467567444
+            },
+            "worldRotation_xyzw": {
+                "x": 0.010731696151196957,
+                "y": 0.010673551820218563,
+                "z": -0.7070255279541016,
+                "w": -0.7070262432098389
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "LeftLowerArm",
+            "humanBodyBones": "LeftLowerArm",
+            "transformName": "lowerarm_l",
+            "hierarchyPath": "Armature/root/pelvis/spine_01/spine_02/spine_03/clavicle_l/upperarm_l/lowerarm_l",
+            "parent": "upperarm_l",
+            "worldPosition_m": {
+                "x": -0.4630117118358612,
+                "y": 1.5572373867034913,
+                "z": -0.07300051301717758
+            },
+            "localRotation_xyzw": {
+                "x": 0.03073282726109028,
+                "y": -0.000041025828977581114,
+                "z": 7.715563583587937e-7,
+                "w": 0.999527633190155
+            },
+            "worldRotation_xyzw": {
+                "x": -0.01103139016777277,
+                "y": -0.01103139016777277,
+                "z": -0.7070205211639404,
+                "w": -0.7070211172103882
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "LeftHand",
+            "humanBodyBones": "LeftHand",
+            "transformName": "hand_l",
+            "hierarchyPath": "Armature/root/pelvis/spine_01/spine_02/spine_03/clavicle_l/upperarm_l/lowerarm_l/hand_l",
+            "parent": "lowerarm_l",
+            "worldPosition_m": {
+                "x": -0.7064874172210693,
+                "y": 1.5572373867034913,
+                "z": -0.06540113687515259
+            },
+            "localRotation_xyzw": {
+                "x": -0.015601660124957562,
+                "y": 6.509538685861571e-9,
+                "z": 4.1718175225469169e-7,
+                "w": 0.9998782873153687
+            },
+            "worldRotation_xyzw": {
+                "x": 7.141494506868185e-7,
+                "y": 6.247424835237325e-7,
+                "z": -0.7071069478988648,
+                "w": -0.7071069478988648
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "RightUpperArm",
+            "humanBodyBones": "RightUpperArm",
+            "transformName": "upperarm_r",
+            "hierarchyPath": "Armature/root/pelvis/spine_01/spine_02/spine_03/clavicle_r/upperarm_r",
+            "parent": "clavicle_r",
+            "worldPosition_m": {
+                "x": 0.2120116800069809,
+                "y": 1.5572373867034913,
+                "z": -0.0653999000787735
+            },
+            "localRotation_xyzw": {
+                "x": 0.14980119466781617,
+                "y": 0.6911312341690064,
+                "z": -0.14938664436340333,
+                "w": 0.6910723447799683
+            },
+            "worldRotation_xyzw": {
+                "x": 0.010732562281191349,
+                "y": -0.010674268938601017,
+                "z": 0.7070255875587463,
+                "w": -0.7070264220237732
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "RightLowerArm",
+            "humanBodyBones": "RightLowerArm",
+            "transformName": "lowerarm_r",
+            "hierarchyPath": "Armature/root/pelvis/spine_01/spine_02/spine_03/clavicle_r/upperarm_r/lowerarm_r",
+            "parent": "upperarm_r",
+            "worldPosition_m": {
+                "x": 0.4630116820335388,
+                "y": 1.5572373867034913,
+                "z": -0.0730011835694313
+            },
+            "localRotation_xyzw": {
+                "x": 0.0307327751070261,
+                "y": 0.00004108540451852605,
+                "z": -7.733280540378473e-7,
+                "w": 0.999527633190155
+            },
+            "worldRotation_xyzw": {
+                "x": -0.011030375026166439,
+                "y": 0.01103061344474554,
+                "z": 0.70702064037323,
+                "w": -0.7070212364196777
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "RightHand",
+            "humanBodyBones": "RightHand",
+            "transformName": "hand_r",
+            "hierarchyPath": "Armature/root/pelvis/spine_01/spine_02/spine_03/clavicle_r/upperarm_r/lowerarm_r/hand_r",
+            "parent": "lowerarm_r",
+            "worldPosition_m": {
+                "x": 0.7064873576164246,
+                "y": 1.5572375059127808,
+                "z": -0.06540220975875855
+            },
+            "localRotation_xyzw": {
+                "x": -0.015601660124957562,
+                "y": -7.439472149428639e-9,
+                "z": -4.7677914949417757e-7,
+                "w": 0.9998782873153687
+            },
+            "worldRotation_xyzw": {
+                "x": 0.0000015806293731657207,
+                "y": -0.0000013720131164518535,
+                "z": 0.7071069478988648,
+                "w": -0.70710688829422
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "LeftUpperLeg",
+            "humanBodyBones": "LeftUpperLeg",
+            "transformName": "thigh_l",
+            "hierarchyPath": "Armature/root/pelvis/thigh_l",
+            "parent": "pelvis",
+            "worldPosition_m": {
+                "x": -0.11430516093969345,
+                "y": 1.0729374885559083,
+                "z": -0.035999882966279986
+            },
+            "localRotation_xyzw": {
+                "x": 0.9898309707641602,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 0.14224843680858613
+            },
+            "worldRotation_xyzw": {
+                "x": -1.0,
+                "y": 5.107951388250154e-12,
+                "z": 4.371138828673793e-8,
+                "w": 0.00011685490608215332
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "LeftLowerLeg",
+            "humanBodyBones": "LeftLowerLeg",
+            "transformName": "calf_l",
+            "hierarchyPath": "Armature/root/pelvis/thigh_l/calf_l",
+            "parent": "thigh_l",
+            "worldPosition_m": {
+                "x": -0.11430514603853226,
+                "y": 0.6441373229026794,
+                "z": -0.03610013797879219
+            },
+            "localRotation_xyzw": {
+                "x": 0.055988602340221408,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 0.9984314441680908
+            },
+            "worldRotation_xyzw": {
+                "x": -0.9984250068664551,
+                "y": 2.4524386965651958e-9,
+                "z": 4.364254380107013e-8,
+                "w": 0.05610525608062744
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "LeftFoot",
+            "humanBodyBones": "LeftFoot",
+            "transformName": "foot_l",
+            "hierarchyPath": "Armature/root/pelvis/thigh_l/calf_l/foot_l",
+            "parent": "calf_l",
+            "worldPosition_m": {
+                "x": -0.11430516093969345,
+                "y": 0.1882372498512268,
+                "z": -0.0875001922249794
+            },
+            "localRotation_xyzw": {
+                "x": -0.5721679925918579,
+                "y": -1.9553580443698594e-7,
+                "z": 1.3641546559028939e-7,
+                "w": 0.8201364278793335
+            },
+            "worldRotation_xyzw": {
+                "x": -0.850946307182312,
+                "y": 1.0227049074273964e-7,
+                "z": 2.400774974375963e-7,
+                "w": -0.5252528190612793
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "RightUpperLeg",
+            "humanBodyBones": "RightUpperLeg",
+            "transformName": "thigh_r",
+            "hierarchyPath": "Armature/root/pelvis/thigh_r",
+            "parent": "pelvis",
+            "worldPosition_m": {
+                "x": 0.11430516093969345,
+                "y": 1.0729374885559083,
+                "z": -0.035999905318021777
+            },
+            "localRotation_xyzw": {
+                "x": 0.9898309707641602,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 0.14224843680858613
+            },
+            "worldRotation_xyzw": {
+                "x": -1.0,
+                "y": 5.107951388250154e-12,
+                "z": 4.371138828673793e-8,
+                "w": 0.00011685490608215332
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "RightLowerLeg",
+            "humanBodyBones": "RightLowerLeg",
+            "transformName": "calf_r",
+            "hierarchyPath": "Armature/root/pelvis/thigh_r/calf_r",
+            "parent": "thigh_r",
+            "worldPosition_m": {
+                "x": 0.11430514603853226,
+                "y": 0.6441373229026794,
+                "z": -0.03610016033053398
+            },
+            "localRotation_xyzw": {
+                "x": 0.055988602340221408,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 0.9984314441680908
+            },
+            "worldRotation_xyzw": {
+                "x": -0.9984250068664551,
+                "y": 2.4524386965651958e-9,
+                "z": 4.364254380107013e-8,
+                "w": 0.05610525608062744
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "RightFoot",
+            "humanBodyBones": "RightFoot",
+            "transformName": "foot_r",
+            "hierarchyPath": "Armature/root/pelvis/thigh_r/calf_r/foot_r",
+            "parent": "calf_r",
+            "worldPosition_m": {
+                "x": 0.11430514603853226,
+                "y": 0.1882372498512268,
+                "z": -0.0875002071261406
+            },
+            "localRotation_xyzw": {
+                "x": -0.5721679925918579,
+                "y": 1.9553580443698594e-7,
+                "z": -1.3641546559028939e-7,
+                "w": 0.8201364278793335
+            },
+            "worldRotation_xyzw": {
+                "x": -0.850946307182312,
+                "y": -1.4818954241491157e-7,
+                "z": -1.6568540672778909e-7,
+                "w": -0.5252528190612793
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "UpperChest",
+            "humanBodyBones": "UpperChest",
+            "transformName": "spine_03",
+            "hierarchyPath": "Armature/root/pelvis/spine_01/spine_02/spine_03",
+            "parent": "spine_02",
+            "worldPosition_m": {
+                "x": 6.032340738038045e-10,
+                "y": 1.41263747215271,
+                "z": 0.006900191307067871
+            },
+            "localRotation_xyzw": {
+                "x": -0.12418916076421738,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 0.992258608341217
+            },
+            "worldRotation_xyzw": {
+                "x": 0.11300086975097656,
+                "y": -4.3431416685280058e-8,
+                "z": -4.939424869121467e-9,
+                "w": -0.9935950040817261
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "Neck",
+            "humanBodyBones": "Neck",
+            "transformName": "neck_01",
+            "hierarchyPath": "Armature/root/pelvis/spine_01/spine_02/spine_03/neck_01",
+            "parent": "spine_03",
+            "worldPosition_m": {
+                "x": -3.6192884245167535e-9,
+                "y": 1.6222375631332398,
+                "z": -0.04139983654022217
+            },
+            "localRotation_xyzw": {
+                "x": 0.25725916028022768,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 0.9663424491882324
+            },
+            "worldRotation_xyzw": {
+                "x": -0.1464138925075531,
+                "y": -4.324033753277945e-8,
+                "z": 6.39995434426055e-9,
+                "w": -0.9892235994338989
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "LeftToes",
+            "humanBodyBones": "LeftToes",
+            "transformName": "ball_l",
+            "hierarchyPath": "Armature/root/pelvis/thigh_l/calf_l/foot_l/ball_l",
+            "parent": "foot_l",
+            "worldPosition_m": {
+                "x": -0.11430513858795166,
+                "y": 0.11693758517503739,
+                "z": 0.05469951406121254
+            },
+            "localRotation_xyzw": {
+                "x": -2.5882656018438867e-8,
+                "y": 0.9731196761131287,
+                "z": -0.23030009865760804,
+                "w": -1.9396011907701905e-7
+            },
+            "worldRotation_xyzw": {
+                "x": -7.853243744193606e-8,
+                "y": -0.7071068286895752,
+                "z": -0.7071068286895752,
+                "w": 3.562179529126297e-8
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "RightToes",
+            "humanBodyBones": "RightToes",
+            "transformName": "ball_r",
+            "hierarchyPath": "Armature/root/pelvis/thigh_r/calf_r/foot_r/ball_r",
+            "parent": "foot_r",
+            "worldPosition_m": {
+                "x": 0.11430515348911286,
+                "y": 0.11693758517503739,
+                "z": 0.05469949170947075
+            },
+            "localRotation_xyzw": {
+                "x": 2.5882656018438867e-8,
+                "y": 0.9731196761131287,
+                "z": -0.23030009865760804,
+                "w": 1.9396011907701905e-7
+            },
+            "worldRotation_xyzw": {
+                "x": 1.6715194561811587e-8,
+                "y": -0.7071068286895752,
+                "z": -0.7071068286895752,
+                "w": 2.619544225979098e-8
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "LeftShoulder",
+            "humanBodyBones": "LeftShoulder",
+            "transformName": "clavicle_l",
+            "hierarchyPath": "Armature/root/pelvis/spine_01/spine_02/spine_03/clavicle_l",
+            "parent": "spine_03",
+            "worldPosition_m": {
+                "x": -0.03140000253915787,
+                "y": 1.5970375537872315,
+                "z": 0.033500198274850848
+            },
+            "localRotation_xyzw": {
+                "x": -0.528737485408783,
+                "y": 0.32910192012786868,
+                "z": 0.41380807757377627,
+                "w": 0.6639966368675232
+            },
+            "worldRotation_xyzw": {
+                "x": 0.6003831028938294,
+                "y": -0.37375470995903017,
+                "z": -0.3739689290523529,
+                "w": -0.599996030330658
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "RightShoulder",
+            "humanBodyBones": "RightShoulder",
+            "transformName": "clavicle_r",
+            "hierarchyPath": "Armature/root/pelvis/spine_01/spine_02/spine_03/clavicle_r",
+            "parent": "spine_03",
+            "worldPosition_m": {
+                "x": 0.031400009989738467,
+                "y": 1.5970375537872315,
+                "z": 0.03350019082427025
+            },
+            "localRotation_xyzw": {
+                "x": -0.528737485408783,
+                "y": -0.32910192012786868,
+                "z": -0.41380807757377627,
+                "w": 0.6639966368675232
+            },
+            "worldRotation_xyzw": {
+                "x": 0.6003831028938294,
+                "y": 0.3737546503543854,
+                "z": 0.37396886944770815,
+                "w": -0.599996030330658
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "LeftMiddleProximal",
+            "humanBodyBones": "LeftMiddleProximal",
+            "transformName": "middle_01_l",
+            "hierarchyPath": "Armature/root/pelvis/spine_01/spine_02/spine_03/clavicle_l/upperarm_l/lowerarm_l/hand_l/middle_01_l",
+            "parent": "hand_l",
+            "worldPosition_m": {
+                "x": -0.8219261169433594,
+                "y": 1.552554726600647,
+                "z": -0.050287891179323199
+            },
+            "localRotation_xyzw": {
+                "x": 0.005067428108304739,
+                "y": -0.7067629098892212,
+                "z": 0.021958278492093087,
+                "w": 0.7070915699005127
+            },
+            "worldRotation_xyzw": {
+                "x": -0.5033395886421204,
+                "y": 0.49617403745651247,
+                "z": -0.5155167579650879,
+                "w": -0.48446211218833926
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "logicalName": "RightMiddleProximal",
+            "humanBodyBones": "RightMiddleProximal",
+            "transformName": "middle_01_r",
+            "hierarchyPath": "Armature/root/pelvis/spine_01/spine_02/spine_03/clavicle_r/upperarm_r/lowerarm_r/hand_r/middle_01_r",
+            "parent": "hand_r",
+            "worldPosition_m": {
+                "x": 0.8219261765480042,
+                "y": 1.5525546073913575,
+                "z": -0.0502893440425396
+            },
+            "localRotation_xyzw": {
+                "x": 0.005067385733127594,
+                "y": 0.7067629098892212,
+                "z": -0.021958235651254655,
+                "w": 0.7070915699005127
+            },
+            "worldRotation_xyzw": {
+                "x": -0.5033389925956726,
+                "y": -0.49617475271224978,
+                "z": 0.5155172944068909,
+                "w": -0.4844614863395691
+            },
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        }
+    ],
+    "measurements": [
+        {
+            "id": "rendered_stature_proxy",
+            "value_m": 1.915580153465271,
+            "method": "Combined SkinnedMeshRenderer world-bounds height",
+            "sourceClass": "ASSET_DIRECT_MEASUREMENT"
+        },
+        {
+            "id": "hip_width_proxy",
+            "value_m": 0.2286103218793869,
+            "method": "Euclidean world-position distance between LeftUpperLeg and RightUpperLeg bone pivots",
+            "sourceClass": "ENGINEERING_DERIVED"
+        },
+        {
+            "id": "left_thigh_bone_pivot_distance",
+            "value_m": 0.42880016565322878,
+            "method": "Euclidean world-position distance between LeftUpperLeg and LeftLowerLeg bone pivots",
+            "sourceClass": "ENGINEERING_DERIVED"
+        },
+        {
+            "id": "right_thigh_bone_pivot_distance",
+            "value_m": 0.42880016565322878,
+            "method": "Euclidean world-position distance between RightUpperLeg and RightLowerLeg bone pivots",
+            "sourceClass": "ENGINEERING_DERIVED"
+        },
+        {
+            "id": "left_shank_bone_pivot_distance",
+            "value_m": 0.4587884545326233,
+            "method": "Euclidean world-position distance between LeftLowerLeg and LeftFoot bone pivots",
+            "sourceClass": "ENGINEERING_DERIVED"
+        },
+        {
+            "id": "right_shank_bone_pivot_distance",
+            "value_m": 0.4587884545326233,
+            "method": "Euclidean world-position distance between RightLowerLeg and RightFoot bone pivots",
+            "sourceClass": "ENGINEERING_DERIVED"
+        },
+        {
+            "id": "left_foot_bone_pivot_proxy",
+            "value_m": 0.15907356142997743,
+            "method": "Euclidean world-position distance between LeftFoot and LeftToes bone pivots",
+            "sourceClass": "ENGINEERING_DERIVED"
+        },
+        {
+            "id": "right_foot_bone_pivot_proxy",
+            "value_m": 0.15907354652881623,
+            "method": "Euclidean world-position distance between RightFoot and RightToes bone pivots",
+            "sourceClass": "ENGINEERING_DERIVED"
+        },
+        {
+            "id": "left_upper_arm_bone_pivot_distance",
+            "value_m": 0.2511151134967804,
+            "method": "Euclidean world-position distance between LeftUpperArm and LeftLowerArm bone pivots",
+            "sourceClass": "ENGINEERING_DERIVED"
+        },
+        {
+            "id": "right_upper_arm_bone_pivot_distance",
+            "value_m": 0.2511150538921356,
+            "method": "Euclidean world-position distance between RightUpperArm and RightLowerArm bone pivots",
+            "sourceClass": "ENGINEERING_DERIVED"
+        },
+        {
+            "id": "left_forearm_bone_pivot_distance",
+            "value_m": 0.24359427392482758,
+            "method": "Euclidean world-position distance between LeftLowerArm and LeftHand bone pivots",
+            "sourceClass": "ENGINEERING_DERIVED"
+        },
+        {
+            "id": "right_forearm_bone_pivot_distance",
+            "value_m": 0.243594229221344,
+            "method": "Euclidean world-position distance between RightLowerArm and RightHand bone pivots",
+            "sourceClass": "ENGINEERING_DERIVED"
+        },
+        {
+            "id": "left_hand_skeletal_proxy",
+            "value_m": 0.11651793867349625,
+            "method": "Euclidean world-position distance between LeftHand and LeftMiddleProximal bone pivots",
+            "sourceClass": "ENGINEERING_DERIVED"
+        },
+        {
+            "id": "right_hand_skeletal_proxy",
+            "value_m": 0.11651802062988281,
+            "method": "Euclidean world-position distance between RightHand and RightMiddleProximal bone pivots",
+            "sourceClass": "ENGINEERING_DERIVED"
+        },
+        {
+            "id": "spine_to_chest_bone_pivot_distance",
+            "value_m": 0.10634995251893997,
+            "method": "Euclidean world-position distance between Spine and Chest bone pivots",
+            "sourceClass": "ENGINEERING_DERIVED"
+        },
+        {
+            "id": "chest_to_upper_chest_bone_pivot_distance",
+            "value_m": 0.13313360512256623,
+            "method": "Euclidean world-position distance between Chest and UpperChest bone pivots",
+            "sourceClass": "ENGINEERING_DERIVED"
+        },
+        {
+            "id": "upper_chest_to_neck_bone_pivot_distance",
+            "value_m": 0.2150932103395462,
+            "method": "Euclidean world-position distance between UpperChest and Neck bone pivots",
+            "sourceClass": "ENGINEERING_DERIVED"
+        },
+        {
+            "id": "neck_to_head_bone_pivot_distance",
+            "value_m": 0.08285239338874817,
+            "method": "Euclidean world-position distance between Neck and Head bone pivots",
+            "sourceClass": "ENGINEERING_DERIVED"
+        },
+        {
+            "id": "shoulder_width_proxy",
+            "value_m": 0.4240233600139618,
+            "method": "Euclidean world-position distance between LeftUpperArm and RightUpperArm bone pivots",
+            "sourceClass": "ENGINEERING_DERIVED"
+        },
+        {
+            "id": "stance_foot_center_separation",
+            "value_m": 0.2286103069782257,
+            "method": "Euclidean world-position distance between LeftFoot and RightFoot bone pivots",
+            "sourceClass": "ENGINEERING_DERIVED"
+        }
+    ],
+    "method": "Unity Humanoid bone-transform world-position distances in the imported bind pose; rendered height is the combined SkinnedMeshRenderer world bounds. Distances are SI meters because 1 Unity unit = 1 m.",
+    "scientificClaimCeiling": "Bone-pivot distances and rendered bounds are direct asset/rig measurements. Segment labels are engineering proxies, not anatomical joint centers, biological segment lengths, COM, mass, inertia, muscle, or clinical anatomy."
+}
