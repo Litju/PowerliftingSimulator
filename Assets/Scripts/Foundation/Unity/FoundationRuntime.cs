@@ -96,6 +96,24 @@ namespace PowerliftingSimulator.Foundation.Unity
             }
         }
 
+        public double InputRenderIntervalStartSeconds
+        {
+            get
+            {
+                EnsureInitialized();
+                return _tickDriver.InputRenderIntervalStartSeconds;
+            }
+        }
+
+        public double InputRenderIntervalEndSeconds
+        {
+            get
+            {
+                EnsureInitialized();
+                return _tickDriver.InputRenderIntervalEndSeconds;
+            }
+        }
+
         public void Initialize(string physicsSceneName = DefaultPhysicsSceneName)
         {
             if (IsInitialized)
@@ -123,6 +141,24 @@ namespace PowerliftingSimulator.Foundation.Unity
         {
             EnsureInitialized();
             return _tickDriver.AdvanceRenderFrame(renderDeltaTimeSeconds);
+        }
+
+        public void PrepareRenderFrame(double renderDeltaTimeSeconds)
+        {
+            EnsureInitialized();
+            _tickDriver.PrepareRenderFrame(renderDeltaTimeSeconds);
+        }
+
+        public int CompleteRenderFrame()
+        {
+            EnsureInitialized();
+            return _tickDriver.CompleteRenderFrame();
+        }
+
+        public void CancelPreparedRenderFrame()
+        {
+            EnsureInitialized();
+            _tickDriver.CancelPreparedRenderFrame();
         }
 
         public void Reset()

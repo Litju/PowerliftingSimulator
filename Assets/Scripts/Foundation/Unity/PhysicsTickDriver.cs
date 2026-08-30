@@ -12,6 +12,11 @@ namespace PowerliftingSimulator.Foundation.Unity
         private readonly SimulationClock _clock;
         private readonly ObservationExchange _observations;
         private double _accumulatedRenderTimeSeconds;
+        private double _preparedAccumulatedRenderTimeSeconds;
+        private bool _renderFramePrepared;
+        private bool _renderModeStarted;
+        private bool _manualSteppingMode;
+        private bool _completingRenderFrame;
         private bool _stepInProgress;
 
         internal PhysicsTickDriver(AuthoritativePhysicsScene authoritativeScene, InputTimeDomain inputTimeDomain)
@@ -37,12 +42,26 @@ namespace PowerliftingSimulator.Foundation.Unity
 
         public double AccumulatedRenderTimeSeconds => _accumulatedRenderTimeSeconds;
 
+        public double InputRenderIntervalStartSeconds { get; private set; }
+
+        public double InputRenderIntervalEndSeconds { get; private set; }
+
         public void StepOne()
         {
             if (!_authoritativeScene.IsValid)
                 throw new InvalidOperationException("Cannot step an invalid authoritative physics scene.");
+            if (_renderFramePrepared)
+                throw new InvalidOperationException("A prepared render frame must be completed before stepping manually.");
             if (_stepInProgress)
                 throw new InvalidOperationException("A physics tick cannot be re-entered.");
+            if (!_completingRenderFrame)
+            {
+                if (_renderModeStarted || _inputTimeDomain.HasEpoch ||
+                    _accumulatedRenderTimeSeconds > FoundationTolerances.RenderAccumulatorComparison)
+                    throw new InvalidOperationException(
+                        "Manual stepping cannot be mixed with the render-frame clock or input capture.");
+                _manualSteppingMode = true;
+            }
 
             _stepInProgress = true;
             try
@@ -63,25 +82,71 @@ namespace PowerliftingSimulator.Foundation.Unity
 
         public int AdvanceRenderFrame(double renderDeltaTimeSeconds)
         {
+            PrepareRenderFrame(renderDeltaTimeSeconds);
+            return CompleteRenderFrame();
+        }
+
+        public void PrepareRenderFrame(double renderDeltaTimeSeconds)
+        {
             if (double.IsNaN(renderDeltaTimeSeconds) || double.IsInfinity(renderDeltaTimeSeconds) || renderDeltaTimeSeconds < 0d)
                 throw new ArgumentOutOfRangeException(nameof(renderDeltaTimeSeconds));
+            if (_renderFramePrepared)
+                throw new InvalidOperationException("The render frame is already prepared.");
+            if (_manualSteppingMode)
+                throw new InvalidOperationException(
+                    "Render-frame advancement cannot be mixed with manual stepping; reset before changing clock modes.");
 
-            _accumulatedRenderTimeSeconds = Math.Min(
+            double simulationStartSeconds = _clock.Current.SimulationTimeSeconds + _accumulatedRenderTimeSeconds;
+            _preparedAccumulatedRenderTimeSeconds = Math.Min(
                 _accumulatedRenderTimeSeconds + renderDeltaTimeSeconds,
                 SimulationConstants.MaxAccumulatedTimeSeconds);
+            InputRenderIntervalStartSeconds = simulationStartSeconds;
+            InputRenderIntervalEndSeconds = _clock.Current.SimulationTimeSeconds + _preparedAccumulatedRenderTimeSeconds;
+            _renderFramePrepared = true;
+            _renderModeStarted = true;
+        }
+
+        public int CompleteRenderFrame()
+        {
+            if (!_renderFramePrepared)
+                throw new InvalidOperationException("The render frame must be prepared before it is completed.");
+
+            _accumulatedRenderTimeSeconds = _preparedAccumulatedRenderTimeSeconds;
+            _renderFramePrepared = false;
             int ticks = 0;
-            while (_accumulatedRenderTimeSeconds + FoundationTolerances.RenderAccumulatorComparison >= SimulationConstants.FixedDeltaTimeSeconds &&
-                   ticks < SimulationConstants.MaxCatchUpTicksPerRenderFrame)
+            _completingRenderFrame = true;
+            try
             {
-                StepOne();
-                _accumulatedRenderTimeSeconds -= SimulationConstants.FixedDeltaTimeSeconds;
-                if (_accumulatedRenderTimeSeconds < FoundationTolerances.RenderAccumulatorComparison)
-                    _accumulatedRenderTimeSeconds = 0d;
-                ticks++;
+                while (_accumulatedRenderTimeSeconds + FoundationTolerances.RenderAccumulatorComparison >= SimulationConstants.FixedDeltaTimeSeconds &&
+                       ticks < SimulationConstants.MaxCatchUpTicksPerRenderFrame)
+                {
+                    StepOne();
+                    _accumulatedRenderTimeSeconds -= SimulationConstants.FixedDeltaTimeSeconds;
+                    if (_accumulatedRenderTimeSeconds < FoundationTolerances.RenderAccumulatorComparison)
+                        _accumulatedRenderTimeSeconds = 0d;
+                    ticks++;
+                }
+            }
+            finally
+            {
+                _completingRenderFrame = false;
             }
 
             LastCatchUpTicks = ticks;
             return ticks;
+        }
+
+        public void CancelPreparedRenderFrame()
+        {
+            if (_stepInProgress || _completingRenderFrame)
+                throw new InvalidOperationException("A prepared render frame cannot be cancelled during a physics step.");
+            if (!_renderFramePrepared)
+                return;
+
+            _renderFramePrepared = false;
+            _preparedAccumulatedRenderTimeSeconds = _accumulatedRenderTimeSeconds;
+            InputRenderIntervalStartSeconds = _clock.Current.SimulationTimeSeconds + _accumulatedRenderTimeSeconds;
+            InputRenderIntervalEndSeconds = InputRenderIntervalStartSeconds;
         }
 
         public void Reset()
@@ -97,6 +162,13 @@ namespace PowerliftingSimulator.Foundation.Unity
             LastIntentFrame = PlayerIntentFrame.Empty;
             LastCatchUpTicks = 0;
             _accumulatedRenderTimeSeconds = 0d;
+            _preparedAccumulatedRenderTimeSeconds = 0d;
+            _renderFramePrepared = false;
+            _renderModeStarted = false;
+            _manualSteppingMode = false;
+            _completingRenderFrame = false;
+            InputRenderIntervalStartSeconds = 0d;
+            InputRenderIntervalEndSeconds = 0d;
         }
 
         private sealed class ObservationExchange

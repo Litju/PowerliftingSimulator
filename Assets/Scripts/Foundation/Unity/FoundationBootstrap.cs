@@ -31,8 +31,29 @@ namespace PowerliftingSimulator.Foundation.Unity
             if (_runtime == null || !_runtime.IsInitialized)
                 return;
 
-            _inputAdapter.Capture(Time.realtimeSinceStartupAsDouble);
-            _runtime.AdvanceRenderFrame(Time.unscaledDeltaTime);
+            _runtime.PrepareRenderFrame(Time.unscaledDeltaTime);
+            try
+            {
+                _inputAdapter.Capture(
+                    Time.realtimeSinceStartupAsDouble,
+                    _runtime.InputRenderIntervalStartSeconds,
+                    _runtime.InputRenderIntervalEndSeconds);
+            }
+            catch
+            {
+                _runtime.CancelPreparedRenderFrame();
+                throw;
+            }
+            _runtime.CompleteRenderFrame();
+        }
+
+        public void Reset()
+        {
+            if (_runtime == null || !_runtime.IsInitialized)
+                return;
+
+            _runtime.Reset();
+            _inputAdapter.Reset();
         }
 
         private void OnDestroy()

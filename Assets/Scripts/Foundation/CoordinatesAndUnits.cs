@@ -84,6 +84,7 @@ namespace PowerliftingSimulator.Foundation
 
         public QuaternionValue Normalized(float zeroLengthThreshold = FoundationTolerances.QuaternionNormalizationThreshold)
         {
+            ValidateFiniteComponents();
             double length = Math.Sqrt((double)X * X + (double)Y * Y + (double)Z * Z + (double)W * W);
             if (length <= zeroLengthThreshold)
                 throw new InvalidOperationException("Cannot normalize a zero-length quaternion.");
@@ -92,8 +93,24 @@ namespace PowerliftingSimulator.Foundation
             return new QuaternionValue(X * inverseLength, Y * inverseLength, Z * inverseLength, W * inverseLength);
         }
 
+        public QuaternionValue Canonicalized(
+            float zeroLengthThreshold = FoundationTolerances.QuaternionNormalizationThreshold,
+            float signTieThreshold = FoundationTolerances.QuaternionCanonicalizationTie)
+        {
+            if (float.IsNaN(signTieThreshold) || float.IsInfinity(signTieThreshold) ||
+                signTieThreshold < 0f || signTieThreshold >= 0.5f)
+                throw new ArgumentOutOfRangeException(nameof(signTieThreshold));
+
+            QuaternionValue normalized = Normalized(zeroLengthThreshold);
+            if (ShouldNegate(normalized, signTieThreshold))
+                return new QuaternionValue(-normalized.X, -normalized.Y, -normalized.Z, -normalized.W);
+
+            return normalized;
+        }
+
         public QuaternionValue Inverse(float zeroLengthThreshold = FoundationTolerances.QuaternionNormalizationThreshold)
         {
+            ValidateFiniteComponents();
             double normSquared = (double)X * X + (double)Y * Y + (double)Z * Z + (double)W * W;
             if (normSquared <= (double)zeroLengthThreshold * zeroLengthThreshold)
                 throw new InvalidOperationException("Cannot invert a zero-length quaternion.");
@@ -119,6 +136,20 @@ namespace PowerliftingSimulator.Foundation
             return direction + twiceCross * normalized.W + Vector3Value.Cross(quaternionVector, twiceCross);
         }
 
+        public float ShortestArcRadiansTo(QuaternionValue other)
+        {
+            QuaternionValue left = Canonicalized();
+            QuaternionValue right = other.Canonicalized();
+            if (left.Equals(right))
+                return 0f;
+
+            QuaternionValue relative = (left.Inverse() * right).Normalized();
+            double vectorLength = Math.Sqrt((double)relative.X * relative.X +
+                (double)relative.Y * relative.Y +
+                (double)relative.Z * relative.Z);
+            return 2f * (float)Math.Atan2(vectorLength, Math.Abs(relative.W));
+        }
+
         public static QuaternionValue operator *(QuaternionValue left, QuaternionValue right) =>
             new QuaternionValue(
                 left.W * right.X + left.X * right.W + left.Y * right.Z - left.Z * right.Y,
@@ -132,6 +163,32 @@ namespace PowerliftingSimulator.Foundation
         public override bool Equals(object obj) => obj is QuaternionValue other && Equals(other);
 
         public override int GetHashCode() => HashCode.Combine(X, Y, Z, W);
+
+        private static bool ShouldNegate(QuaternionValue normalized, float signTieThreshold)
+        {
+            if (normalized.W < -signTieThreshold)
+                return true;
+            if (normalized.W > signTieThreshold)
+                return false;
+            if (normalized.X < -signTieThreshold)
+                return true;
+            if (normalized.X > signTieThreshold)
+                return false;
+            if (normalized.Y < -signTieThreshold)
+                return true;
+            if (normalized.Y > signTieThreshold)
+                return false;
+            return normalized.Z < -signTieThreshold;
+        }
+
+        private void ValidateFiniteComponents()
+        {
+            if (float.IsNaN(X) || float.IsInfinity(X) ||
+                float.IsNaN(Y) || float.IsInfinity(Y) ||
+                float.IsNaN(Z) || float.IsInfinity(Z) ||
+                float.IsNaN(W) || float.IsInfinity(W))
+                throw new ArgumentOutOfRangeException(nameof(QuaternionValue), "Quaternion components must be finite.");
+        }
     }
 
     public static class CoordinateContract
@@ -193,6 +250,7 @@ namespace PowerliftingSimulator.Foundation
         public const float QuaternionNormalizationThreshold = 1e-6f;
         public const float BasisOrthogonality = 1e-6f;
         public const float UnitConversionRoundTrip = 1e-5f;
+        public const float QuaternionCanonicalizationTie = 1e-6f;
         public const double SimulationTimeMapping = 1e-12d;
         public const double RenderAccumulatorComparison = 1e-12d;
         public const float PhysicsFixturePositionMeters = 1e-5f;

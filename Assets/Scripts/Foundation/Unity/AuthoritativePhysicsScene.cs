@@ -95,7 +95,7 @@ namespace PowerliftingSimulator.Foundation.Unity
                 _primaryBody.rotation.x,
                 _primaryBody.rotation.y,
                 _primaryBody.rotation.z,
-                _primaryBody.rotation.w).Normalized();
+                _primaryBody.rotation.w);
             PhysicalBodyObservation body = new PhysicalBodyObservation(
                 _primaryBodyId,
                 _primaryBody.mass,

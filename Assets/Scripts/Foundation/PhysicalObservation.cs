@@ -13,7 +13,7 @@ namespace PowerliftingSimulator.Foundation
             BodyId = bodyId ?? string.Empty;
             MassKilograms = massKilograms;
             PositionMeters = positionMeters;
-            RotationWorldFromBody = rotationWorldFromBody.Normalized();
+            RotationWorldFromBody = rotationWorldFromBody.Canonicalized();
             LinearVelocityMetersPerSecond = linearVelocityMetersPerSecond;
             AngularVelocityRadiansPerSecond = angularVelocityRadiansPerSecond;
         }

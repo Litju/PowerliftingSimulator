@@ -1,3 +1,4 @@
+using System;
 using NUnit.Framework;
 using PowerliftingSimulator.Foundation;
 
@@ -52,6 +53,27 @@ namespace PowerliftingSimulator.Tests
         }
 
         [Test]
+        public void QuaternionNormalizationProducesUnitLength()
+        {
+            QuaternionValue normalized = new QuaternionValue(1f, 2f, 3f, 4f).Normalized();
+            float lengthSquared = normalized.X * normalized.X +
+                normalized.Y * normalized.Y +
+                normalized.Z * normalized.Z +
+                normalized.W * normalized.W;
+
+            Assert.That(lengthSquared, Is.EqualTo(1f).Within(FoundationTolerances.QuaternionNormalizationThreshold));
+        }
+
+        [Test]
+        public void NONFINITE_QUATERNION_COMPONENTS_ARE_REJECTED()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                new QuaternionValue(float.NaN, 0f, 0f, 1f).Normalized());
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                new QuaternionValue(0f, 0f, float.PositiveInfinity, 1f).Canonicalized());
+        }
+
+        [Test]
         public void DegreeAndRadianConversionsRoundTrip()
         {
             float radians = UnitContract.DegreesToRadians(180f);
@@ -86,6 +108,88 @@ namespace PowerliftingSimulator.Tests
 
             Assert.That(clock.Current.Tick, Is.EqualTo(0ul));
             Assert.That(clock.Current.SimulationTimeSeconds, Is.EqualTo(0d));
+        }
+
+        [Test]
+        public void QUATERNION_Q_AND_NEGATIVE_Q_CANONICALIZE_IDENTICALLY()
+        {
+            QuaternionValue q = QuaternionValue.FromAxisAngleRadians(
+                new Vector3Value(1f, 2f, 3f),
+                UnitContract.DegreesToRadians(73f));
+            QuaternionValue negativeQ = new QuaternionValue(-q.X, -q.Y, -q.Z, -q.W);
+
+            QuaternionValue normalized = q.Canonicalized();
+            QuaternionValue normalizedNegative = negativeQ.Canonicalized();
+
+            Assert.That(normalized, Is.EqualTo(normalizedNegative));
+            AssertQuaternion(normalized, normalizedNegative, FoundationTolerances.QuaternionNormalizationThreshold);
+        }
+
+        [Test]
+        public void QUATERNION_PI_BOUNDARY_HAS_A_DETERMINISTIC_CANONICAL_SIGN()
+        {
+            QuaternionValue q = QuaternionValue.FromAxisAngleRadians(
+                new Vector3Value(0f, 1f, 0f),
+                UnitContract.DegreesToRadians(180f));
+            QuaternionValue negativeQ = new QuaternionValue(-q.X, -q.Y, -q.Z, -q.W);
+
+            QuaternionValue canonical = q.Canonicalized();
+            Assert.That(canonical, Is.EqualTo(negativeQ.Canonicalized()));
+            AssertQuaternion(canonical, negativeQ.Canonicalized(), FoundationTolerances.QuaternionCanonicalizationTie);
+            Assert.That(canonical.W, Is.EqualTo(0f).Within(FoundationTolerances.QuaternionCanonicalizationTie));
+            Assert.That(canonical.X, Is.EqualTo(0f).Within(FoundationTolerances.QuaternionCanonicalizationTie));
+            Assert.That(canonical.Y, Is.GreaterThan(0f));
+            Assert.That(canonical.Z, Is.EqualTo(0f).Within(FoundationTolerances.QuaternionCanonicalizationTie));
+        }
+
+        [Test]
+        public void IDENTICAL_ROTATION_DIFFERENT_SIGN_HAS_ZERO_ERROR()
+        {
+            QuaternionValue q = QuaternionValue.FromAxisAngleRadians(
+                new Vector3Value(2f, -1f, 4f),
+                UnitContract.DegreesToRadians(121f));
+            QuaternionValue negativeQ = new QuaternionValue(-q.X, -q.Y, -q.Z, -q.W);
+            float errorRadians = q.ShortestArcRadiansTo(negativeQ);
+
+            Assert.That(errorRadians, Is.EqualTo(0f).Within(FoundationTolerances.UnitConversionRoundTrip));
+        }
+
+        [Test]
+        public void QuaternionSmallRotationIsNotRoundedToZero()
+        {
+            QuaternionValue identity = QuaternionValue.Identity;
+            QuaternionValue smallRotation = QuaternionValue.FromAxisAngleRadians(
+                CoordinateContract.UpAxis,
+                UnitContract.DegreesToRadians(0.1f));
+
+            float separationRadians = identity.ShortestArcRadiansTo(smallRotation);
+
+            Assert.That(separationRadians, Is.EqualTo(UnitContract.DegreesToRadians(0.1f))
+                .Within(FoundationTolerances.UnitConversionRoundTrip));
+        }
+
+        [Test]
+        public void SHORTEST_ARC_ACROSS_PLUS_MINUS_PI()
+        {
+            Vector3Value axis = new Vector3Value(1f, 2f, -1f);
+            QuaternionValue plus179 = QuaternionValue.FromAxisAngleRadians(
+                axis,
+                UnitContract.DegreesToRadians(179f));
+            QuaternionValue minus179 = QuaternionValue.FromAxisAngleRadians(
+                axis,
+                UnitContract.DegreesToRadians(-179f));
+            float separationRadians = plus179.ShortestArcRadiansTo(minus179);
+
+            Assert.That(separationRadians, Is.EqualTo(0.0349066f)
+                .Within(FoundationTolerances.UnitConversionRoundTrip));
+        }
+
+        private static void AssertQuaternion(QuaternionValue actual, QuaternionValue expected, float tolerance)
+        {
+            Assert.That(actual.X, Is.EqualTo(expected.X).Within(tolerance));
+            Assert.That(actual.Y, Is.EqualTo(expected.Y).Within(tolerance));
+            Assert.That(actual.Z, Is.EqualTo(expected.Z).Within(tolerance));
+            Assert.That(actual.W, Is.EqualTo(expected.W).Within(tolerance));
         }
 
         private static void AssertVector(Vector3Value actual, Vector3Value expected, float tolerance)
