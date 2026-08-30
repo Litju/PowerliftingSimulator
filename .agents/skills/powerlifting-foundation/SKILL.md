@@ -55,7 +55,10 @@ frozen 100 Hz / 0.01 s step in `SimulationConstants`. `PhysicsTickDriver` is
 the single production step owner. Its `StepOne` samples the intent frame,
 simulates one local Unity `PhysicsScene` step, then publishes a copied
 observation. Render catch-up is capped at four ticks and 0.04 s; there is no
-`FixedUpdate` owner.
+`FixedUpdate` owner. `ProjectSettings/TimeManager.asset` intentionally retains
+Unity's ordinary 0.02 s global fixed timestep. The foundation does not depend
+on that global value because its authoritative local scene always steps at
+0.01 s.
 
 # Physics Scene Ownership
 
@@ -72,16 +75,43 @@ the local scene.
 
 # Input Boundary
 
-`InputTimeDomain` maps monotonic realtime samples into the simulation timestamp
-domain. The first sample after construction or reset anchors at the current
-simulation epoch; each positive wall-time gap contributes at most the 0.04 s
-catch-up bound. `IntentBuffer` keeps edge events in a fixed-capacity ordered
-ring and coalesces each continuous channel to its latest pending state, so
-continuous captures cannot exhaust the edge capacity. It consumes edge events
-once, carries held state forward, and clamps continuous values to their
-semantic ranges. `UnityIntentInputAdapter` is the only Input System boundary;
-it maps the `Gameplay` actions `Brace`, `Yield`, `Drive`, `Balance`, `Grip`,
-`Confirm`, and `Abort` into the buffer. Physics code does not read devices.
+`InputTimeDomain` maps each monotonic realtime render interval `[R0, R1]` onto
+the accepted simulation interval `[S0, S1]`. An event at `E` maps affinely to
+`S0 + ((E - R0) / (R1 - R0)) * (S1 - S0)`. The standalone path derives
+`S1 = S0 + min(R1 - R0, 0.04 s)`; the runtime path supplies the authoritative
+horizon after accounting for pending fractional time. Events must belong to
+the current interval and remain ordered. Reopening the same interval resets
+only event-order progress, preserving the original real interval and accepted
+horizon so retry does not accept wall time twice.
+
+`IntentBuffer` stores edges in a fixed-capacity ordered 64-event ring. Eligible
+edges are exposed in consumption order, consumed exactly once, and update held
+state; an edge older than the current contiguous fixed interval is rejected
+instead of silently reassigned. Continuous input has five channels with a
+five-entry history per channel (`MaxCatchUpTicksPerRenderFrame + 1`, 25 total).
+The latest value in each eligibility-tick bucket replaces only that bucket's
+newest value, preserving the history needed by four-tick catch-up while keeping
+memory bounded. Continuous values persist after consumption and are clamped to
+their semantic ranges.
+
+`UnityIntentInputAdapter` is the only Input System boundary. It stages callbacks
+in sequence order, maps the complete capture, and calls `IntentBuffer.ApplyBatch`,
+which validates before mutating. Capture checkpoints the time mapper; rejection
+restores that checkpoint and retains staged callbacks for retry. Reset clears
+staged input and sequence state, establishes a new realtime epoch, and rejects
+callbacks timestamped before that epoch. It maps `Gameplay` actions `Brace`,
+`Yield`, `Drive`, `Balance`, `Grip`, `Confirm`, and `Abort`; physics code does
+not read devices.
+
+# Quaternion Contract
+
+`QuaternionValue` rejects non-finite components at normalization/inversion,
+normalizes before transform and comparison operations, and canonicalizes the
+double cover by making the first significant component in `(W, X, Y, Z)`
+positive. The 1e-6 tie threshold gives deterministic pi-boundary identity, so
+`q` and `-q` canonicalize identically and have zero shortest-arc error. The
+shortest-arc calculation preserves small real rotations and crosses the
+plus/minus-pi boundary on the short path.
 
 # Observation Boundary
 
@@ -106,13 +136,23 @@ From the repository root:
 # Known Repository Traps
 
 - Unity may add `com.unity.dt.app-ui` to `ProjectSettings/EditorBuildSettings.asset`
-  and change the Standalone scripting define while importing; remove that
-  unrelated churn before review.
+  and change `ProjectSettings/ProjectSettings.asset` while importing; revert
+  only churn absent from the pre-Unity candidate. Preserve the intentional
+  `ProjectSettings/TimeManager.asset` 0.02 s decision.
 - In Unity 6000.3.22f1, `PhysicsScene.Simulate(float)` returns `void`; do not
   write a boolean-return check around it.
+- On a clean `Library/Bee` regeneration, the first backend probe can return 4
+  with `Require frontend run`; this is preparatory when the frontend and second
+  backend run follow and `Tundra build success` plus return code 0 are recorded.
+- `Unity.exe` is a GUI process on Windows. Launch it with an explicit process
+  handle and validate the fresh log/XML; a blank PowerShell `$LASTEXITCODE`
+  does not prove completion.
+- Test Framework runs must omit `-quit`. Accept results only from a fresh,
+  parseable completed XML, and stop only that exact Unity PID if it lingers
+  after writing the result.
 - The Codex environment may expose pre-existing untracked `.agents/` tooling
-  and `skills-lock.json`; stage only the single project skill created for
-  GAM-2.
+  and `skills-lock.json`; stage only the intended GAM-2 candidate and the
+  project-local `powerlifting-foundation` skill.
 
 # Verified Lessons
 
@@ -139,7 +179,8 @@ tested; do not pre-seed future architecture here.
 
 # Last Verified
 
-2026-08-29 after Unity 6000.3.22f1 compile/import, the ownership fixture,
-EditMode 16/16, PlayMode 10/10, and master-spec verification PASS. These are
-repository validation results for the current repair evidence; they do not
-replace owner review or decide later architecture.
+2026-08-30 after Unity 6000.3.22f1 Level 1 Bee regeneration and compile/import:
+affected EditMode 2/2, full EditMode 38/38, full PlayMode 15/15, sole production
+`.Simulate` count 1, global fixed timestep 0.02 s, authoritative local timestep
+0.01 s, and master-spec verification all PASS. These are repository validation
+results and do not decide later architecture.
