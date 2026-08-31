@@ -1,0 +1,867 @@
+{
+    "mission": "POWERLIFTING_SIMULATOR_GAM_6_PHYSICAL_HUMANOID",
+    "profileId": "GAM6_QUATERNIUS_100KG_GAME_CALIBRATION_V1",
+    "bodyMass_kg": 100.0,
+    "assignedMass_kg": 100.0,
+    "segmentCount": 16,
+    "jointCount": 15,
+    "gravity_m_per_s2": -9.8100004196167,
+    "physicsStep_s": 0.01,
+    "wholeAthleteComNeutral_W_m": {
+        "x": -1.9371511061905268e-9,
+        "y": 1.1578538417816163,
+        "z": -0.0318116657435894
+    },
+    "selfCollisionPolicy": "Adjacent parent-child collider pairs ignored explicitly; nonadjacent pairs remain enabled.",
+    "geometryAuthority": "Artifacts/Measurements/GAM-5-canonical-humanoid.json",
+    "massModel": "Frozen 16-segment fractions; 100 kg profile is GAME_CALIBRATION; no redistribution.",
+    "comModel": "Source-compatible de Leva longitudinal fractions applied to asset bone-pivot proxies where available, otherwise explicit engineering proxy centers; all runtime placements classified ENGINEERING_DERIVED.",
+    "inertiaModel": "Analytic equivalent-box principal inertia at each rigid-body COM, derived from the actual primitive proxy dimensions; ENGINEERING_DERIVED.",
+    "anthropometricSource": "Paolo de Leva (1996), Journal of Biomechanics 29(9):1223-1230, DOI 10.1016/0021-9290(95)00178-6; fractions are population means applied only as engineering proxy placements, not subject anatomy.",
+    "maxInitialNonAdjacentPenetration_m": 0.0,
+    "segments": [
+        {
+            "name": "pelvis",
+            "parent": "",
+            "proximalBoneProxy": "Hips",
+            "distalBoneProxy": "Hips",
+            "mass_kg": 14.200000762939454,
+            "massFraction": 0.1420000046491623,
+            "massSourceClass": "ENGINEERING_DERIVED",
+            "comSourceClass": "ENGINEERING_DERIVED",
+            "com_W_m": {
+                "x": -3.759167643835326e-9,
+                "y": 1.07583749294281,
+                "z": -0.042999863624572757
+            },
+            "colliderType": "Box",
+            "colliderDimensions_m": {
+                "x": 0.30000001192092898,
+                "y": 0.20000000298023225,
+                "z": 0.18000000715255738
+            },
+            "inertiaTensor_kg_m2": {
+                "x": 0.08567333966493607,
+                "y": 0.14484001696109773,
+                "z": 0.15383334457874299
+            },
+            "inertiaTensorRotation_xyz": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "name": "abdomen",
+            "parent": "pelvis",
+            "proximalBoneProxy": "Spine",
+            "distalBoneProxy": "Chest",
+            "mass_kg": 13.899999618530274,
+            "massFraction": 0.13899999856948853,
+            "massSourceClass": "ENGINEERING_DERIVED",
+            "comSourceClass": "ENGINEERING_DERIVED",
+            "com_W_m": {
+                "x": -1.311193098540997e-10,
+                "y": 1.226637601852417,
+                "z": -0.0014998316764831544
+            },
+            "colliderType": "Box",
+            "colliderDimensions_m": {
+                "x": 0.25,
+                "y": 0.1599999964237213,
+                "z": 0.17000000178813935
+            },
+            "inertiaTensor_kg_m2": {
+                "x": 0.06312916427850723,
+                "y": 0.10587166249752045,
+                "z": 0.10204916447401047
+            },
+            "inertiaTensorRotation_xyz": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "name": "thorax",
+            "parent": "abdomen",
+            "proximalBoneProxy": "Chest",
+            "distalBoneProxy": "Neck",
+            "mass_kg": 21.600000381469728,
+            "massFraction": 0.2160000056028366,
+            "massSourceClass": "ENGINEERING_DERIVED",
+            "comSourceClass": "ENGINEERING_DERIVED",
+            "com_W_m": {
+                "x": -1.5599571634439258e-9,
+                "y": 1.4440336227416993,
+                "z": -0.017843833193182946
+            },
+            "colliderType": "Box",
+            "colliderDimensions_m": {
+                "x": 0.36000001430511477,
+                "y": 0.2800000011920929,
+                "z": 0.20000000298023225
+            },
+            "inertiaTensor_kg_m2": {
+                "x": 0.2131199985742569,
+                "y": 0.30528002977371218,
+                "z": 0.3744000494480133
+            },
+            "inertiaTensorRotation_xyz": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "name": "head_neck",
+            "parent": "thorax",
+            "proximalBoneProxy": "Neck",
+            "distalBoneProxy": "Head",
+            "mass_kg": 8.100000381469727,
+            "massFraction": 0.08100000023841858,
+            "massSourceClass": "ENGINEERING_DERIVED",
+            "comSourceClass": "ENGINEERING_DERIVED",
+            "com_W_m": {
+                "x": -1.9827308683773028e-9,
+                "y": 1.7740917205810547,
+                "z": -0.022679800167679788
+            },
+            "colliderType": "Capsule",
+            "colliderDimensions_m": {
+                "x": 0.20999999344348908,
+                "y": 0.3100000023841858,
+                "z": 0.20999999344348908
+            },
+            "inertiaTensor_kg_m2": {
+                "x": 0.0946350023150444,
+                "y": 0.05953500047326088,
+                "z": 0.0946350023150444
+            },
+            "inertiaTensorRotation_xyz": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "name": "left_upper_arm",
+            "parent": "thorax",
+            "proximalBoneProxy": "LeftUpperArm",
+            "distalBoneProxy": "LeftLowerArm",
+            "mass_kg": 2.8000001907348635,
+            "massFraction": 0.02800000086426735,
+            "massSourceClass": "ENGINEERING_DERIVED",
+            "comSourceClass": "ENGINEERING_DERIVED",
+            "com_W_m": {
+                "x": -0.35688889026641848,
+                "y": 1.5572373867034913,
+                "z": -0.06978695839643479
+            },
+            "colliderType": "Capsule",
+            "colliderDimensions_m": {
+                "x": 0.11999999731779099,
+                "y": 0.21093669533729554,
+                "z": 0.11999999731779099
+            },
+            "inertiaTensor_kg_m2": {
+                "x": 0.013742001727223397,
+                "y": 0.006719999946653843,
+                "z": 0.013742001727223397
+            },
+            "inertiaTensorRotation_xyz": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "name": "right_upper_arm",
+            "parent": "thorax",
+            "proximalBoneProxy": "RightUpperArm",
+            "distalBoneProxy": "RightLowerArm",
+            "mass_kg": 2.8000001907348635,
+            "massFraction": 0.02800000086426735,
+            "massSourceClass": "ENGINEERING_DERIVED",
+            "comSourceClass": "ENGINEERING_DERIVED",
+            "com_W_m": {
+                "x": 0.35688889026641848,
+                "y": 1.5572373867034913,
+                "z": -0.06978736072778702
+            },
+            "colliderType": "Capsule",
+            "colliderDimensions_m": {
+                "x": 0.11999999731779099,
+                "y": 0.21093663573265077,
+                "z": 0.11999999731779099
+            },
+            "inertiaTensor_kg_m2": {
+                "x": 0.013741996139287949,
+                "y": 0.006719999946653843,
+                "z": 0.013741996139287949
+            },
+            "inertiaTensorRotation_xyz": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "name": "left_forearm",
+            "parent": "left_upper_arm",
+            "proximalBoneProxy": "LeftLowerArm",
+            "distalBoneProxy": "LeftHand",
+            "mass_kg": 1.600000023841858,
+            "massFraction": 0.01600000075995922,
+            "massSourceClass": "ENGINEERING_DERIVED",
+            "comSourceClass": "ENGINEERING_DERIVED",
+            "com_W_m": {
+                "x": -0.5743774771690369,
+                "y": 1.5572373867034913,
+                "z": -0.06952455639839173
+            },
+            "colliderType": "Capsule",
+            "colliderDimensions_m": {
+                "x": 0.0949999988079071,
+                "y": 0.20461918413639069,
+                "z": 0.0949999988079071
+            },
+            "inertiaTensor_kg_m2": {
+                "x": 0.00678586820140481,
+                "y": 0.0024066667538136245,
+                "z": 0.00678586820140481
+            },
+            "inertiaTensorRotation_xyz": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "name": "right_forearm",
+            "parent": "right_upper_arm",
+            "proximalBoneProxy": "RightLowerArm",
+            "distalBoneProxy": "RightHand",
+            "mass_kg": 1.600000023841858,
+            "massFraction": 0.01600000075995922,
+            "massSourceClass": "ENGINEERING_DERIVED",
+            "comSourceClass": "ENGINEERING_DERIVED",
+            "com_W_m": {
+                "x": 0.5743774771690369,
+                "y": 1.5572373867034913,
+                "z": -0.06952541321516037
+            },
+            "colliderType": "Capsule",
+            "colliderDimensions_m": {
+                "x": 0.0949999988079071,
+                "y": 0.2046191394329071,
+                "z": 0.0949999988079071
+            },
+            "inertiaTensor_kg_m2": {
+                "x": 0.006785865873098373,
+                "y": 0.0024066667538136245,
+                "z": 0.006785865873098373
+            },
+            "inertiaTensorRotation_xyz": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "name": "left_hand",
+            "parent": "left_forearm",
+            "proximalBoneProxy": "LeftHand",
+            "distalBoneProxy": "LeftMiddleProximal",
+            "mass_kg": 0.6000000238418579,
+            "massFraction": 0.006000000052154064,
+            "massSourceClass": "ENGINEERING_DERIVED",
+            "comSourceClass": "ENGINEERING_DERIVED",
+            "com_W_m": {
+                "x": -0.7642067670822144,
+                "y": 1.5548961162567139,
+                "z": -0.05784451216459274
+            },
+            "colliderType": "Box",
+            "colliderDimensions_m": {
+                "x": 0.14000000059604646,
+                "y": 0.05999999865889549,
+                "z": 0.04500000178813934
+            },
+            "inertiaTensor_kg_m2": {
+                "x": 0.000281250016996637,
+                "y": 0.0010812500258907676,
+                "z": 0.0011600001016631723
+            },
+            "inertiaTensorRotation_xyz": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "name": "right_hand",
+            "parent": "right_forearm",
+            "proximalBoneProxy": "RightHand",
+            "distalBoneProxy": "RightMiddleProximal",
+            "mass_kg": 0.6000000238418579,
+            "massFraction": 0.006000000052154064,
+            "massSourceClass": "ENGINEERING_DERIVED",
+            "comSourceClass": "ENGINEERING_DERIVED",
+            "com_W_m": {
+                "x": 0.7642067670822144,
+                "y": 1.5548961162567139,
+                "z": -0.05784577876329422
+            },
+            "colliderType": "Box",
+            "colliderDimensions_m": {
+                "x": 0.14000000059604646,
+                "y": 0.05999999865889549,
+                "z": 0.04500000178813934
+            },
+            "inertiaTensor_kg_m2": {
+                "x": 0.000281250016996637,
+                "y": 0.0010812500258907676,
+                "z": 0.0011600001016631723
+            },
+            "inertiaTensorRotation_xyz": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "name": "left_thigh",
+            "parent": "pelvis",
+            "proximalBoneProxy": "LeftUpperLeg",
+            "distalBoneProxy": "LeftLowerLeg",
+            "mass_kg": 10.0,
+            "massFraction": 0.10000000149011612,
+            "massSourceClass": "ENGINEERING_DERIVED",
+            "comSourceClass": "ENGINEERING_DERIVED",
+            "com_W_m": {
+                "x": -0.11430515348911286,
+                "y": 0.8973438143730164,
+                "z": -0.036040935665369037
+            },
+            "colliderType": "Capsule",
+            "colliderDimensions_m": {
+                "x": 0.18000000715255738,
+                "y": 0.36019212007522585,
+                "z": 0.18000000715255738
+            },
+            "inertiaTensor_kg_m2": {
+                "x": 0.13511531054973603,
+                "y": 0.05400000512599945,
+                "z": 0.13511531054973603
+            },
+            "inertiaTensorRotation_xyz": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "name": "right_thigh",
+            "parent": "pelvis",
+            "proximalBoneProxy": "RightUpperLeg",
+            "distalBoneProxy": "RightLowerLeg",
+            "mass_kg": 10.0,
+            "massFraction": 0.10000000149011612,
+            "massSourceClass": "ENGINEERING_DERIVED",
+            "comSourceClass": "ENGINEERING_DERIVED",
+            "com_W_m": {
+                "x": 0.11430515348911286,
+                "y": 0.8973438143730164,
+                "z": -0.036040958017110828
+            },
+            "colliderType": "Capsule",
+            "colliderDimensions_m": {
+                "x": 0.18000000715255738,
+                "y": 0.36019212007522585,
+                "z": 0.18000000715255738
+            },
+            "inertiaTensor_kg_m2": {
+                "x": 0.13511531054973603,
+                "y": 0.05400000512599945,
+                "z": 0.13511531054973603
+            },
+            "inertiaTensorRotation_xyz": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "name": "left_shank",
+            "parent": "left_thigh",
+            "proximalBoneProxy": "LeftLowerLeg",
+            "distalBoneProxy": "LeftFoot",
+            "mass_kg": 4.650000095367432,
+            "massFraction": 0.04650000110268593,
+            "massSourceClass": "ENGINEERING_DERIVED",
+            "comSourceClass": "ENGINEERING_DERIVED",
+            "com_W_m": {
+                "x": -0.11430515348911286,
+                "y": 0.44085147976875307,
+                "z": -0.05901942029595375
+            },
+            "colliderType": "Capsule",
+            "colliderDimensions_m": {
+                "x": 0.12999999523162843,
+                "y": 0.3853822946548462,
+                "z": 0.12999999523162843
+            },
+            "inertiaTensor_kg_m2": {
+                "x": 0.06410006433725357,
+                "y": 0.013097500428557396,
+                "z": 0.06410006433725357
+            },
+            "inertiaTensorRotation_xyz": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "name": "right_shank",
+            "parent": "right_thigh",
+            "proximalBoneProxy": "RightLowerLeg",
+            "distalBoneProxy": "RightFoot",
+            "mass_kg": 4.650000095367432,
+            "massFraction": 0.04650000110268593,
+            "massSourceClass": "ENGINEERING_DERIVED",
+            "comSourceClass": "ENGINEERING_DERIVED",
+            "com_W_m": {
+                "x": 0.11430514603853226,
+                "y": 0.44085147976875307,
+                "z": -0.05901944264769554
+            },
+            "colliderType": "Capsule",
+            "colliderDimensions_m": {
+                "x": 0.12999999523162843,
+                "y": 0.3853822946548462,
+                "z": 0.12999999523162843
+            },
+            "inertiaTensor_kg_m2": {
+                "x": 0.06410006433725357,
+                "y": 0.013097500428557396,
+                "z": 0.06410006433725357
+            },
+            "inertiaTensorRotation_xyz": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "name": "left_foot",
+            "parent": "left_shank",
+            "proximalBoneProxy": "LeftFoot",
+            "distalBoneProxy": "LeftToes",
+            "mass_kg": 1.4499999284744263,
+            "massFraction": 0.014499999582767487,
+            "massSourceClass": "ENGINEERING_DERIVED",
+            "comSourceClass": "ENGINEERING_DERIVED",
+            "com_W_m": {
+                "x": -0.11430515348911286,
+                "y": 0.09675844013690949,
+                "z": -0.009719020687043667
+            },
+            "colliderType": "Box",
+            "colliderDimensions_m": {
+                "x": 0.12999999523162843,
+                "y": 0.10000000149011612,
+                "z": 0.28999999165534975
+            },
+            "inertiaTensor_kg_m2": {
+                "x": 0.011370415799319744,
+                "y": 0.012204164639115334,
+                "z": 0.0032504163682460787
+            },
+            "inertiaTensorRotation_xyz": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "name": "right_foot",
+            "parent": "right_shank",
+            "proximalBoneProxy": "RightFoot",
+            "distalBoneProxy": "RightToes",
+            "mass_kg": 1.4499999284744263,
+            "massFraction": 0.014499999582767487,
+            "massSourceClass": "ENGINEERING_DERIVED",
+            "comSourceClass": "ENGINEERING_DERIVED",
+            "com_W_m": {
+                "x": 0.11430514603853226,
+                "y": 0.09675844013690949,
+                "z": -0.00971903931349516
+            },
+            "colliderType": "Box",
+            "colliderDimensions_m": {
+                "x": 0.12999999523162843,
+                "y": 0.10000000149011612,
+                "z": 0.28999999165534975
+            },
+            "inertiaTensor_kg_m2": {
+                "x": 0.011370415799319744,
+                "y": 0.012204164639115334,
+                "z": 0.0032504163682460787
+            },
+            "inertiaTensorRotation_xyz": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        }
+    ],
+    "joints": [
+        {
+            "name": "abdomen_joint",
+            "family": "lumbar",
+            "parentBody": "pelvis",
+            "childBody": "abdomen",
+            "anchor_W_m": {
+                "x": -6.032024879587539e-10,
+                "y": 1.1737375259399415,
+                "z": -0.006899833679199219
+            },
+            "primaryAxis_W": {
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "motion": "Ball",
+            "lowLimit_deg": -35.0,
+            "highLimit_deg": 45.0,
+            "secondaryLimit_deg": 25.0,
+            "limitSourceClass": "GAME_CALIBRATION",
+            "projectionMode": "None",
+            "poweredDrive": "DISABLED"
+        },
+        {
+            "name": "thorax_joint",
+            "family": "trunk",
+            "parentBody": "abdomen",
+            "childBody": "thorax",
+            "anchor_W_m": {
+                "x": 3.4096386825055449e-10,
+                "y": 1.2795376777648926,
+                "z": 0.00390017032623291
+            },
+            "primaryAxis_W": {
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "motion": "Ball",
+            "lowLimit_deg": -35.0,
+            "highLimit_deg": 50.0,
+            "secondaryLimit_deg": 30.0,
+            "limitSourceClass": "GAME_CALIBRATION",
+            "projectionMode": "None",
+            "poweredDrive": "DISABLED"
+        },
+        {
+            "name": "head_neck_joint",
+            "family": "neck",
+            "parentBody": "thorax",
+            "childBody": "head_neck",
+            "anchor_W_m": {
+                "x": -3.6192884245167535e-9,
+                "y": 1.6222375631332398,
+                "z": -0.04139983654022217
+            },
+            "primaryAxis_W": {
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "motion": "Ball",
+            "lowLimit_deg": -45.0,
+            "highLimit_deg": 55.0,
+            "secondaryLimit_deg": 45.0,
+            "limitSourceClass": "GAME_CALIBRATION",
+            "projectionMode": "None",
+            "poweredDrive": "DISABLED"
+        },
+        {
+            "name": "left_upper_arm_joint",
+            "family": "shoulder",
+            "parentBody": "thorax",
+            "childBody": "left_upper_arm",
+            "anchor_W_m": {
+                "x": -0.2120116800069809,
+                "y": 1.5572373867034913,
+                "z": -0.06539987027645111
+            },
+            "primaryAxis_W": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 1.0
+            },
+            "motion": "Ball",
+            "lowLimit_deg": -100.0,
+            "highLimit_deg": 100.0,
+            "secondaryLimit_deg": 105.0,
+            "limitSourceClass": "GAME_CALIBRATION",
+            "projectionMode": "None",
+            "poweredDrive": "DISABLED"
+        },
+        {
+            "name": "right_upper_arm_joint",
+            "family": "shoulder",
+            "parentBody": "thorax",
+            "childBody": "right_upper_arm",
+            "anchor_W_m": {
+                "x": 0.2120116800069809,
+                "y": 1.5572373867034913,
+                "z": -0.0653999000787735
+            },
+            "primaryAxis_W": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 1.0
+            },
+            "motion": "Ball",
+            "lowLimit_deg": -100.0,
+            "highLimit_deg": 100.0,
+            "secondaryLimit_deg": 105.0,
+            "limitSourceClass": "GAME_CALIBRATION",
+            "projectionMode": "None",
+            "poweredDrive": "DISABLED"
+        },
+        {
+            "name": "left_forearm_joint",
+            "family": "elbow",
+            "parentBody": "left_upper_arm",
+            "childBody": "left_forearm",
+            "anchor_W_m": {
+                "x": -0.4630117118358612,
+                "y": 1.5572373867034913,
+                "z": -0.07300051301717758
+            },
+            "primaryAxis_W": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 1.0
+            },
+            "motion": "Hinge",
+            "lowLimit_deg": -5.0,
+            "highLimit_deg": 145.0,
+            "secondaryLimit_deg": 0.0,
+            "limitSourceClass": "GAME_CALIBRATION",
+            "projectionMode": "None",
+            "poweredDrive": "DISABLED"
+        },
+        {
+            "name": "right_forearm_joint",
+            "family": "elbow",
+            "parentBody": "right_upper_arm",
+            "childBody": "right_forearm",
+            "anchor_W_m": {
+                "x": 0.4630116820335388,
+                "y": 1.5572373867034913,
+                "z": -0.0730011835694313
+            },
+            "primaryAxis_W": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 1.0
+            },
+            "motion": "Hinge",
+            "lowLimit_deg": -5.0,
+            "highLimit_deg": 145.0,
+            "secondaryLimit_deg": 0.0,
+            "limitSourceClass": "GAME_CALIBRATION",
+            "projectionMode": "None",
+            "poweredDrive": "DISABLED"
+        },
+        {
+            "name": "left_hand_joint",
+            "family": "wrist",
+            "parentBody": "left_forearm",
+            "childBody": "left_hand",
+            "anchor_W_m": {
+                "x": -0.7064874172210693,
+                "y": 1.5572373867034913,
+                "z": -0.06540113687515259
+            },
+            "primaryAxis_W": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 1.0
+            },
+            "motion": "Ball",
+            "lowLimit_deg": -70.0,
+            "highLimit_deg": 70.0,
+            "secondaryLimit_deg": 30.0,
+            "limitSourceClass": "GAME_CALIBRATION",
+            "projectionMode": "None",
+            "poweredDrive": "DISABLED"
+        },
+        {
+            "name": "right_hand_joint",
+            "family": "wrist",
+            "parentBody": "right_forearm",
+            "childBody": "right_hand",
+            "anchor_W_m": {
+                "x": 0.7064873576164246,
+                "y": 1.5572375059127808,
+                "z": -0.06540220975875855
+            },
+            "primaryAxis_W": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 1.0
+            },
+            "motion": "Ball",
+            "lowLimit_deg": -70.0,
+            "highLimit_deg": 70.0,
+            "secondaryLimit_deg": 30.0,
+            "limitSourceClass": "GAME_CALIBRATION",
+            "projectionMode": "None",
+            "poweredDrive": "DISABLED"
+        },
+        {
+            "name": "left_thigh_joint",
+            "family": "hip",
+            "parentBody": "pelvis",
+            "childBody": "left_thigh",
+            "anchor_W_m": {
+                "x": -0.11430516093969345,
+                "y": 1.0729374885559083,
+                "z": -0.035999882966279986
+            },
+            "primaryAxis_W": {
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "motion": "Ball",
+            "lowLimit_deg": -120.0,
+            "highLimit_deg": 45.0,
+            "secondaryLimit_deg": 50.0,
+            "limitSourceClass": "GAME_CALIBRATION",
+            "projectionMode": "None",
+            "poweredDrive": "DISABLED"
+        },
+        {
+            "name": "right_thigh_joint",
+            "family": "hip",
+            "parentBody": "pelvis",
+            "childBody": "right_thigh",
+            "anchor_W_m": {
+                "x": 0.11430516093969345,
+                "y": 1.0729374885559083,
+                "z": -0.035999905318021777
+            },
+            "primaryAxis_W": {
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "motion": "Ball",
+            "lowLimit_deg": -120.0,
+            "highLimit_deg": 45.0,
+            "secondaryLimit_deg": 50.0,
+            "limitSourceClass": "GAME_CALIBRATION",
+            "projectionMode": "None",
+            "poweredDrive": "DISABLED"
+        },
+        {
+            "name": "left_shank_joint",
+            "family": "knee",
+            "parentBody": "left_thigh",
+            "childBody": "left_shank",
+            "anchor_W_m": {
+                "x": -0.11430514603853226,
+                "y": 0.6441373229026794,
+                "z": -0.03610013797879219
+            },
+            "primaryAxis_W": {
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "motion": "Hinge",
+            "lowLimit_deg": -5.0,
+            "highLimit_deg": 145.0,
+            "secondaryLimit_deg": 0.0,
+            "limitSourceClass": "GAME_CALIBRATION",
+            "projectionMode": "None",
+            "poweredDrive": "DISABLED"
+        },
+        {
+            "name": "right_shank_joint",
+            "family": "knee",
+            "parentBody": "right_thigh",
+            "childBody": "right_shank",
+            "anchor_W_m": {
+                "x": 0.11430514603853226,
+                "y": 0.6441373229026794,
+                "z": -0.03610016033053398
+            },
+            "primaryAxis_W": {
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "motion": "Hinge",
+            "lowLimit_deg": -5.0,
+            "highLimit_deg": 145.0,
+            "secondaryLimit_deg": 0.0,
+            "limitSourceClass": "GAME_CALIBRATION",
+            "projectionMode": "None",
+            "poweredDrive": "DISABLED"
+        },
+        {
+            "name": "left_foot_joint",
+            "family": "ankle",
+            "parentBody": "left_shank",
+            "childBody": "left_foot",
+            "anchor_W_m": {
+                "x": -0.11430516093969345,
+                "y": 0.1882372498512268,
+                "z": -0.0875001922249794
+            },
+            "primaryAxis_W": {
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "motion": "Hinge",
+            "lowLimit_deg": -45.0,
+            "highLimit_deg": 55.0,
+            "secondaryLimit_deg": 0.0,
+            "limitSourceClass": "GAME_CALIBRATION",
+            "projectionMode": "None",
+            "poweredDrive": "DISABLED"
+        },
+        {
+            "name": "right_foot_joint",
+            "family": "ankle",
+            "parentBody": "right_shank",
+            "childBody": "right_foot",
+            "anchor_W_m": {
+                "x": 0.11430514603853226,
+                "y": 0.1882372498512268,
+                "z": -0.0875002071261406
+            },
+            "primaryAxis_W": {
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "motion": "Hinge",
+            "lowLimit_deg": -45.0,
+            "highLimit_deg": 55.0,
+            "secondaryLimit_deg": 0.0,
+            "limitSourceClass": "GAME_CALIBRATION",
+            "projectionMode": "None",
+            "poweredDrive": "DISABLED"
+        }
+    ]
+}

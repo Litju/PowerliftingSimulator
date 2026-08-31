@@ -22,5 +22,12 @@ namespace PowerliftingSimulator.Athlete
             visibleRigRoot = visibleRoot;
             physicalRigRoot = null;
         }
+
+        public void ConfigurePhysicalRig(Animator referenceAnimator, Transform visibleRoot, Transform physicalRoot)
+        {
+            referenceRigAnimator = referenceAnimator;
+            visibleRigRoot = visibleRoot;
+            physicalRigRoot = physicalRoot;
+        }
     }
 }

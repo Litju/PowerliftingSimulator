@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using PowerliftingSimulator.Foundation;
@@ -11,8 +12,8 @@ namespace PowerliftingSimulator.Foundation.Unity
 
         private Scene _scene;
         private PhysicsScene _physicsScene;
+        private readonly List<RegisteredBody> _bodies = new List<RegisteredBody>();
         private Rigidbody _primaryBody;
-        private RigidbodyResetState _primaryBodyResetState;
         private string _primaryBodyId;
         private bool _initialized;
 
@@ -78,11 +79,24 @@ namespace PowerliftingSimulator.Foundation.Unity
             if (string.IsNullOrWhiteSpace(bodyId))
                 throw new ArgumentException("A body identifier is required.", nameof(bodyId));
             if (_primaryBody != null)
-                throw new InvalidOperationException("The foundation probe supports one registered primary body.");
+                throw new InvalidOperationException("Only one primary observed body may be registered.");
 
             _primaryBody = body;
             _primaryBodyId = bodyId;
-            _primaryBodyResetState = new RigidbodyResetState(body);
+            RegisterBodyInternal(body, bodyId);
+        }
+
+        public void RegisterBody(Rigidbody body, string bodyId)
+        {
+            EnsureInitialized();
+            if (body == null)
+                throw new ArgumentNullException(nameof(body));
+            if (body.gameObject.scene != _scene)
+                throw new ArgumentException("The registered body must belong to the authoritative physics scene.", nameof(body));
+            if (string.IsNullOrWhiteSpace(bodyId))
+                throw new ArgumentException("A body identifier is required.", nameof(bodyId));
+
+            RegisterBodyInternal(body, bodyId);
         }
 
         internal PhysicalObservation CaptureObservation(SimulationTime time)
@@ -115,19 +129,28 @@ namespace PowerliftingSimulator.Foundation.Unity
         internal void ResetBodies()
         {
             EnsureInitialized();
-            if (_primaryBody == null)
+            if (_bodies.Count == 0)
                 return;
 
-            _primaryBody.position = _primaryBodyResetState.Position;
-            _primaryBody.rotation = _primaryBodyResetState.Rotation;
-            _primaryBody.linearVelocity = _primaryBodyResetState.LinearVelocity;
-            _primaryBody.angularVelocity = _primaryBodyResetState.AngularVelocity;
+            foreach (RegisteredBody registered in _bodies)
+            {
+                Rigidbody body = registered.Body;
+                RigidbodyResetState state = registered.ResetState;
+                body.isKinematic = state.WasKinematic;
+                body.position = state.Position;
+                body.rotation = state.Rotation;
+                body.linearVelocity = state.LinearVelocity;
+                body.angularVelocity = state.AngularVelocity;
+            }
             Physics.SyncTransforms();
 
-            if (_primaryBodyResetState.WasSleeping)
-                _primaryBody.Sleep();
-            else
-                _primaryBody.WakeUp();
+            foreach (RegisteredBody registered in _bodies)
+            {
+                if (registered.ResetState.WasSleeping)
+                    registered.Body.Sleep();
+                else
+                    registered.Body.WakeUp();
+            }
         }
 
         public AsyncOperation Shutdown()
@@ -137,9 +160,9 @@ namespace PowerliftingSimulator.Foundation.Unity
 
             Scene sceneToUnload = _scene;
             _initialized = false;
+            _bodies.Clear();
             _primaryBody = null;
             _primaryBodyId = null;
-            _primaryBodyResetState = default(RigidbodyResetState);
             _scene = default(Scene);
             _physicsScene = default(PhysicsScene);
 
@@ -158,6 +181,33 @@ namespace PowerliftingSimulator.Foundation.Unity
                 throw new InvalidOperationException("The authoritative physics scene is not initialized.");
         }
 
+        private void RegisterBodyInternal(Rigidbody body, string bodyId)
+        {
+            for (int index = 0; index < _bodies.Count; index++)
+            {
+                if (_bodies[index].Body == body)
+                    throw new InvalidOperationException($"Body '{body.name}' is already registered.");
+                if (string.Equals(_bodies[index].BodyId, bodyId, StringComparison.Ordinal))
+                    throw new InvalidOperationException($"Body identifier '{bodyId}' is already registered.");
+            }
+
+            _bodies.Add(new RegisteredBody(body, bodyId));
+        }
+
+        private readonly struct RegisteredBody
+        {
+            public RegisteredBody(Rigidbody body, string bodyId)
+            {
+                Body = body;
+                BodyId = bodyId;
+                ResetState = new RigidbodyResetState(body);
+            }
+
+            public Rigidbody Body { get; }
+            public string BodyId { get; }
+            public RigidbodyResetState ResetState { get; }
+        }
+
         private readonly struct RigidbodyResetState
         {
             public RigidbodyResetState(Rigidbody body)
@@ -167,6 +217,7 @@ namespace PowerliftingSimulator.Foundation.Unity
                 LinearVelocity = body.linearVelocity;
                 AngularVelocity = body.angularVelocity;
                 WasSleeping = body.IsSleeping();
+                WasKinematic = body.isKinematic;
             }
 
             public Vector3 Position { get; }
@@ -174,6 +225,7 @@ namespace PowerliftingSimulator.Foundation.Unity
             public Vector3 LinearVelocity { get; }
             public Vector3 AngularVelocity { get; }
             public bool WasSleeping { get; }
+            public bool WasKinematic { get; }
         }
     }
 }

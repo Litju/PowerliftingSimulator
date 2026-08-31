@@ -131,6 +131,12 @@ namespace PowerliftingSimulator.Foundation.Unity
             _authoritativeScene.RegisterPrimaryBody(body, bodyId);
         }
 
+        public void RegisterBody(Rigidbody body, string bodyId)
+        {
+            EnsureInitialized();
+            _authoritativeScene.RegisterBody(body, bodyId);
+        }
+
         public void StepOne()
         {
             EnsureInitialized();
