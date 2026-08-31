@@ -1,0 +1,651 @@
+{
+    "mission": "POWERLIFTING_SIMULATOR_GAM_7_FINITE_POWERED_JOINTS",
+    "profileId": "GAM7_FINITE_POWERED_JOINTS_GAME_CALIBRATION_V1",
+    "physicsStep_s": 0.01,
+    "driveWriter": "PoweredJointController",
+    "driveWriterCount": 1,
+    "sourceClass": "GAME_CALIBRATION",
+    "targetRotationConversion": "GAM7_CONFIGURABLE_JOINT_LOCAL_V1: logical q_target_J -> inverse(q_target_J); neutral identity; local joint targets",
+    "targetAngularVelocityConversion": "logical omega_target_J rad/s -> -omega_target_J in Unity local target convention",
+    "useAcceleration": false,
+    "projectionMode": "None",
+    "poweredJointCount": 14,
+    "passiveJointCount": 1,
+    "familyProfiles": [
+        {
+            "id": "ankle",
+            "spring": 650.0,
+            "damper": 70.0,
+            "baseCapacity_Nm": 180.0,
+            "maxTargetRate_rad_s": 2.0,
+            "sourceClass": "GAME_CALIBRATION"
+        },
+        {
+            "id": "knee",
+            "spring": 800.0,
+            "damper": 80.0,
+            "baseCapacity_Nm": 300.0,
+            "maxTargetRate_rad_s": 2.5,
+            "sourceClass": "GAME_CALIBRATION"
+        },
+        {
+            "id": "hip",
+            "spring": 900.0,
+            "damper": 90.0,
+            "baseCapacity_Nm": 360.0,
+            "maxTargetRate_rad_s": 2.200000047683716,
+            "sourceClass": "GAME_CALIBRATION"
+        },
+        {
+            "id": "trunk",
+            "spring": 800.0,
+            "damper": 85.0,
+            "baseCapacity_Nm": 260.0,
+            "maxTargetRate_rad_s": 1.7999999523162842,
+            "sourceClass": "GAME_CALIBRATION"
+        },
+        {
+            "id": "shoulder",
+            "spring": 500.0,
+            "damper": 55.0,
+            "baseCapacity_Nm": 130.0,
+            "maxTargetRate_rad_s": 2.5,
+            "sourceClass": "GAME_CALIBRATION"
+        },
+        {
+            "id": "elbow",
+            "spring": 450.0,
+            "damper": 45.0,
+            "baseCapacity_Nm": 100.0,
+            "maxTargetRate_rad_s": 3.0,
+            "sourceClass": "GAME_CALIBRATION"
+        },
+        {
+            "id": "wrist",
+            "spring": 250.0,
+            "damper": 30.0,
+            "baseCapacity_Nm": 45.0,
+            "maxTargetRate_rad_s": 2.5,
+            "sourceClass": "GAME_CALIBRATION"
+        }
+    ],
+    "joints": [
+        {
+            "jointId": "abdomen_joint",
+            "parentBody": "pelvis",
+            "childBody": "abdomen",
+            "family": "trunk",
+            "powered": true,
+            "axis_B_child": {
+                "x": 1.0,
+                "y": 8.877920620875557e-9,
+                "z": -4.5195161502142869e-10
+            },
+            "secondaryAxis_B_child": {
+                "x": -8.877920620875557e-9,
+                "y": 0.9948302507400513,
+                "z": -0.10155156999826431
+            },
+            "neutralParentToChild": {
+                "w": 0.9987067580223084,
+                "x": 0.05084153637290001,
+                "y": 0.0,
+                "z": -4.444708601170078e-9
+            },
+            "jointSpaceBasis": {
+                "w": 0.9987067580223084,
+                "x": -0.05084154009819031,
+                "y": -1.3895759133802785e-17,
+                "z": 4.444709489348497e-9
+            },
+            "driveMode": "Slerp",
+            "activation": 1.0,
+            "capacityScale": 1.0,
+            "configuredMaximumForceAtFullActivation_Nm": 260.0,
+            "targetRateBound_rad_s": 1.7999999523162842,
+            "positiveConvention": "trunk flexion relative pelvis",
+            "targetRotationCalibration": "GAM7_CONFIGURABLE_JOINT_LOCAL_V1",
+            "useAcceleration": false,
+            "projectionMode": "None"
+        },
+        {
+            "jointId": "thorax_joint",
+            "parentBody": "abdomen",
+            "childBody": "thorax",
+            "family": "trunk",
+            "powered": true,
+            "axis_B_child": {
+                "x": 1.0,
+                "y": -1.1456380732965954e-8,
+                "z": -7.539056601224559e-10
+            },
+            "secondaryAxis_B_child": {
+                "x": 1.1456380732965954e-8,
+                "y": 0.9913763403892517,
+                "z": 0.13104574382305146
+            },
+            "neutralParentToChild": {
+                "w": 0.9932128190994263,
+                "x": -0.11631147563457489,
+                "y": -5.78724474776313e-17,
+                "z": 1.0168271558086417e-8
+            },
+            "jointSpaceBasis": {
+                "w": 0.9978417754173279,
+                "x": 0.06566459685564041,
+                "y": -1.390780453788278e-17,
+                "z": -5.7405808995270039e-9
+            },
+            "driveMode": "Slerp",
+            "activation": 1.0,
+            "capacityScale": 1.0,
+            "configuredMaximumForceAtFullActivation_Nm": 260.0,
+            "targetRateBound_rad_s": 1.7999999523162842,
+            "positiveConvention": "trunk flexion relative pelvis",
+            "targetRotationCalibration": "GAM7_CONFIGURABLE_JOINT_LOCAL_V1",
+            "useAcceleration": false,
+            "projectionMode": "None"
+        },
+        {
+            "jointId": "head_neck_joint",
+            "parentBody": "thorax",
+            "childBody": "head_neck",
+            "family": "neck",
+            "powered": false,
+            "axis_B_child": {
+                "x": 1.0,
+                "y": 2.5323961594381218e-8,
+                "z": -3.748175547713117e-9
+            },
+            "secondaryAxis_B_child": {
+                "x": -2.5323961594381218e-8,
+                "y": 0.9571258425712586,
+                "z": -0.2896723747253418
+            },
+            "neutralParentToChild": {
+                "w": 0.9774742126464844,
+                "x": 0.2110549807548523,
+                "y": 7.205394953659563e-17,
+                "z": -1.8451011385423045e-8
+            },
+            "jointSpaceBasis": {
+                "w": 0.9892234206199646,
+                "x": -0.14641402661800385,
+                "y": -2.244635457339324e-16,
+                "z": 1.2799919346662137e-8
+            },
+            "driveMode": "Passive",
+            "activation": 0.0,
+            "capacityScale": 0.0,
+            "configuredMaximumForceAtFullActivation_Nm": 0.0,
+            "targetRateBound_rad_s": 0.0,
+            "positiveConvention": "passive",
+            "targetRotationCalibration": "GAM7_CONFIGURABLE_JOINT_LOCAL_V1",
+            "useAcceleration": false,
+            "projectionMode": "None"
+        },
+        {
+            "jointId": "left_upper_arm_joint",
+            "parentBody": "thorax",
+            "childBody": "left_upper_arm",
+            "family": "shoulder",
+            "powered": true,
+            "axis_B_child": {
+                "x": -0.030253702774643899,
+                "y": -0.03026757203042507,
+                "z": 0.9990838766098023
+            },
+            "secondaryAxis_B_child": {
+                "x": 0.9995419383049011,
+                "y": 0.0,
+                "z": 0.03026757203042507
+            },
+            "neutralParentToChild": {
+                "w": 0.706986129283905,
+                "x": 0.02507566660642624,
+                "y": -0.04641060158610344,
+                "z": 0.7052574157714844
+            },
+            "jointSpaceBasis": {
+                "w": 0.5000000596046448,
+                "x": -0.48463714122772219,
+                "y": -0.5000000596046448,
+                "z": -0.5149047374725342
+            },
+            "driveMode": "Slerp",
+            "activation": 1.0,
+            "capacityScale": 1.0,
+            "configuredMaximumForceAtFullActivation_Nm": 130.0,
+            "targetRateBound_rad_s": 2.5,
+            "positiveConvention": "humeral flexion in sagittal working plane",
+            "targetRotationCalibration": "GAM7_CONFIGURABLE_JOINT_LOCAL_V1",
+            "useAcceleration": false,
+            "projectionMode": "None"
+        },
+        {
+            "jointId": "right_upper_arm_joint",
+            "parentBody": "thorax",
+            "childBody": "right_upper_arm",
+            "family": "shoulder",
+            "powered": true,
+            "axis_B_child": {
+                "x": 0.030256250873208047,
+                "y": -0.03027012199163437,
+                "z": 0.9990836977958679
+            },
+            "secondaryAxis_B_child": {
+                "x": -0.9995417594909668,
+                "y": 0.0,
+                "z": 0.03027012199163437
+            },
+            "neutralParentToChild": {
+                "w": 0.7069861888885498,
+                "x": 0.025073861703276635,
+                "y": 0.04641060158610344,
+                "z": -0.7052573561668396
+            },
+            "jointSpaceBasis": {
+                "w": 0.5,
+                "x": 0.5149059295654297,
+                "y": -0.5000000596046448,
+                "z": 0.4846358299255371
+            },
+            "driveMode": "Slerp",
+            "activation": 1.0,
+            "capacityScale": 1.0,
+            "configuredMaximumForceAtFullActivation_Nm": 130.0,
+            "targetRateBound_rad_s": 2.5,
+            "positiveConvention": "humeral flexion in sagittal working plane",
+            "targetRotationCalibration": "GAM7_CONFIGURABLE_JOINT_LOCAL_V1",
+            "useAcceleration": false,
+            "projectionMode": "None"
+        },
+        {
+            "jointId": "left_forearm_joint",
+            "parentBody": "left_upper_arm",
+            "childBody": "left_forearm",
+            "family": "elbow",
+            "powered": true,
+            "axis_B_child": {
+                "x": 0.03118167258799076,
+                "y": 0.03119685687124729,
+                "z": 0.9990267753601074
+            },
+            "secondaryAxis_B_child": {
+                "x": 0.9995132684707642,
+                "y": 0.0,
+                "z": -0.03119685687124729
+            },
+            "neutralParentToChild": {
+                "w": 0.9990555644035339,
+                "x": 0.03073221445083618,
+                "y": -0.030717700719833375,
+                "z": -0.000014245654710975941
+            },
+            "jointSpaceBasis": {
+                "w": -0.5,
+                "x": 0.5153550505638123,
+                "y": 0.5,
+                "z": 0.4841582179069519
+            },
+            "driveMode": "XAndYZ",
+            "activation": 1.0,
+            "capacityScale": 1.0,
+            "configuredMaximumForceAtFullActivation_Nm": 100.0,
+            "targetRateBound_rad_s": 3.0,
+            "positiveConvention": "flexion",
+            "targetRotationCalibration": "GAM7_CONFIGURABLE_JOINT_LOCAL_V1",
+            "useAcceleration": false,
+            "projectionMode": "None"
+        },
+        {
+            "jointId": "right_forearm_joint",
+            "parentBody": "right_upper_arm",
+            "childBody": "right_forearm",
+            "family": "elbow",
+            "powered": true,
+            "axis_B_child": {
+                "x": -0.031180016696453096,
+                "y": 0.03119521588087082,
+                "z": 0.9990268349647522
+            },
+            "secondaryAxis_B_child": {
+                "x": -0.9995134472846985,
+                "y": 4.172325134277344e-7,
+                "z": -0.03119521588087082
+            },
+            "neutralParentToChild": {
+                "w": 0.9990555644035339,
+                "x": 0.030732668936252595,
+                "y": 0.03071814775466919,
+                "z": 0.000014498438758892007
+            },
+            "jointSpaceBasis": {
+                "w": 0.5000001192092896,
+                "x": 0.4841589331626892,
+                "y": -0.5000001192092896,
+                "z": 0.5153541564941406
+            },
+            "driveMode": "XAndYZ",
+            "activation": 1.0,
+            "capacityScale": 1.0,
+            "configuredMaximumForceAtFullActivation_Nm": 100.0,
+            "targetRateBound_rad_s": 3.0,
+            "positiveConvention": "flexion",
+            "targetRotationCalibration": "GAM7_CONFIGURABLE_JOINT_LOCAL_V1",
+            "useAcceleration": false,
+            "projectionMode": "None"
+        },
+        {
+            "jointId": "left_hand_joint",
+            "parentBody": "left_forearm",
+            "childBody": "left_hand",
+            "family": "wrist",
+            "powered": true,
+            "axis_B_child": {
+                "x": 0.129707470536232,
+                "y": 0.5627798438072205,
+                "z": -0.8163669109344482
+            },
+            "secondaryAxis_B_child": {
+                "x": -0.040188323706388476,
+                "y": 0.8256293535232544,
+                "z": 0.5627798438072205
+            },
+            "neutralParentToChild": {
+                "w": 0.16056612133979798,
+                "x": 0.6750364899635315,
+                "y": 0.6803768277168274,
+                "z": 0.2358635663986206
+            },
+            "jointSpaceBasis": {
+                "w": 0.7219841480255127,
+                "x": 0.20878857374191285,
+                "y": 0.6257424354553223,
+                "z": 0.20878857374191285
+            },
+            "driveMode": "Slerp",
+            "activation": 1.0,
+            "capacityScale": 1.0,
+            "configuredMaximumForceAtFullActivation_Nm": 45.0,
+            "targetRateBound_rad_s": 2.5,
+            "positiveConvention": "extension",
+            "targetRotationCalibration": "GAM7_CONFIGURABLE_JOINT_LOCAL_V1",
+            "useAcceleration": false,
+            "projectionMode": "None"
+        },
+        {
+            "jointId": "right_hand_joint",
+            "parentBody": "right_forearm",
+            "childBody": "right_hand",
+            "family": "wrist",
+            "powered": true,
+            "axis_B_child": {
+                "x": 0.12970411777496339,
+                "y": 0.002618552418425679,
+                "z": 0.9915493130683899
+            },
+            "secondaryAxis_B_child": {
+                "x": -0.04019033536314964,
+                "y": 0.9991886019706726,
+                "z": 0.002618552418425679
+            },
+            "neutralParentToChild": {
+                "w": 0.7197033166885376,
+                "x": 0.023934297263622285,
+                "y": -0.04640819504857063,
+                "z": 0.6923154592514038
+            },
+            "jointSpaceBasis": {
+                "w": 0.7514314651489258,
+                "x": 0.014242446981370449,
+                "y": -0.659503698348999,
+                "z": 0.014242446981370449
+            },
+            "driveMode": "Slerp",
+            "activation": 1.0,
+            "capacityScale": 1.0,
+            "configuredMaximumForceAtFullActivation_Nm": 45.0,
+            "targetRateBound_rad_s": 2.5,
+            "positiveConvention": "extension",
+            "targetRotationCalibration": "GAM7_CONFIGURABLE_JOINT_LOCAL_V1",
+            "useAcceleration": false,
+            "projectionMode": "None"
+        },
+        {
+            "jointId": "left_thigh_joint",
+            "parentBody": "pelvis",
+            "childBody": "left_thigh",
+            "family": "hip",
+            "powered": true,
+            "axis_B_child": {
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "secondaryAxis_B_child": {
+                "x": 0.0,
+                "y": -1.0,
+                "z": 0.0
+            },
+            "neutralParentToChild": {
+                "w": 0.0,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "jointSpaceBasis": {
+                "w": 0.0,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "driveMode": "Slerp",
+            "activation": 1.0,
+            "capacityScale": 1.0,
+            "configuredMaximumForceAtFullActivation_Nm": 360.0,
+            "targetRateBound_rad_s": 2.200000047683716,
+            "positiveConvention": "flexion",
+            "targetRotationCalibration": "GAM7_CONFIGURABLE_JOINT_LOCAL_V1",
+            "useAcceleration": false,
+            "projectionMode": "None"
+        },
+        {
+            "jointId": "right_thigh_joint",
+            "parentBody": "pelvis",
+            "childBody": "right_thigh",
+            "family": "hip",
+            "powered": true,
+            "axis_B_child": {
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "secondaryAxis_B_child": {
+                "x": 0.0,
+                "y": -1.0,
+                "z": 0.0
+            },
+            "neutralParentToChild": {
+                "w": 0.0,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "jointSpaceBasis": {
+                "w": 0.0,
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "driveMode": "Slerp",
+            "activation": 1.0,
+            "capacityScale": 1.0,
+            "configuredMaximumForceAtFullActivation_Nm": 360.0,
+            "targetRateBound_rad_s": 2.200000047683716,
+            "positiveConvention": "flexion",
+            "targetRotationCalibration": "GAM7_CONFIGURABLE_JOINT_LOCAL_V1",
+            "useAcceleration": false,
+            "projectionMode": "None"
+        },
+        {
+            "jointId": "left_shank_joint",
+            "parentBody": "left_thigh",
+            "childBody": "left_shank",
+            "family": "knee",
+            "powered": true,
+            "axis_B_child": {
+                "x": 1.0,
+                "y": -3.24793738570861e-8,
+                "z": -5.779859293397749e-7
+            },
+            "secondaryAxis_B_child": {
+                "x": 3.24793738570861e-8,
+                "y": -0.9937043190002441,
+                "z": 0.11203432828187943
+            },
+            "neutralParentToChild": {
+                "w": 0.9984248280525208,
+                "x": 0.056105539202690127,
+                "y": -2.8944890573257e-7,
+                "z": 0.0
+            },
+            "jointSpaceBasis": {
+                "w": 0.05610554292798042,
+                "x": 0.9984248280525208,
+                "y": -2.668738871859362e-15,
+                "z": -2.8944890573257e-7
+            },
+            "driveMode": "XAndYZ",
+            "activation": 1.0,
+            "capacityScale": 1.0,
+            "configuredMaximumForceAtFullActivation_Nm": 300.0,
+            "targetRateBound_rad_s": 2.5,
+            "positiveConvention": "flexion",
+            "targetRotationCalibration": "GAM7_CONFIGURABLE_JOINT_LOCAL_V1",
+            "useAcceleration": false,
+            "projectionMode": "None"
+        },
+        {
+            "jointId": "right_shank_joint",
+            "parentBody": "right_thigh",
+            "childBody": "right_shank",
+            "family": "knee",
+            "powered": true,
+            "axis_B_child": {
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "secondaryAxis_B_child": {
+                "x": 0.0,
+                "y": -0.9937043190002441,
+                "z": 0.11203431338071823
+            },
+            "neutralParentToChild": {
+                "w": 0.9984248280525208,
+                "x": 0.05610553175210953,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "jointSpaceBasis": {
+                "w": 0.056105535477399829,
+                "x": 0.9984248280525208,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "driveMode": "XAndYZ",
+            "activation": 1.0,
+            "capacityScale": 1.0,
+            "configuredMaximumForceAtFullActivation_Nm": 300.0,
+            "targetRateBound_rad_s": 2.5,
+            "positiveConvention": "flexion",
+            "targetRotationCalibration": "GAM7_CONFIGURABLE_JOINT_LOCAL_V1",
+            "useAcceleration": false,
+            "projectionMode": "None"
+        },
+        {
+            "jointId": "left_foot_joint",
+            "parentBody": "left_shank",
+            "childBody": "left_foot",
+            "family": "ankle",
+            "powered": true,
+            "axis_B_child": {
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "secondaryAxis_B_child": {
+                "x": 0.0,
+                "y": 1.0,
+                "z": 0.0
+            },
+            "neutralParentToChild": {
+                "w": -0.056105539202690127,
+                "x": -0.9984248280525208,
+                "y": 0.0,
+                "z": 2.8944890573257e-7
+            },
+            "jointSpaceBasis": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "driveMode": "XAndYZ",
+            "activation": 1.0,
+            "capacityScale": 1.0,
+            "configuredMaximumForceAtFullActivation_Nm": 180.0,
+            "targetRateBound_rad_s": 2.0,
+            "positiveConvention": "dorsiflexion",
+            "targetRotationCalibration": "GAM7_CONFIGURABLE_JOINT_LOCAL_V1",
+            "useAcceleration": false,
+            "projectionMode": "None"
+        },
+        {
+            "jointId": "right_foot_joint",
+            "parentBody": "right_shank",
+            "childBody": "right_foot",
+            "family": "ankle",
+            "powered": true,
+            "axis_B_child": {
+                "x": 1.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "secondaryAxis_B_child": {
+                "x": 0.0,
+                "y": 1.0,
+                "z": 0.0
+            },
+            "neutralParentToChild": {
+                "w": -0.05610553175210953,
+                "x": -0.9984248280525208,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "jointSpaceBasis": {
+                "w": 1.0,
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "driveMode": "XAndYZ",
+            "activation": 1.0,
+            "capacityScale": 1.0,
+            "configuredMaximumForceAtFullActivation_Nm": 180.0,
+            "targetRateBound_rad_s": 2.0,
+            "positiveConvention": "dorsiflexion",
+            "targetRotationCalibration": "GAM7_CONFIGURABLE_JOINT_LOCAL_V1",
+            "useAcceleration": false,
+            "projectionMode": "None"
+        }
+    ],
+    "qualification": {
+        "passiveWholeBodyComDrop_m": 0.44398796558380129,
+        "poweredWholeBodyComDrop_m": 0.12823736667633058,
+        "positivePulseRelativeAngle_deg": 5.014199256896973,
+        "metric": "Whole-body COM drop from identical neutral state at fixed short interval; pulse is calibrated J-frame signed twist.",
+        "sourceClass": "ENGINE_RUNTIME_OBSERVATION"
+    }
+}

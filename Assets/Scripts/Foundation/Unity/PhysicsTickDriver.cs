@@ -18,6 +18,7 @@ namespace PowerliftingSimulator.Foundation.Unity
         private bool _manualSteppingMode;
         private bool _completingRenderFrame;
         private bool _stepInProgress;
+        private Action<SimulationTime, PlayerIntentFrame> _prePhysicsStep;
 
         internal PhysicsTickDriver(AuthoritativePhysicsScene authoritativeScene, InputTimeDomain inputTimeDomain)
         {
@@ -46,6 +47,16 @@ namespace PowerliftingSimulator.Foundation.Unity
 
         public double InputRenderIntervalEndSeconds { get; private set; }
 
+        internal void RegisterPrePhysicsStep(Action<SimulationTime, PlayerIntentFrame> step)
+        {
+            if (step == null)
+                throw new ArgumentNullException(nameof(step));
+            if (_prePhysicsStep != null)
+                throw new InvalidOperationException("The authoritative pre-physics step already has an owner.");
+
+            _prePhysicsStep = step;
+        }
+
         public void StepOne()
         {
             if (!_authoritativeScene.IsValid)
@@ -69,6 +80,8 @@ namespace PowerliftingSimulator.Foundation.Unity
                 double tickStartSeconds = _clock.Current.SimulationTimeSeconds;
                 SimulationTime time = _clock.Advance();
                 LastIntentFrame = _intentBuffer.SampleForTick(time.Tick, tickStartSeconds, time.SimulationTimeSeconds);
+
+                _prePhysicsStep?.Invoke(time, LastIntentFrame);
 
                 _authoritativeScene.PhysicsSceneHandle.Simulate((float)SimulationConstants.FixedDeltaTimeSeconds);
 

@@ -137,6 +137,12 @@ namespace PowerliftingSimulator.Foundation.Unity
             _authoritativeScene.RegisterBody(body, bodyId);
         }
 
+        public void RegisterPrePhysicsStep(Action<SimulationTime, PlayerIntentFrame> step)
+        {
+            EnsureInitialized();
+            _tickDriver.RegisterPrePhysicsStep(step);
+        }
+
         public void StepOne()
         {
             EnsureInitialized();

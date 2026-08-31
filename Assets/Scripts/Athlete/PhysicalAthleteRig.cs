@@ -13,7 +13,7 @@ namespace PowerliftingSimulator.Athlete
     [DisallowMultipleComponent]
     public sealed class PhysicalAthleteRig : MonoBehaviour
     {
-        private const string ArtifactPath = "Artifacts/Measurements/GAM-6-physical-humanoid.json";
+        private const string ArtifactPath = "Artifacts/Measurements/GAM-7-powered-joints.json";
 
         [SerializeField] private FoundationBootstrap foundation;
         [SerializeField] private AthleteRigOwnership ownership;
@@ -36,14 +36,19 @@ namespace PowerliftingSimulator.Athlete
         private Renderer[] _visibleRenderers = Array.Empty<Renderer>();
         private GameObject _physicalRoot;
         private DebugMarker _wholeBodyComMarker;
+        private PoweredJointController _poweredController;
         private bool _inspectionFrozen;
-        private string _status = "Building passive physical athlete...";
+        private float _qualifiedPassiveComDropMeters;
+        private float _qualifiedPoweredComDropMeters;
+        private float _qualifiedPositivePulseDegrees;
+        private string _status = "Building finite powered physical athlete...";
 
         public IReadOnlyDictionary<string, SegmentRuntime> Segments => _segments;
         public IReadOnlyList<JointRuntime> Joints => _joints;
         public bool IsInspectionFrozen => _inspectionFrozen;
         public float TotalMassKg => _segments.Values.Sum(segment => segment.Body.mass);
         public float MaxInitialNonAdjacentPenetrationMeters { get; private set; }
+        public PoweredJointController PoweredController => _poweredController;
 
         public void Configure(
             FoundationBootstrap foundationBootstrap,
@@ -89,6 +94,9 @@ namespace PowerliftingSimulator.Athlete
             foreach (PhysicalJointRecipe recipe in PhysicalAthleteDefinition.Joints)
                 CreateJoint(recipe);
 
+            _poweredController = new PoweredJointController(_joints);
+            foundation.Runtime.RegisterPrePhysicsStep(_poweredController.Step);
+
             DisableAdjacentSelfCollision();
             MaxInitialNonAdjacentPenetrationMeters = MeasureInitialNonAdjacentPenetration();
             CreatePlatformCollider();
@@ -97,13 +105,12 @@ namespace PowerliftingSimulator.Athlete
             ownership.ConfigurePhysicalRig(referenceAnimator, visibleAnimator.transform, _physicalRoot.transform);
             ApplyVisibility();
             ValidateRuntime();
-            WriteArtifact();
-            _status = "PASSIVE_RAGDOLL: gravity on, 16/16 bodies dynamic, drives off";
+            _status = "PASSIVE: gravity on, 16/16 bodies dynamic, drives off";
         }
 
         private void LateUpdate()
         {
-            if (_segments.Count == 0)
+            if (_segments.Count == 0 || _segments["pelvis"].Body == null)
                 return;
 
             foreach (VisibleFollowerBinding binding in _visibleBindings)
@@ -117,14 +124,45 @@ namespace PowerliftingSimulator.Athlete
 
         public void ResetPassive()
         {
+            ResetToMode(PoweredAthleteMode.Passive);
+            _status = "RESET -> PASSIVE";
+        }
+
+        public void StartPoweredNeutral()
+        {
+            ResetToMode(PoweredAthleteMode.PoweredNeutral);
+            _status = "POWERED NEUTRAL: finite open-loop joint authority";
+        }
+
+        public void StartZeroActivation()
+        {
+            ResetToMode(PoweredAthleteMode.ZeroActivation);
+            _status = "ZERO ACTIVATION: powered architecture, maximumForce = 0";
+        }
+
+        public void StartSelectedJointPulse(bool positive)
+        {
+            ResetToMode(PoweredAthleteMode.SelectedJointPulse);
+            _poweredController.SetPulse(positive);
+            _status = $"JOINT PULSE: {_poweredController.SelectedJointId} {(positive ? "+" : "-")}20 deg";
+        }
+
+        public void SelectNextPulseJoint(int direction)
+        {
+            _poweredController.SelectNextPulseJoint(direction);
+            _status = $"Selected pulse joint: {_poweredController.SelectedJointId}";
+        }
+
+        private void ResetToMode(PoweredAthleteMode mode)
+        {
             if (_segments.Count == 0)
                 return;
 
             SetInspectionFrozen(false);
             foundation.Reset();
+            _poweredController.Reset(mode);
             foreach (SegmentRuntime segment in _segments.Values)
                 segment.Body.WakeUp();
-            _status = "RESET -> PASSIVE_RAGDOLL";
         }
 
         public void InspectNeutral()
@@ -133,6 +171,7 @@ namespace PowerliftingSimulator.Athlete
                 return;
 
             foundation.Reset();
+            _poweredController.Reset(PoweredAthleteMode.Passive);
             SetInspectionFrozen(true);
             _status = "AUTHORING INSPECTION: explicitly frozen (not gameplay)";
         }
@@ -140,9 +179,10 @@ namespace PowerliftingSimulator.Athlete
         public void ReleasePassive()
         {
             SetInspectionFrozen(false);
+            _poweredController.Reset(PoweredAthleteMode.Passive);
             foreach (SegmentRuntime segment in _segments.Values)
                 segment.Body.WakeUp();
-            _status = "PASSIVE_RAGDOLL: released under gravity";
+            _status = "PASSIVE: released under gravity";
         }
 
         private void SetInspectionFrozen(bool frozen)
@@ -227,10 +267,6 @@ namespace PowerliftingSimulator.Athlete
             joint.highAngularXLimit = Limit(recipe.HighDegrees);
             joint.angularYLimit = Limit(recipe.SecondaryLimitDegrees);
             joint.angularZLimit = Limit(recipe.SecondaryLimitDegrees);
-            joint.rotationDriveMode = RotationDriveMode.Slerp;
-            joint.angularXDrive = ZeroDrive();
-            joint.angularYZDrive = ZeroDrive();
-            joint.slerpDrive = ZeroDrive();
             joint.projectionMode = JointProjectionMode.None;
             joint.enableCollision = false;
             joint.enablePreprocessing = true;
@@ -460,15 +496,50 @@ namespace PowerliftingSimulator.Athlete
 
         private void OnGUI()
         {
-            GUILayout.BeginArea(new Rect(18f, 18f, 420f, 245f), GUI.skin.box);
-            GUILayout.Label("GAM-6 Physical Athlete");
+            GUILayout.BeginArea(new Rect(18f, 18f, 520f, 430f), GUI.skin.box);
+            GUILayout.Label("GAM-7 Finite Powered Athlete");
             GUILayout.Label(_status);
-            GUILayout.Label($"Bodies: {_segments.Count}/16   Joints: {_joints.Count}/15   Mass: {TotalMassKg:F4} kg");
+            GUILayout.Label($"Bodies: {_segments.Count}/16   Powered: {_poweredController?.PoweredJointCount ?? 0}/14   Mass: {TotalMassKg:F4} kg");
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Reset + Passive")) ResetPassive();
+            if (GUILayout.Button("Passive")) ResetPassive();
+            if (GUILayout.Button("Powered Neutral")) StartPoweredNeutral();
+            if (GUILayout.Button("Zero Activation")) StartZeroActivation();
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("< Joint")) SelectNextPulseJoint(-1);
+            GUILayout.Label(_poweredController?.SelectedJointId ?? "building", GUILayout.Width(110f));
+            if (GUILayout.Button("Joint >")) SelectNextPulseJoint(1);
+            if (GUILayout.Button("Pulse -")) StartSelectedJointPulse(false);
+            if (GUILayout.Button("Pulse +")) StartSelectedJointPulse(true);
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Activation", GUILayout.Width(70f));
+            if (GUILayout.Button("0")) _poweredController?.SetGlobalActivation(0f);
+            if (GUILayout.Button("0.5")) _poweredController?.SetGlobalActivation(0.5f);
+            if (GUILayout.Button("1")) _poweredController?.SetGlobalActivation(1f);
+            GUILayout.Label($"{(_poweredController?.GlobalActivation ?? 0f):F2}", GUILayout.Width(40f));
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Reset")) ResetPassive();
             if (GUILayout.Button("Inspect Neutral")) InspectNeutral();
             if (GUILayout.Button("Release")) ReleasePassive();
             GUILayout.EndHorizontal();
+
+            if (_poweredController != null)
+            {
+                PoweredJointController.PoweredJointRuntime selected = _poweredController.GetJoint(_poweredController.SelectedJointId);
+                PoweredJointDiagnostic diagnostic = selected.Diagnostic;
+                JointFamilyProfile profile = selected.Profile.Value;
+                GUILayout.Label($"Mode: {_poweredController.Mode}   Family: {profile.Id}");
+                GUILayout.Label($"Requested J: {FormatQuaternion(diagnostic.RequestedTarget)}");
+                GUILayout.Label($"Applied J: {FormatQuaternion(diagnostic.AppliedTarget)}");
+                GUILayout.Label($"Actual J: {FormatQuaternion(diagnostic.ActualRelative)}");
+                GUILayout.Label($"Error rad: {diagnostic.ErrorRad.ToString("F3")}   target w: {diagnostic.TargetAngularVelocityRadS.ToString("F2")}");
+                GUILayout.Label($"Kp/Kd: {profile.Spring:F0}/{profile.Damper:F0}   maxForce: {diagnostic.MaximumForceNm:F1} N*m");
+                GUILayout.Label($"Activation: {diagnostic.Activation:F2}   capacity scale: {diagnostic.CapacityScale:F2}   demand*: {diagnostic.ModeledDemand:F2}");
+                GUILayout.Label($"Limit proximity: {diagnostic.LimitProximity:P0}   *command-side conceptual diagnostic");
+            }
+
             bool visible = GUILayout.Toggle(showVisibleMesh, "Show visible athlete");
             bool proxy = GUILayout.Toggle(showPhysicalColliders, "Show physical colliders");
             showSegmentCom = GUILayout.Toggle(showSegmentCom, "Show segment COMs");
@@ -480,6 +551,9 @@ namespace PowerliftingSimulator.Athlete
             ApplyVisibility();
             GUILayout.EndArea();
         }
+
+        private static string FormatQuaternion(Quaternion value) =>
+            $"({value.w:F3}, {value.x:F3}, {value.y:F3}, {value.z:F3})";
 
         public Vector3 CalculateWholeBodyCom()
         {
@@ -497,24 +571,28 @@ namespace PowerliftingSimulator.Athlete
         {
             var artifact = new Artifact
             {
-                mission = "POWERLIFTING_SIMULATOR_GAM_6_PHYSICAL_HUMANOID",
-                profileId = PhysicalAthleteDefinition.ProfileId,
-                bodyMass_kg = PhysicalAthleteDefinition.PrototypeBodyMassKg,
-                assignedMass_kg = TotalMassKg,
-                segmentCount = _segments.Count,
-                jointCount = _joints.Count,
-                gravity_m_per_s2 = Physics.gravity.y,
+                mission = "POWERLIFTING_SIMULATOR_GAM_7_FINITE_POWERED_JOINTS",
+                profileId = "GAM7_FINITE_POWERED_JOINTS_GAME_CALIBRATION_V1",
                 physicsStep_s = SimulationConstants.FixedDeltaTimeSeconds,
-                wholeAthleteComNeutral_W_m = VectorRecord.From(CalculateWholeBodyCom()),
-                selfCollisionPolicy = "Adjacent parent-child collider pairs ignored explicitly; nonadjacent pairs remain enabled.",
-                geometryAuthority = "Artifacts/Measurements/GAM-5-canonical-humanoid.json",
-                massModel = "Frozen 16-segment fractions; 100 kg profile is GAME_CALIBRATION; no redistribution.",
-                comModel = "Source-compatible de Leva longitudinal fractions applied to asset bone-pivot proxies where available, otherwise explicit engineering proxy centers; all runtime placements classified ENGINEERING_DERIVED.",
-                inertiaModel = "Analytic equivalent-box principal inertia at each rigid-body COM, derived from the actual primitive proxy dimensions; ENGINEERING_DERIVED.",
-                anthropometricSource = "Paolo de Leva (1996), Journal of Biomechanics 29(9):1223-1230, DOI 10.1016/0021-9290(95)00178-6; fractions are population means applied only as engineering proxy placements, not subject anatomy.",
-                maxInitialNonAdjacentPenetration_m = MaxInitialNonAdjacentPenetrationMeters,
-                segments = _segments.Values.Select(SegmentRecord.From).ToArray(),
-                joints = _joints.Select(JointRecord.From).ToArray()
+                driveWriter = PoweredJointController.WriterId,
+                driveWriterCount = 1,
+                sourceClass = PoweredJointController.SourceClass,
+                targetRotationConversion = PoweredJointController.CalibrationVersion + ": logical q_target_J -> inverse(q_target_J); neutral identity; local joint targets",
+                targetAngularVelocityConversion = "logical omega_target_J rad/s -> -omega_target_J in Unity local target convention",
+                useAcceleration = false,
+                projectionMode = "None",
+                poweredJointCount = _poweredController.PoweredJointCount,
+                passiveJointCount = _poweredController.PassiveJointCount,
+                familyProfiles = PoweredJointController.FamilyProfiles.Select(FamilyProfileRecord.From).ToArray(),
+                joints = _poweredController.Joints.Select(PoweredJointRecord.From).ToArray(),
+                qualification = new QualificationRecord
+                {
+                    passiveWholeBodyComDrop_m = _qualifiedPassiveComDropMeters,
+                    poweredWholeBodyComDrop_m = _qualifiedPoweredComDropMeters,
+                    positivePulseRelativeAngle_deg = _qualifiedPositivePulseDegrees,
+                    metric = "Whole-body COM drop from identical neutral state at fixed short interval; pulse is calibrated J-frame signed twist.",
+                    sourceClass = "ENGINE_RUNTIME_OBSERVATION"
+                }
             };
 
             string fullPath = Path.GetFullPath(ArtifactPath);
@@ -522,12 +600,19 @@ namespace PowerliftingSimulator.Athlete
             File.WriteAllText(fullPath, JsonUtility.ToJson(artifact, true) + Environment.NewLine);
         }
 
+        public void RecordQualification(float passiveComDropMeters, float poweredComDropMeters, float positivePulseDegrees)
+        {
+            _qualifiedPassiveComDropMeters = passiveComDropMeters;
+            _qualifiedPoweredComDropMeters = poweredComDropMeters;
+            _qualifiedPositivePulseDegrees = positivePulseDegrees;
+            WriteArtifact();
+        }
+
         private static bool HasPoweredDrive(ConfigurableJoint joint) =>
             joint.angularXDrive.positionSpring != 0f || joint.angularXDrive.positionDamper != 0f || joint.angularXDrive.maximumForce != 0f ||
             joint.angularYZDrive.positionSpring != 0f || joint.angularYZDrive.positionDamper != 0f || joint.angularYZDrive.maximumForce != 0f ||
             joint.slerpDrive.positionSpring != 0f || joint.slerpDrive.positionDamper != 0f || joint.slerpDrive.maximumForce != 0f;
 
-        private static JointDrive ZeroDrive() => new JointDrive { positionSpring = 0f, positionDamper = 0f, maximumForce = 0f };
         private static SoftJointLimit Limit(float degrees) => new SoftJointLimit { limit = degrees, bounciness = 0f, contactDistance = 2f };
         private static bool Finite(Vector3 value) => float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
 
@@ -548,22 +633,19 @@ namespace PowerliftingSimulator.Athlete
         {
             public string mission;
             public string profileId;
-            public float bodyMass_kg;
-            public float assignedMass_kg;
-            public int segmentCount;
-            public int jointCount;
-            public float gravity_m_per_s2;
             public double physicsStep_s;
-            public VectorRecord wholeAthleteComNeutral_W_m;
-            public string selfCollisionPolicy;
-            public string geometryAuthority;
-            public string massModel;
-            public string comModel;
-            public string inertiaModel;
-            public string anthropometricSource;
-            public float maxInitialNonAdjacentPenetration_m;
-            public SegmentRecord[] segments;
-            public JointRecord[] joints;
+            public string driveWriter;
+            public int driveWriterCount;
+            public string sourceClass;
+            public string targetRotationConversion;
+            public string targetAngularVelocityConversion;
+            public bool useAcceleration;
+            public string projectionMode;
+            public int poweredJointCount;
+            public int passiveJointCount;
+            public FamilyProfileRecord[] familyProfiles;
+            public PoweredJointRecord[] joints;
+            public QualificationRecord qualification;
         }
 
         [Serializable]
@@ -576,73 +658,117 @@ namespace PowerliftingSimulator.Athlete
         }
 
         [Serializable]
-        private sealed class SegmentRecord
+        private struct QuaternionRecord
         {
-            public string name;
-            public string parent;
-            public string proximalBoneProxy;
-            public string distalBoneProxy;
-            public float mass_kg;
-            public float massFraction;
-            public string massSourceClass;
-            public string comSourceClass;
-            public VectorRecord com_W_m;
-            public string colliderType;
-            public VectorRecord colliderDimensions_m;
-            public VectorRecord inertiaTensor_kg_m2;
-            public VectorRecord inertiaTensorRotation_xyz;
-
-            public static SegmentRecord From(SegmentRuntime segment) => new SegmentRecord
+            public float w;
+            public float x;
+            public float y;
+            public float z;
+            public static QuaternionRecord From(Quaternion value) => new QuaternionRecord
             {
-                name = segment.Recipe.Id,
-                parent = segment.Recipe.ParentId,
-                proximalBoneProxy = segment.Recipe.ProximalBone.ToString(),
-                distalBoneProxy = segment.Recipe.DistalBone.ToString(),
-                mass_kg = segment.Body.mass,
-                massFraction = segment.Recipe.MassFraction,
-                massSourceClass = "ENGINEERING_DERIVED",
-                comSourceClass = "ENGINEERING_DERIVED",
-                com_W_m = VectorRecord.From(segment.Body.worldCenterOfMass),
-                colliderType = segment.Recipe.Collider.ToString(),
-                colliderDimensions_m = VectorRecord.From(segment.DimensionsMeters),
-                inertiaTensor_kg_m2 = VectorRecord.From(segment.Body.inertiaTensor),
-                inertiaTensorRotation_xyz = VectorRecord.From(segment.Body.inertiaTensorRotation.eulerAngles)
+                w = value.w,
+                x = value.x,
+                y = value.y,
+                z = value.z
             };
         }
 
         [Serializable]
-        private sealed class JointRecord
+        private sealed class FamilyProfileRecord
         {
-            public string name;
-            public string family;
+            public string id;
+            public float spring;
+            public float damper;
+            public float baseCapacity_Nm;
+            public float maxTargetRate_rad_s;
+            public string sourceClass;
+
+            public static FamilyProfileRecord From(JointFamilyProfile profile) => new FamilyProfileRecord
+            {
+                id = profile.Id,
+                spring = profile.Spring,
+                damper = profile.Damper,
+                baseCapacity_Nm = profile.BaseCapacityNm,
+                maxTargetRate_rad_s = profile.MaxTargetRateRadS,
+                sourceClass = PoweredJointController.SourceClass
+            };
+        }
+
+        [Serializable]
+        private sealed class PoweredJointRecord
+        {
+            public string jointId;
             public string parentBody;
             public string childBody;
-            public VectorRecord anchor_W_m;
-            public VectorRecord primaryAxis_W;
-            public string motion;
-            public float lowLimit_deg;
-            public float highLimit_deg;
-            public float secondaryLimit_deg;
-            public string limitSourceClass;
+            public string family;
+            public bool powered;
+            public VectorRecord axis_B_child;
+            public VectorRecord secondaryAxis_B_child;
+            public QuaternionRecord neutralParentToChild;
+            public QuaternionRecord jointSpaceBasis;
+            public string driveMode;
+            public float activation;
+            public float capacityScale;
+            public float configuredMaximumForceAtFullActivation_Nm;
+            public float targetRateBound_rad_s;
+            public string positiveConvention;
+            public string targetRotationCalibration;
+            public bool useAcceleration;
             public string projectionMode;
-            public string poweredDrive;
 
-            public static JointRecord From(JointRuntime runtime) => new JointRecord
+            public static PoweredJointRecord From(PoweredJointController.PoweredJointRuntime runtime)
             {
-                name = runtime.Recipe.ChildId + "_joint",
-                family = runtime.Recipe.Family,
-                parentBody = runtime.Joint.connectedBody.name,
-                childBody = runtime.Recipe.ChildId,
-                anchor_W_m = VectorRecord.From(runtime.AnchorWorld),
-                primaryAxis_W = VectorRecord.From(runtime.Recipe.PrimaryAxisWorld),
-                motion = runtime.Recipe.Kind.ToString(),
-                lowLimit_deg = runtime.Recipe.LowDegrees,
-                highLimit_deg = runtime.Recipe.HighDegrees,
-                secondaryLimit_deg = runtime.Recipe.SecondaryLimitDegrees,
-                limitSourceClass = "GAME_CALIBRATION",
-                projectionMode = runtime.Joint.projectionMode.ToString(),
-                poweredDrive = "DISABLED"
-            };
+                JointFamilyProfile? profile = runtime.Profile;
+                return new PoweredJointRecord
+                {
+                    jointId = runtime.Id + "_joint",
+                    parentBody = runtime.Joint.connectedBody.name,
+                    childBody = runtime.Id,
+                    family = profile.HasValue ? profile.Value.Id : runtime.Recipe.Family,
+                    powered = profile.HasValue,
+                    axis_B_child = VectorRecord.From(runtime.Joint.axis),
+                    secondaryAxis_B_child = VectorRecord.From(runtime.Joint.secondaryAxis),
+                    neutralParentToChild = QuaternionRecord.From(runtime.NeutralParentToChild),
+                    jointSpaceBasis = QuaternionRecord.From(runtime.JointSpace),
+                    driveMode = profile.HasValue
+                        ? (runtime.Recipe.Kind == PhysicalJointKind.Hinge ? "XAndYZ" : "Slerp")
+                        : "Passive",
+                    activation = runtime.Diagnostic.Activation,
+                    capacityScale = runtime.Diagnostic.CapacityScale,
+                    configuredMaximumForceAtFullActivation_Nm = profile.HasValue ? profile.Value.BaseCapacityNm : 0f,
+                    targetRateBound_rad_s = profile.HasValue ? profile.Value.MaxTargetRateRadS : 0f,
+                    positiveConvention = PositiveConvention(runtime.Recipe.Family),
+                    targetRotationCalibration = PoweredJointController.CalibrationVersion,
+                    useAcceleration = false,
+                    projectionMode = runtime.Joint.projectionMode.ToString()
+                };
+            }
+
+            private static string PositiveConvention(string family)
+            {
+                switch (family)
+                {
+                    case "ankle": return "dorsiflexion";
+                    case "knee": return "flexion";
+                    case "hip": return "flexion";
+                    case "lumbar":
+                    case "trunk": return "trunk flexion relative pelvis";
+                    case "shoulder": return "humeral flexion in sagittal working plane";
+                    case "elbow": return "flexion";
+                    case "wrist": return "extension";
+                    default: return "passive";
+                }
+            }
+        }
+
+        [Serializable]
+        private sealed class QualificationRecord
+        {
+            public float passiveWholeBodyComDrop_m;
+            public float poweredWholeBodyComDrop_m;
+            public float positivePulseRelativeAngle_deg;
+            public string metric;
+            public string sourceClass;
         }
 
         public sealed class SegmentRuntime
