@@ -1,6 +1,7 @@
 MISSION=POWERLIFTING_SIMULATOR_GAM_7_FINITE_POWERED_JOINTS
 BASE_HEAD=f97fff241991c87e849b0685fc9fe649107fa775
 FINAL_HEAD=resolve with git rev-parse HEAD after the receipt commit
+IMPLEMENTATION_HEAD=649f588ea1bac82dbf4e6728cb7478cba49eacbf
 BRANCH=work/gam-7-powered-joints
 
 PRE_PHYSICS_ACTUATOR_SEAM=FoundationRuntime.RegisterPrePhysicsStep; exactly one callback after clock/input sampling and before the sole PhysicsScene.Simulate call
@@ -62,6 +63,9 @@ PROJECT_SKILL_UPDATED=PASS; verified GAM-7 authority, calibration, profiles, act
 MASTER_SPEC=PASS; 68 files; hashes PASS; dependencies PASS
 COMPILE=PASS; Unity 6000.3.22f1 batch compile/import and test assemblies
 DIFF_CHECK=PASS
+
+PR=https://github.com/Litju/PowerliftingSimulator/pull/6
+LINEAR_STATUS=GAM-7 In Review; PR attached
 
 KNOWN_LIMITATIONS=finite local neutral drives provide no COM/support-polygon feedback or indefinite balance; neck remains passive; target angular velocity contract is implemented but initial powered modes command zero rad/s; final acceptance requires owner powered-athlete review
 
