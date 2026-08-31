@@ -3,7 +3,8 @@
     "rootNamespace": "PowerliftingSimulator",
     "references": [
         "PowerliftingSimulator.Foundation",
-        "PowerliftingSimulator.Foundation.Unity"
+        "PowerliftingSimulator.Foundation.Unity",
+        "PowerliftingSimulator.Athlete"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"

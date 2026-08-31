@@ -109,10 +109,44 @@ All required bones resolve once. UpperChest, Neck, shoulders, toes, and bilatera
 
 The JSON records asset transform pivots, their distances, rotations, and rendered bounds. Segment names such as thigh, shank, hand, stance, and shoulder are engineering proxies. They do not establish anatomical joint centers, biological segment lengths, COM, mass, inertia, muscle properties, tissue load, or clinical anatomy. GAM-6 must keep this distinction when building the physical proxy.
 
+# Physical Segmentation
+
+- `Assets/Scripts/Athlete/PhysicalAthleteDefinition.cs` owns the verified GAM-6 16-body recipe: pelvis, abdomen, thorax, head_neck, bilateral upper arms, forearms, hands, thighs, shanks, and feet.
+- `Assets/Scripts/Athlete/PhysicalAthleteRig.cs` creates the bodies in `FoundationRuntime.AuthoritativeScene`; the graph has 15 `ConfigurableJoint` parent-child constraints and no Rigidbody-per-render-bone proliferation.
+- `Assets/Scenes/Prototype/PhysicalAthletePhysics.unity` is the owner-review scene. It keeps separate hidden reference, authoritative physical, and player-visible rigs.
+
+# Mass, COM, and Inertia
+
+- The prototype profile is `GAM6_QUATERNIUS_100KG_GAME_CALIBRATION_V1`; 100 kg is a `GAME_CALIBRATION`, not a population claim.
+- The frozen mass fractions are used without redistribution and assign exactly 100 kg across the 16 bodies. Runtime segment mass values are `ENGINEERING_DERIVED` from the calibrated profile mass and frozen fractions.
+- Limb longitudinal proxy placement uses de Leva (1996) fractions where definitions are close enough to guide an engineering proxy; torso, head/neck, hands, and final foot placement use explicit proxy centers. All runtime COM placements remain `ENGINEERING_DERIVED` because GAM-5 bone pivots are not anatomical joint centers.
+- Principal inertia is the analytic solid-box tensor `I_x=m(h^2+d^2)/12`, `I_y=m(w^2+d^2)/12`, `I_z=m(w^2+h^2)/12` using each actual proxy's dimensions. Capsule bodies intentionally use that documented equivalent-box seed; all axes are positive and finite.
+
+# Collider and Joint Recipes
+
+- Pelvis, abdomen, thorax, hands, and feet use boxes; head/neck and long limb segments use capsules. Feet remain platform-aligned while hand boxes align their long local X axis to the measured hand proxy.
+- Joint anchors are the calibrated GAM-5 Humanoid pivot proxies transformed into both connected body frames. The neutral world anchors coincide within `0.0001 m`.
+- Knees, elbows, and ankles are hinge-dominant. Hips, shoulders, trunk, wrists, and neck are bounded multiaxial joints. Limits are broad `GAME_CALIBRATION` ranges, not clinical or subject-specific ROM.
+- Projection is `None`; every angular drive spring, damper, and maximum force is zero in GAM-6.
+
+# Collision, Passive Mode, and Reset
+
+- Adjacent parent-child collider pairs are ignored explicitly. Nonadjacent self-collision remains enabled; the qualified neutral configuration measured `0 m` maximum nonadjacent penetration.
+- `PASSIVE_RAGDOLL` starts with gravity enabled and all 16 bodies, including the pelvis, dynamic. There is no hidden support, position lock, root pin, balance force, or Animator on the physical rig.
+- `FoundationRuntime.RegisterBody` extends the established authoritative-scene seam so reset restores every registered body pose, rotation, kinematic state, linear/angular velocity, and sleep state without adding another physics step owner.
+- The visible follower applies fixed body-to-bone bind rotation offsets in `LateUpdate` and the pelvis bind-position offset one way; it never writes back to physics.
+- Runtime review controls expose `Reset + Passive`, explicit authoring-only `Inspect Neutral`, and `Release`, plus visible mesh, physical proxy, COM, anchor, and joint-axis toggles.
+
+# GAM-6 Evidence
+
+- Durable calibration: `Artifacts/Measurements/GAM-6-physical-humanoid.json`.
+- Visual evidence: `Artifacts/Evidence/GAM-6/` contains neutral overlay, collider/COM/axis debug, falling, and settled views.
+- The qualified PlayMode fixture observed gravity-driven collapse by 1.0 s, finite bounded velocities, less than `0.08 m` anchor separation through 3.0 s, and exact neutral reset with zero velocities.
+
 # Evolution Rules
 
 Only add facts verified in this repository by imported assets, Unity inspection, measurements, tests, or visual evidence. Do not add generic Unity tutorials, speculative powered-joint architecture, or a debugging diary. Do not state that a physical rig, mass model, colliders, joints, or follower exists until its owning mission implements and qualifies it.
 
 # Last Verified
 
-2026-08-30 with Unity `6000.3.22f1`: official Standard archive and hashes verified; Humanoid Avatar valid; 16 required bones plus 8 useful optional bones resolved; measured artifact regenerated; front, side, and projected skeleton evidence visually inspected; no athlete Rigidbody, Collider, or ConfigurableJoint exists.
+2026-08-30 with Unity `6000.3.22f1`: GAM-5 asset/import facts remain valid; GAM-6 builds 16 dynamic rigid bodies and 15 zero-drive `ConfigurableJoint` constraints in the 100 Hz authoritative scene, assigns 100.0000 kg with zero mass error, reports zero initial nonadjacent penetration, collapses coherently under gravity, settles without numerical explosion, and resets cleanly. The full EditMode suite passed 40/40 and the full PlayMode suite passed 16/16; owner physical review remains the acceptance boundary.
