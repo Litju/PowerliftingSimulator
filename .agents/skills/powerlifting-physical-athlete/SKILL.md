@@ -143,10 +143,54 @@ The JSON records asset transform pivots, their distances, rotations, and rendere
 - Visual evidence: `Artifacts/Evidence/GAM-6/` contains neutral overlay, collider/COM/axis debug, falling, and settled views.
 - The qualified PlayMode fixture observed gravity-driven collapse by 1.0 s, finite bounded velocities, less than `0.08 m` anchor separation through 3.0 s, and exact neutral reset with zero velocities.
 
+# Powered Joint Authority
+
+- `PoweredJointController` is the sole athlete drive writer. It owns `targetRotation`, `targetAngularVelocity`, drive mode, and all angular drive structures for the 15 physical joints.
+- `FoundationRuntime.RegisterPrePhysicsStep` accepts one callback only. `PhysicsTickDriver.StepOne` invokes it exactly once after clock advance and input sampling and before the sole `PhysicsScene.Simulate(0.01)` call; duplicate registration throws and reset preserves the registration.
+- GAM-7 powers 14 joints and leaves `head_neck` passive. Hinge-dominant ankles, knees, and elbows use `RotationDriveMode.XYAndZ` with only `angularXDrive`; multiaxial joints use `Slerp`.
+
+# Joint-Space Calibration
+
+- Calibration version is `GAM7_CONFIGURABLE_JOINT_LOCAL_V1`. Logical neutral is identity in each calibrated `J_i` frame. Unity local `targetRotation` receives the canonicalized inverse of the requested `J_i` orientation; target angular velocity in rad/s receives the corresponding negated local target vector.
+- Each runtime joint stores neutral parent-to-child orientation plus the orthonormal joint-space basis derived from `axis` and `secondaryAxis`. Diagnostics remove the neutral relative orientation and express actual/error state in that basis.
+- Physical fixtures in Unity 6000.3.22f1 verified neutral identity, quaternion sign equivalence, positive knee flexion, positive elbow flexion, and equal relative response after rotating the whole parent/body fixture in world space.
+
+# Joint Family Profiles
+
+All values below are `GAME_CALIBRATION`, not biological joint properties.
+
+| Family | Spring | Damper | Base capacity N*m | Max target rate rad/s |
+|---|---:|---:|---:|---:|
+| ankle | 650 | 70 | 180 | 2.0 |
+| knee | 800 | 80 | 300 | 2.5 |
+| hip | 900 | 90 | 360 | 2.2 |
+| trunk | 800 | 85 | 260 | 1.8 |
+| shoulder | 500 | 55 | 130 | 2.5 |
+| elbow | 450 | 45 | 100 | 3.0 |
+| wrist | 250 | 30 | 45 | 2.5 |
+
+# Activation and Capacity
+
+- The finite force-mode authority contract is `maximumForce = baseCapacity_Nm * capacityScale * activation`, with activation clamped to `[0,1]`, finite nonnegative capacity scale, and `useAcceleration=false`.
+- Physical fixtures verified activation `0`, `0.5`, and `1` produce zero, half, and full finite maximum force. Spring/damper govern tracking response and do not define capacity.
+- Requested orientations are normalized/canonicalized and shortest-arc rate limited per 0.01 s tick. The command-side modeled demand is an `ENGINEERING_CONCEPTUAL` diagnostic and does not use `ConfigurableJoint.currentTorque`.
+
+# Powered Prototype Modes
+
+- `PASSIVE` restores the GAM-6 zero-drive collapse.
+- `POWERED_NEUTRAL` applies finite open-loop neutral tracking with no root or balance control.
+- `ZERO_ACTIVATION` retains the powered architecture with zero maximum force.
+- `SELECTED_JOINT_PULSE` applies a bounded signed 20-degree internal-radian command to the selected knee or elbow.
+- The actual review scene measured whole-body COM drop after 0.75 s of authoritative simulation as `0.44399 m` passive versus `0.12824 m` powered. The positive left-knee pulse measured `+5.014 degrees` in calibrated joint space, and the visible human followed both results.
+
+# Known Open-Loop Limitations
+
+Finite local neutral drives materially delay collapse but do not provide COM feedback, support-polygon control, or indefinite balance. GAM-7 has no root control, hidden support, direct torque path, barbell behavior, lift controller, or fatigue model.
+
 # Evolution Rules
 
 Only add facts verified in this repository by imported assets, Unity inspection, measurements, tests, or visual evidence. Do not add generic Unity tutorials, speculative powered-joint architecture, or a debugging diary. Do not state that a physical rig, mass model, colliders, joints, or follower exists until its owning mission implements and qualifies it.
 
 # Last Verified
 
-2026-08-30 with Unity `6000.3.22f1`: GAM-5 asset/import facts remain valid; GAM-6 builds 16 dynamic rigid bodies and 15 zero-drive `ConfigurableJoint` constraints in the 100 Hz authoritative scene, assigns 100.0000 kg with zero mass error, reports zero initial nonadjacent penetration, collapses coherently under gravity, settles without numerical explosion, and resets cleanly. The full EditMode suite passed 40/40 and the full PlayMode suite passed 16/16; owner physical review remains the acceptance boundary.
+2026-08-31 with Unity `6000.3.22f1`: GAM-5/GAM-6 asset and passive-rig facts remain valid. GAM-7 adds one pre-physics drive authority, 14 finite powered joints in seven family profiles, calibrated local target conversion, activation scaling, shortest-arc target limiting, passive/powered/zero/pulse review modes, focused convention fixtures, and paired actual-human visual evidence. Owner powered-athlete review remains the final acceptance boundary.
