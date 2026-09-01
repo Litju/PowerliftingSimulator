@@ -43,9 +43,13 @@ namespace PowerliftingSimulator.Equipment
         private readonly List<LineRenderer> _inertiaAxes = new List<LineRenderer>(3);
 
         private GameObject _barRoot;
+        private GameObject _leftCollarVisual;
+        private GameObject _rightCollarVisual;
         private Rigidbody _barBody;
         private MeshCollider _leftPlateCollider;
         private MeshCollider _rightPlateCollider;
+        private BoxCollider _leftCollarCollider;
+        private BoxCollider _rightCollarCollider;
         private LineRenderer _recordedTrail;
         private Material _steelMaterial;
         private Material _sleeveMaterial;
@@ -67,6 +71,7 @@ namespace PowerliftingSimulator.Equipment
 
         public Rigidbody Body => _barBody;
         public BarbellLoadPlan LoadPlan => _loadPlan;
+        public BarbellLoadLayout LoadLayout => _loadPlan == null ? null : _loadPlan.Layout;
         public BarbellInertiaModel InertiaModel => _inertiaModel;
         public float LoadedMassKg => _barBody == null ? 0f : _barBody.mass;
         public bool IsBuilt => _barBody != null;
@@ -400,6 +405,8 @@ namespace PowerliftingSimulator.Equipment
             collarMassEachKg = BarbellPrototypeConfiguration.CollarMassEachKg,
             baseBarbellMassKg = BarbellPrototypeConfiguration.BaseBarbellMassKg,
             plateMassRule = "requested total = 20 kg bare bar + 5 kg collars + equal plate mass on each side",
+            collarLayoutRule = "inner fixed shoulder/collar face -> heaviest-first plate stack -> removable 2.5 kg collar -> remaining sleeve; one layout per load plan",
+            sleeveOverflowRule = "reject a load when either complete per-side plate and removable collar stack exceeds the usable sleeve end",
             sourceClass = "SOURCE_DERIVED_AND_GAME_CALIBRATION"
         };
 
@@ -423,10 +430,12 @@ namespace PowerliftingSimulator.Equipment
             _barBody.centerOfMass = _inertiaModel.CenterOfMassBarMeters;
             _barBody.inertiaTensor = _inertiaModel.InertiaTensorKgM2;
             _barBody.inertiaTensorRotation = Quaternion.identity;
-            ApplyPlateVisuals(plan.PlatesPerSideKg, _leftPlateVisuals, -1f, "left");
-            ApplyPlateVisuals(plan.PlatesPerSideKg, _rightPlateVisuals, 1f, "right");
-            ApplyPlateCollider(_leftPlateCollider, plan.PlatesPerSideKg, -1f);
-            ApplyPlateCollider(_rightPlateCollider, plan.PlatesPerSideKg, 1f);
+            ApplyPlateVisuals(plan.Layout.Left, _leftPlateVisuals, "left");
+            ApplyPlateVisuals(plan.Layout.Right, _rightPlateVisuals, "right");
+            ApplyPlateCollider(_leftPlateCollider, plan.Layout.Left);
+            ApplyPlateCollider(_rightPlateCollider, plan.Layout.Right);
+            ApplyCollarPlacement(_leftCollarVisual, _leftCollarCollider, plan.Layout.Left);
+            ApplyCollarPlacement(_rightCollarVisual, _rightCollarCollider, plan.Layout.Right);
             UpdateDebugOverlay();
         }
 
@@ -456,8 +465,8 @@ namespace PowerliftingSimulator.Equipment
             CreateCylinderVisual("RightSleeveVisual", sleeveLength, BarbellPrototypeConfiguration.SleeveDiameterMeters, sleeveCenter, _sleeveMaterial);
             CreateCylinderVisual("LeftShoulderVisual", 0.040f, 0.090f, -BarbellPrototypeConfiguration.CollarFaceXBarMeters, _steelMaterial);
             CreateCylinderVisual("RightShoulderVisual", 0.040f, 0.090f, BarbellPrototypeConfiguration.CollarFaceXBarMeters, _steelMaterial);
-            CreateCylinderVisual("LeftCollarVisual", BarbellPrototypeConfiguration.CollarThicknessMeters, BarbellPrototypeConfiguration.CollarDiameterMeters, -(BarbellPrototypeConfiguration.CollarFaceXBarMeters + BarbellPrototypeConfiguration.CollarThicknessMeters * 0.5f), _collarMaterial);
-            CreateCylinderVisual("RightCollarVisual", BarbellPrototypeConfiguration.CollarThicknessMeters, BarbellPrototypeConfiguration.CollarDiameterMeters, BarbellPrototypeConfiguration.CollarFaceXBarMeters + BarbellPrototypeConfiguration.CollarThicknessMeters * 0.5f, _collarMaterial);
+            _leftCollarVisual = CreateCylinderVisual("LeftCollarVisual", BarbellPrototypeConfiguration.CollarThicknessMeters, BarbellPrototypeConfiguration.CollarDiameterMeters, 0f, _collarMaterial);
+            _rightCollarVisual = CreateCylinderVisual("RightCollarVisual", BarbellPrototypeConfiguration.CollarThicknessMeters, BarbellPrototypeConfiguration.CollarDiameterMeters, 0f, _collarMaterial);
             CreateCylinderVisual("LeftRingVisual", 0.012f, 0.036f, -BarbellPrototypeConfiguration.RingXBarMeters, _collarMaterial);
             CreateCylinderVisual("RightRingVisual", 0.012f, 0.036f, BarbellPrototypeConfiguration.RingXBarMeters, _collarMaterial);
         }
@@ -476,6 +485,8 @@ namespace PowerliftingSimulator.Equipment
             CreateSleeveCollider("RightSleeveCollider", sleeveCenter, sleeveLength);
             CreateShoulderCollider("LeftShoulderCollider", -BarbellPrototypeConfiguration.CollarFaceXBarMeters);
             CreateShoulderCollider("RightShoulderCollider", BarbellPrototypeConfiguration.CollarFaceXBarMeters);
+            _leftCollarCollider = CreateCollarCollider("LeftCollarCollider");
+            _rightCollarCollider = CreateCollarCollider("RightCollarCollider");
             _leftPlateCollider = CreatePlateCollider("LeftPlateAggregateCollider");
             _rightPlateCollider = CreatePlateCollider("RightPlateAggregateCollider");
         }
@@ -500,6 +511,19 @@ namespace PowerliftingSimulator.Equipment
             BoxCollider shoulder = colliderObject.AddComponent<BoxCollider>();
             shoulder.size = new Vector3(0.040f, 0.090f, 0.090f);
             shoulder.material = _contactMaterial;
+        }
+
+        private BoxCollider CreateCollarCollider(string name)
+        {
+            GameObject colliderObject = new GameObject(name);
+            colliderObject.transform.SetParent(_barRoot.transform, false);
+            BoxCollider collar = colliderObject.AddComponent<BoxCollider>();
+            collar.size = new Vector3(
+                BarbellPrototypeConfiguration.CollarThicknessMeters,
+                BarbellPrototypeConfiguration.CollarDiameterMeters,
+                BarbellPrototypeConfiguration.CollarDiameterMeters);
+            collar.material = _contactMaterial;
+            return collar;
         }
 
         private MeshCollider CreatePlateCollider(string name)
@@ -604,48 +628,43 @@ namespace PowerliftingSimulator.Equipment
             return visual;
         }
 
-        private void ApplyPlateVisuals(IReadOnlyList<float> plates, List<GameObject> visuals, float side, string sideName)
+        private void ApplyPlateVisuals(BarbellSideLayout layout, List<GameObject> visuals, string sideName)
         {
-            float accumulatedThickness = 0f;
             for (int index = 0; index < visuals.Count; index++)
             {
                 GameObject visual = visuals[index];
-                if (index >= plates.Count)
+                if (index >= layout.PlatePlacements.Count)
                 {
                     visual.SetActive(false);
                     continue;
                 }
 
-                float massKg = plates[index];
+                BarbellPlatePlacement placement = layout.PlatePlacements[index];
+                float massKg = placement.MassKilograms;
                 BarbellPlateGeometry geometry = BarbellPrototypeConfiguration.GetPlateGeometry(massKg);
                 visual.SetActive(true);
                 visual.name = string.Format(CultureInfo.InvariantCulture, "{0}Plate_{1:0.##}kg_{2}", sideName, massKg, index);
-                visual.transform.localPosition = new Vector3(
-                    side * (BarbellPrototypeConfiguration.PlateStartXBarMeters + accumulatedThickness + geometry.ThicknessMeters * 0.5f),
-                    0f,
-                    0f);
+                visual.transform.localPosition = new Vector3(placement.CenterXBarMeters, 0f, 0f);
                 visual.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
                 visual.transform.localScale = new Vector3(geometry.DiameterMeters, geometry.ThicknessMeters * 0.5f, geometry.DiameterMeters);
                 SetMaterial(visual.GetComponent<Renderer>(), GetPlateMaterial(geometry));
-                accumulatedThickness += geometry.ThicknessMeters;
             }
         }
 
-        private void ApplyPlateCollider(MeshCollider collider, IReadOnlyList<float> plates, float side)
+        private void ApplyPlateCollider(MeshCollider collider, BarbellSideLayout layout)
         {
-            if (plates.Count == 0)
+            if (layout.PlatePlacements.Count == 0)
             {
                 collider.sharedMesh = null;
                 collider.gameObject.SetActive(false);
                 return;
             }
 
-            float stackLength = 0f;
+            float stackLength = layout.PlateStackThicknessMeters;
             float radius = 0f;
-            for (int index = 0; index < plates.Count; index++)
+            for (int index = 0; index < layout.PlatePlacements.Count; index++)
             {
-                BarbellPlateGeometry geometry = BarbellPrototypeConfiguration.GetPlateGeometry(plates[index]);
-                stackLength += geometry.ThicknessMeters;
+                BarbellPlateGeometry geometry = BarbellPrototypeConfiguration.GetPlateGeometry(layout.PlatePlacements[index].MassKilograms);
                 radius = Mathf.Max(radius, geometry.DiameterMeters * 0.5f);
             }
 
@@ -655,10 +674,17 @@ namespace PowerliftingSimulator.Equipment
                 DestroyImmediate(previousMesh);
             collider.sharedMesh = CreateCylinderMesh(stackLength, radius, 24);
             collider.transform.localPosition = new Vector3(
-                side * (BarbellPrototypeConfiguration.PlateStartXBarMeters + stackLength * 0.5f),
+                (layout.PlateStartXBarMeters + layout.PlateStackOuterFaceXBarMeters) * 0.5f,
                 0f,
                 0f);
             collider.gameObject.SetActive(true);
+        }
+
+        private static void ApplyCollarPlacement(GameObject visual, BoxCollider collider, BarbellSideLayout layout)
+        {
+            Vector3 center = new Vector3(layout.RemovableCollarCenterXBarMeters, 0f, 0f);
+            visual.transform.localPosition = center;
+            collider.transform.localPosition = center;
         }
 
         private void UpdateDebugOverlay()
@@ -859,6 +885,10 @@ namespace PowerliftingSimulator.Equipment
             ringXBarM = BarbellPrototypeConfiguration.RingXBarMeters,
             collarFaceXBarM = BarbellPrototypeConfiguration.CollarFaceXBarMeters,
             sleeveEndXBarM = BarbellPrototypeConfiguration.SleeveEndXBarMeters,
+            plateStartXBarM = BarbellPrototypeConfiguration.PlateStartXBarMeters,
+            usableSleeveLengthM = BarbellPrototypeConfiguration.SleeveEndXBarMeters - BarbellPrototypeConfiguration.PlateStartXBarMeters,
+            removableCollarThicknessM = BarbellPrototypeConfiguration.CollarThicknessMeters,
+            removableCollarDiameterM = BarbellPrototypeConfiguration.CollarDiameterMeters,
             sourceClass = "GAME_CALIBRATION_FROM_SOURCE_RANGE"
         };
 
@@ -904,10 +934,41 @@ namespace PowerliftingSimulator.Equipment
                     totalMassKg = plan.TotalMassKg,
                     leftPlanKg = Copy(plan.PlatesPerSideKg),
                     rightPlanKg = Copy(plan.PlatesPerSideKg),
+                    leftLayout = BuildSideLayoutRecord(plan.Layout.Left),
+                    rightLayout = BuildSideLayoutRecord(plan.Layout.Right),
                     symmetryErrorKg = 0f
                 };
             }
             return records;
+        }
+
+        private static SideLayoutRecord BuildSideLayoutRecord(BarbellSideLayout layout)
+        {
+            var plates = new PlatePlacementRecord[layout.PlatePlacements.Count];
+            for (int index = 0; index < plates.Length; index++)
+            {
+                BarbellPlatePlacement placement = layout.PlatePlacements[index];
+                plates[index] = new PlatePlacementRecord
+                {
+                    massKg = placement.MassKilograms,
+                    centerXBarM = placement.CenterXBarMeters,
+                    innerFaceXBarM = placement.InnerFaceXBarMeters,
+                    outerFaceXBarM = placement.OuterFaceXBarMeters,
+                    thicknessM = placement.ThicknessMeters
+                };
+            }
+
+            return new SideLayoutRecord
+            {
+                sideSign = layout.SideSign,
+                plateStartXBarM = layout.PlateStartXBarMeters,
+                plateStackThicknessM = layout.PlateStackThicknessMeters,
+                plateStackOuterFaceXBarM = layout.PlateStackOuterFaceXBarMeters,
+                removableCollarCenterXBarM = layout.RemovableCollarCenterXBarMeters,
+                removableCollarOuterFaceXBarM = layout.RemovableCollarOuterFaceXBarMeters,
+                remainingSleeveClearanceM = layout.RemainingSleeveClearanceMeters,
+                plates = plates
+            };
         }
 
         private InertiaRecord[] BuildInertiaRecords(IReadOnlyList<BarbellLoadPlan> plans)
@@ -1016,6 +1077,8 @@ namespace PowerliftingSimulator.Equipment
             public float collarMassEachKg;
             public float baseBarbellMassKg;
             public string plateMassRule;
+            public string collarLayoutRule;
+            public string sleeveOverflowRule;
             public string sourceClass;
         }
 
@@ -1029,6 +1092,10 @@ namespace PowerliftingSimulator.Equipment
             public float ringXBarM;
             public float collarFaceXBarM;
             public float sleeveEndXBarM;
+            public float plateStartXBarM;
+            public float usableSleeveLengthM;
+            public float removableCollarThicknessM;
+            public float removableCollarDiameterM;
             public string sourceClass;
         }
 
@@ -1057,7 +1124,32 @@ namespace PowerliftingSimulator.Equipment
             public float totalMassKg;
             public float[] leftPlanKg;
             public float[] rightPlanKg;
+            public SideLayoutRecord leftLayout;
+            public SideLayoutRecord rightLayout;
             public float symmetryErrorKg;
+        }
+
+        [Serializable]
+        private sealed class SideLayoutRecord
+        {
+            public float sideSign;
+            public float plateStartXBarM;
+            public float plateStackThicknessM;
+            public float plateStackOuterFaceXBarM;
+            public float removableCollarCenterXBarM;
+            public float removableCollarOuterFaceXBarM;
+            public float remainingSleeveClearanceM;
+            public PlatePlacementRecord[] plates;
+        }
+
+        [Serializable]
+        private sealed class PlatePlacementRecord
+        {
+            public float massKg;
+            public float centerXBarM;
+            public float innerFaceXBarM;
+            public float outerFaceXBarM;
+            public float thicknessM;
         }
 
         [Serializable]

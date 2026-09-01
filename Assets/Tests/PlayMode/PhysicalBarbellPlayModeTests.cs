@@ -137,6 +137,82 @@ namespace PowerliftingSimulator.Tests
             Assert.That(bar.IsRecordedTrailVisible, Is.False);
         }
 
+        [UnityTest]
+        public IEnumerator GAM8_COLLAR_LAYOUT_DRIVES_PRESENTATION_AND_CHILD_COLLIDERS()
+        {
+            AsyncOperation load = SceneManager.LoadSceneAsync("PhysicalAthletePhysics", LoadSceneMode.Single);
+            Assert.That(load, Is.Not.Null);
+            while (!load.isDone)
+                yield return null;
+            yield return null;
+
+            PhysicalBarbell bar = Object.FindFirstObjectByType<PhysicalBarbell>();
+            Assert.That(bar, Is.Not.Null);
+            Assert.That(bar.LoadLayout, Is.Not.Null);
+
+            AssertLoadPresentationAndColliders(bar, 105f);
+            bar.ConfigureLoad(25f);
+            AssertLoadPresentationAndColliders(bar, 25f);
+            bar.ConfigureLoad(205f);
+            AssertLoadPresentationAndColliders(bar, 205f);
+        }
+
+        private static void AssertLoadPresentationAndColliders(PhysicalBarbell bar, float loadKg)
+        {
+            BarbellSideLayout left = bar.LoadLayout.Left;
+            BarbellSideLayout right = bar.LoadLayout.Right;
+            Assert.That(bar.LoadedMassKg, Is.EqualTo(loadKg).Within(0.0001f));
+            AssertCollarPlacement(bar.Body, "Left", left);
+            AssertCollarPlacement(bar.Body, "Right", right);
+            AssertPlatePresentation(bar.Body, "left", left);
+            AssertPlatePresentation(bar.Body, "right", right);
+        }
+
+        private static void AssertCollarPlacement(Rigidbody body, string sideName, BarbellSideLayout layout)
+        {
+            Transform visual = body.transform.Find(sideName + "CollarVisual");
+            Transform colliderObject = body.transform.Find(sideName + "CollarCollider");
+            Assert.That(visual, Is.Not.Null);
+            Assert.That(colliderObject, Is.Not.Null);
+            Assert.That(visual.localPosition.x, Is.EqualTo(layout.RemovableCollarCenterXBarMeters).Within(0.0001f));
+            Assert.That(colliderObject.localPosition.x, Is.EqualTo(layout.RemovableCollarCenterXBarMeters).Within(0.0001f));
+            Assert.That(colliderObject.parent, Is.SameAs(body.transform));
+            Assert.That(colliderObject.GetComponents<Collider>(), Has.Length.EqualTo(1));
+            Assert.That(colliderObject.GetComponent<BoxCollider>(), Is.Not.Null);
+            Assert.That(colliderObject.GetComponent<Rigidbody>(), Is.Null);
+            Assert.That(colliderObject.GetComponent<Collider>().attachedRigidbody, Is.SameAs(body));
+        }
+
+        private static void AssertPlatePresentation(Rigidbody body, string sideName, BarbellSideLayout layout)
+        {
+            Transform aggregateObject = body.transform.Find(char.ToUpperInvariant(sideName[0]) + sideName.Substring(1) + "PlateAggregateCollider");
+            Assert.That(aggregateObject, Is.Not.Null);
+            MeshCollider aggregate = aggregateObject.GetComponent<MeshCollider>();
+            Assert.That(aggregate, Is.Not.Null);
+            if (layout.PlatePlacements.Count == 0)
+            {
+                Assert.That(aggregateObject.gameObject.activeSelf, Is.False);
+                Assert.That(aggregate.sharedMesh, Is.Null);
+                return;
+            }
+
+            Assert.That(aggregateObject.localPosition.x, Is.EqualTo(
+                (layout.PlateStartXBarMeters + layout.PlateStackOuterFaceXBarMeters) * 0.5f).Within(0.0001f));
+            Assert.That(aggregateObject.gameObject.activeSelf, Is.True);
+            for (int index = 0; index < layout.PlatePlacements.Count; index++)
+            {
+                BarbellPlatePlacement placement = layout.PlatePlacements[index];
+                Transform visual = body.transform.Find(string.Format(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    "{0}Plate_{1:0.##}kg_{2}",
+                    sideName,
+                    placement.MassKilograms,
+                    index));
+                Assert.That(visual, Is.Not.Null);
+                Assert.That(visual.localPosition.x, Is.EqualTo(placement.CenterXBarMeters).Within(0.0001f));
+            }
+        }
+
         private static void Capture(string filename)
         {
             if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)

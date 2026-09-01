@@ -47,6 +47,68 @@ namespace PowerliftingSimulator.Tests
         }
 
         [Test]
+        public void BAR_LOADED_LAYOUT_PRESERVES_ORDER_SYMMETRY_AND_SLEEVE_CLEARANCE()
+        {
+            BarbellLoadPlan light = BarbellLoadingSolver.Solve(25f);
+            AssertSideLayout(light, -0.705f, -0.705f, -0.725f, -0.745f, 0.355f, Array.Empty<float>());
+            AssertSideLayout(light, 0.705f, 0.705f, 0.725f, 0.745f, 0.355f, Array.Empty<float>());
+
+            BarbellLoadPlan medium = BarbellLoadingSolver.Solve(105f);
+            AssertSideLayout(medium, -0.705f, -0.790f, -0.810f, -0.830f, 0.270f, new[] { -0.7325f, -0.775f });
+            AssertSideLayout(medium, 0.705f, 0.790f, 0.810f, 0.830f, 0.270f, new[] { 0.7325f, 0.775f });
+
+            BarbellLoadPlan heavy = BarbellLoadingSolver.Solve(205f);
+            AssertSideLayout(heavy, -0.705f, -0.900f, -0.920f, -0.940f, 0.160f, new[] { -0.7325f, -0.7875f, -0.8425f, -0.885f });
+            AssertSideLayout(heavy, 0.705f, 0.900f, 0.920f, 0.940f, 0.160f, new[] { 0.7325f, 0.7875f, 0.8425f, 0.885f });
+
+            Assert.That(Mathf.Abs(light.Layout.Left.RemovableCollarCenterXBarMeters), Is.LessThan(Mathf.Abs(medium.Layout.Left.RemovableCollarCenterXBarMeters)));
+            Assert.That(Mathf.Abs(medium.Layout.Left.RemovableCollarCenterXBarMeters), Is.LessThan(Mathf.Abs(heavy.Layout.Left.RemovableCollarCenterXBarMeters)));
+            Assert.That(light.Layout.Left.RemovableCollarCenterXBarMeters, Is.EqualTo(-light.Layout.Right.RemovableCollarCenterXBarMeters).Within(0.0001f));
+            Assert.That(medium.Layout.Left.RemovableCollarCenterXBarMeters, Is.EqualTo(-medium.Layout.Right.RemovableCollarCenterXBarMeters).Within(0.0001f));
+            Assert.That(heavy.Layout.Left.RemovableCollarCenterXBarMeters, Is.EqualTo(-heavy.Layout.Right.RemovableCollarCenterXBarMeters).Within(0.0001f));
+        }
+
+        [Test]
+        public void BAR_LOADING_REJECTS_FINITE_INVENTORY_SLEEVE_OVERFLOW()
+        {
+            float maximumFiniteInventoryLoadKg = BarbellPrototypeConfiguration.BaseBarbellMassKg;
+            for (int index = 0; index < BarbellPrototypeConfiguration.Inventory.Count; index++)
+            {
+                BarbellInventoryEntry entry = BarbellPrototypeConfiguration.Inventory[index];
+                maximumFiniteInventoryLoadKg += entry.MassKilograms * entry.MaximumPairsPerSide * 2f;
+            }
+
+            InvalidOperationException exception = Assert.Throws<InvalidOperationException>(
+                () => BarbellLoadingSolver.Solve(maximumFiniteInventoryLoadKg));
+            Assert.That(exception.Message, Does.Contain("sleeve"));
+        }
+
+        [Test]
+        public void BAR_CORRECTED_COMPOUND_INERTIA_USES_LOAD_DEPENDENT_COLLAR_POSITIONS()
+        {
+            BarbellLoadPlan mediumPlan = BarbellLoadingSolver.Solve(105f);
+            BarbellLoadPlan heavyPlan = BarbellLoadingSolver.Solve(205f);
+            BarbellInertiaModel medium = BarbellPrototypeConfiguration.ComputeInertia(mediumPlan);
+            BarbellInertiaModel heavy = BarbellPrototypeConfiguration.ComputeInertia(heavyPlan);
+
+            BarbellMassComponent mediumLeftCollar = FindComponent(medium, "collar_left");
+            BarbellMassComponent mediumRightCollar = FindComponent(medium, "collar_right");
+            BarbellMassComponent heavyLeftCollar = FindComponent(heavy, "collar_left");
+            BarbellMassComponent heavyRightCollar = FindComponent(heavy, "collar_right");
+            Assert.That(mediumLeftCollar.MassKilograms, Is.EqualTo(BarbellPrototypeConfiguration.CollarMassEachKg).Within(0.0001f));
+            Assert.That(mediumRightCollar.MassKilograms, Is.EqualTo(BarbellPrototypeConfiguration.CollarMassEachKg).Within(0.0001f));
+            Assert.That(heavyLeftCollar.MassKilograms, Is.EqualTo(BarbellPrototypeConfiguration.CollarMassEachKg).Within(0.0001f));
+            Assert.That(heavyRightCollar.MassKilograms, Is.EqualTo(BarbellPrototypeConfiguration.CollarMassEachKg).Within(0.0001f));
+            Assert.That(mediumLeftCollar.PositionBarMeters.x, Is.EqualTo(mediumPlan.Layout.Left.RemovableCollarCenterXBarMeters).Within(0.0001f));
+            Assert.That(mediumRightCollar.PositionBarMeters.x, Is.EqualTo(mediumPlan.Layout.Right.RemovableCollarCenterXBarMeters).Within(0.0001f));
+            Assert.That(heavyLeftCollar.PositionBarMeters.x, Is.EqualTo(heavyPlan.Layout.Left.RemovableCollarCenterXBarMeters).Within(0.0001f));
+            Assert.That(heavyRightCollar.PositionBarMeters.x, Is.EqualTo(heavyPlan.Layout.Right.RemovableCollarCenterXBarMeters).Within(0.0001f));
+            Assert.That(Mathf.Abs(heavyLeftCollar.PositionBarMeters.x), Is.GreaterThan(Mathf.Abs(mediumLeftCollar.PositionBarMeters.x)));
+            Assert.That(IsFinitePositive(medium.InertiaTensorKgM2), Is.True);
+            Assert.That(IsFinitePositive(heavy.InertiaTensorKgM2), Is.True);
+        }
+
+        [Test]
         public void PHYSICAL_OBSERVATION_AND_TRACE_ARE_IMMUTABLE_BOUNDED_AND_MONOTONIC()
         {
             var source = new[] { Body("barbell", 1f) };
@@ -94,6 +156,42 @@ namespace PowerliftingSimulator.Tests
                 QuaternionValue.Identity,
                 Vector3Value.Zero,
                 Vector3Value.Zero);
+        }
+
+        private static void AssertSideLayout(
+            BarbellLoadPlan plan,
+            float expectedPlateStart,
+            float expectedPlateStackOuterFace,
+            float expectedCollarCenter,
+            float expectedCollarOuterFace,
+            float expectedClearance,
+            float[] expectedPlateCenters)
+        {
+            BarbellSideLayout side = expectedPlateStart < 0f ? plan.Layout.Left : plan.Layout.Right;
+            Assert.That(side.PlateStartXBarMeters, Is.EqualTo(expectedPlateStart).Within(0.0001f));
+            Assert.That(side.PlateStackOuterFaceXBarMeters, Is.EqualTo(expectedPlateStackOuterFace).Within(0.0001f));
+            Assert.That(side.RemovableCollarCenterXBarMeters, Is.EqualTo(expectedCollarCenter).Within(0.0001f));
+            Assert.That(side.RemovableCollarOuterFaceXBarMeters, Is.EqualTo(expectedCollarOuterFace).Within(0.0001f));
+            Assert.That(side.RemainingSleeveClearanceMeters, Is.EqualTo(expectedClearance).Within(0.0001f));
+            Assert.That(Mathf.Abs(side.RemovableCollarOuterFaceXBarMeters), Is.LessThanOrEqualTo(BarbellPrototypeConfiguration.SleeveEndXBarMeters));
+            Assert.That(side.PlatePlacements.Count, Is.EqualTo(expectedPlateCenters.Length));
+            for (int index = 0; index < expectedPlateCenters.Length; index++)
+            {
+                Assert.That(side.PlatePlacements[index].CenterXBarMeters, Is.EqualTo(expectedPlateCenters[index]).Within(0.0001f));
+                Assert.That(side.PlatePlacements[index].MassKilograms, Is.EqualTo(plan.PlatesPerSideKg[index]).Within(0.0001f));
+            }
+        }
+
+        private static BarbellMassComponent FindComponent(BarbellInertiaModel model, string id)
+        {
+            for (int index = 0; index < model.Components.Count; index++)
+            {
+                if (model.Components[index].Id == id)
+                    return model.Components[index];
+            }
+
+            Assert.Fail("Missing inertia component: " + id);
+            return default;
         }
 
         private static PlayerIntentFrame Intent(ulong tick)
