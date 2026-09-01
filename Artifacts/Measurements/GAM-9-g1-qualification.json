@@ -1,0 +1,30 @@
+{
+    "schema": "GAM9_G1_QUALIFICATION_V1",
+    "status": "PASS_WITH_LIMITATIONS",
+    "qualificationScope": "G1 shared physical substrate; not final lift, replay, or release qualification",
+    "unityVersion": "6000.3.22f1",
+    "physicsRateHz": 100,
+    "scene": "PhysicalAthletePhysics",
+    "authoritativeScene": "PowerliftingSimulator.AuthoritativePhysics",
+    "bodyCount": 16,
+    "jointCount": 15,
+    "poweredJointCount": 14,
+    "passiveJointCount": 1,
+    "totalMassKg": 100.0,
+    "passiveComDropM": 0.4529830813407898,
+    "poweredComDropM": 0.12307107448577881,
+    "positivePulseDegrees": 5.013730525970459,
+    "barDropM": 1.1250306367874146,
+    "barMassKg": 105.0,
+    "observationBodyCount": 17,
+    "traceSamples": 20,
+    "sameMachineRepeatability": "PASS; cross-platform PhysX determinism not claimed",
+    "evidence": [
+        "Artifacts/Evidence/GAM-9/GAM-9-neutral-substrate.png",
+        "Artifacts/Evidence/GAM-9/GAM-9-passive-no-support.png",
+        "Artifacts/Evidence/GAM-9/GAM-9-powered-neutral.png",
+        "Artifacts/Evidence/GAM-9/GAM-9-feet-platform-contact.png",
+        "Artifacts/Evidence/GAM-9/GAM-9-athlete-and-bar.png",
+        "Artifacts/Evidence/GAM-9/GAM-9-reset-repeatability.png"
+    ]
+}

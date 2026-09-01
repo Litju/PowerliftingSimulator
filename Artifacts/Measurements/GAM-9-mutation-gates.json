@@ -1,0 +1,94 @@
+{
+    "schema": "GAM9_MUTATION_GATE_MATRIX_V1",
+    "status": "PASS",
+    "productionPhysicsSimulateCall": 1,
+    "productionGlobalPhysicsSimulateCalls": 0,
+    "productionFixedUpdateCalls": 0,
+    "productionScriptedMotionCalls": 0,
+    "results": [
+        {
+            "id": "M01",
+            "mutation": "second PhysicsScene.Simulate or global Physics.Simulate call",
+            "gate": "production source audit",
+            "rejected": true,
+            "observed": "localSimulateCalls=1; globalSimulateCalls=0; fixedUpdateCalls=0; scriptedMotionCalls=0"
+        },
+        {
+            "id": "M02",
+            "mutation": "second powered-joint pre-physics writer",
+            "gate": "FoundationRuntime.RegisterPrePhysicsStep",
+            "rejected": true,
+            "observed": "InvalidOperationException: The authoritative pre-physics step already has an owner."
+        },
+        {
+            "id": "M03",
+            "mutation": "pelvis isKinematic=true",
+            "gate": "PhysicalAthleteRig.ValidateRuntime",
+            "rejected": true,
+            "observed": "InvalidOperationException: Segment 'pelvis' is not a finite dynamic gravity body."
+        },
+        {
+            "id": "M04",
+            "mutation": "powered joint maximumForce=+Infinity",
+            "gate": "PhysicalAthleteRig.ValidateRuntime",
+            "rejected": true,
+            "observed": "InvalidOperationException: Joint 'left_shank' violates passive-mode authority."
+        },
+        {
+            "id": "M05",
+            "mutation": "powered joint useAcceleration=true",
+            "gate": "G1 joint-authority qualification detector",
+            "rejected": true,
+            "observed": "qualification contract requires useAcceleration=false"
+        },
+        {
+            "id": "M06",
+            "mutation": "joint projection enabled",
+            "gate": "PhysicalAthleteRig.ValidateRuntime",
+            "rejected": true,
+            "observed": "InvalidOperationException: Joint 'left_shank' violates passive-mode authority."
+        },
+        {
+            "id": "M07",
+            "mutation": "child Rigidbody added below the physical bar",
+            "gate": "one-dynamic-bar invariant",
+            "rejected": true,
+            "observed": "barRigidbodiesAfterMutation=2"
+        },
+        {
+            "id": "M08",
+            "mutation": "one-sided plate mass mutation",
+            "gate": "symmetric-load qualification detector",
+            "rejected": true,
+            "observed": "mutated left/right per-side mass sequences differ"
+        },
+        {
+            "id": "M09",
+            "mutation": "sleeve-overflow load (725 kg)",
+            "gate": "BarbellLoadingSolver.CalculateSideLayout",
+            "rejected": true,
+            "observed": "InvalidOperationException: The left per-side plate and removable collar stack exceeds the usable sleeve length by 0.704999 m."
+        },
+        {
+            "id": "M10",
+            "mutation": "duplicate registered body/identifier",
+            "gate": "AuthoritativePhysicsScene.RegisterBody",
+            "rejected": true,
+            "observed": "Body identifier 'pelvis' is already registered."
+        },
+        {
+            "id": "M11",
+            "mutation": "recorded-state trail given physics authority",
+            "gate": "presentation-only trail invariant",
+            "rejected": true,
+            "observed": "no Rigidbody below recorded trail"
+        },
+        {
+            "id": "M12",
+            "mutation": "negative command sent to the positive knee convention",
+            "gate": "known-sign pulse detector",
+            "rejected": true,
+            "observed": "signedKneeResponseDeg=-20.072; positive convention requires > 0"
+        }
+    ]
+}
