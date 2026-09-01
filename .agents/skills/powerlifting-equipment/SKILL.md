@@ -43,7 +43,13 @@ solver subtracts the 25 kg base, splits the remainder equally, and consumes
 available denominations heaviest-first. It rejects non-finite, below-base,
 non-symmetric, and unsolvable requests without silent rounding. The canonical
 review loads are 25 kg (no plates), 105 kg (25 + 15 per side), and 205 kg
-(25 + 25 + 25 + 15 per side).
+(25 + 25 + 25 + 15 per side). Each `BarbellLoadPlan` calculates one shared
+deterministic signed BAR layout: plate start, each heaviest-first plate center
+and faces, stack outer face, removable-collar center and outer face, and
+remaining sleeve clearance. The order is fixed shoulder/collar face, plates,
+removable 2.5 kg collar, then remaining sleeve. A finite-inventory request is
+rejected when either complete per-side stack exceeds the usable sleeve end;
+plates are never clipped, overlapped, or silently shifted.
 
 # Mass and Compound Inertia
 
@@ -53,15 +59,19 @@ face masses are exact authored values. Each aligned cylinder uses
 `I_x = 1/2 m r^2` and `I_y = I_z = m(3r^2 + L^2)/12`; axial offsets add the
 parallel-axis term to the transverse axes. Symmetric loads keep COM at BAR
 origin within numerical tolerance, and the resulting mass and inertia are
-assigned to the one root Rigidbody.
+assigned to the one root Rigidbody. The two 2.5 kg removable collars are
+compound-inertia components at their same load-dependent layout centers.
 
 # Collision Model
 
 The bar root has one dynamic Rigidbody. Shaft, sleeves, shoulders, and one
-convex aggregate plate MeshCollider per loaded side are child colliders; plate
-renderers remain individual presentation children with no Rigidbody. Contact
-friction and restitution are explicit `GAME_CALIBRATION` values, and the bar
-uses discrete collision detection after the tested elevated drop path.
+convex aggregate plate MeshCollider per loaded side are child colliders; each
+removable collar also has one primitive BoxCollider child of that same root,
+with no child Rigidbody. Plate renderers remain individual presentation
+children with no Rigidbody. All plate and collar child positions use the same
+layout calculation as mass/inertia. Contact friction and restitution are
+explicit `GAME_CALIBRATION` values, and the bar uses discrete collision
+detection after the tested elevated drop path.
 
 # Authoritative Rigidbody Ownership
 
