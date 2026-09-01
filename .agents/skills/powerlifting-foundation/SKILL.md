@@ -210,3 +210,11 @@ results and do not decide later architecture.
 registered-body observation was 17 bodies in stable order; the bounded trace
 passed monotonic/immutability/neutrality checks; the existing athlete remained
 the primary body and sole pre-physics callback owner.
+
+2026-09-01 after GAM-9 G1 qualification on Unity 6000.3.22f1: the merged
+physical athlete/bar scene retained one production local Simulate owner, a
+17-body post-physics observation, 20-sample reset repeatability, 12 targeted
+mutation gates, a 100-cycle bounded soak, and a Windows x64 standalone smoke
+PASS. These same-machine results are not a cross-platform PhysX determinism
+claim; editor controller timing p95 was 0.1287 ms while the release player p95
+was 0.0663 ms.

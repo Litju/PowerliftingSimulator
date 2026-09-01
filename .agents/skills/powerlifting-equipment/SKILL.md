@@ -113,3 +113,9 @@ coupling, or a complete replay product.
 mass/inertia, one-body ownership, gravity/drop, same-impulse response, BAR
 landmarks, all-body observation, bounded trace, and recorded-state presentation
 seam were exercised by the GAM-8 qualification test.
+
+2026-09-01 after GAM-9 G1 qualification: the merged scene retained one dynamic
+105 kg bar in a stable 17-body observation; physical gravity drop measured
+1.125 m, and symmetric loading, presentation-only trail, and reset passed in
+the Windows standalone smoke. This remains a rigid engineering approximation;
+grip, rack, and lift coupling are not implemented.
