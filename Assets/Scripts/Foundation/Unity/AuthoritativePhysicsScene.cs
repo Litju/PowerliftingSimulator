@@ -102,28 +102,34 @@ namespace PowerliftingSimulator.Foundation.Unity
         internal PhysicalObservation CaptureObservation(SimulationTime time)
         {
             EnsureInitialized();
-            if (_primaryBody == null)
+            if (_bodies.Count == 0)
                 return PhysicalObservation.Empty(time);
 
-            QuaternionValue rotation = new QuaternionValue(
-                _primaryBody.rotation.x,
-                _primaryBody.rotation.y,
-                _primaryBody.rotation.z,
-                _primaryBody.rotation.w);
-            PhysicalBodyObservation body = new PhysicalBodyObservation(
-                _primaryBodyId,
-                _primaryBody.mass,
-                new Vector3Value(_primaryBody.position.x, _primaryBody.position.y, _primaryBody.position.z),
-                rotation,
-                new Vector3Value(
-                    _primaryBody.linearVelocity.x,
-                    _primaryBody.linearVelocity.y,
-                    _primaryBody.linearVelocity.z),
-                new Vector3Value(
-                    _primaryBody.angularVelocity.x,
-                    _primaryBody.angularVelocity.y,
-                    _primaryBody.angularVelocity.z));
-            return new PhysicalObservation(time, body, true);
+            var bodies = new PhysicalBodyObservation[_bodies.Count];
+            PhysicalBodyObservation primaryBody = default(PhysicalBodyObservation);
+            bool hasPrimaryBody = _primaryBody != null;
+            for (int index = 0; index < _bodies.Count; index++)
+            {
+                RegisteredBody registered = _bodies[index];
+                PhysicalBodyObservation body = CaptureBody(registered);
+                bodies[index] = body;
+                if (registered.Body == _primaryBody)
+                    primaryBody = body;
+            }
+
+            return new PhysicalObservation(time, primaryBody, hasPrimaryBody, bodies);
+        }
+
+        private static PhysicalBodyObservation CaptureBody(RegisteredBody registered)
+        {
+            Rigidbody body = registered.Body;
+            return new PhysicalBodyObservation(
+                registered.BodyId,
+                body.mass,
+                new Vector3Value(body.position.x, body.position.y, body.position.z),
+                new QuaternionValue(body.rotation.x, body.rotation.y, body.rotation.z, body.rotation.w),
+                new Vector3Value(body.linearVelocity.x, body.linearVelocity.y, body.linearVelocity.z),
+                new Vector3Value(body.angularVelocity.x, body.angularVelocity.y, body.angularVelocity.z));
         }
 
         internal void ResetBodies()
@@ -136,11 +142,14 @@ namespace PowerliftingSimulator.Foundation.Unity
             {
                 Rigidbody body = registered.Body;
                 RigidbodyResetState state = registered.ResetState;
-                body.isKinematic = state.WasKinematic;
+                // Unity rejects velocity writes while a Rigidbody is kinematic.
+                body.isKinematic = false;
+                body.transform.SetPositionAndRotation(state.Position, state.Rotation);
                 body.position = state.Position;
                 body.rotation = state.Rotation;
                 body.linearVelocity = state.LinearVelocity;
                 body.angularVelocity = state.AngularVelocity;
+                body.isKinematic = state.WasKinematic;
             }
             Physics.SyncTransforms();
 

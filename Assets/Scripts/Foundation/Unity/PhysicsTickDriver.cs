@@ -11,6 +11,7 @@ namespace PowerliftingSimulator.Foundation.Unity
         private readonly InputTimeDomain _inputTimeDomain;
         private readonly SimulationClock _clock;
         private readonly ObservationExchange _observations;
+        private readonly AttemptTrace _attemptTrace;
         private double _accumulatedRenderTimeSeconds;
         private double _preparedAccumulatedRenderTimeSeconds;
         private bool _renderFramePrepared;
@@ -27,6 +28,7 @@ namespace PowerliftingSimulator.Foundation.Unity
             _intentBuffer = new IntentBuffer();
             _clock = new SimulationClock();
             _observations = new ObservationExchange();
+            _attemptTrace = new AttemptTrace();
         }
 
         public IntentBuffer InputBuffer => _intentBuffer;
@@ -38,6 +40,8 @@ namespace PowerliftingSimulator.Foundation.Unity
         public PhysicalObservation CurrentObservation => _observations.Current;
 
         public PhysicalObservation PreviousObservation => _observations.Previous;
+
+        public AttemptTrace AttemptTrace => _attemptTrace;
 
         public int LastCatchUpTicks { get; private set; }
 
@@ -85,7 +89,10 @@ namespace PowerliftingSimulator.Foundation.Unity
 
                 _authoritativeScene.PhysicsSceneHandle.Simulate((float)SimulationConstants.FixedDeltaTimeSeconds);
 
-                _observations.Publish(_authoritativeScene.CaptureObservation(time));
+                PhysicalObservation observation = _authoritativeScene.CaptureObservation(time);
+                _observations.Publish(observation);
+                if (_attemptTrace.IsRecording)
+                    _attemptTrace.Append(observation, LastIntentFrame);
             }
             finally
             {
@@ -172,6 +179,8 @@ namespace PowerliftingSimulator.Foundation.Unity
             _inputTimeDomain.Reset();
             _clock.Reset();
             _observations.Reset();
+            _attemptTrace.EndRecording();
+            _attemptTrace.Clear();
             LastIntentFrame = PlayerIntentFrame.Empty;
             LastCatchUpTicks = 0;
             _accumulatedRenderTimeSeconds = 0d;

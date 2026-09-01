@@ -78,6 +78,27 @@ namespace PowerliftingSimulator.Foundation.Unity
             }
         }
 
+        public AttemptTrace AttemptTrace
+        {
+            get
+            {
+                EnsureInitialized();
+                return _tickDriver.AttemptTrace;
+            }
+        }
+
+        public void BeginAttemptTrace()
+        {
+            EnsureInitialized();
+            _tickDriver.AttemptTrace.BeginRecording();
+        }
+
+        public void EndAttemptTrace()
+        {
+            EnsureInitialized();
+            _tickDriver.AttemptTrace.EndRecording();
+        }
+
         public int LastCatchUpTicks
         {
             get

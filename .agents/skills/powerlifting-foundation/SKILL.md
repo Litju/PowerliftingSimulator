@@ -121,6 +121,27 @@ frame, and SI units. `AuthoritativePhysicsScene.CaptureObservation` is the
 Unity-to-foundation conversion boundary; later systems must not treat live
 Unity component references as observations.
 
+# GAM-8 Observation and Trace Evolution
+
+`AuthoritativePhysicsScene` captures every registered body in stable
+registration order after the single local `PhysicsScene.Simulate` call.
+`PhysicalObservation.Bodies` is a copied read-only collection with `BodyCount`,
+`BodyAt`, and `TryGetBody`; it exposes values only, never Rigidbody references.
+The bar's durable identity is `barbell`, while `PrimaryBody` keeps the existing
+foundation convenience semantics.
+
+`AttemptTrace` is schema `GAM8_ATTEMPT_TRACE_V1` with a fixed default capacity
+of 3000 samples. `PhysicsTickDriver` appends an immutable observation paired
+with the already sampled `PlayerIntentFrame` only after simulation and
+publication. Appends require recording mode, the matching tick, and strict
+monotonic order; a full trace fails instead of overwriting its oldest state.
+`BeginRecording`, `EndRecording`, and `Clear` are explicit attempt/reset
+boundaries. Trace reads cannot influence physics.
+
+The recorded-state replay seam is presentation-only: the GAM-8 bar trail reads
+captured BAR poses into a main-scene `LineRenderer` with no Rigidbody and no
+resimulation. It is not an input replay system or a second physics scene.
+
 # Canonical Validation Commands
 
 From the repository root:
@@ -184,3 +205,8 @@ affected EditMode 2/2, full EditMode 38/38, full PlayMode 15/15, sole production
 `.Simulate` count 1, global fixed timestep 0.02 s, authoritative local timestep
 0.01 s, and master-spec verification all PASS. These are repository validation
 results and do not decide later architecture.
+
+2026-08-31 after GAM-8 qualification on the same Unity version: complete
+registered-body observation was 17 bodies in stable order; the bounded trace
+passed monotonic/immutability/neutrality checks; the existing athlete remained
+the primary body and sole pre-physics callback owner.
