@@ -299,6 +299,19 @@ namespace PowerliftingSimulator.Athlete
         public static bool IsFinite(Vector3 value) =>
             float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
 
+        public static bool IsValidPoweredDrive(JointDrive drive) =>
+            !drive.useAcceleration && float.IsFinite(drive.maximumForce) && drive.maximumForce >= 0f;
+
+        public static void ValidatePoweredDrive(string jointId, JointDrive drive)
+        {
+            if (drive.useAcceleration)
+                throw new InvalidOperationException($"Joint '{jointId}' uses acceleration authority; powered drives require useAcceleration=false.");
+            if (!float.IsFinite(drive.maximumForce))
+                throw new InvalidOperationException($"Joint '{jointId}' has non-finite maximumForce authority.");
+            if (drive.maximumForce < 0f)
+                throw new InvalidOperationException($"Joint '{jointId}' has negative maximumForce authority.");
+        }
+
         private void ApplyInitialDriveState()
         {
             foreach (PoweredJointRuntime joint in _joints)

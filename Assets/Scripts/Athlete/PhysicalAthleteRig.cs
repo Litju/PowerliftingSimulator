@@ -34,10 +34,18 @@ namespace PowerliftingSimulator.Athlete
         private readonly List<DebugMarker> _jointAnchorMarkers = new List<DebugMarker>();
         private readonly List<LineRenderer> _jointAxisLines = new List<LineRenderer>();
         private Renderer[] _visibleRenderers = Array.Empty<Renderer>();
+        private Transform _visibleHips;
         private GameObject _physicalRoot;
         private DebugMarker _wholeBodyComMarker;
         private PoweredJointController _poweredController;
         private bool _inspectionFrozen;
+        private bool _gameplayPerformanceProfile;
+        private bool _savedShowVisibleMesh;
+        private bool _savedShowPhysicalColliders;
+        private bool _savedShowSegmentCom;
+        private bool _savedShowWholeBodyCom;
+        private bool _savedShowJointAnchors;
+        private bool _savedShowJointAxes;
         private float _qualifiedPassiveComDropMeters;
         private float _qualifiedPoweredComDropMeters;
         private float _qualifiedPositivePulseDegrees;
@@ -49,6 +57,41 @@ namespace PowerliftingSimulator.Athlete
         public float TotalMassKg => _segments.Values.Sum(segment => segment.Body.mass);
         public float MaxInitialNonAdjacentPenetrationMeters { get; private set; }
         public PoweredJointController PoweredController => _poweredController;
+        public bool IsGameplayPerformanceProfileActive => _gameplayPerformanceProfile;
+
+        public void SetGameplayPerformanceProfile(bool enabled)
+        {
+            if (_gameplayPerformanceProfile == enabled)
+                return;
+
+            if (enabled)
+            {
+                _savedShowPhysicalColliders = showPhysicalColliders;
+                _savedShowVisibleMesh = showVisibleMesh;
+                _savedShowSegmentCom = showSegmentCom;
+                _savedShowWholeBodyCom = showWholeBodyCom;
+                _savedShowJointAnchors = showJointAnchors;
+                _savedShowJointAxes = showJointAxes;
+                showVisibleMesh = true;
+                showPhysicalColliders = false;
+                showSegmentCom = false;
+                showWholeBodyCom = false;
+                showJointAnchors = false;
+                showJointAxes = false;
+            }
+            else
+            {
+                showVisibleMesh = _savedShowVisibleMesh;
+                showPhysicalColliders = _savedShowPhysicalColliders;
+                showSegmentCom = _savedShowSegmentCom;
+                showWholeBodyCom = _savedShowWholeBodyCom;
+                showJointAnchors = _savedShowJointAnchors;
+                showJointAxes = _savedShowJointAxes;
+            }
+
+            _gameplayPerformanceProfile = enabled;
+            ApplyVisibility();
+        }
 
         public void Configure(
             FoundationBootstrap foundationBootstrap,
@@ -85,6 +128,7 @@ namespace PowerliftingSimulator.Athlete
             referenceAnimator.enabled = false;
             visibleAnimator.enabled = false;
             _visibleRenderers = visibleAnimator.GetComponentsInChildren<Renderer>(true);
+            _visibleHips = visibleAnimator.GetBoneTransform(HumanBodyBones.Hips);
 
             _physicalRoot = new GameObject("PhysicalRig_GAM6_Authoritative");
             SceneManager.MoveGameObjectToScene(_physicalRoot, foundation.Runtime.AuthoritativeScene);
@@ -117,9 +161,9 @@ namespace PowerliftingSimulator.Athlete
                 binding.VisibleBone.rotation = binding.Body.rotation * binding.BodyToBoneRotation;
 
             SegmentRuntime pelvis = _segments["pelvis"];
-            Transform visibleHips = visibleAnimator.GetBoneTransform(HumanBodyBones.Hips);
-            visibleHips.position = pelvis.Body.position + pelvis.Body.rotation * pelvis.BodyToVisiblePosition;
-            UpdateRuntimeDebugOverlay();
+            _visibleHips.position = pelvis.Body.position + pelvis.Body.rotation * pelvis.BodyToVisiblePosition;
+            if (!_gameplayPerformanceProfile)
+                UpdateRuntimeDebugOverlay();
         }
 
         public void ResetPassive()
@@ -408,6 +452,9 @@ namespace PowerliftingSimulator.Athlete
             foreach (JointRuntime jointRuntime in _joints)
             {
                 ConfigurableJoint joint = jointRuntime.Joint;
+                PoweredJointController.ValidatePoweredDrive(jointRuntime.Recipe.ChildId, joint.angularXDrive);
+                PoweredJointController.ValidatePoweredDrive(jointRuntime.Recipe.ChildId, joint.angularYZDrive);
+                PoweredJointController.ValidatePoweredDrive(jointRuntime.Recipe.ChildId, joint.slerpDrive);
                 Vector3 childAnchor = joint.transform.TransformPoint(joint.anchor);
                 Vector3 parentAnchor = joint.connectedBody.transform.TransformPoint(joint.connectedAnchor);
                 if (Vector3.Distance(childAnchor, parentAnchor) > PhysicalAthleteDefinition.AnchorToleranceMeters)
@@ -496,6 +543,9 @@ namespace PowerliftingSimulator.Athlete
 
         private void OnGUI()
         {
+            if (_gameplayPerformanceProfile)
+                return;
+
             GUILayout.BeginArea(new Rect(18f, 18f, 520f, 430f), GUI.skin.box);
             GUILayout.Label("GAM-7 Finite Powered Athlete");
             GUILayout.Label(_status);

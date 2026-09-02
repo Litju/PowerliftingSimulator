@@ -60,6 +60,13 @@ namespace PowerliftingSimulator.Equipment
         private BarbellLoadPlan _loadPlan;
         private BarbellInertiaModel _inertiaModel;
         private bool _trailVisible;
+        private bool _gameplayPerformanceProfile;
+        private bool _savedShowDebugLandmarks;
+        private bool _savedTrailVisible;
+        private bool _savedTrailEnabled;
+        private int _savedTrailSampleCount;
+        private bool _debugVisibilityInitialized;
+        private bool _lastAppliedShowDebugLandmarks;
         private bool _pendingImpulseMeasurement;
         private ulong _impulseApplicationTick;
         private Vector3 _preImpulseLinearVelocity;
@@ -81,6 +88,36 @@ namespace PowerliftingSimulator.Equipment
         public bool HasPendingImpulseMeasurement => _pendingImpulseMeasurement;
         public bool IsRecordedTrailVisible => _trailVisible;
         public int RecordedTrailPointCount => _recordedTrail == null ? 0 : _recordedTrail.positionCount;
+        public bool IsGameplayPerformanceProfileActive => _gameplayPerformanceProfile;
+
+        public void SetGameplayPerformanceProfile(bool enabled)
+        {
+            if (_gameplayPerformanceProfile == enabled)
+                return;
+
+            if (enabled)
+            {
+                _savedShowDebugLandmarks = showDebugLandmarks;
+                _savedTrailVisible = _trailVisible;
+                _savedTrailEnabled = _recordedTrail != null && _recordedTrail.enabled;
+                _savedTrailSampleCount = _lastTrailSampleCount;
+                showDebugLandmarks = false;
+                _trailVisible = false;
+                if (_recordedTrail != null)
+                    _recordedTrail.enabled = false;
+            }
+            else
+            {
+                showDebugLandmarks = _savedShowDebugLandmarks;
+                _trailVisible = _savedTrailVisible;
+                _lastTrailSampleCount = _savedTrailSampleCount;
+                if (_recordedTrail != null)
+                    _recordedTrail.enabled = _savedTrailEnabled;
+            }
+
+            _gameplayPerformanceProfile = enabled;
+            ApplyDebugVisibility();
+        }
 
         private void Start()
         {
@@ -142,6 +179,9 @@ namespace PowerliftingSimulator.Equipment
                     _lastImpulseLinearResponse.magnitude,
                     _lastImpulseAngularResponse.magnitude);
             }
+
+            if (_gameplayPerformanceProfile)
+                return;
 
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null)
@@ -703,10 +743,15 @@ namespace PowerliftingSimulator.Equipment
 
         private void ApplyDebugVisibility()
         {
+            if (_debugVisibilityInitialized && _lastAppliedShowDebugLandmarks == showDebugLandmarks)
+                return;
+
             for (int index = 0; index < _debugMarkers.Count; index++)
                 _debugMarkers[index].SetActive(showDebugLandmarks);
             for (int index = 0; index < _inertiaAxes.Count; index++)
                 _inertiaAxes[index].enabled = showDebugLandmarks;
+            _lastAppliedShowDebugLandmarks = showDebugLandmarks;
+            _debugVisibilityInitialized = true;
         }
 
         private void UpdateRecordedTrail()
@@ -845,7 +890,7 @@ namespace PowerliftingSimulator.Equipment
 
         private void OnGUI()
         {
-            if (_barBody == null)
+            if (_barBody == null || _gameplayPerformanceProfile)
                 return;
 
             GUILayout.BeginArea(new Rect(16f, 16f, 390f, 270f), GUI.skin.window);

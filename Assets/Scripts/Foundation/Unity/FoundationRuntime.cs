@@ -90,7 +90,7 @@ namespace PowerliftingSimulator.Foundation.Unity
         public void BeginAttemptTrace()
         {
             EnsureInitialized();
-            _tickDriver.AttemptTrace.BeginRecording();
+            _tickDriver.BeginAttemptTrace();
         }
 
         public void EndAttemptTrace()

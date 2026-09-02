@@ -21,5 +21,30 @@ namespace PowerliftingSimulator.Tests
                 PoweredJointController.RateLimitShortestArc(Quaternion.identity, target, 0.05f),
                 PoweredJointController.RateLimitShortestArc(Quaternion.identity, negative, 0.05f)), Is.LessThan(0.0001f));
         }
+
+        [Test]
+        public void POWERED_DRIVE_VALIDATOR_REJECTS_ACCELERATION_NONFINITE_AND_NEGATIVE_AUTHORITY()
+        {
+            JointDrive valid = new JointDrive
+            {
+                positionSpring = 1f,
+                positionDamper = 1f,
+                maximumForce = 0f,
+                useAcceleration = false
+            };
+            Assert.That(PoweredJointController.IsValidPoweredDrive(valid), Is.True);
+
+            JointDrive acceleration = valid;
+            acceleration.useAcceleration = true;
+            Assert.That(PoweredJointController.IsValidPoweredDrive(acceleration), Is.False);
+
+            JointDrive infinite = valid;
+            infinite.maximumForce = float.PositiveInfinity;
+            Assert.That(PoweredJointController.IsValidPoweredDrive(infinite), Is.False);
+
+            JointDrive negative = valid;
+            negative.maximumForce = -1f;
+            Assert.That(PoweredJointController.IsValidPoweredDrive(negative), Is.False);
+        }
     }
 }

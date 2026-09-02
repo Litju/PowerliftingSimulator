@@ -194,3 +194,10 @@ Only add facts verified in this repository by imported assets, Unity inspection,
 # Last Verified
 
 2026-08-31 with Unity `6000.3.22f1`: GAM-5/GAM-6 asset and passive-rig facts remain valid. GAM-7 adds one pre-physics drive authority, 14 finite powered joints in seven family profiles, calibrated local target conversion, activation scaling, shortest-arc target limiting, passive/powered/zero/pulse review modes, focused convention fixtures, and paired actual-human visual evidence. Owner powered-athlete review remains the final acceptance boundary.
+
+2026-09-01 after GAM-9 G1 qualification: `PhysicalAthletePhysics` qualified as
+16 dynamic gravity bodies with 15 joints, 14 powered joints, and a passive
+neck, with no hidden support. The measured passive COM drop was 0.45298 m
+versus 0.12307 m powered over 0.75 s; feet/platform contact and visible-follower
+evidence passed. Open-loop neutral remains finite posture authority, not
+indefinite balance.
