@@ -5,8 +5,8 @@ PR=https://github.com/Litju/PowerliftingSimulator/pull/8
 BRANCH=work/gam-9-qualify-shared-substrate
 BASE_HEAD=d5a479c7c4da5aac120e530f5fdc59aa0bc79a0c
 QUALIFIED_HEAD=5f0f26b
-FINAL_HEAD=5f0f26b
-FINAL_HEAD_SEMANTICS=qualified implementation/evidence head; this receipt is sealed by the following bookkeeping commit
+FINAL_HEAD=11a98c9
+FINAL_HEAD_SEMANTICS=final qualified implementation/evidence head; this receipt is sealed by the following bookkeeping commit
 STATUS=PASS_WITH_LIMITATIONS
 
 TOPOLOGY=PASS; 16 athlete bodies, 15 joints, 14 powered joints, 1 passive neck, one dynamic 105 kg bar Rigidbody, 17 observed bodies
