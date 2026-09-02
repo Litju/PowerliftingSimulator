@@ -1,53 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
-<test-run id="2" testcasecount="29" result="Passed" total="29" passed="29" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-02 02:04:08Z" end-time="2026-09-02 02:04:32Z" duration="23.4594371">
-  <test-suite type="TestSuite" id="1042" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="29" result="Passed" start-time="2026-09-02 02:04:08Z" end-time="2026-09-02 02:04:32Z" duration="23.459437" total="29" passed="29" failed="0" inconclusive="0" skipped="0" asserts="0">
+<test-run id="2" testcasecount="29" result="Passed" total="29" passed="29" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-02 02:36:00Z" end-time="2026-09-02 02:36:29Z" duration="29.422855">
+  <test-suite type="TestSuite" id="1042" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="29" result="Passed" start-time="2026-09-02 02:36:00Z" end-time="2026-09-02 02:36:29Z" duration="29.422855" total="29" passed="29" failed="0" inconclusive="0" skipped="0" asserts="0">
     <properties>
       <property name="platform" value="PlayMode" />
     </properties>
-    <test-suite type="Assembly" id="1036" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="C:/Users/Educacion/Desktop/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="29" result="Passed" start-time="2026-09-02 02:04:08Z" end-time="2026-09-02 02:04:32Z" duration="23.426669" total="29" passed="29" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <test-suite type="Assembly" id="1036" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="C:/Users/Educacion/Desktop/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="29" result="Passed" start-time="2026-09-02 02:36:00Z" end-time="2026-09-02 02:36:29Z" duration="29.360255" total="29" passed="29" failed="0" inconclusive="0" skipped="0" asserts="0">
       <properties>
-        <property name="_PID" value="21368" />
+        <property name="_PID" value="8440" />
         <property name="_APPDOMAIN" value="Unity Child Domain" />
         <property name="platform" value="PlayMode" />
         <property name="EditorOnly" value="False" />
       </properties>
-      <test-suite type="TestSuite" id="1037" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="29" result="Passed" start-time="2026-09-02 02:04:08Z" end-time="2026-09-02 02:04:32Z" duration="23.422841" total="29" passed="29" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <test-suite type="TestSuite" id="1037" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="29" result="Passed" start-time="2026-09-02 02:36:00Z" end-time="2026-09-02 02:36:29Z" duration="29.294867" total="29" passed="29" failed="0" inconclusive="0" skipped="0" asserts="0">
         <properties />
-        <test-suite type="TestSuite" id="1038" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="29" result="Passed" start-time="2026-09-02 02:04:08Z" end-time="2026-09-02 02:04:32Z" duration="23.420335" total="29" passed="29" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <test-suite type="TestSuite" id="1038" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="29" result="Passed" start-time="2026-09-02 02:36:00Z" end-time="2026-09-02 02:36:29Z" duration="29.286370" total="29" passed="29" failed="0" inconclusive="0" skipped="0" asserts="0">
           <properties />
-          <test-suite type="TestFixture" id="1001" name="GAM9SharedPhysicalSubstrateQualificationTests" fullname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests" classname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-09-02 02:04:08Z" end-time="2026-09-02 02:04:19Z" duration="10.684731" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <test-suite type="TestFixture" id="1001" name="GAM9SharedPhysicalSubstrateQualificationTests" fullname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests" classname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-09-02 02:36:00Z" end-time="2026-09-02 02:36:15Z" duration="15.512862" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
             <properties />
-            <test-case id="1003" name="G1_FIXED_TICK_RESET_REPEATABILITY" fullname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests.G1_FIXED_TICK_RESET_REPEATABILITY" methodname="G1_FIXED_TICK_RESET_REPEATABILITY" classname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests" runstate="Runnable" seed="185277981" result="Passed" start-time="2026-09-02 02:04:09Z" end-time="2026-09-02 02:04:11Z" duration="2.546492" asserts="0">
+            <test-case id="1003" name="G1_FIXED_TICK_RESET_REPEATABILITY" fullname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests.G1_FIXED_TICK_RESET_REPEATABILITY" methodname="G1_FIXED_TICK_RESET_REPEATABILITY" classname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests" runstate="Runnable" seed="397702588" result="Passed" start-time="2026-09-02 02:36:00Z" end-time="2026-09-02 02:36:02Z" duration="2.110483" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
             </test-case>
-            <test-case id="1004" name="G1_MUTATION_GATES_REJECT_FORBIDDEN_AUTHORITY" fullname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests.G1_MUTATION_GATES_REJECT_FORBIDDEN_AUTHORITY" methodname="G1_MUTATION_GATES_REJECT_FORBIDDEN_AUTHORITY" classname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests" runstate="Runnable" seed="1066481429" result="Passed" start-time="2026-09-02 02:04:11Z" end-time="2026-09-02 02:04:13Z" duration="1.544226" asserts="0">
+            <test-case id="1004" name="G1_MUTATION_GATES_REJECT_FORBIDDEN_AUTHORITY" fullname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests.G1_MUTATION_GATES_REJECT_FORBIDDEN_AUTHORITY" methodname="G1_MUTATION_GATES_REJECT_FORBIDDEN_AUTHORITY" classname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests" runstate="Runnable" seed="1817026143" result="Passed" start-time="2026-09-02 02:36:02Z" end-time="2026-09-02 02:36:03Z" duration="1.130566" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
             </test-case>
-            <test-case id="1006" name="G1_OBSERVATION_TRACE_STORAGE_IMMUTABILITY_AND_STATIC_AUDIT" fullname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests.G1_OBSERVATION_TRACE_STORAGE_IMMUTABILITY_AND_STATIC_AUDIT" methodname="G1_OBSERVATION_TRACE_STORAGE_IMMUTABILITY_AND_STATIC_AUDIT" classname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests" runstate="Runnable" seed="471403821" result="Passed" start-time="2026-09-02 02:04:13Z" end-time="2026-09-02 02:04:14Z" duration="0.952012" asserts="0">
+            <test-case id="1006" name="G1_OBSERVATION_TRACE_STORAGE_IMMUTABILITY_AND_STATIC_AUDIT" fullname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests.G1_OBSERVATION_TRACE_STORAGE_IMMUTABILITY_AND_STATIC_AUDIT" methodname="G1_OBSERVATION_TRACE_STORAGE_IMMUTABILITY_AND_STATIC_AUDIT" classname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests" runstate="Runnable" seed="141678075" result="Passed" start-time="2026-09-02 02:36:03Z" end-time="2026-09-02 02:36:06Z" duration="2.659973" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
             </test-case>
-            <test-case id="1005" name="G1_PERFORMANCE_BOUNDED_SOAK_AND_CATCH_UP" fullname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests.G1_PERFORMANCE_BOUNDED_SOAK_AND_CATCH_UP" methodname="G1_PERFORMANCE_BOUNDED_SOAK_AND_CATCH_UP" classname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests" runstate="Runnable" seed="597986547" result="Passed" start-time="2026-09-02 02:04:14Z" end-time="2026-09-02 02:04:16Z" duration="2.148972" asserts="0">
+            <test-case id="1005" name="G1_PERFORMANCE_BOUNDED_SOAK_AND_CATCH_UP" fullname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests.G1_PERFORMANCE_BOUNDED_SOAK_AND_CATCH_UP" methodname="G1_PERFORMANCE_BOUNDED_SOAK_AND_CATCH_UP" classname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests" runstate="Runnable" seed="2039655274" result="Passed" start-time="2026-09-02 02:36:06Z" end-time="2026-09-02 02:36:08Z" duration="2.627397" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
-              <output><![CDATA[GAM9_PERFORMANCE hardBudgetsPass=True failures= editorAllocationClean=False editorWithinBudget=physics:True,foundationStep:True,catchUp:True,controller:True physicsP95=0.510ms foundationStepP95=0.511ms catchUpP95=2.748ms controllerP95=0.078ms gcOffMax=1700B gcTraceMax=1400B runtimeMemory=264006607 traceReserved=6336000
+              <output><![CDATA[GAM9_PERFORMANCE hardBudgetsPass=True failures= editorAllocationClean=False editorWithinBudget=physics:True,foundationStep:True,catchUp:True,controller:True physicsP95=0.417ms foundationStepP95=0.474ms catchUpP95=1.602ms controllerP95=0.064ms gcOffMax=1000B gcTraceMax=5000B runtimeMemory=260661140 traceReserved=6336000
 ]]></output>
             </test-case>
-            <test-case id="1002" name="G1_PHYSICAL_SUBSTRATE_QUALIFICATION_EVIDENCE" fullname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests.G1_PHYSICAL_SUBSTRATE_QUALIFICATION_EVIDENCE" methodname="G1_PHYSICAL_SUBSTRATE_QUALIFICATION_EVIDENCE" classname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests" runstate="Runnable" seed="396393987" result="Passed" start-time="2026-09-02 02:04:16Z" end-time="2026-09-02 02:04:19Z" duration="3.402265" asserts="0">
+            <test-case id="1002" name="G1_PHYSICAL_SUBSTRATE_QUALIFICATION_EVIDENCE" fullname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests.G1_PHYSICAL_SUBSTRATE_QUALIFICATION_EVIDENCE" methodname="G1_PHYSICAL_SUBSTRATE_QUALIFICATION_EVIDENCE" classname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests" runstate="Runnable" seed="676321114" result="Passed" start-time="2026-09-02 02:36:08Z" end-time="2026-09-02 02:36:15Z" duration="6.913176" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
@@ -55,9 +55,9 @@
               </properties>
             </test-case>
           </test-suite>
-          <test-suite type="TestFixture" id="1007" name="PhysicalAthletePlayModeTests" fullname="PowerliftingSimulator.Tests.PhysicalAthletePlayModeTests" classname="PowerliftingSimulator.Tests.PhysicalAthletePlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-02 02:04:19Z" end-time="2026-09-02 02:04:24Z" duration="5.125771" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <test-suite type="TestFixture" id="1007" name="PhysicalAthletePlayModeTests" fullname="PowerliftingSimulator.Tests.PhysicalAthletePlayModeTests" classname="PowerliftingSimulator.Tests.PhysicalAthletePlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-02 02:36:15Z" end-time="2026-09-02 02:36:20Z" duration="4.681349" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
             <properties />
-            <test-case id="1008" name="PASSIVE_PHYSICAL_ATHLETE_FALLS_COHERENTLY_AND_RESETS" fullname="PowerliftingSimulator.Tests.PhysicalAthletePlayModeTests.PASSIVE_PHYSICAL_ATHLETE_FALLS_COHERENTLY_AND_RESETS" methodname="PASSIVE_PHYSICAL_ATHLETE_FALLS_COHERENTLY_AND_RESETS" classname="PowerliftingSimulator.Tests.PhysicalAthletePlayModeTests" runstate="Runnable" seed="1070961556" result="Passed" start-time="2026-09-02 02:04:19Z" end-time="2026-09-02 02:04:24Z" duration="5.122099" asserts="0">
+            <test-case id="1008" name="PASSIVE_PHYSICAL_ATHLETE_FALLS_COHERENTLY_AND_RESETS" fullname="PowerliftingSimulator.Tests.PhysicalAthletePlayModeTests.PASSIVE_PHYSICAL_ATHLETE_FALLS_COHERENTLY_AND_RESETS" methodname="PASSIVE_PHYSICAL_ATHLETE_FALLS_COHERENTLY_AND_RESETS" classname="PowerliftingSimulator.Tests.PhysicalAthletePlayModeTests" runstate="Runnable" seed="2081488637" result="Passed" start-time="2026-09-02 02:36:15Z" end-time="2026-09-02 02:36:20Z" duration="4.678450" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
@@ -65,16 +65,16 @@
               </properties>
             </test-case>
           </test-suite>
-          <test-suite type="TestFixture" id="1009" name="PhysicalBarbellPlayModeTests" fullname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests" classname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-02 02:04:24Z" end-time="2026-09-02 02:04:28Z" duration="3.916762" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <test-suite type="TestFixture" id="1009" name="PhysicalBarbellPlayModeTests" fullname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests" classname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-02 02:36:20Z" end-time="2026-09-02 02:36:25Z" duration="5.040208" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
             <properties />
-            <test-case id="1011" name="GAM8_COLLAR_LAYOUT_DRIVES_PRESENTATION_AND_CHILD_COLLIDERS" fullname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests.GAM8_COLLAR_LAYOUT_DRIVES_PRESENTATION_AND_CHILD_COLLIDERS" methodname="GAM8_COLLAR_LAYOUT_DRIVES_PRESENTATION_AND_CHILD_COLLIDERS" classname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests" runstate="Runnable" seed="595201047" result="Passed" start-time="2026-09-02 02:04:24Z" end-time="2026-09-02 02:04:25Z" duration="1.087425" asserts="0">
+            <test-case id="1011" name="GAM8_COLLAR_LAYOUT_DRIVES_PRESENTATION_AND_CHILD_COLLIDERS" fullname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests.GAM8_COLLAR_LAYOUT_DRIVES_PRESENTATION_AND_CHILD_COLLIDERS" methodname="GAM8_COLLAR_LAYOUT_DRIVES_PRESENTATION_AND_CHILD_COLLIDERS" classname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests" runstate="Runnable" seed="589196148" result="Passed" start-time="2026-09-02 02:36:20Z" end-time="2026-09-02 02:36:21Z" duration="1.178232" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
             </test-case>
-            <test-case id="1010" name="GAM8_SCENE_HAS_ONE_DYNAMIC_BAR_AND_COMPLETE_OBSERVATION" fullname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests.GAM8_SCENE_HAS_ONE_DYNAMIC_BAR_AND_COMPLETE_OBSERVATION" methodname="GAM8_SCENE_HAS_ONE_DYNAMIC_BAR_AND_COMPLETE_OBSERVATION" classname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests" runstate="Runnable" seed="944844404" result="Passed" start-time="2026-09-02 02:04:25Z" end-time="2026-09-02 02:04:28Z" duration="2.825505" asserts="0">
+            <test-case id="1010" name="GAM8_SCENE_HAS_ONE_DYNAMIC_BAR_AND_COMPLETE_OBSERVATION" fullname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests.GAM8_SCENE_HAS_ONE_DYNAMIC_BAR_AND_COMPLETE_OBSERVATION" methodname="GAM8_SCENE_HAS_ONE_DYNAMIC_BAR_AND_COMPLETE_OBSERVATION" classname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests" runstate="Runnable" seed="1652557191" result="Passed" start-time="2026-09-02 02:36:21Z" end-time="2026-09-02 02:36:25Z" duration="3.858687" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
@@ -82,93 +82,93 @@
               </properties>
             </test-case>
           </test-suite>
-          <test-suite type="TestFixture" id="1012" name="PhysicsFoundationPlayModeTests" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-09-02 02:04:28Z" end-time="2026-09-02 02:04:28Z" duration="0.266270" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <test-suite type="TestFixture" id="1012" name="PhysicsFoundationPlayModeTests" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:25Z" duration="0.255860" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
             <properties />
-            <test-case id="1014" name="BodyChangesOnlyAfterTheOwnedStep" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.BodyChangesOnlyAfterTheOwnedStep" methodname="BodyChangesOnlyAfterTheOwnedStep" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="759688324" result="Passed" start-time="2026-09-02 02:04:28Z" end-time="2026-09-02 02:04:28Z" duration="0.010209" asserts="0">
+            <test-case id="1014" name="BodyChangesOnlyAfterTheOwnedStep" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.BodyChangesOnlyAfterTheOwnedStep" methodname="BodyChangesOnlyAfterTheOwnedStep" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="1094135350" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:25Z" duration="0.014302" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
             </test-case>
-            <test-case id="1013" name="CreatesAnIsolatedManualPhysicsScene" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.CreatesAnIsolatedManualPhysicsScene" methodname="CreatesAnIsolatedManualPhysicsScene" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="1878369012" result="Passed" start-time="2026-09-02 02:04:28Z" end-time="2026-09-02 02:04:28Z" duration="0.046741" asserts="0">
+            <test-case id="1013" name="CreatesAnIsolatedManualPhysicsScene" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.CreatesAnIsolatedManualPhysicsScene" methodname="CreatesAnIsolatedManualPhysicsScene" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="518334618" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:25Z" duration="0.019261" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
             </test-case>
-            <test-case id="1017" name="GLOBAL_FIXED_TIMESTEP_AUTHORITY" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.GLOBAL_FIXED_TIMESTEP_AUTHORITY" methodname="GLOBAL_FIXED_TIMESTEP_AUTHORITY" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="1726509683" result="Passed" start-time="2026-09-02 02:04:28Z" end-time="2026-09-02 02:04:28Z" duration="0.019492" asserts="0">
+            <test-case id="1017" name="GLOBAL_FIXED_TIMESTEP_AUTHORITY" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.GLOBAL_FIXED_TIMESTEP_AUTHORITY" methodname="GLOBAL_FIXED_TIMESTEP_AUTHORITY" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="525015935" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:25Z" duration="0.018149" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
             </test-case>
-            <test-case id="1016" name="InputRenderWindowTracksTheAuthoritativeCatchUpHorizon" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.InputRenderWindowTracksTheAuthoritativeCatchUpHorizon" methodname="InputRenderWindowTracksTheAuthoritativeCatchUpHorizon" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="1755077530" result="Passed" start-time="2026-09-02 02:04:28Z" end-time="2026-09-02 02:04:28Z" duration="0.019888" asserts="0">
+            <test-case id="1016" name="InputRenderWindowTracksTheAuthoritativeCatchUpHorizon" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.InputRenderWindowTracksTheAuthoritativeCatchUpHorizon" methodname="InputRenderWindowTracksTheAuthoritativeCatchUpHorizon" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="293893103" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:25Z" duration="0.013485" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
             </test-case>
-            <test-case id="1018" name="MANUAL_STEP_CANNOT_CONSUME_RENDER_RESIDUAL" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.MANUAL_STEP_CANNOT_CONSUME_RENDER_RESIDUAL" methodname="MANUAL_STEP_CANNOT_CONSUME_RENDER_RESIDUAL" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="1143876771" result="Passed" start-time="2026-09-02 02:04:28Z" end-time="2026-09-02 02:04:28Z" duration="0.020576" asserts="0">
+            <test-case id="1018" name="MANUAL_STEP_CANNOT_CONSUME_RENDER_RESIDUAL" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.MANUAL_STEP_CANNOT_CONSUME_RENDER_RESIDUAL" methodname="MANUAL_STEP_CANNOT_CONSUME_RENDER_RESIDUAL" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="1143910307" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:25Z" duration="0.010534" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
             </test-case>
-            <test-case id="1019" name="MANUAL_STEP_CANNOT_RESUME_RENDER_MODE" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.MANUAL_STEP_CANNOT_RESUME_RENDER_MODE" methodname="MANUAL_STEP_CANNOT_RESUME_RENDER_MODE" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="423079229" result="Passed" start-time="2026-09-02 02:04:28Z" end-time="2026-09-02 02:04:28Z" duration="0.016850" asserts="0">
+            <test-case id="1019" name="MANUAL_STEP_CANNOT_RESUME_RENDER_MODE" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.MANUAL_STEP_CANNOT_RESUME_RENDER_MODE" methodname="MANUAL_STEP_CANNOT_RESUME_RENDER_MODE" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="204840747" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:25Z" duration="0.017725" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
             </test-case>
-            <test-case id="1022" name="ObservationIsAStablePostStepCopy" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.ObservationIsAStablePostStepCopy" methodname="ObservationIsAStablePostStepCopy" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="705907186" result="Passed" start-time="2026-09-02 02:04:28Z" end-time="2026-09-02 02:04:28Z" duration="0.021229" asserts="0">
+            <test-case id="1022" name="ObservationIsAStablePostStepCopy" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.ObservationIsAStablePostStepCopy" methodname="ObservationIsAStablePostStepCopy" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="1201206525" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:25Z" duration="0.020669" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
             </test-case>
-            <test-case id="1020" name="PREPARED_RENDER_FRAME_CAN_BE_CANCELLED_AFTER_CAPTURE_FAILURE" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.PREPARED_RENDER_FRAME_CAN_BE_CANCELLED_AFTER_CAPTURE_FAILURE" methodname="PREPARED_RENDER_FRAME_CAN_BE_CANCELLED_AFTER_CAPTURE_FAILURE" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="1899764371" result="Passed" start-time="2026-09-02 02:04:28Z" end-time="2026-09-02 02:04:28Z" duration="0.012412" asserts="0">
+            <test-case id="1020" name="PREPARED_RENDER_FRAME_CAN_BE_CANCELLED_AFTER_CAPTURE_FAILURE" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.PREPARED_RENDER_FRAME_CAN_BE_CANCELLED_AFTER_CAPTURE_FAILURE" methodname="PREPARED_RENDER_FRAME_CAN_BE_CANCELLED_AFTER_CAPTURE_FAILURE" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="102779521" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:25Z" duration="0.020820" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
             </test-case>
-            <test-case id="1015" name="RenderCatchUpIsBoundedAtFourTicks" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.RenderCatchUpIsBoundedAtFourTicks" methodname="RenderCatchUpIsBoundedAtFourTicks" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="659767407" result="Passed" start-time="2026-09-02 02:04:28Z" end-time="2026-09-02 02:04:28Z" duration="0.011244" asserts="0">
+            <test-case id="1015" name="RenderCatchUpIsBoundedAtFourTicks" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.RenderCatchUpIsBoundedAtFourTicks" methodname="RenderCatchUpIsBoundedAtFourTicks" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="1702427220" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:25Z" duration="0.017485" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
             </test-case>
-            <test-case id="1024" name="RESET_NONZERO_WALL_TIME" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.RESET_NONZERO_WALL_TIME" methodname="RESET_NONZERO_WALL_TIME" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="1534387915" result="Passed" start-time="2026-09-02 02:04:28Z" end-time="2026-09-02 02:04:28Z" duration="0.019923" asserts="0">
+            <test-case id="1024" name="RESET_NONZERO_WALL_TIME" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.RESET_NONZERO_WALL_TIME" methodname="RESET_NONZERO_WALL_TIME" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="578687219" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:25Z" duration="0.022900" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
             </test-case>
-            <test-case id="1023" name="ResetRestoresTheProbeAndASecondRuntimeCanBeCreated" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.ResetRestoresTheProbeAndASecondRuntimeCanBeCreated" methodname="ResetRestoresTheProbeAndASecondRuntimeCanBeCreated" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="1942037169" result="Passed" start-time="2026-09-02 02:04:28Z" end-time="2026-09-02 02:04:28Z" duration="0.026457" asserts="0">
+            <test-case id="1023" name="ResetRestoresTheProbeAndASecondRuntimeCanBeCreated" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.ResetRestoresTheProbeAndASecondRuntimeCanBeCreated" methodname="ResetRestoresTheProbeAndASecondRuntimeCanBeCreated" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="1035718394" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:25Z" duration="0.026535" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
             </test-case>
-            <test-case id="1025" name="ShutdownLeavesTheMainSceneLoaded" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.ShutdownLeavesTheMainSceneLoaded" methodname="ShutdownLeavesTheMainSceneLoaded" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="385012445" result="Passed" start-time="2026-09-02 02:04:28Z" end-time="2026-09-02 02:04:28Z" duration="0.015193" asserts="0">
+            <test-case id="1025" name="ShutdownLeavesTheMainSceneLoaded" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.ShutdownLeavesTheMainSceneLoaded" methodname="ShutdownLeavesTheMainSceneLoaded" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="1125150202" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:25Z" duration="0.020192" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
             </test-case>
-            <test-case id="1021" name="SLOW_FRAME_TIME_DOMAIN" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.SLOW_FRAME_TIME_DOMAIN" methodname="SLOW_FRAME_TIME_DOMAIN" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="738986479" result="Passed" start-time="2026-09-02 02:04:28Z" end-time="2026-09-02 02:04:28Z" duration="0.017539" asserts="0">
+            <test-case id="1021" name="SLOW_FRAME_TIME_DOMAIN" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.SLOW_FRAME_TIME_DOMAIN" methodname="SLOW_FRAME_TIME_DOMAIN" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="2087703183" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:25Z" duration="0.024045" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
@@ -176,16 +176,16 @@
               </properties>
             </test-case>
           </test-suite>
-          <test-suite type="TestFixture" id="1026" name="PhysicsOwnershipExperimentTests" fullname="PowerliftingSimulator.Tests.PhysicsOwnershipExperimentTests" classname="PowerliftingSimulator.Tests.PhysicsOwnershipExperimentTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-02 02:04:28Z" end-time="2026-09-02 02:04:28Z" duration="0.036786" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <test-suite type="TestFixture" id="1026" name="PhysicsOwnershipExperimentTests" fullname="PowerliftingSimulator.Tests.PhysicsOwnershipExperimentTests" classname="PowerliftingSimulator.Tests.PhysicsOwnershipExperimentTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:25Z" duration="0.040587" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
             <properties />
-            <test-case id="1027" name="AutomaticDefaultSceneAndExplicitLocalSceneAdvanceIndependently" fullname="PowerliftingSimulator.Tests.PhysicsOwnershipExperimentTests.AutomaticDefaultSceneAndExplicitLocalSceneAdvanceIndependently" methodname="AutomaticDefaultSceneAndExplicitLocalSceneAdvanceIndependently" classname="PowerliftingSimulator.Tests.PhysicsOwnershipExperimentTests" runstate="Runnable" seed="1448122215" result="Passed" start-time="2026-09-02 02:04:28Z" end-time="2026-09-02 02:04:28Z" duration="0.023325" asserts="0">
+            <test-case id="1027" name="AutomaticDefaultSceneAndExplicitLocalSceneAdvanceIndependently" fullname="PowerliftingSimulator.Tests.PhysicsOwnershipExperimentTests.AutomaticDefaultSceneAndExplicitLocalSceneAdvanceIndependently" methodname="AutomaticDefaultSceneAndExplicitLocalSceneAdvanceIndependently" classname="PowerliftingSimulator.Tests.PhysicsOwnershipExperimentTests" runstate="Runnable" seed="1309288857" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:25Z" duration="0.027854" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
             </test-case>
-            <test-case id="1028" name="BoundedScriptTransitionDoesNotDoubleStepDefaultScene" fullname="PowerliftingSimulator.Tests.PhysicsOwnershipExperimentTests.BoundedScriptTransitionDoesNotDoubleStepDefaultScene" methodname="BoundedScriptTransitionDoesNotDoubleStepDefaultScene" classname="PowerliftingSimulator.Tests.PhysicsOwnershipExperimentTests" runstate="Runnable" seed="705115268" result="Passed" start-time="2026-09-02 02:04:28Z" end-time="2026-09-02 02:04:28Z" duration="0.010132" asserts="0">
+            <test-case id="1028" name="BoundedScriptTransitionDoesNotDoubleStepDefaultScene" fullname="PowerliftingSimulator.Tests.PhysicsOwnershipExperimentTests.BoundedScriptTransitionDoesNotDoubleStepDefaultScene" methodname="BoundedScriptTransitionDoesNotDoubleStepDefaultScene" classname="PowerliftingSimulator.Tests.PhysicsOwnershipExperimentTests" runstate="Runnable" seed="1517849927" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:25Z" duration="0.009485" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
@@ -193,44 +193,44 @@
               </properties>
             </test-case>
           </test-suite>
-          <test-suite type="TestFixture" id="1029" name="PoweredJointPlayModeTests" fullname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" classname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-09-02 02:04:28Z" end-time="2026-09-02 02:04:32Z" duration="3.382985" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <test-suite type="TestFixture" id="1029" name="PoweredJointPlayModeTests" fullname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" classname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:29Z" duration="3.746591" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
             <properties />
-            <test-case id="1033" name="FINITE_CAPACITY_SCALES_WITH_ACTIVATION" fullname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests.FINITE_CAPACITY_SCALES_WITH_ACTIVATION" methodname="FINITE_CAPACITY_SCALES_WITH_ACTIVATION" classname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" runstate="Runnable" seed="203113890" result="Passed" start-time="2026-09-02 02:04:28Z" end-time="2026-09-02 02:04:28Z" duration="0.009568" asserts="0">
+            <test-case id="1033" name="FINITE_CAPACITY_SCALES_WITH_ACTIVATION" fullname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests.FINITE_CAPACITY_SCALES_WITH_ACTIVATION" methodname="FINITE_CAPACITY_SCALES_WITH_ACTIVATION" classname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" runstate="Runnable" seed="302072571" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:25Z" duration="0.017520" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
             </test-case>
-            <test-case id="1034" name="ONE_POWERED_JOINT_WRITER_ONLY" fullname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests.ONE_POWERED_JOINT_WRITER_ONLY" methodname="ONE_POWERED_JOINT_WRITER_ONLY" classname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" runstate="Runnable" seed="2120996528" result="Passed" start-time="2026-09-02 02:04:28Z" end-time="2026-09-02 02:04:29Z" duration="0.011841" asserts="0">
+            <test-case id="1034" name="ONE_POWERED_JOINT_WRITER_ONLY" fullname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests.ONE_POWERED_JOINT_WRITER_ONLY" methodname="ONE_POWERED_JOINT_WRITER_ONLY" classname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" runstate="Runnable" seed="462734944" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:25Z" duration="0.017163" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
             </test-case>
-            <test-case id="1031" name="POSITIVE_ELBOW_FLEXION_COMMAND_HAS_CORRECT_SIGN" fullname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests.POSITIVE_ELBOW_FLEXION_COMMAND_HAS_CORRECT_SIGN" methodname="POSITIVE_ELBOW_FLEXION_COMMAND_HAS_CORRECT_SIGN" classname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" runstate="Runnable" seed="1702218194" result="Passed" start-time="2026-09-02 02:04:29Z" end-time="2026-09-02 02:04:29Z" duration="0.015637" asserts="0">
+            <test-case id="1031" name="POSITIVE_ELBOW_FLEXION_COMMAND_HAS_CORRECT_SIGN" fullname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests.POSITIVE_ELBOW_FLEXION_COMMAND_HAS_CORRECT_SIGN" methodname="POSITIVE_ELBOW_FLEXION_COMMAND_HAS_CORRECT_SIGN" classname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" runstate="Runnable" seed="499513906" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:25Z" duration="0.018999" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
             </test-case>
-            <test-case id="1030" name="POSITIVE_KNEE_FLEXION_COMMAND_HAS_CORRECT_SIGN" fullname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests.POSITIVE_KNEE_FLEXION_COMMAND_HAS_CORRECT_SIGN" methodname="POSITIVE_KNEE_FLEXION_COMMAND_HAS_CORRECT_SIGN" classname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" runstate="Runnable" seed="636732243" result="Passed" start-time="2026-09-02 02:04:29Z" end-time="2026-09-02 02:04:29Z" duration="0.011832" asserts="0">
+            <test-case id="1030" name="POSITIVE_KNEE_FLEXION_COMMAND_HAS_CORRECT_SIGN" fullname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests.POSITIVE_KNEE_FLEXION_COMMAND_HAS_CORRECT_SIGN" methodname="POSITIVE_KNEE_FLEXION_COMMAND_HAS_CORRECT_SIGN" classname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" runstate="Runnable" seed="1501641180" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:25Z" duration="0.017271" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
             </test-case>
-            <test-case id="1035" name="POWERED_NEUTRAL_OPPOSES_PASSIVE_AND_ACTUAL_HUMAN_RESPONDS_TO_PULSE" fullname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests.POWERED_NEUTRAL_OPPOSES_PASSIVE_AND_ACTUAL_HUMAN_RESPONDS_TO_PULSE" methodname="POWERED_NEUTRAL_OPPOSES_PASSIVE_AND_ACTUAL_HUMAN_RESPONDS_TO_PULSE" classname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" runstate="Runnable" seed="1080617035" result="Passed" start-time="2026-09-02 02:04:29Z" end-time="2026-09-02 02:04:32Z" duration="3.296244" asserts="0">
+            <test-case id="1035" name="POWERED_NEUTRAL_OPPOSES_PASSIVE_AND_ACTUAL_HUMAN_RESPONDS_TO_PULSE" fullname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests.POWERED_NEUTRAL_OPPOSES_PASSIVE_AND_ACTUAL_HUMAN_RESPONDS_TO_PULSE" methodname="POWERED_NEUTRAL_OPPOSES_PASSIVE_AND_ACTUAL_HUMAN_RESPONDS_TO_PULSE" classname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" runstate="Runnable" seed="463245931" result="Passed" start-time="2026-09-02 02:36:25Z" end-time="2026-09-02 02:36:29Z" duration="3.628729" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
                 <property name="repeatIteration" value="0" />
               </properties>
             </test-case>
-            <test-case id="1032" name="TARGET_ROTATION_IS_PARENT_WORLD_ROTATION_INVARIANT" fullname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests.TARGET_ROTATION_IS_PARENT_WORLD_ROTATION_INVARIANT" methodname="TARGET_ROTATION_IS_PARENT_WORLD_ROTATION_INVARIANT" classname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" runstate="Runnable" seed="997844542" result="Passed" start-time="2026-09-02 02:04:32Z" end-time="2026-09-02 02:04:32Z" duration="0.033090" asserts="0">
+            <test-case id="1032" name="TARGET_ROTATION_IS_PARENT_WORLD_ROTATION_INVARIANT" fullname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests.TARGET_ROTATION_IS_PARENT_WORLD_ROTATION_INVARIANT" methodname="TARGET_ROTATION_IS_PARENT_WORLD_ROTATION_INVARIANT" classname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" runstate="Runnable" seed="2027119563" result="Passed" start-time="2026-09-02 02:36:29Z" end-time="2026-09-02 02:36:29Z" duration="0.041055" asserts="0">
               <properties>
                 <property name="_JOINTYPE" value="UnityCombinatorial" />
                 <property name="retryIteration" value="0" />
