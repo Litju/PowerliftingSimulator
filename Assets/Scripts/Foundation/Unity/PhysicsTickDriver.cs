@@ -27,7 +27,7 @@ namespace PowerliftingSimulator.Foundation.Unity
             _inputTimeDomain = inputTimeDomain ?? throw new ArgumentNullException(nameof(inputTimeDomain));
             _intentBuffer = new IntentBuffer();
             _clock = new SimulationClock();
-            _observations = new ObservationExchange();
+            _observations = new ObservationExchange(AuthoritativePhysicsScene.MaxRegisteredBodyCount);
             _attemptTrace = new AttemptTrace();
         }
 
@@ -37,8 +37,20 @@ namespace PowerliftingSimulator.Foundation.Unity
 
         public PlayerIntentFrame LastIntentFrame { get; private set; } = PlayerIntentFrame.Empty;
 
+        /// <summary>
+        /// Gets the immutable value view published by the most recent physics tick.
+        /// The view remains valid until the next published tick; the exchange retains
+        /// a third preallocated slot so current and previous views are not overwritten.
+        /// Historical retention belongs to <see cref="AttemptTrace"/>, which copies
+        /// observation values into its own flat storage.
+        /// </summary>
         public PhysicalObservation CurrentObservation => _observations.Current;
 
+        /// <summary>
+        /// Gets the immutable value view published immediately before
+        /// <see cref="CurrentObservation"/>. Its lifetime ends at the next exchange,
+        /// while trace samples remain immutable for the lifetime of the trace.
+        /// </summary>
         public PhysicalObservation PreviousObservation => _observations.Previous;
 
         public AttemptTrace AttemptTrace => _attemptTrace;
@@ -89,7 +101,10 @@ namespace PowerliftingSimulator.Foundation.Unity
 
                 _authoritativeScene.PhysicsSceneHandle.Simulate((float)SimulationConstants.FixedDeltaTimeSeconds);
 
-                PhysicalObservation observation = _authoritativeScene.CaptureObservation(time);
+                _attemptTrace.ConfigureRegisteredBodyCount(_authoritativeScene.RegisteredBodyCount);
+                PhysicalObservation observation = _authoritativeScene.CaptureObservation(
+                    time,
+                    _observations.AcquireWriteStorage());
                 _observations.Publish(observation);
                 if (_attemptTrace.IsRecording)
                     _attemptTrace.Append(observation, LastIntentFrame);
@@ -193,19 +208,44 @@ namespace PowerliftingSimulator.Foundation.Unity
             InputRenderIntervalEndSeconds = 0d;
         }
 
+        internal void BeginAttemptTrace()
+        {
+            _attemptTrace.ConfigureRegisteredBodyCount(_authoritativeScene.RegisteredBodyCount);
+            _attemptTrace.BeginRecording();
+        }
+
         private sealed class ObservationExchange
         {
+            private readonly PhysicalObservationStorage _slotA;
+            private readonly PhysicalObservationStorage _slotB;
+            private readonly PhysicalObservationStorage _slotC;
             private PhysicalObservation _previous = PhysicalObservation.Empty(new SimulationTime(0, 0d));
             private PhysicalObservation _current = PhysicalObservation.Empty(new SimulationTime(0, 0d));
+            private PhysicalObservationStorage _previousStorage;
+            private PhysicalObservationStorage _currentStorage;
+            private PhysicalObservationStorage _writeStorage;
+
+            public ObservationExchange(int bodyCapacity)
+            {
+                _slotA = new PhysicalObservationStorage(bodyCapacity);
+                _slotB = new PhysicalObservationStorage(bodyCapacity);
+                _slotC = new PhysicalObservationStorage(bodyCapacity);
+                _writeStorage = _slotA;
+            }
 
             public PhysicalObservation Previous => _previous;
 
             public PhysicalObservation Current => _current;
 
+            public PhysicalObservationStorage AcquireWriteStorage() => _writeStorage;
+
             public void Publish(PhysicalObservation observation)
             {
                 _previous = _current;
+                _previousStorage = _currentStorage;
                 _current = observation;
+                _currentStorage = _writeStorage;
+                _writeStorage = FindSpareStorage();
             }
 
             public void Reset()
@@ -213,6 +253,18 @@ namespace PowerliftingSimulator.Foundation.Unity
                 PhysicalObservation empty = PhysicalObservation.Empty(new SimulationTime(0, 0d));
                 _previous = empty;
                 _current = empty;
+                _previousStorage = null;
+                _currentStorage = null;
+                _writeStorage = _slotA;
+            }
+
+            private PhysicalObservationStorage FindSpareStorage()
+            {
+                if (_slotA != _currentStorage && _slotA != _previousStorage)
+                    return _slotA;
+                if (_slotB != _currentStorage && _slotB != _previousStorage)
+                    return _slotB;
+                return _slotC;
             }
         }
     }

@@ -8,6 +8,8 @@ namespace PowerliftingSimulator.Foundation.Unity
 {
     public sealed class AuthoritativePhysicsScene
     {
+        public const int MaxRegisteredBodyCount = PhysicalObservationStorage.DefaultBodyCapacity;
+
         private static AuthoritativePhysicsScene s_activeOwner;
 
         private Scene _scene;
@@ -20,6 +22,8 @@ namespace PowerliftingSimulator.Foundation.Unity
         public bool IsInitialized => _initialized;
 
         public bool IsValid => _initialized && _scene.IsValid() && _physicsScene.IsValid();
+
+        public int RegisteredBodyCount => _bodies.Count;
 
         public Scene Scene
         {
@@ -99,25 +103,28 @@ namespace PowerliftingSimulator.Foundation.Unity
             RegisterBodyInternal(body, bodyId);
         }
 
-        internal PhysicalObservation CaptureObservation(SimulationTime time)
+        internal PhysicalObservation CaptureObservation(SimulationTime time, PhysicalObservationStorage storage)
         {
             EnsureInitialized();
+            if (storage == null)
+                throw new ArgumentNullException(nameof(storage));
+            if (_bodies.Count > storage.Capacity)
+                throw new InvalidOperationException("The observation storage capacity is smaller than the registered body count.");
             if (_bodies.Count == 0)
                 return PhysicalObservation.Empty(time);
 
-            var bodies = new PhysicalBodyObservation[_bodies.Count];
             PhysicalBodyObservation primaryBody = default(PhysicalBodyObservation);
             bool hasPrimaryBody = _primaryBody != null;
             for (int index = 0; index < _bodies.Count; index++)
             {
                 RegisteredBody registered = _bodies[index];
                 PhysicalBodyObservation body = CaptureBody(registered);
-                bodies[index] = body;
+                storage.Set(index, body);
                 if (registered.Body == _primaryBody)
                     primaryBody = body;
             }
 
-            return new PhysicalObservation(time, primaryBody, hasPrimaryBody, bodies);
+            return new PhysicalObservation(time, primaryBody, hasPrimaryBody, storage, 0, _bodies.Count);
         }
 
         private static PhysicalBodyObservation CaptureBody(RegisteredBody registered)
@@ -192,6 +199,9 @@ namespace PowerliftingSimulator.Foundation.Unity
 
         private void RegisterBodyInternal(Rigidbody body, string bodyId)
         {
+            if (_bodies.Count == MaxRegisteredBodyCount)
+                throw new InvalidOperationException("The bounded observation storage cannot register another body.");
+
             for (int index = 0; index < _bodies.Count; index++)
             {
                 if (_bodies[index].Body == body)
