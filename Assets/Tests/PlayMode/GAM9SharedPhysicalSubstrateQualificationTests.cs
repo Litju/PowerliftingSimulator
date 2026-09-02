@@ -15,6 +15,7 @@ using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.Profiling;
+using Unity.Profiling;
 
 namespace PowerliftingSimulator.Tests
 {
@@ -163,47 +164,97 @@ namespace PowerliftingSimulator.Tests
         [UnityTest]
         public IEnumerator G1_FIXED_TICK_RESET_REPEATABILITY()
         {
+            const int repeatCount = 20;
+            const int ticksPerRepeat = 20;
+            const int tracedRepeatCount = 10;
+
             yield return LoadQualificationScene();
             AssertSceneTopology();
             FoundationRuntime runtime = _bootstrap.Runtime;
 
-            _bar.ConfigureLoad(105f);
-            _rig.StartPoweredNeutral();
-            G1Snapshot first = RunManualSnapshot(runtime, _bar, 20);
+            G1Snapshot[] firstTrial = null;
+            float maxPositionDelta = 0f;
+            float maxRotationDelta = 0f;
+            float maxLinearVelocityDelta = 0f;
+            float maxAngularVelocityDelta = 0f;
+            float maxTracePositionDelta = 0f;
+            float maxTraceRotationDelta = 0f;
+            float maxTraceLinearVelocityDelta = 0f;
+            float maxTraceAngularVelocityDelta = 0f;
+            float maxBarInertiaDelta = 0f;
 
-            _bar.ConfigureLoad(105f);
-            _rig.StartPoweredNeutral();
-            G1Snapshot second = RunManualSnapshot(runtime, _bar, 20);
+            for (int repeatIndex = 0; repeatIndex < repeatCount; repeatIndex++)
+            {
+                _bar.ConfigureLoad(105f);
+                _rig.StartPoweredNeutral();
+                AssertPoweredControllerResetState(_rig.PoweredController);
 
-            _bar.ConfigureLoad(105f);
-            _rig.StartPoweredNeutral();
-            runtime.BeginAttemptTrace();
-            G1Snapshot traced = RunManualSnapshot(runtime, _bar, 20);
-            runtime.EndAttemptTrace();
+                bool traced = repeatIndex >= repeatCount - tracedRepeatCount;
+                if (traced)
+                    runtime.BeginAttemptTrace();
 
-            float maxPositionDelta = CompareSnapshots(first, second, 0.0001f, 0.01f, out float maxLinearVelocityDelta, out float maxAngularVelocityDelta);
-            float maxRotationDelta = CompareRotationSnapshots(first, second);
-            float tracePositionDelta = CompareSnapshots(first, traced, 0.0001f, 0.01f, out float maxTraceLinearVelocityDelta, out float maxTraceAngularVelocityDelta);
-            float traceRotationDelta = CompareRotationSnapshots(first, traced);
-            float maxBarInertiaDelta = Mathf.Max(CompareSnapshotMetadata(first, second), CompareSnapshotMetadata(first, traced));
+                G1Snapshot[] trial = RunManualSnapshots(runtime, _bar, ticksPerRepeat);
+
+                if (traced)
+                {
+                    runtime.EndAttemptTrace();
+                    Assert.That(runtime.AttemptTrace.Count, Is.EqualTo(ticksPerRepeat));
+                    AssertTraceShape(runtime.AttemptTrace, 17);
+                }
+
+                if (firstTrial == null)
+                {
+                    firstTrial = trial;
+                    continue;
+                }
+
+                Assert.That(trial.Length, Is.EqualTo(firstTrial.Length));
+                for (int tickIndex = 0; tickIndex < firstTrial.Length; tickIndex++)
+                {
+                    G1Snapshot baseline = firstTrial[tickIndex];
+                    G1Snapshot candidate = trial[tickIndex];
+                    maxBarInertiaDelta = Mathf.Max(maxBarInertiaDelta, CompareSnapshotMetadata(baseline, candidate));
+                    float positionDelta = CompareSnapshots(
+                        baseline,
+                        candidate,
+                        0.0001f,
+                        0.01f,
+                        out float linearVelocityDelta,
+                        out float angularVelocityDelta);
+                    maxPositionDelta = Mathf.Max(maxPositionDelta, positionDelta);
+                    maxRotationDelta = Mathf.Max(maxRotationDelta, CompareRotationSnapshots(baseline, candidate));
+                    maxLinearVelocityDelta = Mathf.Max(maxLinearVelocityDelta, linearVelocityDelta);
+                    maxAngularVelocityDelta = Mathf.Max(maxAngularVelocityDelta, angularVelocityDelta);
+
+                    if (traced)
+                    {
+                        maxTracePositionDelta = Mathf.Max(maxTracePositionDelta, positionDelta);
+                        maxTraceRotationDelta = Mathf.Max(maxTraceRotationDelta, CompareRotationSnapshots(baseline, candidate));
+                        maxTraceLinearVelocityDelta = Mathf.Max(maxTraceLinearVelocityDelta, linearVelocityDelta);
+                        maxTraceAngularVelocityDelta = Mathf.Max(maxTraceAngularVelocityDelta, angularVelocityDelta);
+                    }
+                }
+            }
+
+            Assert.That(firstTrial, Is.Not.Null);
             Assert.That(maxPositionDelta, Is.LessThan(0.0001f));
             Assert.That(maxRotationDelta, Is.LessThan(0.01f));
-            Assert.That(tracePositionDelta, Is.LessThan(0.0001f));
-            Assert.That(traceRotationDelta, Is.LessThan(0.01f));
-            Assert.That(runtime.AttemptTrace.Count, Is.EqualTo(20));
+            Assert.That(maxLinearVelocityDelta, Is.LessThan(0.0001f));
+            Assert.That(maxAngularVelocityDelta, Is.LessThan(0.0001f));
+            Assert.That(maxTracePositionDelta, Is.LessThan(0.0001f));
+            Assert.That(maxTraceRotationDelta, Is.LessThan(0.01f));
+            Assert.That(maxTraceLinearVelocityDelta, Is.LessThan(0.0001f));
+            Assert.That(maxTraceAngularVelocityDelta, Is.LessThan(0.0001f));
+            Assert.That(runtime.AttemptTrace.Count, Is.EqualTo(ticksPerRepeat));
             AssertTraceShape(runtime.AttemptTrace, 17);
 
             _rig.StartPoweredNeutral();
+            AssertPoweredControllerResetState(_rig.PoweredController);
             Assert.That(runtime.CurrentObservation.HasPrimaryBody, Is.False);
             Assert.That(runtime.AttemptTrace.Count, Is.Zero);
             Assert.That(runtime.InputBuffer.PendingSampleCount, Is.Zero);
             Assert.That(_rig.PoweredController.Mode, Is.EqualTo(PoweredAthleteMode.PoweredNeutral));
             Assert.That(_rig.PoweredController.GlobalActivation, Is.EqualTo(1f));
-            foreach (PoweredJointController.PoweredJointRuntime joint in _rig.PoweredController.Joints)
-            {
-                Assert.That(Quaternion.Angle(joint.AppliedTarget, Quaternion.identity), Is.LessThan(0.0001f), joint.Id);
-                Assert.That(Quaternion.Angle(joint.RequestedCommand.TargetRelativeRotation, Quaternion.identity), Is.LessThan(0.0001f), joint.Id);
-            }
             foreach (PhysicalAthleteRig.SegmentRuntime segment in _rig.Segments.Values)
             {
                 Assert.That(segment.Body.linearVelocity, Is.EqualTo(Vector3.zero), segment.Recipe.Id);
@@ -220,20 +271,21 @@ namespace PowerliftingSimulator.Tests
             {
                 schema = "GAM9_RESET_REPEATABILITY_V1",
                 status = "PASS",
-                manualSamples = 20,
-                traceSamples = 20,
+                repeatCount = repeatCount,
+                ticksPerRepeat = ticksPerRepeat,
+                tracedRepeatCount = tracedRepeatCount,
                 maxPositionDeltaM = maxPositionDelta,
                 maxRotationDeltaDeg = maxRotationDelta,
                 maxLinearVelocityDeltaMps = maxLinearVelocityDelta,
                 maxAngularVelocityDeltaRadS = maxAngularVelocityDelta,
-                maxTracePositionDeltaM = tracePositionDelta,
-                maxTraceRotationDeltaDeg = traceRotationDelta,
+                maxTracePositionDeltaM = maxTracePositionDelta,
+                maxTraceRotationDeltaDeg = maxTraceRotationDelta,
                 maxTraceLinearVelocityDeltaMps = maxTraceLinearVelocityDelta,
                 maxTraceAngularVelocityDeltaRadS = maxTraceAngularVelocityDelta,
-                barMassKg = first.BarMassKg,
+                barMassKg = firstTrial[0].BarMassKg,
                 maxBarInertiaDeltaKgM2 = maxBarInertiaDelta,
-                firstTick = first.Tick,
-                firstSimulationTimeS = first.TimeSeconds,
+                firstTick = firstTrial[0].Tick,
+                firstSimulationTimeS = firstTrial[0].TimeSeconds,
                 resetObservationBodyCount = runtime.CurrentObservation.BodyCount,
                 resetPendingInputSamples = runtime.InputBuffer.PendingSampleCount
             });
@@ -292,16 +344,13 @@ namespace PowerliftingSimulator.Tests
             JointDrive accelerationDrive = oldKneeDrive;
             accelerationDrive.useAcceleration = true;
             knee.angularXDrive = accelerationDrive;
-            bool accelerationRejected = accelerationDrive.useAcceleration;
+            Exception accelerationError = InvokeRuntimeValidation(_rig);
             knee.angularXDrive = oldKneeDrive;
-            results.Add(new MutationResult
-            {
-                id = "M05",
-                mutation = "powered joint useAcceleration=true",
-                gate = "G1 joint-authority qualification detector",
-                rejected = accelerationRejected,
-                observed = "qualification contract requires useAcceleration=false"
-            });
+            results.Add(Rejected(
+                "M05",
+                "powered joint useAcceleration=true",
+                "PoweredJointController.ValidatePoweredDrive via PhysicalAthleteRig.ValidateRuntime",
+                accelerationError));
 
             JointProjectionMode oldProjection = knee.projectionMode;
             knee.projectionMode = JointProjectionMode.PositionAndRotation;
@@ -434,6 +483,22 @@ namespace PowerliftingSimulator.Tests
             yield return LoadQualificationScene();
             AssertSceneTopology();
             FoundationRuntime runtime = _bootstrap.Runtime;
+            _bootstrap.enabled = false;
+            _rig.enabled = false;
+            _bar.enabled = false;
+
+            AllocationCapture allocationOffCapture = new AllocationCapture(120);
+            _bar.ConfigureLoad(105f);
+            _rig.StartPoweredNeutral();
+            yield return CaptureProfilerGcSamples(runtime, false, allocationOffCapture);
+
+            AllocationCapture allocationTraceCapture = new AllocationCapture(120);
+            _bar.ConfigureLoad(105f);
+            _rig.StartPoweredNeutral();
+            yield return CaptureProfilerGcSamples(runtime, true, allocationTraceCapture);
+
+            Assert.That(allocationOffCapture.Available, Is.True, allocationOffCapture.UnavailableReason);
+            Assert.That(allocationTraceCapture.Available, Is.True, allocationTraceCapture.UnavailableReason);
 
             _bar.ConfigureLoad(105f);
             _rig.StartPoweredNeutral();
@@ -441,15 +506,12 @@ namespace PowerliftingSimulator.Tests
                 runtime.StepOne();
 
             var physicsTickMs = new double[300];
-            var physicsAllocBytes = new double[300];
             for (int index = 0; index < physicsTickMs.Length; index++)
             {
-                long allocationBefore = GC.GetAllocatedBytesForCurrentThread();
                 Stopwatch timer = Stopwatch.StartNew();
                 runtime.StepOne();
                 timer.Stop();
                 physicsTickMs[index] = timer.Elapsed.TotalMilliseconds;
-                physicsAllocBytes[index] = GC.GetAllocatedBytesForCurrentThread() - allocationBefore;
             }
             AssertFiniteAthlete();
 
@@ -457,13 +519,13 @@ namespace PowerliftingSimulator.Tests
             _rig.StartPoweredNeutral();
             for (int index = 0; index < 50; index++)
                 runtime.AdvanceRenderFrame(0.01d);
-            var renderFrameMs = new double[300];
-            for (int index = 0; index < renderFrameMs.Length; index++)
+            var foundationFrameStepMs = new double[300];
+            for (int index = 0; index < foundationFrameStepMs.Length; index++)
             {
                 Stopwatch timer = Stopwatch.StartNew();
                 Assert.That(runtime.AdvanceRenderFrame(0.01d), Is.EqualTo(1));
                 timer.Stop();
-                renderFrameMs[index] = timer.Elapsed.TotalMilliseconds;
+                foundationFrameStepMs[index] = timer.Elapsed.TotalMilliseconds;
             }
 
             _bar.ConfigureLoad(105f);
@@ -495,14 +557,10 @@ namespace PowerliftingSimulator.Tests
 
             _bar.ConfigureLoad(105f);
             _rig.StartPoweredNeutral();
-            GC.Collect();
-            long traceAllocationBefore = GC.GetAllocatedBytesForCurrentThread();
             runtime.BeginAttemptTrace();
             for (int index = 0; index < 300; index++)
                 runtime.StepOne();
             runtime.EndAttemptTrace();
-            long traceAllocationAfter = GC.GetAllocatedBytesForCurrentThread();
-            long traceAllocatedBytes = traceAllocationAfter - traceAllocationBefore;
             Assert.That(runtime.AttemptTrace.Count, Is.EqualTo(300));
             AssertTraceShape(runtime.AttemptTrace, 17);
 
@@ -528,24 +586,30 @@ namespace PowerliftingSimulator.Tests
             long finalMemory = Profiler.GetTotalAllocatedMemoryLong();
 
             MetricSummary physicsSummary = Summarize(physicsTickMs);
-            MetricSummary allocationSummary = Summarize(physicsAllocBytes);
-            MetricSummary renderSummary = Summarize(renderFrameMs);
+            MetricSummary foundationFrameStepSummary = Summarize(foundationFrameStepMs);
             MetricSummary catchUpSummary = Summarize(catchUpMs);
             MetricSummary controllerSummary = Summarize(controllerMs);
+            AllocationMetricArtifact allocationOff = allocationOffCapture.ToArtifact();
+            AllocationMetricArtifact allocationTrace = allocationTraceCapture.ToArtifact();
+            HotPathAudit hotPathAudit = AuditObservationTraceHotPath();
             long workingSetBytes = Process.GetCurrentProcess().WorkingSet64;
 
             var hardBudgetFailures = new List<string>();
             bool editorCatchUpWithinBudget = catchUpSummary.p95Ms <= 8d;
             bool editorPhysicsTickWithinBudget = physicsSummary.p95Ms <= 2d;
-            bool editorRenderFrameWithinBudget = renderSummary.p95Ms <= 10d;
+            bool editorFoundationFrameStepWithinBudget = foundationFrameStepSummary.p95Ms <= 10d;
             bool editorControllerWithinBudget = controllerSummary.p95Ms <= 0.25d;
+            bool editorAllocationClean = allocationOffCapture.Available && allocationTraceCapture.Available &&
+                allocationOff.maxBytes == 0L && allocationTrace.maxBytes == 0L;
             long runtimeAllocatedMemoryBytes = Profiler.GetTotalAllocatedMemoryLong();
-            if (allocationSummary.p95Ms != 0d)
-                hardBudgetFailures.Add("activeGcBytesPerTick!=0");
             if (runtimeAllocatedMemoryBytes > 2L * 1024L * 1024L * 1024L)
                 hardBudgetFailures.Add("runtimeAllocatedMemory>2GB");
-            if (traceAllocatedBytes > 25L * 1024L * 1024L)
-                hardBudgetFailures.Add("normalTrace>25MB");
+            if (runtime.AttemptTrace.ReservedStorageEstimateBytes > 25L * 1024L * 1024L)
+                hardBudgetFailures.Add("traceReservedStorage>25MB");
+            if (runtime.AttemptTrace.LogicalPayloadStorageBytes > 25L * 1024L * 1024L)
+                hardBudgetFailures.Add("traceLogicalPayload>25MB");
+            if (!hotPathAudit.Pass)
+                hardBudgetFailures.Add("staticHotPathAuditFailed");
             if (baselineRigidbodies != CountComponents<Rigidbody>(runtime.AuthoritativeScene))
                 hardBudgetFailures.Add("rigidbodyCountChanged");
             if (baselineJoints != CountComponents<ConfigurableJoint>(runtime.AuthoritativeScene))
@@ -556,15 +620,30 @@ namespace PowerliftingSimulator.Tests
             {
                 schema = "GAM9_PERFORMANCE_BOUNDED_SOAK_V1",
                 status = hardBudgetsPass ? "PASS_PENDING_STANDALONE_PERF" : "FAIL_HARD_BUDGET",
-                measurementMethod = "Unity PlayMode direct local-authority harness; Stopwatch around owned calls; no wall-clock sleeps; 300 samples unless noted",
+                measurementMethod = "Unity PlayMode local-authority harness; ProfilerRecorder Internal/GC.Alloc summed on the current thread for editor diagnostic frames; Stopwatch only for named foundation stage diagnostics; 300 timing samples and 120 allocation frames. Release allocation qualification is the standalone Development player artifact.",
                 physicsTick = physicsSummary,
-                activeGcBytesPerTick = allocationSummary,
-                renderFrame = renderSummary,
+                steadyStateGcOff = allocationOff,
+                steadyStateGcTrace = allocationTrace,
+                allocationMetric = allocationOff.channel,
+                editorAllocationClean = editorAllocationClean,
+                editorAllocationGate = editorAllocationClean
+                    ? "PASS; editor current-thread samples were zero."
+                    : "NOT_A_RELEASE_GATE; Unity Editor/PlayMode test-runner frame samples include harness allocations; standalone GC.Alloc evidence is required.",
+                releaseAllocationGate = "GAM9StandaloneSmoke: Development Windows player GC.Alloc (current thread), 120 warmed OFF and 120 warmed TRACE frames.",
+                foundationFrameStep = foundationFrameStepSummary,
                 fourTickCatchUp = catchUpSummary,
                 controllerStep = controllerSummary,
                 normalTraceSamples = 300,
-                normalTraceAllocatedBytes = traceAllocatedBytes,
+                normalTraceAppendAllocationP95Bytes = allocationTrace.p95Bytes,
+                normalTraceAppendAllocationMaxBytes = allocationTrace.maxBytes,
                 normalTraceBudgetBytes = 25L * 1024L * 1024L,
+                traceCapacitySamples = runtime.AttemptTrace.Capacity,
+                traceRegisteredBodyCount = runtime.AttemptTrace.RegisteredBodyCount,
+                traceReservedBodyRecordCount = runtime.AttemptTrace.ReservedBodyRecordCount,
+                traceReservedBodyRecordStorageBytes = runtime.AttemptTrace.ReservedBodyRecordStorageBytes,
+                traceReservedStorageEstimateBytes = runtime.AttemptTrace.ReservedStorageEstimateBytes,
+                traceLogicalPayloadStorageBytes = runtime.AttemptTrace.LogicalPayloadStorageBytes,
+                traceCurrentLogicalPayloadStorageBytes = runtime.AttemptTrace.CurrentLogicalPayloadStorageBytes,
                 boundedSoakCycles = soakCycles,
                 baselineRigidbodies = baselineRigidbodies,
                 baselineJoints = baselineJoints,
@@ -575,20 +654,269 @@ namespace PowerliftingSimulator.Tests
                 runtimeAllocatedMemoryBytes = runtimeAllocatedMemoryBytes,
                 memoryBudgetBasis = "Profiler.GetTotalAllocatedMemoryLong; Process.WorkingSet64 is unavailable in this Unity editor harness when reported as zero.",
                 gpuP95Ms = -1d,
-                gpuMeasurement = "Not measured in PlayMode harness; standalone graphics smoke is a separate gate.",
+                gpuMeasurement = "GPU=NOT_AVAILABLE_IN_CURRENT_HARNESS; standalone graphics smoke is a separate gate.",
+                staticHotPathAuditPass = hotPathAudit.Pass,
+                staticHotPathAudit = hotPathAudit.Description,
                 hardBudgetsPass = hardBudgetsPass,
                 hardBudgetFailures = hardBudgetFailures.ToArray(),
                 editorCatchUpWithinBudget = editorCatchUpWithinBudget,
                 editorPhysicsTickWithinBudget = editorPhysicsTickWithinBudget,
-                editorRenderFrameWithinBudget = editorRenderFrameWithinBudget,
+                editorFoundationFrameStepWithinBudget = editorFoundationFrameStepWithinBudget,
                 editorControllerWithinBudget = editorControllerWithinBudget,
                 releaseCatchUpGate = "GAM9 standalone Windows smoke runner"
             });
-            UnityEngine.Debug.Log($"GAM9_PERFORMANCE hardBudgetsPass={hardBudgetsPass} failures={string.Join(",", hardBudgetFailures)} editorWithinBudget=physics:{editorPhysicsTickWithinBudget},render:{editorRenderFrameWithinBudget},catchUp:{editorCatchUpWithinBudget},controller:{editorControllerWithinBudget} physicsP95={physicsSummary.p95Ms:0.000}ms renderP95={renderSummary.p95Ms:0.000}ms catchUpP95={catchUpSummary.p95Ms:0.000}ms controllerP95={controllerSummary.p95Ms:0.000}ms gcP95={allocationSummary.p95Ms:0.000}B runtimeMemory={runtimeAllocatedMemoryBytes} traceBytes={traceAllocatedBytes}");
+            UnityEngine.Debug.Log($"GAM9_PERFORMANCE hardBudgetsPass={hardBudgetsPass} failures={string.Join(",", hardBudgetFailures)} editorAllocationClean={editorAllocationClean} editorWithinBudget=physics:{editorPhysicsTickWithinBudget},foundationStep:{editorFoundationFrameStepWithinBudget},catchUp:{editorCatchUpWithinBudget},controller:{editorControllerWithinBudget} physicsP95={physicsSummary.p95Ms:0.000}ms foundationStepP95={foundationFrameStepSummary.p95Ms:0.000}ms catchUpP95={catchUpSummary.p95Ms:0.000}ms controllerP95={controllerSummary.p95Ms:0.000}ms gcOffMax={allocationOff.maxBytes}B gcTraceMax={allocationTrace.maxBytes}B runtimeMemory={runtimeAllocatedMemoryBytes} traceReserved={runtime.AttemptTrace.ReservedStorageEstimateBytes}");
             Assert.That(hardBudgetsPass, Is.True, "A hard G1 memory, trace, or bounded-soak structural budget failed.");
 
             runtime.Reset();
             yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator G1_OBSERVATION_TRACE_STORAGE_IMMUTABILITY_AND_STATIC_AUDIT()
+        {
+            yield return LoadQualificationScene();
+            AssertSceneTopology();
+            FoundationRuntime runtime = _bootstrap.Runtime;
+            _bootstrap.enabled = false;
+            _rig.enabled = false;
+            _bar.enabled = false;
+
+            _rig.StartPoweredNeutral();
+            runtime.StepOne();
+            PhysicalObservation first = runtime.CurrentObservation;
+            Assert.That(first.BodyCount, Is.EqualTo(17));
+            Assert.That(first.BodyAt(0).BodyId, Is.EqualTo("pelvis"));
+            Assert.That(first.BodyAt(16).BodyId, Is.EqualTo("barbell"));
+
+            PhysicalBodyObservation callerCopy = first.BodyAt(0);
+            callerCopy = new PhysicalBodyObservation(
+                callerCopy.BodyId,
+                999f,
+                new Vector3Value(999f, 999f, 999f),
+                callerCopy.RotationWorldFromBody,
+                callerCopy.LinearVelocityMetersPerSecond,
+                callerCopy.AngularVelocityRadiansPerSecond);
+            Assert.That(first.BodyAt(0).MassKilograms, Is.Not.EqualTo(callerCopy.MassKilograms));
+            Assert.That(first.BodyAt(0).PositionMeters.X, Is.Not.EqualTo(callerCopy.PositionMeters.X));
+
+            runtime.StepOne();
+            Assert.That(runtime.PreviousObservation.SimulationTick, Is.EqualTo(first.SimulationTick));
+            Assert.That(runtime.CurrentObservation.SimulationTick, Is.EqualTo(first.SimulationTick + 1ul));
+            Assert.That(runtime.PreviousObservation.BodyAt(16).BodyId, Is.EqualTo("barbell"));
+            Assert.That(runtime.CurrentObservation.BodyAt(16).BodyId, Is.EqualTo("barbell"));
+
+            _rig.StartPoweredNeutral();
+            runtime.BeginAttemptTrace();
+            runtime.StepOne();
+            AttemptTraceSample historicalSample = runtime.AttemptTrace.GetSample(0);
+            G1BodyState[] historicalBodies = CaptureBodyStates(historicalSample.Observation);
+            for (int index = 0; index < 300; index++)
+                runtime.StepOne();
+            runtime.EndAttemptTrace();
+
+            Assert.That(runtime.AttemptTrace.Count, Is.EqualTo(301));
+            Assert.That(runtime.AttemptTrace.RegisteredBodyCount, Is.EqualTo(17));
+            Assert.That(runtime.AttemptTrace.ReservedBodyRecordCount, Is.EqualTo(
+                runtime.AttemptTrace.Capacity * runtime.AttemptTrace.BodyCapacity));
+            Assert.That(runtime.AttemptTrace.ReservedStorageEstimateBytes, Is.GreaterThan(0L));
+            Assert.That(runtime.AttemptTrace.LogicalPayloadStorageBytes, Is.LessThan(25L * 1024L * 1024L));
+            AssertHistoricalBodiesUnchanged(historicalSample.Observation, historicalBodies);
+
+            HotPathAudit hotPathAudit = AuditObservationTraceHotPath();
+            Assert.That(hotPathAudit.Pass, Is.True, hotPathAudit.Description);
+            yield return null;
+        }
+
+        private static IEnumerator CaptureProfilerGcSamples(
+            FoundationRuntime runtime,
+            bool recording,
+            AllocationCapture capture)
+        {
+            ProfilerRecorder recorder;
+            string unavailableReason;
+            if (!TryStartGcFrameRecorder(out recorder, out unavailableReason))
+            {
+                capture.Available = false;
+                capture.UnavailableReason = unavailableReason;
+                yield break;
+            }
+
+            bool recordingStarted = false;
+            try
+            {
+                if (recording)
+                {
+                    runtime.BeginAttemptTrace();
+                    recordingStarted = true;
+                }
+
+                for (int index = 0; index < 20; index++)
+                {
+                    runtime.StepOne();
+                    yield return null;
+                }
+
+                for (int index = 0; index < capture.values.Length; index++)
+                {
+                    runtime.StepOne();
+                    yield return null;
+                    if (!recorder.Valid || recorder.Count == 0)
+                    {
+                        capture.Available = false;
+                        capture.UnavailableReason = "ProfilerRecorder was valid but returned no frame samples.";
+                        yield break;
+                    }
+
+                    capture.values[index] = recorder.LastValue;
+                }
+
+                capture.Available = true;
+            }
+            finally
+            {
+                if (recordingStarted && runtime.AttemptTrace.IsRecording)
+                    runtime.EndAttemptTrace();
+                recorder.Dispose();
+            }
+        }
+
+        private static bool TryStartGcFrameRecorder(out ProfilerRecorder recorder, out string reason)
+        {
+            recorder = default(ProfilerRecorder);
+            reason = string.Empty;
+            try
+            {
+                recorder = ProfilerRecorder.StartNew(
+                    ProfilerCategory.Internal,
+                    "GC.Alloc",
+                    128,
+                    ProfilerRecorderOptions.SumAllSamplesInFrame |
+                    ProfilerRecorderOptions.CollectOnlyOnCurrentThread);
+            }
+            catch (Exception exception)
+            {
+                reason = "ProfilerRecorder Internal/GC.Alloc unavailable: " + exception.Message;
+                return false;
+            }
+
+            if (recorder.Valid)
+                return true;
+
+            recorder.Dispose();
+            reason = "ProfilerRecorder Internal/GC.Alloc returned an invalid recorder.";
+            return false;
+        }
+
+        private static HotPathAudit AuditObservationTraceHotPath()
+        {
+            string scriptsDirectory = Path.Combine(Directory.GetParent(Application.dataPath).FullName, "Assets", "Scripts");
+            string[] files =
+            {
+                Path.Combine(scriptsDirectory, "Foundation", "Unity", "AuthoritativePhysicsScene.cs"),
+                Path.Combine(scriptsDirectory, "Foundation", "Unity", "PhysicsTickDriver.cs"),
+                Path.Combine(scriptsDirectory, "Foundation", "AttemptTrace.cs")
+            };
+            string[] methodNames = { "CaptureObservation", "StepOne", "Append" };
+            bool pass = true;
+            var findings = new List<string>();
+
+            for (int fileIndex = 0; fileIndex < files.Length; fileIndex++)
+            {
+                string source = File.ReadAllText(files[fileIndex]);
+                string methodName = methodNames[fileIndex];
+                string method = ExtractMethodBody(source, methodName);
+                if (method == null)
+                {
+                    pass = false;
+                    findings.Add(Path.GetFileName(files[fileIndex]) + "." + methodName + ": method not found");
+                    continue;
+                }
+
+                if (Regex.IsMatch(method, @"\bnew\s+[^;\r\n]*\["))
+                {
+                    pass = false;
+                    findings.Add(Path.GetFileName(files[fileIndex]) + "." + methodName + ": managed array allocation");
+                }
+                if (Regex.IsMatch(method, @"\b(Enumerable|Select|Where|ToArray|ToList)\b"))
+                {
+                    pass = false;
+                    findings.Add(Path.GetFileName(files[fileIndex]) + "." + methodName + ": LINQ/materializing query");
+                }
+                if (Regex.IsMatch(method, @"\b(String\.Format|string\.Format)\s*\(|\.ToString\s*\("))
+                {
+                    pass = false;
+                    findings.Add(Path.GetFileName(files[fileIndex]) + "." + methodName + ": string formatting");
+                }
+                if (Regex.IsMatch(method, @"\bnew\s+object\s*\[|\bbox\s*\("))
+                {
+                    pass = false;
+                    findings.Add(Path.GetFileName(files[fileIndex]) + "." + methodName + ": boxing/object allocation");
+                }
+            }
+
+            return new HotPathAudit
+            {
+                Pass = pass,
+                Description = pass
+                    ? "PASS; CaptureObservation, PhysicsTickDriver.StepOne, and AttemptTrace.Append contain no managed arrays, LINQ/materialization, boxing, or string formatting."
+                    : "FAIL; " + string.Join("; ", findings)
+            };
+        }
+
+        private static string ExtractMethodBody(string source, string methodName)
+        {
+            Match signature = Regex.Match(
+                source,
+                @"\b(public|internal|private|protected)\s+(?:static\s+)?[^\r\n{;]+\b" + Regex.Escape(methodName) + @"\s*\(");
+            if (!signature.Success)
+                return null;
+
+            int openingBrace = source.IndexOf('{', signature.Index);
+            if (openingBrace < 0)
+                return null;
+
+            int depth = 0;
+            for (int index = openingBrace; index < source.Length; index++)
+            {
+                if (source[index] == '{')
+                    depth++;
+                else if (source[index] == '}' && --depth == 0)
+                    return source.Substring(openingBrace, index - openingBrace + 1);
+            }
+            return null;
+        }
+
+        private static G1BodyState[] CaptureBodyStates(PhysicalObservation observation)
+        {
+            var bodies = new G1BodyState[observation.BodyCount];
+            for (int index = 0; index < bodies.Length; index++)
+            {
+                PhysicalBodyObservation body = observation.BodyAt(index);
+                bodies[index] = new G1BodyState
+                {
+                    id = body.BodyId,
+                    position = ToUnityVector(body.PositionMeters),
+                    rotation = ToUnityQuaternion(body.RotationWorldFromBody),
+                    linearVelocity = ToUnityVector(body.LinearVelocityMetersPerSecond),
+                    angularVelocity = ToUnityVector(body.AngularVelocityRadiansPerSecond)
+                };
+            }
+            return bodies;
+        }
+
+        private static void AssertHistoricalBodiesUnchanged(PhysicalObservation observation, G1BodyState[] expected)
+        {
+            Assert.That(observation.BodyCount, Is.EqualTo(expected.Length));
+            for (int index = 0; index < expected.Length; index++)
+            {
+                PhysicalBodyObservation body = observation.BodyAt(index);
+                Assert.That(body.BodyId, Is.EqualTo(expected[index].id));
+                Assert.That(ToUnityVector(body.PositionMeters), Is.EqualTo(expected[index].position));
+                Assert.That(ToUnityQuaternion(body.RotationWorldFromBody), Is.EqualTo(expected[index].rotation));
+                Assert.That(ToUnityVector(body.LinearVelocityMetersPerSecond), Is.EqualTo(expected[index].linearVelocity));
+                Assert.That(ToUnityVector(body.AngularVelocityRadiansPerSecond), Is.EqualTo(expected[index].angularVelocity));
+            }
         }
 
         [UnityTearDown]
@@ -645,10 +973,19 @@ namespace PowerliftingSimulator.Tests
                 Assert.That(runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds), Is.EqualTo(1));
         }
 
-        private static G1Snapshot RunManualSnapshot(FoundationRuntime runtime, PhysicalBarbell bar, int ticks)
+        private static G1Snapshot[] RunManualSnapshots(FoundationRuntime runtime, PhysicalBarbell bar, int ticks)
         {
+            var snapshots = new G1Snapshot[ticks];
             for (int index = 0; index < ticks; index++)
+            {
                 runtime.StepOne();
+                snapshots[index] = CaptureSnapshot(runtime, bar);
+            }
+            return snapshots;
+        }
+
+        private static G1Snapshot CaptureSnapshot(FoundationRuntime runtime, PhysicalBarbell bar)
+        {
             PhysicalObservation observation = runtime.CurrentObservation;
             Assert.That(observation.BodyCount, Is.EqualTo(17));
             var bodies = new G1BodyState[observation.BodyCount];
@@ -672,6 +1009,15 @@ namespace PowerliftingSimulator.Tests
                 BarMassKg = bar.LoadedMassKg,
                 BarInertiaTensor = bar.Body.inertiaTensor
             };
+        }
+
+        private static void AssertPoweredControllerResetState(PoweredJointController controller)
+        {
+            foreach (PoweredJointController.PoweredJointRuntime joint in controller.Joints)
+            {
+                Assert.That(Quaternion.Angle(joint.AppliedTarget, Quaternion.identity), Is.LessThan(0.0001f), joint.Id);
+                Assert.That(Quaternion.Angle(joint.RequestedCommand.TargetRelativeRotation, Quaternion.identity), Is.LessThan(0.0001f), joint.Id);
+            }
         }
 
         private static float CompareSnapshotMetadata(G1Snapshot first, G1Snapshot second)
@@ -847,6 +1193,15 @@ namespace PowerliftingSimulator.Tests
             return sorted[index];
         }
 
+        private static long Percentile(long[] sorted, double percentile)
+        {
+            if (sorted.Length == 0)
+                return 0L;
+            int index = (int)Math.Ceiling(percentile * sorted.Length) - 1;
+            index = Math.Max(0, Math.Min(index, sorted.Length - 1));
+            return sorted[index];
+        }
+
         private static int CountComponents<T>(Scene scene) where T : Component
         {
             int count = 0;
@@ -974,8 +1329,9 @@ namespace PowerliftingSimulator.Tests
         {
             public string schema;
             public string status;
-            public int manualSamples;
-            public int traceSamples;
+            public int repeatCount;
+            public int ticksPerRepeat;
+            public int tracedRepeatCount;
             public float maxPositionDeltaM;
             public float maxRotationDeltaDeg;
             public float maxLinearVelocityDeltaMps;
@@ -1021,13 +1377,26 @@ namespace PowerliftingSimulator.Tests
             public string status;
             public string measurementMethod;
             public MetricSummary physicsTick;
-            public MetricSummary activeGcBytesPerTick;
-            public MetricSummary renderFrame;
+            public AllocationMetricArtifact steadyStateGcOff;
+            public AllocationMetricArtifact steadyStateGcTrace;
+            public string allocationMetric;
+            public bool editorAllocationClean;
+            public string editorAllocationGate;
+            public string releaseAllocationGate;
+            public MetricSummary foundationFrameStep;
             public MetricSummary fourTickCatchUp;
             public MetricSummary controllerStep;
             public int normalTraceSamples;
-            public long normalTraceAllocatedBytes;
+            public long normalTraceAppendAllocationP95Bytes;
+            public long normalTraceAppendAllocationMaxBytes;
             public long normalTraceBudgetBytes;
+            public int traceCapacitySamples;
+            public int traceRegisteredBodyCount;
+            public int traceReservedBodyRecordCount;
+            public long traceReservedBodyRecordStorageBytes;
+            public long traceReservedStorageEstimateBytes;
+            public long traceLogicalPayloadStorageBytes;
+            public long traceCurrentLogicalPayloadStorageBytes;
             public int boundedSoakCycles;
             public int baselineRigidbodies;
             public int baselineJoints;
@@ -1039,13 +1408,29 @@ namespace PowerliftingSimulator.Tests
             public string memoryBudgetBasis;
             public double gpuP95Ms;
             public string gpuMeasurement;
+            public bool staticHotPathAuditPass;
+            public string staticHotPathAudit;
             public bool hardBudgetsPass;
             public string[] hardBudgetFailures;
             public bool editorCatchUpWithinBudget;
             public bool editorPhysicsTickWithinBudget;
-            public bool editorRenderFrameWithinBudget;
+            public bool editorFoundationFrameStepWithinBudget;
             public bool editorControllerWithinBudget;
             public string releaseCatchUpGate;
+        }
+
+        [Serializable]
+        private sealed class AllocationMetricArtifact
+        {
+            public bool available;
+            public string channel;
+            public int sampleCount;
+            public long p50Bytes;
+            public long p95Bytes;
+            public long p99Bytes;
+            public long maxBytes;
+            public string scope;
+            public string unavailableReason;
         }
 
         [Serializable]
@@ -1056,6 +1441,63 @@ namespace PowerliftingSimulator.Tests
             public double p95Ms;
             public double p99Ms;
             public double maxMs;
+        }
+
+        private sealed class AllocationCapture
+        {
+            public AllocationCapture(int sampleCount)
+            {
+                values = new long[sampleCount];
+                Channel = "GC.Alloc (current thread)";
+                Scope = "Editor PlayMode frame; includes Unity Editor/Test Framework work and is not the release gate.";
+            }
+
+            public readonly long[] values;
+            public string Channel { get; set; }
+            public string Scope { get; set; }
+            public bool Available { get; set; }
+            public string UnavailableReason { get; set; }
+
+            public AllocationMetricArtifact ToArtifact()
+            {
+                if (!Available)
+                {
+                    return new AllocationMetricArtifact
+                    {
+                        available = false,
+                        channel = Channel,
+                        sampleCount = 0,
+                        p50Bytes = -1L,
+                        p95Bytes = -1L,
+                        p99Bytes = -1L,
+                        maxBytes = -1L,
+                        scope = Scope,
+                        unavailableReason = UnavailableReason ?? "ProfilerRecorder channel unavailable."
+                    };
+                }
+
+                long[] sorted = new long[values.Length];
+                Array.Copy(values, sorted, values.Length);
+                Array.Sort(sorted);
+                return new AllocationMetricArtifact
+                {
+                    available = true,
+                    channel = Channel,
+                    sampleCount = sorted.Length,
+                    p50Bytes = Percentile(sorted, 0.50d),
+                    p95Bytes = Percentile(sorted, 0.95d),
+                    p99Bytes = Percentile(sorted, 0.99d),
+                    maxBytes = sorted[sorted.Length - 1],
+                    scope = Scope,
+                    unavailableReason = string.Empty
+                };
+            }
+        }
+
+        private sealed class HotPathAudit
+        {
+            public bool Pass;
+            public string Description;
         }
 
         private sealed class SourceAudit

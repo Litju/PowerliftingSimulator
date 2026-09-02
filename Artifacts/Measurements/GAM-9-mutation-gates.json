@@ -37,9 +37,9 @@
         {
             "id": "M05",
             "mutation": "powered joint useAcceleration=true",
-            "gate": "G1 joint-authority qualification detector",
+            "gate": "PoweredJointController.ValidatePoweredDrive via PhysicalAthleteRig.ValidateRuntime",
             "rejected": true,
-            "observed": "qualification contract requires useAcceleration=false"
+            "observed": "InvalidOperationException: Joint 'left_shank' uses acceleration authority; powered drives require useAcceleration=false."
         },
         {
             "id": "M06",
