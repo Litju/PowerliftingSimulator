@@ -34,20 +34,28 @@ namespace PowerliftingSimulator.Squat.Unity
         [SerializeField] private bool showLandmarks;
         [SerializeField] private bool showReferenceBarGhost = true;
 
+        public const float HandPronationDeg = 60f;
+        public const float FingerMcpDeg = 55f;
+        public const float FingerPipDeg = 75f;
+        public const float FingerDipDeg = 50f;
+        public const float ThumbProximalDeg = 25f;
+        public const float ThumbIntermediateDeg = 45f;
+        public const float ThumbDistalDeg = 35f;
+
         private readonly LandmarkMarker[] _landmarkMarkers = new LandmarkMarker[4];
         private readonly List<PoseBind> _bindPose = new List<PoseBind>();
         private static readonly float[] FingerCurlAngles = new[]
         {
             // Thumb: wraps under/around the bar
-            20f, 25f, 20f,
+            ThumbProximalDeg, ThumbIntermediateDeg, ThumbDistalDeg,
             // Index: wraps over and around the bar
-            35f, 45f, 30f,
+            FingerMcpDeg, FingerPipDeg, FingerDipDeg,
             // Middle: wraps over and around the bar
-            35f, 45f, 30f,
+            FingerMcpDeg, FingerPipDeg, FingerDipDeg,
             // Ring: wraps over and around the bar
-            35f, 45f, 30f,
+            FingerMcpDeg, FingerPipDeg, FingerDipDeg,
             // Pinky: wraps over and around the bar
-            35f, 45f, 30f
+            FingerMcpDeg, FingerPipDeg, FingerDipDeg
         };
         private Transform _hips;
         private Transform _spine;
@@ -1088,7 +1096,11 @@ namespace PowerliftingSimulator.Squat.Unity
             Quaternion upperRot = ConstructArmBoneRotation(upperDir, armNormal);
             Quaternion forearmRot = ConstructArmBoneRotation(forearmFinalDir, armNormal);
 
-            Quaternion handRot = forearmRot * handBindRelativeToForearm;
+            Quaternion baseHandRot = forearmRot * handBindRelativeToForearm;
+            Vector3 handLongitudinalAxis = forearmFinalDir;
+            float pronationSignedDeg = isLeft ? HandPronationDeg : -HandPronationDeg;
+            Quaternion axialPronation = Quaternion.AngleAxis(pronationSignedDeg, handLongitudinalAxis);
+            Quaternion handRot = axialPronation * baseHandRot;
 
             upperArm.SetPositionAndRotation(shoulder, upperRot);
             forearm.SetPositionAndRotation(elbow, forearmRot);
