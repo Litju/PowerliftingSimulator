@@ -527,7 +527,7 @@ namespace PowerliftingSimulator.Squat.Unity
         public const float SpineWeightTotal = SpineWeight + ChestWeight + UpperChestWeight;
         public const float CervicalCompensationFraction = 0.08f;
         public const float HeadCompensationFraction = 0.12f;
-        public const float ArmBarHalfWidthM = 0.40f;
+        public const float ArmBarHalfWidthM = 0.45f;
         public const float ArmBackOffsetM = 0.120f;
         public const float ArmBarHeightM = 0.115f;
         public const float BarGhostHalfLengthM = 1.05f;

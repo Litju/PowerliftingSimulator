@@ -63,8 +63,8 @@
             "rightPlantarAnchorErrorMm": 0.0,
             "leftFootPitchErrorDeg": 0.0,
             "rightFootPitchErrorDeg": 0.0,
-            "leftHandBarErrorM": 5.617164902105287e-7,
-            "rightHandBarErrorM": 4.6097363792796389e-7
+            "leftHandBarErrorM": 4.933162358611298e-7,
+            "rightHandBarErrorM": 3.424026147058612e-7
         },
         {
             "waypoint": "QUARTER_DESCENT",
@@ -98,8 +98,8 @@
             "rightPlantarAnchorErrorMm": 0.0,
             "leftFootPitchErrorDeg": 0.0,
             "rightFootPitchErrorDeg": 0.0,
-            "leftHandBarErrorM": 6.093098932069552e-7,
-            "rightHandBarErrorM": 6.107658805376559e-7
+            "leftHandBarErrorM": 6.316756753221853e-7,
+            "rightHandBarErrorM": 4.6671806330778056e-7
         },
         {
             "waypoint": "NEAR_PARALLEL",
@@ -133,8 +133,8 @@
             "rightPlantarAnchorErrorMm": 0.0,
             "leftFootPitchErrorDeg": 0.0,
             "rightFootPitchErrorDeg": 0.0,
-            "leftHandBarErrorM": 2.6193850999334247e-7,
-            "rightHandBarErrorM": 4.87201873511367e-7
+            "leftHandBarErrorM": 5.164063736629032e-7,
+            "rightHandBarErrorM": 4.7145164216999549e-7
         },
         {
             "waypoint": "LEGAL_BOTTOM",
@@ -168,8 +168,8 @@
             "rightPlantarAnchorErrorMm": 0.0,
             "leftFootPitchErrorDeg": 0.0,
             "rightFootPitchErrorDeg": 0.0,
-            "leftHandBarErrorM": 5.031762952967256e-7,
-            "rightHandBarErrorM": 4.819897867491818e-7
+            "leftHandBarErrorM": 4.1536569028721717e-7,
+            "rightHandBarErrorM": 4.349505786649388e-7
         },
         {
             "waypoint": "EARLY_ASCENT",
@@ -203,8 +203,8 @@
             "rightPlantarAnchorErrorMm": 0.0,
             "leftFootPitchErrorDeg": 0.0,
             "rightFootPitchErrorDeg": 0.0,
-            "leftHandBarErrorM": 3.686343745812337e-7,
-            "rightHandBarErrorM": 7.00196039815637e-7
+            "leftHandBarErrorM": 3.291773964519962e-7,
+            "rightHandBarErrorM": 5.372689884097781e-7
         },
         {
             "waypoint": "STICKING",
@@ -238,8 +238,8 @@
             "rightPlantarAnchorErrorMm": 0.0,
             "leftFootPitchErrorDeg": 0.0,
             "rightFootPitchErrorDeg": 0.0,
-            "leftHandBarErrorM": 3.7814908182554066e-7,
-            "rightHandBarErrorM": 5.101335887047753e-7
+            "leftHandBarErrorM": 3.5270454645797147e-7,
+            "rightHandBarErrorM": 4.965128823641862e-7
         },
         {
             "waypoint": "LOCKOUT",
@@ -273,8 +273,8 @@
             "rightPlantarAnchorErrorMm": 0.0,
             "leftFootPitchErrorDeg": 0.0,
             "rightFootPitchErrorDeg": 0.0,
-            "leftHandBarErrorM": 5.617164902105287e-7,
-            "rightHandBarErrorM": 4.6097363792796389e-7
+            "leftHandBarErrorM": 4.933162358611298e-7,
+            "rightHandBarErrorM": 3.424026147058612e-7
         }
     ],
     "phaseConvention": "s_q in [0,1]; 0=standing/lockout, 1=canonical legal-bottom; descent increases, ascent decreases",
@@ -373,8 +373,8 @@
         "RENDER_RATE_INDEPENDENCE": true,
         "BAR_SUPPORT_HAND_TARGETS": true,
         "BAR_GHOST_AP_MIDFOOT_M": -0.1141895055770874,
-        "LEFT_HAND_BAR_ERROR_M": 5.031762952967256e-7,
-        "RIGHT_HAND_BAR_ERROR_M": 4.819897867491818e-7
+        "LEFT_HAND_BAR_ERROR_M": 4.1536569028721717e-7,
+        "RIGHT_HAND_BAR_ERROR_M": 4.349505786649388e-7
     },
     "knownLimitations": [
         "Reference motion is deterministic game calibration, not motion-capture ground truth.",

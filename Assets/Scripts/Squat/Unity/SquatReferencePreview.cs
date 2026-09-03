@@ -959,7 +959,7 @@ namespace PowerliftingSimulator.Squat.Unity
             float forearmLength = Vector3.Distance(handFrame.BindPosition, forearmFrame.BindPosition);
 
             float sideSign = isLeft ? -1f : 1f;
-            Vector3 poleHint = -thoraxUp * 0.85f - thoraxForward * 0.40f + thoraxRight * (sideSign * 0.35f);
+            Vector3 poleHint = -thoraxUp * 0.90f - thoraxForward * 0.15f + thoraxRight * (sideSign * 0.45f);
 
             SolveTwoBone(
                 shoulder,
@@ -973,39 +973,38 @@ namespace PowerliftingSimulator.Squat.Unity
             Vector3 upperDir = (elbow - shoulder).normalized;
             Vector3 forearmDir = (solvedHand - elbow).normalized;
 
-            Vector3 hingeAxis = Vector3.Cross(upperDir, forearmDir);
-            if (hingeAxis.sqrMagnitude < 1e-6f)
-                hingeAxis = isLeft ? thoraxUp : -thoraxUp;
-            else
-                hingeAxis.Normalize();
+            Vector3 armNormal = Vector3.Cross(upperDir, forearmDir);
+            if (armNormal.sqrMagnitude < 1e-6f)
+                armNormal = Vector3.Cross(upperDir, poleHint);
+            if (armNormal.sqrMagnitude < 1e-6f)
+                armNormal = isLeft ? -thoraxUp : thoraxUp;
+            armNormal.Normalize();
 
-            Vector3 bindUpperDir = (forearmBindPosition - upperArmFrame.BindPosition).normalized;
-            Vector3 bindForearmDir = (handFrame.BindPosition - forearmFrame.BindPosition).normalized;
+            Quaternion upperRot = ConstructArmBoneRotation(upperDir, armNormal);
+            Quaternion forearmRot = ConstructArmBoneRotation(forearmDir, armNormal);
 
-            Quaternion upperRot = Quaternion.FromToRotation(bindUpperDir, upperDir) * upperArmFrame.BindRotation;
-            Quaternion forearmRot = Quaternion.FromToRotation(bindForearmDir, forearmDir) * forearmFrame.BindRotation;
-
-            Vector3 currentUpperHinge = isLeft ? upperRot * Vector3.right : upperRot * -Vector3.right;
-            float upperTwist = SquatReferenceKinematics.SignedAngleAroundAxis(currentUpperHinge, hingeAxis, upperDir);
-            upperRot = Quaternion.AngleAxis(upperTwist, upperDir) * upperRot;
-
-            Vector3 currentForearmHinge = isLeft ? forearmRot * Vector3.right : forearmRot * -Vector3.right;
-            float forearmTwist = SquatReferenceKinematics.SignedAngleAroundAxis(currentForearmHinge, hingeAxis, forearmDir);
-            forearmRot = Quaternion.AngleAxis(forearmTwist, forearmDir) * forearmRot;
-
-            Vector3 fingerDir = (thoraxForward * 0.65f - thoraxUp * 0.75f).normalized;
-            Vector3 handBarDir = isLeft ? -thoraxRight : thoraxRight;
-            Vector3 handNormal = Vector3.Cross(handBarDir, fingerDir).normalized;
-            Vector3 localXDir = isLeft ? handBarDir : -handBarDir;
-            Matrix4x4 handMatrix = Matrix4x4.identity;
-            handMatrix.SetColumn(0, new Vector4(localXDir.x, localXDir.y, localXDir.z, 0f));
-            handMatrix.SetColumn(1, new Vector4(fingerDir.x, fingerDir.y, fingerDir.z, 0f));
-            handMatrix.SetColumn(2, new Vector4(handNormal.x, handNormal.y, handNormal.z, 0f));
-            Quaternion handRot = handMatrix.rotation;
+            Quaternion handBindRelativeToForearm = Quaternion.Inverse(forearmFrame.BindRotation) * handFrame.BindRotation;
+            Quaternion baseHandRot = forearmRot * handBindRelativeToForearm;
+            Quaternion wristAdjustment = Quaternion.Euler(30f, 0f, 0f);
+            Quaternion handRot = baseHandRot * wristAdjustment;
 
             upperArm.SetPositionAndRotation(shoulder, upperRot);
             forearm.SetPositionAndRotation(elbow, forearmRot);
             hand.SetPositionAndRotation(solvedHand, handRot);
+        }
+
+        private static Quaternion ConstructArmBoneRotation(Vector3 boneDir, Vector3 armPlaneNormal)
+        {
+            Vector3 boneUp = boneDir.normalized;
+            Vector3 boneLeft = Vector3.ProjectOnPlane(armPlaneNormal, boneUp).normalized;
+            Vector3 boneRight = -boneLeft;
+            Vector3 boneForward = Vector3.Cross(boneRight, boneUp).normalized;
+
+            Matrix4x4 matrix = Matrix4x4.identity;
+            matrix.SetColumn(0, new Vector4(boneRight.x, boneRight.y, boneRight.z, 0f));
+            matrix.SetColumn(1, new Vector4(boneUp.x, boneUp.y, boneUp.z, 0f));
+            matrix.SetColumn(2, new Vector4(boneForward.x, boneForward.y, boneForward.z, 0f));
+            return matrix.rotation;
         }
 
         private static void SolveTwoBone(
