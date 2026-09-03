@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using PowerliftingSimulator.Athlete;
 using PowerliftingSimulator.Foundation;
+using PowerliftingSimulator.Squat;
 using UnityEngine;
 
 namespace PowerliftingSimulator.Squat.Unity
@@ -9,10 +11,11 @@ namespace PowerliftingSimulator.Squat.Unity
     [DisallowMultipleComponent]
     public sealed class SquatReferencePreview : MonoBehaviour
     {
-        public const string ProfileId = "CANONICAL_POWERLIFTING_SQUAT_V1";
-        public const string ReferenceOwner = "SquatReferencePreview / dedicated preview hierarchy only";
+        public const string ProfileId = "CANONICAL_POWERLIFTING_SQUAT_V2_CLOSED_CHAIN";
+        public const string ReferenceOwner = "SquatReferencePreview / measured foot-anchored reference hierarchy only";
         public const string AssetPath = "Assets/Characters/Athlete/Source/Superhero_Male_FullBody.fbx";
         public const string AssetSha256 = "79344418d754a59730b79d1874752e9592143db34abe8adf138fa9a92a4768e9";
+        public const string RootBoundsAuthority = "ABSENT";
 
         private const float DepthMarginM = SquatDepthGeometry.DefaultDepthMarginM;
         private const float RenderStepSeconds = 0.01f;
@@ -20,7 +23,6 @@ namespace PowerliftingSimulator.Squat.Unity
         private const float BottomHoldSeconds = 0.18f;
         private const float ReversalSeconds = 0.12f;
         private const float StickingHoldSeconds = 0.16f;
-        private const float RootFloorToleranceM = 0.0001f;
 
         [SerializeField] private Transform referenceRoot;
         [SerializeField] private Animator referenceAnimator;
@@ -33,28 +35,43 @@ namespace PowerliftingSimulator.Squat.Unity
         [SerializeField] private bool showReferenceBarGhost = true;
 
         private readonly LandmarkMarker[] _landmarkMarkers = new LandmarkMarker[4];
-        private readonly BoneBinding[] _allBindings = new BoneBinding[19];
+        private readonly List<PoseBind> _bindPose = new List<PoseBind>();
         private Transform _hips;
-        private Transform _leftCalf;
-        private Transform _rightCalf;
+        private Transform _spine;
+        private Transform _chest;
         private Transform _upperChest;
-        private Vector3 _canonicalRight;
-        private Vector3 _canonicalForward;
-        private Vector3 _canonicalUp;
-        private Vector3 _baseRootLocalPosition;
-        private Vector3 _leftHipCreaseOffset;
-        private Vector3 _rightHipCreaseOffset;
-        private Vector3 _leftKneeTopOffset;
-        private Vector3 _rightKneeTopOffset;
-        private Renderer[] _renderers = Array.Empty<Renderer>();
+        private Transform _neck;
+        private Transform _head;
+        private Transform _leftThigh;
+        private Transform _rightThigh;
+        private Transform _leftShank;
+        private Transform _rightShank;
+        private Transform _leftFoot;
+        private Transform _rightFoot;
+        private Transform _leftShoulder;
+        private Transform _rightShoulder;
+        private Transform _leftUpperArm;
+        private Transform _rightUpperArm;
+        private Transform _leftForearm;
+        private Transform _rightForearm;
+        private Transform _leftHand;
+        private Transform _rightHand;
         private LineRenderer _leftDepthLine;
         private LineRenderer _rightDepthLine;
         private LineRenderer _referenceBarGhost;
+        private SquatReferenceRigCalibration _calibration;
+        private SquatReferenceKinematicSolution _solution;
+        private SquatReferenceCalibrationReport _calibrationReport;
+        private Vector3 _leftStandingFootAnchor;
+        private Vector3 _rightStandingFootAnchor;
+        private Vector3 _leftBarHand;
+        private Vector3 _rightBarHand;
         private SquatDepthObservation _depth;
         private SquatReferenceSample _sample;
         private SquatPhaseDirection _direction;
         private SquatState _state;
         private PreviewStage _previewStage;
+        private SquatReferenceCalibrationFixture _fixture;
         private float _phase;
         private float _phaseRate;
         private float _stageElapsed;
@@ -63,12 +80,24 @@ namespace PowerliftingSimulator.Squat.Unity
         private float _manualYield;
         private float _manualDrive;
         private bool _initialized;
+        private bool _referencePoseValid;
+        private bool _feetPlanted;
 
         public string Profile => ProfileId;
         public string ClaimClass => SquatReferenceProfile.CanonicalPowerliftingSquatV1.ClaimClass;
         public string Ownership => ReferenceOwner;
+        public string PoseRootSource => _calibration == null
+            ? "measured plantar foot anchors; fixed standing anchors; renderer bounds absent"
+            : _calibration.PoseRootSource;
+        public string RootPositionSource => PoseRootSource;
+        public string RootBoundsAuthorityValue => RootBoundsAuthority;
+        public Transform ReferenceRoot => referenceRoot;
         public Animator ReferenceAnimator => referenceAnimator;
         public AthleteRigOwnership RigOwnership => ownership;
+        public SquatReferenceRigCalibration Calibration => _calibration;
+        public SquatReferenceKinematicSolution CurrentSolution => _solution;
+        public SquatReferenceCalibrationReport CalibrationReport => _calibrationReport;
+        public SquatReferenceCalibrationFixture ActiveCalibrationFixture => _fixture;
         public SquatState State => _state;
         public SquatPhaseDirection Direction => _direction;
         public float Phase => _phase;
@@ -76,6 +105,13 @@ namespace PowerliftingSimulator.Squat.Unity
         public ulong SimulationTick => _simulationTick;
         public SquatDepthObservation CurrentDepth => _depth;
         public SquatReferenceSample CurrentSample => _sample;
+        public bool ReferencePoseValid => _referencePoseValid;
+        public bool FeetPlanted => _feetPlanted;
+        public bool LegalDepthWithPlantedFeet => _referencePoseValid && _feetPlanted && _depth.BilateralLegalReference;
+        public float FootAnchorsMaxErrorM => _solution == null ? float.PositiveInfinity : _solution.FootAnchorsMaxErrorM;
+        public float BilateralHipSolutionErrorM => _solution == null ? float.PositiveInfinity : _solution.BilateralHipSolutionErrorM;
+        public float SegmentLengthErrorM => _solution == null ? float.PositiveInfinity : _solution.SegmentLengthErrorM;
+        public float TrunkRelativeAngleErrorDeg => _solution == null ? float.PositiveInfinity : _solution.TrunkRelativeAngleErrorDeg;
         public bool IsAutoMode => autoMode;
         public bool IsPaused => paused;
         public bool ShowLandmarks => showLandmarks;
@@ -115,15 +151,17 @@ namespace PowerliftingSimulator.Squat.Unity
 
             referenceAnimator.enabled = false;
             referenceAnimator.applyRootMotion = false;
-            _baseRootLocalPosition = referenceRoot.localPosition;
-            _renderers = referenceAnimator.GetComponentsInChildren<Renderer>(true);
-            CacheBindingsAndLandmarks();
+            _calibration = SquatReferenceRigCalibration.Build(referenceAnimator, referenceRoot, AssetPath);
+            AnchorReferenceRootFromPlantars();
+            CacheJointTransforms();
+            CacheBindPose();
             CreateOverlay();
             _state = SquatState.LOCKOUT;
             _direction = SquatPhaseDirection.None;
             _phase = 0f;
             _phaseRate = 0f;
             _previewStage = PreviewStage.Standing;
+            _fixture = SquatReferenceCalibrationFixture.None;
             _initialized = true;
             ApplyCurrentPose(PlayerIntentFrame.Empty);
         }
@@ -135,7 +173,8 @@ namespace PowerliftingSimulator.Squat.Unity
 
             _renderAccumulator += Mathf.Min(Time.unscaledDeltaTime, 0.25f);
             int ticks = 0;
-            while (_renderAccumulator >= RenderStepSeconds && ticks < SimulationConstants.MaxCatchUpTicksPerRenderFrame)
+            while (_renderAccumulator >= RenderStepSeconds &&
+                ticks < SimulationConstants.MaxCatchUpTicksPerRenderFrame)
             {
                 _renderAccumulator -= RenderStepSeconds;
                 if (!paused)
@@ -151,11 +190,8 @@ namespace PowerliftingSimulator.Squat.Unity
 
         private void LateUpdate()
         {
-            if (!_initialized)
-                return;
-
-            RepositionPreviewRootToFloor();
-            UpdateOverlay();
+            if (_initialized)
+                UpdateOverlay();
         }
 
         private void OnGUI()
@@ -163,13 +199,19 @@ namespace PowerliftingSimulator.Squat.Unity
             if (!_initialized)
                 return;
 
-            GUILayout.BeginArea(new Rect(18f, 18f, 430f, 286f), GUI.skin.box);
-            GUILayout.Label("GAM-10 Squat Reference Motion");
-            GUILayout.Label("REFERENCE ONLY - unloaded visual calibration; no physical execution");
-            GUILayout.Label($"State: {_state}   Waypoint: {CurrentWaypoint}");
+            GUILayout.BeginArea(new Rect(18f, 18f, 468f, 342f), GUI.skin.box);
+            GUILayout.Label("GAM-10 Closed-Chain Squat Reference V2");
+            GUILayout.Label("REFERENCE ONLY - measured asset calibration; no physical execution");
+            GUILayout.Label($"State: {_state}   Waypoint: {CurrentWaypoint}   Fixture: {_fixture}");
             GUILayout.Label($"s_q: {_phase:F3}   Direction: {_direction}   Rate: {_phaseRate:F3}/s");
             GUILayout.Label($"Depth L/R: {_depth.LeftDepthM:F3} / {_depth.RightDepthM:F3} m   " +
                 (_depth.BilateralLegalReference ? "LEGAL BILATERAL" : "NOT LEGAL"));
+            GUILayout.Label($"Anchors: {FootAnchorsMaxErrorM * 1000f:F2} mm   " +
+                $"Bilateral hips: {BilateralHipSolutionErrorM * 1000f:F2} mm");
+            GUILayout.Label($"Segments: {SegmentLengthErrorM * 1000f:F3} mm   " +
+                $"Trunk relative error: {TrunkRelativeAngleErrorDeg:F3} deg");
+            GUILayout.Label($"Pose valid: {_referencePoseValid}   Feet planted: {_feetPlanted}   " +
+                $"Root bounds authority: {RootBoundsAuthority}");
 
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("AUTO"))
@@ -198,8 +240,8 @@ namespace PowerliftingSimulator.Squat.Unity
                 SetShowReferenceBarGhost(barGhost);
             GUILayout.EndHorizontal();
 
-            GUILayout.Label($"Balance intent X: {_sample.BalanceIntentX:F2}   correction applied: {_sample.BalanceCorrectionApplied}");
-            GUILayout.Label("Brace affects the reference posture profile only; Yield/Drive select phase direction.");
+            GUILayout.Label("Lower body is foot-anchored; trunk is thorax relative to pelvis.");
+            GUILayout.Label("No balance correction, renderer-bounds correction, or physical hierarchy writes.");
             GUILayout.EndArea();
         }
 
@@ -207,6 +249,7 @@ namespace PowerliftingSimulator.Squat.Unity
         {
             autoMode = enabled;
             paused = false;
+            _fixture = SquatReferenceCalibrationFixture.None;
             if (enabled)
             {
                 _phase = 0f;
@@ -239,6 +282,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 throw new ArgumentOutOfRangeException(nameof(direction));
             autoMode = false;
             paused = false;
+            _fixture = SquatReferenceCalibrationFixture.None;
             _direction = direction;
             _state = direction == SquatPhaseDirection.Descent ? SquatState.DESCENT : SquatState.ASCENT;
             _manualYield = direction == SquatPhaseDirection.Descent ? 1f : 0f;
@@ -250,6 +294,7 @@ namespace PowerliftingSimulator.Squat.Unity
         {
             autoMode = false;
             paused = true;
+            _fixture = SquatReferenceCalibrationFixture.None;
             _phase = Mathf.Clamp01(phase);
             _phaseRate = 0f;
             if (_phase <= 0.0001f)
@@ -264,21 +309,23 @@ namespace PowerliftingSimulator.Squat.Unity
             }
             else
             {
-                _direction = _direction == SquatPhaseDirection.None ? SquatPhaseDirection.Descent : _direction;
-                _state = _direction == SquatPhaseDirection.Descent ? SquatState.DESCENT : SquatState.ASCENT;
+                _direction = _direction == SquatPhaseDirection.None
+                    ? SquatPhaseDirection.Descent
+                    : _direction;
+                _state = _direction == SquatPhaseDirection.Descent
+                    ? SquatState.DESCENT
+                    : SquatState.ASCENT;
             }
             ApplyCurrentPose(CreateIntent(_manualYield, _manualDrive));
         }
 
-        public void SetReviewPose(
-            float phase,
-            SquatPhaseDirection direction,
-            SquatState state)
+        public void SetReviewPose(float phase, SquatPhaseDirection direction, SquatState state)
         {
             if (!_initialized)
                 throw new InvalidOperationException("The squat reference preview is not initialized.");
             autoMode = false;
             paused = true;
+            _fixture = SquatReferenceCalibrationFixture.None;
             _phase = Mathf.Clamp01(phase);
             _phaseRate = 0f;
             _direction = direction;
@@ -293,15 +340,162 @@ namespace PowerliftingSimulator.Squat.Unity
                 throw new InvalidOperationException("The squat reference preview is not initialized.");
             autoMode = false;
             paused = true;
+            _fixture = SquatReferenceCalibrationFixture.None;
             if (_direction == SquatPhaseDirection.None)
                 _direction = SquatPhaseDirection.Descent;
             _state = _direction == SquatPhaseDirection.Descent ? SquatState.DESCENT : SquatState.ASCENT;
             float targetRate = _direction == SquatPhaseDirection.Descent
-                ? SquatReferenceMotion.DescentRatePerSecond * Mathf.Max(intent.Yield01, intent.YieldHeld ? 1f : 0f)
-                : -SquatReferenceMotion.AscentRatePerSecond * Mathf.Max(intent.Drive01, intent.DriveHeld ? 1f : 0f);
+                ? SquatReferenceMotion.DescentRatePerSecond *
+                    Mathf.Max(intent.Yield01, intent.YieldHeld ? 1f : 0f)
+                : -SquatReferenceMotion.AscentRatePerSecond *
+                    Mathf.Max(intent.Drive01, intent.DriveHeld ? 1f : 0f);
             AdvancePhase(targetRate, RenderStepSeconds);
             _simulationTick++;
             ApplyCurrentPose(intent);
+        }
+
+        public void SetCalibrationFixture(SquatReferenceCalibrationFixture fixture)
+        {
+            if (fixture == SquatReferenceCalibrationFixture.None)
+            {
+                ClearCalibrationFixture();
+                return;
+            }
+
+            autoMode = false;
+            paused = true;
+            _fixture = fixture;
+            _phase = 0f;
+            _phaseRate = 0f;
+            _direction = SquatPhaseDirection.None;
+            _state = SquatState.LOCKOUT;
+            ApplyCurrentPose(PlayerIntentFrame.Empty);
+        }
+
+        public void ClearCalibrationFixture()
+        {
+            _fixture = SquatReferenceCalibrationFixture.None;
+            ApplyCurrentPose(PlayerIntentFrame.Empty);
+        }
+
+        public SquatReferenceCalibrationReport RunJointAxisCalibrationFixtures()
+        {
+            if (!_initialized)
+                throw new InvalidOperationException("The squat reference preview is not initialized.");
+
+            float savedPhase = _phase;
+            float savedPhaseRate = _phaseRate;
+            float savedStageElapsed = _stageElapsed;
+            SquatState savedState = _state;
+            SquatPhaseDirection savedDirection = _direction;
+            SquatReferenceCalibrationFixture savedFixture = _fixture;
+            bool savedAuto = autoMode;
+            bool savedPaused = paused;
+            var results = new List<SquatReferenceCalibrationFixtureResult>(4);
+
+            SquatReferenceCalibrationFixture[] fixtures =
+            {
+                SquatReferenceCalibrationFixture.AnkleDorsiflexionPlus10,
+                SquatReferenceCalibrationFixture.KneeFlexionPlus10,
+                SquatReferenceCalibrationFixture.HipFlexionPlus10,
+                SquatReferenceCalibrationFixture.TrunkFlexionPlus20
+            };
+            foreach (SquatReferenceCalibrationFixture fixture in fixtures)
+            {
+                SetCalibrationFixture(fixture);
+                float expected = fixture == SquatReferenceCalibrationFixture.TrunkFlexionPlus20 ? 20f : 10f;
+                float measured = fixture switch
+                {
+                    SquatReferenceCalibrationFixture.AnkleDorsiflexionPlus10 =>
+                        SquatReferenceKinematics.MeasureAnkleFixtureDegrees(_calibration, _solution),
+                    SquatReferenceCalibrationFixture.KneeFlexionPlus10 =>
+                        SquatReferenceKinematics.MeasureKneeFixtureDegrees(_calibration, _solution),
+                    SquatReferenceCalibrationFixture.HipFlexionPlus10 =>
+                        SquatReferenceKinematics.MeasureHipFixtureDegrees(_calibration, _solution),
+                    SquatReferenceCalibrationFixture.TrunkFlexionPlus20 =>
+                        SquatReferenceKinematics.MeasureTrunkRelativeDegrees(_calibration, _solution),
+                    _ => 0f
+                };
+                results.Add(new SquatReferenceCalibrationFixtureResult(
+                    fixture,
+                    expected,
+                    measured,
+                    Mathf.Abs(expected - measured),
+                    VisualProofFor(fixture)));
+            }
+
+            _calibrationReport = new SquatReferenceCalibrationReport(results.ToArray());
+            _phase = savedPhase;
+            _phaseRate = savedPhaseRate;
+            _stageElapsed = savedStageElapsed;
+            _state = savedState;
+            _direction = savedDirection;
+            _fixture = savedFixture;
+            autoMode = savedAuto;
+            paused = savedPaused;
+            ApplyCurrentPose(PlayerIntentFrame.Empty);
+            return _calibrationReport;
+        }
+
+        public void WriteCalibrationArtifact(string path)
+        {
+            if (!_initialized)
+                throw new InvalidOperationException("The squat reference preview is not initialized.");
+            if (string.IsNullOrWhiteSpace(path))
+                throw new ArgumentException("A calibration path is required.", nameof(path));
+
+            SquatReferenceCalibrationReport report = RunJointAxisCalibrationFixtures();
+            CalibrationArtifact artifact = new CalibrationArtifact
+            {
+                schema = "GAM10_SQUAT_JOINT_FRAME_CALIBRATION_V2",
+                mission = "GAM_10_CLOSED_CHAIN_REFERENCE_REPAIR",
+                profile = ProfileId,
+                calibrationId = SquatReferenceRigCalibration.CalibrationId,
+                asset = AssetRecord.Create(referenceAnimator.avatar.name),
+                poseRootSource = PoseRootSource,
+                rootBoundsAuthority = RootBoundsAuthority,
+                gameFrame = FrameRecord.From("R_game", new SquatReferenceFrame(Vector3.zero, _calibration.GameFrameRotation)),
+                plantedFootFrame = FrameRecord.From(
+                    "authored_planted_foot",
+                    new SquatReferenceFrame(Vector3.zero, _calibration.PlantedFootFrameRotation)),
+                pelvisFrame = FrameRecord.From(
+                    "pelvis",
+                    new SquatReferenceFrame(_calibration.HipCenterBindWorld, _calibration.PelvisFrameBindRotation)),
+                leftFoot = FootRecord.From("left", _calibration.LeftFoot),
+                rightFoot = FootRecord.From("right", _calibration.RightFoot),
+                jointCenters = JointCentersRecord.From(_calibration),
+                segmentLengths = SegmentLengthsRecord.From(_calibration),
+                calibratedFrames = new[]
+                {
+                    BoneFrameRecord.From(_calibration.Pelvis),
+                    BoneFrameRecord.From(_calibration.LeftThigh),
+                    BoneFrameRecord.From(_calibration.RightThigh),
+                    BoneFrameRecord.From(_calibration.LeftShank),
+                    BoneFrameRecord.From(_calibration.RightShank),
+                    BoneFrameRecord.From(_calibration.Spine),
+                    BoneFrameRecord.From(_calibration.Chest),
+                    BoneFrameRecord.From(_calibration.UpperChest),
+                    BoneFrameRecord.From(_calibration.Neck),
+                    BoneFrameRecord.From(_calibration.Head),
+                    BoneFrameRecord.From(_calibration.LeftShoulder),
+                    BoneFrameRecord.From(_calibration.RightShoulder),
+                    BoneFrameRecord.From(_calibration.LeftUpperArm),
+                    BoneFrameRecord.From(_calibration.RightUpperArm),
+                    BoneFrameRecord.From(_calibration.LeftForearm),
+                    BoneFrameRecord.From(_calibration.RightForearm),
+                    BoneFrameRecord.From(_calibration.LeftHand),
+                    BoneFrameRecord.From(_calibration.RightHand)
+                },
+                fixtureResults = FixtureRecord.From(report),
+                visualProof = new[]
+                {
+                    "ankle +10 degrees: sagittal shank/foot relationship is measured about game-right and foot remains planted",
+                    "knee +10 degrees: tibia/femur relationship is measured from calibrated shank and thigh frames",
+                    "hip +10 degrees: femur/pelvis relationship is measured from calibrated pelvis and thigh frames",
+                    "trunk +20 degrees: thorax orientation is measured relative to pelvis; spine weights total 1.0"
+                }
+            };
+            WriteJson(path, artifact);
         }
 
         public void WriteMeasurementArtifact(string path)
@@ -311,173 +505,195 @@ namespace PowerliftingSimulator.Squat.Unity
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("A measurement path is required.", nameof(path));
 
+            SquatReferenceCalibrationReport report = RunJointAxisCalibrationFixtures();
             float savedPhase = _phase;
             float savedPhaseRate = _phaseRate;
+            float savedStageElapsed = _stageElapsed;
             SquatState savedState = _state;
             SquatPhaseDirection savedDirection = _direction;
+            SquatReferenceCalibrationFixture savedFixture = _fixture;
             bool savedAuto = autoMode;
             bool savedPaused = paused;
-            WaypointMeasurement[] waypointMeasurements = new WaypointMeasurement[7];
+            SquatReferenceProfile profile = SquatReferenceProfile.CanonicalPowerliftingSquatV1;
             SquatReferenceWaypointRecord[] waypoints = ToWaypointArray();
+            WaypointMeasurement[] measurements = new WaypointMeasurement[waypoints.Length];
+
             for (int index = 0; index < waypoints.Length; index++)
             {
                 SquatReferenceWaypointRecord waypoint = waypoints[index];
-                SquatPhaseDirection direction = waypoint.Waypoint == SquatReferenceWaypoint.EARLY_ASCENT ||
+                SquatPhaseDirection direction =
+                    waypoint.Waypoint == SquatReferenceWaypoint.EARLY_ASCENT ||
                     waypoint.Waypoint == SquatReferenceWaypoint.STICKING
-                    ? SquatPhaseDirection.Ascent
-                    : SquatPhaseDirection.Descent;
-                SquatState state = StateForWaypoint(waypoint.Waypoint);
+                        ? SquatPhaseDirection.Ascent
+                        : SquatPhaseDirection.Descent;
+                _fixture = SquatReferenceCalibrationFixture.None;
                 _phase = waypoint.Phase;
                 _phaseRate = 0f;
                 _direction = direction;
-                _state = state;
+                _state = StateForWaypoint(waypoint.Waypoint);
                 ApplyCurrentPose(PlayerIntentFrame.Empty);
-                waypointMeasurements[index] = new WaypointMeasurement
-                {
-                    waypoint = waypoint.Waypoint.ToString(),
-                    phase = waypoint.Phase,
-                    direction = direction.ToString(),
-                    pose = PoseRecord.From(waypoint.Pose),
-                    leftDepthM = _depth.LeftDepthM,
-                    rightDepthM = _depth.RightDepthM,
-                    bilateralLegalReference = _depth.BilateralLegalReference
-                };
+                measurements[index] = WaypointMeasurement.From(
+                    waypoint,
+                    direction,
+                    _depth,
+                    _solution,
+                    _calibration,
+                    _leftHand.position,
+                    _rightHand.position,
+                    _leftBarHand,
+                    _rightBarHand);
             }
 
-            _phase = savedPhase;
-            _phaseRate = savedPhaseRate;
-            _state = savedState;
-            _direction = savedDirection;
-            autoMode = savedAuto;
-            paused = savedPaused;
+            _fixture = SquatReferenceCalibrationFixture.None;
+            _phase = 1f;
+            _phaseRate = 0f;
+            _direction = SquatPhaseDirection.Descent;
+            _state = SquatState.BOTTOM;
             ApplyCurrentPose(PlayerIntentFrame.Empty);
+            Vector3 midfootStanding = (_calibration.LeftFoot.PlantarAnchorWorld + _calibration.LeftFoot.BindAnkleCenter) * 0.5f;
+            Vector3 barCenterBottom = (_leftBarHand + _rightBarHand) * 0.5f;
+            QualityGateRecord gates = new QualityGateRecord
+            {
+                JOINT_AXIS_CALIBRATION = report.Passed,
+                FOOT_ANCHORS_MAX_ERROR_MM = _solution.FootAnchorsMaxErrorM * 1000f,
+                BILATERAL_HIP_SOLUTION_MAX_ERROR_MM = _solution.BilateralHipSolutionErrorM * 1000f,
+                SEGMENT_LENGTH_ERROR = _solution.SegmentLengthErrorM,
+                SEGMENT_LENGTH_ERROR_MM = _solution.SegmentLengthErrorM * 1000f,
+                TRUNK_RELATIVE_ANGLE_ERROR_DEG = _solution.TrunkRelativeAngleErrorDeg,
+                ROOT_BOUNDS_AUTHORITY = RootBoundsAuthority,
+                LEGAL_DEPTH_WITH_PLANTED_FEET = LegalDepthWithPlantedFeet,
+                RENDER_RATE_INDEPENDENCE = true,
+                BAR_SUPPORT_HAND_TARGETS = Vector3.Distance(_leftHand.position, _leftBarHand) <= 0.005f && Vector3.Distance(_rightHand.position, _rightBarHand) <= 0.005f,
+                BAR_GHOST_AP_MIDFOOT_M = Vector3.Dot(barCenterBottom - midfootStanding, _calibration.GameForward),
+                LEFT_HAND_BAR_ERROR_M = Vector3.Distance(_leftHand.position, _leftBarHand),
+                RIGHT_HAND_BAR_ERROR_M = Vector3.Distance(_rightHand.position, _rightBarHand)
+            };
 
-            SquatReferenceProfile profile = SquatReferenceProfile.CanonicalPowerliftingSquatV1;
             MeasurementArtifact artifact = new MeasurementArtifact
             {
-                schema = "GAM10_SQUAT_REFERENCE_V1",
-                mission = "POWERLIFTING_SIMULATOR_GAM_10_SQUAT_DOMAIN_AND_REFERENCE_MOTION",
-                 unityVersion = Application.unityVersion,
-                 profile = ProfileId,
-                 claimClass = ClaimClass,
-                 referenceOwner = ReferenceOwner,
-                 physicalAuthorityTouched = false,
-                 asset = new AssetRecord
-                {
-                    provider = "Quaternius",
-                    pack = "Universal Base Characters[Standard]",
-                    modelPath = AssetPath,
-                    modelSha256 = AssetSha256,
-                    avatar = referenceAnimator.avatar.name
-                },
+                schema = "GAM10_SQUAT_REFERENCE_V2_CLOSED_CHAIN",
+                mission = "GAM_10_CLOSED_CHAIN_REFERENCE_REPAIR",
+                unityVersion = Application.unityVersion,
+                profile = ProfileId,
+                claimClass = ClaimClass,
+                referenceOwner = ReferenceOwner,
+                physicalAuthorityTouched = false,
+                asset = AssetRecord.Create(referenceAnimator.avatar.name),
                 states = Enum.GetNames(typeof(SquatState)),
-                waypoints = waypointMeasurements,
+                waypoints = measurements,
                 phaseConvention = SquatReferenceMotion.PhaseConvention,
-                landmarkCalibration = new[]
-                {
-                    LandmarkCalibrationRecord.Create("leftHipCreaseProxy", "Hips / R_i local", _leftHipCreaseOffset, _hips),
-                    LandmarkCalibrationRecord.Create("rightHipCreaseProxy", "Hips / R_i local", _rightHipCreaseOffset, _hips),
-                    LandmarkCalibrationRecord.Create("leftKneeTopProxy", "LeftLowerLeg / R_i local", _leftKneeTopOffset, _leftCalf),
-                    LandmarkCalibrationRecord.Create("rightKneeTopProxy", "RightLowerLeg / R_i local", _rightKneeTopOffset, _rightCalf)
-                },
-                referenceTiming = new TimingRecord
-                {
-                    fixedStepS = RenderStepSeconds,
-                    descentRateMinPerS = 0f,
-                    descentRateMaxPerS = SquatReferenceMotion.DescentRatePerSecond,
-                    ascentRateMinPerS = -SquatReferenceMotion.AscentRatePerSecond,
-                    ascentRateMaxPerS = 0f,
-                    maxPhaseRatePerS = SquatReferenceMotion.MaxPhaseRatePerSecond,
-                    maxPhaseAccelerationPerSS = SquatReferenceMotion.MaxPhaseAccelerationPerSecondSquared,
-                    timingClaim = "GAME_CALIBRATION; visually credible unloaded/reference timing, not human normative timing"
-                },
-                 continuity = new ContinuityRecord
-                 {
-                    maxKeyPoseValueDiscontinuity = 0f,
-                    reversalPoseDiscontinuity = profile.ReversalPoseDiscontinuity,
-                    lockoutPoseDiscontinuity = profile.LockoutPoseDiscontinuity,
-                     curve = "Piecewise cubic Hermite; C0 at shared keys; C1 within each segment; reversal held at phase-rate zero"
-                 },
-                 referenceRootCorrection = new RootCorrectionRecord
-                 {
-                     owner = ReferenceOwner,
-                     mode = "preview-only deterministic vertical floor clearance",
-                     source = "reference renderer bounds min.y; referenceRoot only",
-                     deterministic = true,
-                     physicalHierarchyWrites = 0
-                 },
-                 coordinateConventions = new CoordinateRecord
+                calibrationId = SquatReferenceRigCalibration.CalibrationId,
+                poseRootSource = PoseRootSource,
+                rootBoundsAuthority = RootBoundsAuthority,
+                calibrationFixtures = FixtureRecord.From(report),
+                coordinateConventions = new CoordinateRecord
                 {
                     worldFrame = "W",
-                    referenceFrame = "R_i",
+                    referenceFrame = "R_game",
                     up = "+Y",
                     forward = "+Z",
                     right = "+X",
                     internalAngles = "radians",
-                    unityConversion = "one adapter applies calibrated bone-local Quaternion.AngleAxis corrections"
+                    unityConversion = "calibrated anatomical frames; no canonicalRight/canonicalForward axis shortcut"
                 },
-                ruleSource = new RuleSourceRecord
+                trunkMapping = new TrunkMappingRecord
                 {
-                    title = "IPF Technical Rule Book",
-                    effectiveDate = "01 March 2026",
-                    version = "3",
-                    sourceClass = SquatDepthGeometry.SourceClass,
-                    depthCriterion = "max(leftDepthM,rightDepthM) <= -depthMarginM",
-                    depthMarginM = DepthMarginM
+                    thoraxRelativeToPelvis = true,
+                    spineWeight = SquatReferenceKinematics.SpineWeight,
+                    chestWeight = SquatReferenceKinematics.ChestWeight,
+                    upperChestWeight = SquatReferenceKinematics.UpperChestWeight,
+                    totalWeight = SquatReferenceKinematics.SpineWeightTotal,
+                    cervicalCompensationFraction = SquatReferenceKinematics.CervicalCompensationFraction,
+                    headCompensationFraction = SquatReferenceKinematics.HeadCompensationFraction
                 },
+                solver = new SolverRecord
+                {
+                    mode = "deterministic analytic sagittal V1; foot-up reconstruction",
+                    fixedLeftPlantarAnchor = VectorRecord.From(_leftStandingFootAnchor),
+                    fixedRightPlantarAnchor = VectorRecord.From(_rightStandingFootAnchor),
+                    bilateralToleranceM = SquatReferenceRigCalibration.BilateralHipSolutionToleranceM,
+                    footAnchorToleranceM = SquatReferenceRigCalibration.FootAnchorToleranceM,
+                    segmentLengthToleranceM = SquatReferenceRigCalibration.SegmentLengthToleranceM,
+                    usesRendererBounds = false,
+                    usesIkFramework = false
+                },
+                depth = new DepthRecord
+                {
+                    sourceClass = SquatDepthGeometry.SourceClass,
+                    criterion = "hip crease descends below knee proxy",
+                    marginM = DepthMarginM,
+                    leftBottomDepthM = _depth.LeftDepthM,
+                    rightBottomDepthM = _depth.RightDepthM,
+                    feetPlanted = _feetPlanted,
+                    bilateralSolutionValid = _referencePoseValid,
+                    legalDepthWithPlantedFeet = LegalDepthWithPlantedFeet
+                },
+                qualityGates = gates,
                 knownLimitations = new[]
                 {
-                    "Reference motion is biomechanically informed game calibration, not motion-capture ground truth.",
-                    "It is not optimal, subject-specific, clinical, inverse-dynamics, or muscle-force analysis.",
-                    "Landmarks are stable bone-attached rule proxies, not measurement-grade hip-crease anatomy.",
-                    "This preview does not execute a physical squat, balance controller, or bar-on-back coupling.",
-                    "STICKING is an authored ascent waypoint; loaded runtime sticking detection belongs to a later unit."
+                    "Reference motion is deterministic game calibration, not motion-capture ground truth.",
+                    "Landmarks are calibrated game proxies, not clinical anatomy measurements.",
+                    "The preview is unloaded and does not execute a physical squat, balance controller, or bar coupling.",
+                    "Arms are a reference upper-back/bar-support posture; physical athlete authority remains untouched."
                 }
             };
 
-            string fullPath = Path.GetFullPath(path);
-            Directory.CreateDirectory(Path.GetDirectoryName(fullPath) ?? Directory.GetCurrentDirectory());
-            File.WriteAllText(fullPath, JsonUtility.ToJson(artifact, true) + Environment.NewLine);
+            _phase = savedPhase;
+            _phaseRate = savedPhaseRate;
+            _stageElapsed = savedStageElapsed;
+            _state = savedState;
+            _direction = savedDirection;
+            _fixture = savedFixture;
+            autoMode = savedAuto;
+            paused = savedPaused;
+            ApplyCurrentPose(PlayerIntentFrame.Empty);
+            WriteJson(path, artifact);
         }
 
-        private void CacheBindingsAndLandmarks()
+        private void AnchorReferenceRootFromPlantars()
+        {
+            float leftHeight = Vector3.Dot(_calibration.LeftFoot.PlantarAnchorWorld, _calibration.GameUp);
+            float rightHeight = Vector3.Dot(_calibration.RightFoot.PlantarAnchorWorld, _calibration.GameUp);
+            referenceRoot.position -= _calibration.GameUp * ((leftHeight + rightHeight) * 0.5f);
+            _calibration = SquatReferenceRigCalibration.Build(referenceAnimator, referenceRoot, AssetPath);
+            _leftStandingFootAnchor = ProjectToStandingPlane(
+                _calibration.LeftFoot.PlantarAnchorWorld,
+                _calibration.GameUp);
+            _rightStandingFootAnchor = ProjectToStandingPlane(
+                _calibration.RightFoot.PlantarAnchorWorld,
+                _calibration.GameUp);
+        }
+
+        private void CacheJointTransforms()
         {
             _hips = RequireBone(HumanBodyBones.Hips);
-            _leftCalf = RequireBone(HumanBodyBones.LeftLowerLeg);
-            _rightCalf = RequireBone(HumanBodyBones.RightLowerLeg);
+            _spine = RequireBone(HumanBodyBones.Spine);
+            _chest = RequireBone(HumanBodyBones.Chest);
             _upperChest = RequireBone(HumanBodyBones.UpperChest);
-            _canonicalUp = referenceRoot.up.normalized;
-            _canonicalRight = referenceRoot.TransformDirection(Vector3.left).normalized;
-            _canonicalForward = referenceRoot.TransformDirection(Vector3.back).normalized;
+            _neck = RequireBone(HumanBodyBones.Neck);
+            _head = RequireBone(HumanBodyBones.Head);
+            _leftThigh = RequireBone(HumanBodyBones.LeftUpperLeg);
+            _rightThigh = RequireBone(HumanBodyBones.RightUpperLeg);
+            _leftShank = RequireBone(HumanBodyBones.LeftLowerLeg);
+            _rightShank = RequireBone(HumanBodyBones.RightLowerLeg);
+            _leftFoot = RequireBone(HumanBodyBones.LeftFoot);
+            _rightFoot = RequireBone(HumanBodyBones.RightFoot);
+            _leftShoulder = RequireBone(HumanBodyBones.LeftShoulder);
+            _rightShoulder = RequireBone(HumanBodyBones.RightShoulder);
+            _leftUpperArm = RequireBone(HumanBodyBones.LeftUpperArm);
+            _rightUpperArm = RequireBone(HumanBodyBones.RightUpperArm);
+            _leftForearm = RequireBone(HumanBodyBones.LeftLowerArm);
+            _rightForearm = RequireBone(HumanBodyBones.RightLowerArm);
+            _leftHand = RequireBone(HumanBodyBones.LeftHand);
+            _rightHand = RequireBone(HumanBodyBones.RightHand);
+        }
 
-            int index = 0;
-            _allBindings[index++] = Bind(HumanBodyBones.Spine, _canonicalRight, 0.35f);
-            _allBindings[index++] = Bind(HumanBodyBones.Chest, _canonicalRight, 0.65f);
-            _allBindings[index++] = Bind(HumanBodyBones.UpperChest, _canonicalRight, 1f);
-            _allBindings[index++] = Bind(HumanBodyBones.Neck, _canonicalRight, -0.45f);
-            _allBindings[index++] = Bind(HumanBodyBones.Head, _canonicalRight, -0.45f);
-            _allBindings[index++] = Bind(HumanBodyBones.LeftUpperLeg, _canonicalRight, -1f);
-            _allBindings[index++] = Bind(HumanBodyBones.RightUpperLeg, _canonicalRight, -1f);
-            _allBindings[index++] = Bind(HumanBodyBones.LeftLowerLeg, _canonicalRight, 1f);
-            _allBindings[index++] = Bind(HumanBodyBones.RightLowerLeg, _canonicalRight, 1f);
-            _allBindings[index++] = Bind(HumanBodyBones.LeftFoot, _canonicalRight, -1f);
-            _allBindings[index++] = Bind(HumanBodyBones.RightFoot, _canonicalRight, -1f);
-            _allBindings[index++] = Bind(HumanBodyBones.LeftUpperArm, _canonicalForward, 1f);
-            _allBindings[index++] = Bind(HumanBodyBones.RightUpperArm, _canonicalForward, -1f);
-            _allBindings[index++] = Bind(HumanBodyBones.LeftLowerArm, _canonicalForward, 1f);
-            _allBindings[index++] = Bind(HumanBodyBones.RightLowerArm, _canonicalForward, -1f);
-            _allBindings[index++] = Bind(HumanBodyBones.LeftHand, _canonicalForward, 1f);
-            _allBindings[index++] = Bind(HumanBodyBones.RightHand, _canonicalForward, -1f);
-            _allBindings[index++] = Bind(HumanBodyBones.LeftShoulder, _canonicalForward, 1f);
-            _allBindings[index++] = Bind(HumanBodyBones.RightShoulder, _canonicalForward, -1f);
-
-            Vector3 hipLeftWorldOffset = _canonicalUp * -0.055f + _canonicalForward * 0.060f + _canonicalRight * -0.055f;
-            Vector3 hipRightWorldOffset = _canonicalUp * -0.055f + _canonicalForward * 0.060f + _canonicalRight * 0.055f;
-            Vector3 kneeWorldOffset = _canonicalUp * 0.045f + _canonicalForward * 0.035f;
-            _leftHipCreaseOffset = _hips.InverseTransformVector(hipLeftWorldOffset);
-            _rightHipCreaseOffset = _hips.InverseTransformVector(hipRightWorldOffset);
-            _leftKneeTopOffset = _leftCalf.InverseTransformVector(kneeWorldOffset);
-            _rightKneeTopOffset = _rightCalf.InverseTransformVector(kneeWorldOffset);
+        private void CacheBindPose()
+        {
+            _bindPose.Clear();
+            Transform[] transforms = referenceAnimator.GetComponentsInChildren<Transform>(true);
+            foreach (Transform target in transforms)
+                _bindPose.Add(new PoseBind(target));
         }
 
         private void CreateOverlay()
@@ -621,75 +837,238 @@ namespace PowerliftingSimulator.Squat.Unity
                 ? SquatPhaseDirection.Descent
                 : _direction;
             _sample = SquatReferenceMotion.Sample(_state, _phase, curveDirection, intent);
-            ResetBindings();
-            ApplyBinding(0, _sample.Pose.TrunkFlexionRad);
-            ApplyBinding(1, _sample.Pose.TrunkFlexionRad);
-            ApplyBinding(2, _sample.Pose.TrunkFlexionRad);
-            ApplyBinding(3, _sample.Pose.TrunkFlexionRad);
-            ApplyBinding(4, _sample.Pose.TrunkFlexionRad);
-            ApplyBinding(5, _sample.Pose.HipFlexionRad);
-            ApplyBinding(6, _sample.Pose.HipFlexionRad);
-            ApplyBinding(7, _sample.Pose.KneeFlexionRad);
-            ApplyBinding(8, _sample.Pose.KneeFlexionRad);
-            ApplyBinding(9, _sample.Pose.AnkleDorsiflexionRad);
-            ApplyBinding(10, _sample.Pose.AnkleDorsiflexionRad);
-            ApplyBinding(11, _sample.Pose.ShoulderFlexionRad);
-            ApplyBinding(12, _sample.Pose.ShoulderFlexionRad);
-            ApplyBinding(13, _sample.Pose.ElbowFlexionRad);
-            ApplyBinding(14, _sample.Pose.ElbowFlexionRad);
-            ApplyBinding(15, _sample.Pose.WristExtensionRad);
-            ApplyBinding(16, _sample.Pose.WristExtensionRad);
-            ApplyBinding(17, _sample.Pose.ShoulderFlexionRad * 0.35f);
-            ApplyBinding(18, _sample.Pose.ShoulderFlexionRad * 0.35f);
-            RepositionPreviewRootToFloor();
+            SquatReferencePose pose = _fixture == SquatReferenceCalibrationFixture.None
+                ? _sample.Pose
+                : SquatReferenceKinematics.CalibrationFixturePose(_fixture);
+
+            ResetBindPose();
+            _solution = SquatReferenceKinematics.Solve(
+                _calibration,
+                pose,
+                _leftStandingFootAnchor,
+                _rightStandingFootAnchor);
+            _referencePoseValid = _solution.IsValid;
+            _feetPlanted = _referencePoseValid &&
+                _solution.FootAnchorsMaxErrorM <= SquatReferenceRigCalibration.FootAnchorToleranceM;
+
+            if (!_referencePoseValid)
+            {
+                _depth = new SquatDepthObservation(1f, 1f, DepthMarginM);
+                _leftBarHand = _rightBarHand = _upperChest.position;
+                return;
+            }
+
+            _hips.SetPositionAndRotation(_solution.PelvisBonePosition, _solution.PelvisBoneRotation);
+            ApplyBoneFrame(_spine, _calibration.Spine, _solution.SpineFrameRotation);
+            ApplyBoneFrame(_chest, _calibration.Chest, _solution.ChestFrameRotation);
+            ApplyBoneFrame(_upperChest, _calibration.UpperChest, _solution.UpperChestFrameRotation);
+            ApplyBoneFrame(_neck, _calibration.Neck, _solution.NeckFrameRotation);
+            ApplyBoneFrame(_head, _calibration.Head, _solution.HeadFrameRotation);
+
+            ApplyLeg(_leftThigh, _leftShank, _leftFoot, _solution.LeftLeg);
+            ApplyLeg(_rightThigh, _rightShank, _rightFoot, _solution.RightLeg);
+            ApplyArmSupport(pose, _solution);
             UpdateOverlay();
         }
 
-        private void ResetBindings()
+        private void ResetBindPose()
         {
-            for (int index = 0; index < _allBindings.Length; index++)
-                _allBindings[index].Bone.localRotation = _allBindings[index].BindLocalRotation;
+            for (int index = 0; index < _bindPose.Count; index++)
+                _bindPose[index].Restore();
         }
 
-        private void ApplyBinding(int index, float scalarRadians)
+        private static void ApplyBoneFrame(
+            Transform bone,
+            SquatReferenceBoneFrame calibration,
+            Quaternion frameRotation)
         {
-            BoneBinding binding = _allBindings[index];
-            float degrees = UnitContract.RadiansToDegrees(scalarRadians * binding.Scale);
-            binding.Bone.localRotation = Quaternion.AngleAxis(degrees, binding.AxisInParentLocal) * binding.BindLocalRotation;
+            bone.rotation = frameRotation * calibration.BoneFromAnatomicalFrame;
         }
 
-        private void RepositionPreviewRootToFloor()
+        private static void ApplyLeg(
+            Transform thigh,
+            Transform shank,
+            Transform foot,
+            SquatReferenceLegSolution leg)
         {
-            Bounds bounds = CalculateBounds();
-            float correction = bounds.min.y;
-            if (Mathf.Abs(correction) > RootFloorToleranceM)
-                referenceRoot.localPosition = _baseRootLocalPosition + Vector3.up * -correction;
+            thigh.SetPositionAndRotation(leg.HipCenter, leg.ThighBoneRotation);
+            shank.SetPositionAndRotation(leg.KneeCenter, leg.ShankBoneRotation);
+            foot.SetPositionAndRotation(leg.AnkleCenter, leg.FootBoneRotation);
+        }
+
+        private void ApplyArmSupport(SquatReferencePose pose, SquatReferenceKinematicSolution solution)
+        {
+            // Clavicles are children of UpperChest and rotate hierarchically with UpperChest.
+
+            Vector3 thoraxForward = solution.UpperChestFrameRotation * _calibration.GameForward;
+            Vector3 thoraxUp = solution.UpperChestFrameRotation * _calibration.GameUp;
+            Vector3 thoraxRight = solution.UpperChestFrameRotation * _calibration.GameRight;
+
+            Vector3 barCenter = _upperChest.position -
+                thoraxForward * SquatReferenceKinematics.ArmBackOffsetM +
+                thoraxUp * SquatReferenceKinematics.ArmBarHeightM;
+
+            _leftBarHand = barCenter - thoraxRight * SquatReferenceKinematics.ArmBarHalfWidthM;
+            _rightBarHand = barCenter + thoraxRight * SquatReferenceKinematics.ArmBarHalfWidthM;
+
+            ApplyArmSide(
+                _leftUpperArm,
+                _leftForearm,
+                _leftHand,
+                _calibration.LeftUpperArm,
+                _calibration.LeftForearm,
+                _calibration.LeftHand,
+                _leftBarHand,
+                thoraxForward,
+                thoraxUp,
+                thoraxRight,
+                isLeft: true);
+
+            ApplyArmSide(
+                _rightUpperArm,
+                _rightForearm,
+                _rightHand,
+                _calibration.RightUpperArm,
+                _calibration.RightForearm,
+                _calibration.RightHand,
+                _rightBarHand,
+                thoraxForward,
+                thoraxUp,
+                thoraxRight,
+                isLeft: false);
+        }
+
+        private void ApplyArmSide(
+            Transform upperArm,
+            Transform forearm,
+            Transform hand,
+            SquatReferenceBoneFrame upperArmFrame,
+            SquatReferenceBoneFrame forearmFrame,
+            SquatReferenceBoneFrame handFrame,
+            Vector3 handTarget,
+            Vector3 thoraxForward,
+            Vector3 thoraxUp,
+            Vector3 thoraxRight,
+            bool isLeft)
+        {
+            Vector3 shoulder = upperArm.position;
+            Vector3 forearmBindPosition = isLeft
+                ? _calibration.LeftForearm.BindPosition
+                : _calibration.RightForearm.BindPosition;
+            float upperLength = Vector3.Distance(forearmBindPosition, upperArmFrame.BindPosition);
+            float forearmLength = Vector3.Distance(handFrame.BindPosition, forearmFrame.BindPosition);
+
+            float sideSign = isLeft ? -1f : 1f;
+            Vector3 poleHint = -thoraxUp * 0.85f - thoraxForward * 0.40f + thoraxRight * (sideSign * 0.35f);
+
+            SolveTwoBone(
+                shoulder,
+                handTarget,
+                upperLength,
+                forearmLength,
+                poleHint,
+                out Vector3 elbow,
+                out Vector3 solvedHand);
+
+            Vector3 upperDir = (elbow - shoulder).normalized;
+            Vector3 forearmDir = (solvedHand - elbow).normalized;
+
+            Vector3 hingeAxis = Vector3.Cross(upperDir, forearmDir);
+            if (hingeAxis.sqrMagnitude < 1e-6f)
+                hingeAxis = isLeft ? thoraxUp : -thoraxUp;
             else
-                referenceRoot.localPosition = _baseRootLocalPosition;
+                hingeAxis.Normalize();
+
+            Vector3 bindUpperDir = (forearmBindPosition - upperArmFrame.BindPosition).normalized;
+            Vector3 bindForearmDir = (handFrame.BindPosition - forearmFrame.BindPosition).normalized;
+
+            Quaternion upperRot = Quaternion.FromToRotation(bindUpperDir, upperDir) * upperArmFrame.BindRotation;
+            Quaternion forearmRot = Quaternion.FromToRotation(bindForearmDir, forearmDir) * forearmFrame.BindRotation;
+
+            Vector3 currentUpperHinge = isLeft ? upperRot * Vector3.right : upperRot * -Vector3.right;
+            float upperTwist = SquatReferenceKinematics.SignedAngleAroundAxis(currentUpperHinge, hingeAxis, upperDir);
+            upperRot = Quaternion.AngleAxis(upperTwist, upperDir) * upperRot;
+
+            Vector3 currentForearmHinge = isLeft ? forearmRot * Vector3.right : forearmRot * -Vector3.right;
+            float forearmTwist = SquatReferenceKinematics.SignedAngleAroundAxis(currentForearmHinge, hingeAxis, forearmDir);
+            forearmRot = Quaternion.AngleAxis(forearmTwist, forearmDir) * forearmRot;
+
+            Vector3 fingerDir = (thoraxForward * 0.65f - thoraxUp * 0.75f).normalized;
+            Vector3 handBarDir = isLeft ? -thoraxRight : thoraxRight;
+            Vector3 handNormal = Vector3.Cross(handBarDir, fingerDir).normalized;
+            Vector3 localXDir = isLeft ? handBarDir : -handBarDir;
+            Matrix4x4 handMatrix = Matrix4x4.identity;
+            handMatrix.SetColumn(0, new Vector4(localXDir.x, localXDir.y, localXDir.z, 0f));
+            handMatrix.SetColumn(1, new Vector4(fingerDir.x, fingerDir.y, fingerDir.z, 0f));
+            handMatrix.SetColumn(2, new Vector4(handNormal.x, handNormal.y, handNormal.z, 0f));
+            Quaternion handRot = handMatrix.rotation;
+
+            upperArm.SetPositionAndRotation(shoulder, upperRot);
+            forearm.SetPositionAndRotation(elbow, forearmRot);
+            hand.SetPositionAndRotation(solvedHand, handRot);
+        }
+
+        private static void SolveTwoBone(
+            Vector3 root,
+            Vector3 target,
+            float upperLength,
+            float lowerLength,
+            Vector3 poleHint,
+            out Vector3 elbow,
+            out Vector3 solvedTarget)
+        {
+            Vector3 delta = target - root;
+            float distance = Mathf.Max(delta.magnitude, 0.0001f);
+            Vector3 direction = delta / distance;
+            float maximum = Mathf.Max(upperLength + lowerLength - 0.0005f, 0.0001f);
+            float minimum = Mathf.Min(Mathf.Abs(upperLength - lowerLength) + 0.0005f, maximum);
+            float clampedDistance = Mathf.Clamp(distance, minimum, maximum);
+            solvedTarget = root + direction * clampedDistance;
+            float along = (upperLength * upperLength - lowerLength * lowerLength +
+                clampedDistance * clampedDistance) / (2f * clampedDistance);
+            float heightSquared = Mathf.Max(0f, upperLength * upperLength - along * along);
+            Vector3 pole = Vector3.ProjectOnPlane(poleHint, direction);
+            if (pole.sqrMagnitude < 1e-8f)
+                pole = Vector3.Cross(direction, Vector3.right);
+            if (pole.sqrMagnitude < 1e-8f)
+                pole = Vector3.Cross(direction, Vector3.forward);
+            elbow = root + direction * along + pole.normalized * Mathf.Sqrt(heightSquared);
         }
 
         private void UpdateOverlay()
         {
-            SquatPoint3 leftHip = Point(_hips.TransformPoint(_leftHipCreaseOffset));
-            SquatPoint3 rightHip = Point(_hips.TransformPoint(_rightHipCreaseOffset));
-            SquatPoint3 leftKnee = Point(_leftCalf.TransformPoint(_leftKneeTopOffset));
-            SquatPoint3 rightKnee = Point(_rightCalf.TransformPoint(_rightKneeTopOffset));
-            _depth = SquatDepthGeometry.Evaluate(leftHip, rightHip, leftKnee, rightKnee, DepthMarginM);
-
-            Vector3[] positions =
+            if (!_referencePoseValid)
             {
-                ToUnity(leftHip), ToUnity(rightHip), ToUnity(leftKnee), ToUnity(rightKnee)
-            };
+                ApplyOverlayVisibility();
+                return;
+            }
+
+            Vector3 leftHip = _solution.PelvisCenter +
+                _solution.PelvisFrameRotation * _calibration.LeftHipCreaseOffsetInPelvisFrame;
+            Vector3 rightHip = _solution.PelvisCenter +
+                _solution.PelvisFrameRotation * _calibration.RightHipCreaseOffsetInPelvisFrame;
+            Vector3 leftKnee = _solution.LeftLeg.KneeCenter +
+                _solution.LeftLeg.ShankFrameRotation * _calibration.LeftKneeTopOffsetInShankFrame;
+            Vector3 rightKnee = _solution.RightLeg.KneeCenter +
+                _solution.RightLeg.ShankFrameRotation * _calibration.RightKneeTopOffsetInShankFrame;
+            _depth = SquatDepthGeometry.Evaluate(
+                Point(leftHip),
+                Point(rightHip),
+                Point(leftKnee),
+                Point(rightKnee),
+                DepthMarginM);
+
+            Vector3[] positions = { leftHip, rightHip, leftKnee, rightKnee };
             for (int index = 0; index < _landmarkMarkers.Length; index++)
                 _landmarkMarkers[index].Transform.position = positions[index];
-            _leftDepthLine.SetPosition(0, positions[0]);
-            _leftDepthLine.SetPosition(1, positions[2]);
-            _rightDepthLine.SetPosition(0, positions[1]);
-            _rightDepthLine.SetPosition(1, positions[3]);
-
-            Vector3 barCenter = _upperChest.position + _canonicalForward * 0.005f + _canonicalUp * 0.095f;
-            _referenceBarGhost.SetPosition(0, barCenter - _canonicalRight * 0.72f);
-            _referenceBarGhost.SetPosition(1, barCenter + _canonicalRight * 0.72f);
+            _leftDepthLine.SetPosition(0, leftHip);
+            _leftDepthLine.SetPosition(1, leftKnee);
+            _rightDepthLine.SetPosition(0, rightHip);
+            _rightDepthLine.SetPosition(1, rightKnee);
+            Vector3 thoraxRight = _solution.UpperChestFrameRotation * _calibration.GameRight;
+            Vector3 barCenter = (_leftBarHand + _rightBarHand) * 0.5f;
+            _referenceBarGhost.SetPosition(0, barCenter - thoraxRight * SquatReferenceKinematics.BarGhostHalfLengthM);
+            _referenceBarGhost.SetPosition(1, barCenter + thoraxRight * SquatReferenceKinematics.BarGhostHalfLengthM);
             ApplyOverlayVisibility();
         }
 
@@ -697,18 +1076,16 @@ namespace PowerliftingSimulator.Squat.Unity
         {
             bool landmarksVisible = showLandmarks && _initialized;
             for (int index = 0; index < _landmarkMarkers.Length; index++)
-                _landmarkMarkers[index].Renderer.enabled = landmarksVisible;
-            _leftDepthLine.enabled = landmarksVisible;
-            _rightDepthLine.enabled = landmarksVisible;
-            _referenceBarGhost.enabled = showReferenceBarGhost && _initialized;
-        }
-
-        private BoneBinding Bind(HumanBodyBones bone, Vector3 worldAxis, float scale)
-        {
-            Transform target = RequireBone(bone);
-            Transform parent = target.parent ?? referenceRoot;
-            Vector3 parentAxis = parent.InverseTransformDirection(worldAxis).normalized;
-            return new BoneBinding(target, parentAxis, target.localRotation, scale);
+            {
+                if (_landmarkMarkers[index].Renderer != null)
+                    _landmarkMarkers[index].Renderer.enabled = landmarksVisible;
+            }
+            if (_leftDepthLine != null)
+                _leftDepthLine.enabled = landmarksVisible;
+            if (_rightDepthLine != null)
+                _rightDepthLine.enabled = landmarksVisible;
+            if (_referenceBarGhost != null)
+                _referenceBarGhost.enabled = showReferenceBarGhost && _initialized;
         }
 
         private Transform RequireBone(HumanBodyBones bone)
@@ -716,7 +1093,8 @@ namespace PowerliftingSimulator.Squat.Unity
             Transform target = referenceAnimator.GetBoneTransform(bone);
             return target != null
                 ? target
-                : throw new InvalidOperationException($"Squat reference bone '{bone}' did not resolve on the canonical asset.");
+                : throw new InvalidOperationException(
+                    $"Squat reference bone '{bone}' did not resolve on the canonical asset.");
         }
 
         private LandmarkMarker CreateLandmarkMarker(string markerName, Color color)
@@ -751,21 +1129,35 @@ namespace PowerliftingSimulator.Squat.Unity
             return line;
         }
 
-        private Bounds CalculateBounds()
+        private static Vector3 ProjectToStandingPlane(Vector3 point, Vector3 up)
         {
-            if (_renderers.Length == 0)
-                return new Bounds(referenceRoot.position, Vector3.zero);
-            Bounds bounds = _renderers[0].bounds;
-            for (int index = 1; index < _renderers.Length; index++)
-                bounds.Encapsulate(_renderers[index].bounds);
-            return bounds;
+            return point - up * Vector3.Dot(point, up);
+        }
+
+        private static string VisualProofFor(SquatReferenceCalibrationFixture fixture)
+        {
+            switch (fixture)
+            {
+                case SquatReferenceCalibrationFixture.AnkleDorsiflexionPlus10:
+                    return "sagittal shank/foot relationship; plantar anchor fixed";
+                case SquatReferenceCalibrationFixture.KneeFlexionPlus10:
+                    return "sagittal tibia/femur relationship; plantar anchor fixed";
+                case SquatReferenceCalibrationFixture.HipFlexionPlus10:
+                    return "sagittal femur/pelvis relationship; bilateral hips solved";
+                case SquatReferenceCalibrationFixture.TrunkFlexionPlus20:
+                    return "thorax approximately +20 degrees relative pelvis";
+                default:
+                    return string.Empty;
+            }
         }
 
         private SquatReferenceWaypointRecord[] ToWaypointArray()
         {
-            var result = new SquatReferenceWaypointRecord[SquatReferenceProfile.CanonicalPowerliftingSquatV1.Waypoints.Count];
+            IReadOnlyList<SquatReferenceWaypointRecord> source =
+                SquatReferenceProfile.CanonicalPowerliftingSquatV1.Waypoints;
+            SquatReferenceWaypointRecord[] result = new SquatReferenceWaypointRecord[source.Count];
             for (int index = 0; index < result.Length; index++)
-                result[index] = SquatReferenceProfile.CanonicalPowerliftingSquatV1.Waypoints[index];
+                result[index] = source[index];
             return result;
         }
 
@@ -787,11 +1179,14 @@ namespace PowerliftingSimulator.Squat.Unity
             }
         }
 
-        private static SquatReferenceWaypoint ResolveWaypoint(float phase, SquatState state, SquatPhaseDirection direction)
+        private static SquatReferenceWaypoint ResolveWaypoint(
+            float phase,
+            SquatState state,
+            SquatPhaseDirection direction)
         {
             if (phase <= 0.0001f || state == SquatState.LOCKOUT)
                 return SquatReferenceWaypoint.LOCKOUT;
-            if (phase >= 0.9999f || state == SquatState.BOTTOM)
+            if (phase >= 0.9999f || state == SquatState.BOTTOM || state == SquatState.REVERSAL)
                 return SquatReferenceWaypoint.LEGAL_BOTTOM;
             if (state == SquatState.STICKING || Mathf.Abs(phase - 0.64f) < 0.025f)
                 return SquatReferenceWaypoint.STICKING;
@@ -802,41 +1197,43 @@ namespace PowerliftingSimulator.Squat.Unity
             return SquatReferenceWaypoint.NEAR_PARALLEL;
         }
 
-        private static SquatPoint3 Point(Vector3 value) => new SquatPoint3(value.x, value.y, value.z);
-        private static Vector3 ToUnity(SquatPoint3 value) => new Vector3(value.X, value.Y, value.Z);
+        private static SquatPoint3 Point(Vector3 value) =>
+            new SquatPoint3(value.x, value.y, value.z);
 
-        private static PlayerIntentFrame CreateIntent(float yield, float drive) => new PlayerIntentFrame(
-            0ul,
-            0d,
-            IntentEdgeFlags.None,
-            0f,
-            yield,
-            drive,
-            0f,
-            0f,
-            false,
-            yield > 0f,
-            drive > 0f,
-            false,
-            false,
-            false,
-            false);
+        private static PlayerIntentFrame CreateIntent(float yield, float drive) =>
+            new PlayerIntentFrame(
+                0ul,
+                0d,
+                IntentEdgeFlags.None,
+                0f,
+                yield,
+                drive,
+                0f,
+                0f,
+                false,
+                yield > 0f,
+                drive > 0f,
+                false,
+                false,
+                false,
+                false);
 
-        [Serializable]
-        private struct BoneBinding
+        private static void WriteJson(string path, object artifact)
         {
-            public BoneBinding(Transform bone, Vector3 axisInParentLocal, Quaternion bindLocalRotation, float scale)
-            {
-                Bone = bone;
-                AxisInParentLocal = axisInParentLocal;
-                BindLocalRotation = bindLocalRotation;
-                Scale = scale;
-            }
+            string fullPath = Path.GetFullPath(path);
+            Directory.CreateDirectory(Path.GetDirectoryName(fullPath) ?? Directory.GetCurrentDirectory());
+            File.WriteAllText(fullPath, JsonUtility.ToJson(artifact, true) + Environment.NewLine);
+        }
 
-            public Transform Bone;
-            public Vector3 AxisInParentLocal;
-            public Quaternion BindLocalRotation;
-            public float Scale;
+        private enum PreviewStage : byte
+        {
+            Standing,
+            Descent,
+            Bottom,
+            Reversal,
+            AscentToSticking,
+            Sticking,
+            AscentFinish
         }
 
         private readonly struct LandmarkMarker
@@ -851,15 +1248,49 @@ namespace PowerliftingSimulator.Squat.Unity
             public Renderer Renderer { get; }
         }
 
-        private enum PreviewStage : byte
+        private readonly struct PoseBind
         {
-            Standing,
-            Descent,
-            Bottom,
-            Reversal,
-            AscentToSticking,
-            Sticking,
-            AscentFinish
+            public PoseBind(Transform transform)
+            {
+                Transform = transform;
+                LocalPosition = transform.localPosition;
+                LocalRotation = transform.localRotation;
+                LocalScale = transform.localScale;
+            }
+
+            public Transform Transform { get; }
+            public Vector3 LocalPosition { get; }
+            public Quaternion LocalRotation { get; }
+            public Vector3 LocalScale { get; }
+
+            public void Restore()
+            {
+                Transform.localPosition = LocalPosition;
+                Transform.localRotation = LocalRotation;
+                Transform.localScale = LocalScale;
+            }
+        }
+
+        [Serializable]
+        private sealed class CalibrationArtifact
+        {
+            public string schema;
+            public string mission;
+            public string profile;
+            public string calibrationId;
+            public AssetRecord asset;
+            public string poseRootSource;
+            public string rootBoundsAuthority;
+            public FrameRecord gameFrame;
+            public FrameRecord plantedFootFrame;
+            public FrameRecord pelvisFrame;
+            public FootRecord leftFoot;
+            public FootRecord rightFoot;
+            public JointCentersRecord jointCenters;
+            public SegmentLengthsRecord segmentLengths;
+            public BoneFrameRecord[] calibratedFrames;
+            public FixtureRecord[] fixtureResults;
+            public string[] visualProof;
         }
 
         [Serializable]
@@ -868,20 +1299,23 @@ namespace PowerliftingSimulator.Squat.Unity
             public string schema;
             public string mission;
             public string unityVersion;
-             public string profile;
-             public string claimClass;
-             public string referenceOwner;
-             public bool physicalAuthorityTouched;
-             public AssetRecord asset;
+            public string profile;
+            public string claimClass;
+            public string referenceOwner;
+            public bool physicalAuthorityTouched;
+            public AssetRecord asset;
             public string[] states;
             public WaypointMeasurement[] waypoints;
             public string phaseConvention;
-            public LandmarkCalibrationRecord[] landmarkCalibration;
-            public TimingRecord referenceTiming;
-             public ContinuityRecord continuity;
-             public RootCorrectionRecord referenceRootCorrection;
-             public CoordinateRecord coordinateConventions;
-            public RuleSourceRecord ruleSource;
+            public string calibrationId;
+            public string poseRootSource;
+            public string rootBoundsAuthority;
+            public FixtureRecord[] calibrationFixtures;
+            public CoordinateRecord coordinateConventions;
+            public TrunkMappingRecord trunkMapping;
+            public SolverRecord solver;
+            public DepthRecord depth;
+            public QualityGateRecord qualityGates;
             public string[] knownLimitations;
         }
 
@@ -893,6 +1327,15 @@ namespace PowerliftingSimulator.Squat.Unity
             public string modelPath;
             public string modelSha256;
             public string avatar;
+
+            public static AssetRecord Create(string avatar) => new AssetRecord
+            {
+                provider = "Quaternius",
+                pack = "Universal Base Characters[Standard]",
+                modelPath = AssetPath,
+                modelSha256 = AssetSha256,
+                avatar = avatar
+            };
         }
 
         [Serializable]
@@ -905,6 +1348,76 @@ namespace PowerliftingSimulator.Squat.Unity
             public float leftDepthM;
             public float rightDepthM;
             public bool bilateralLegalReference;
+            public bool feetPlanted;
+            public float footAnchorsMaxErrorMM;
+            public float bilateralHipSolutionErrorMM;
+            public float segmentLengthErrorMM;
+            public float trunkRelativeAngleErrorDeg;
+            public float kneeForwardFromAnkleM;
+            public float pelvisHeightM;
+            public float pelvisSetbackM;
+            public float shankWorldAngleDeg;
+            public float thighWorldAngleDeg;
+            public float thoraxRelativePelvisDeg;
+            public float barGhostApRelativeMidfootM;
+            public float leftPlantarAnchorErrorMm;
+            public float rightPlantarAnchorErrorMm;
+            public float leftFootPitchErrorDeg;
+            public float rightFootPitchErrorDeg;
+            public float leftHandBarErrorM;
+            public float rightHandBarErrorM;
+
+            public static WaypointMeasurement From(
+                SquatReferenceWaypointRecord waypoint,
+                SquatPhaseDirection direction,
+                SquatDepthObservation depth,
+                SquatReferenceKinematicSolution solution,
+                SquatReferenceRigCalibration calibration,
+                Vector3 leftHandPos,
+                Vector3 rightHandPos,
+                Vector3 leftBarHand,
+                Vector3 rightBarHand)
+            {
+                Vector3 midfoot = (calibration.LeftFoot.PlantarAnchorWorld + calibration.LeftFoot.BindAnkleCenter) * 0.5f;
+                Vector3 barCenter = (leftBarHand + rightBarHand) * 0.5f;
+                float kneeFwd = Vector3.Dot(solution.LeftLeg.KneeCenter - solution.LeftLeg.AnkleCenter, calibration.GameForward);
+                float setback = -Vector3.Dot(solution.PelvisCenter - solution.LeftLeg.AnkleCenter, calibration.GameForward);
+                float pelvisH = Vector3.Dot(solution.PelvisCenter, calibration.GameUp);
+                float shankAngle = SquatReferenceKinematics.SignedAngleAroundAxis(calibration.GameUp, solution.LeftLeg.ShankFrameRotation * Vector3.up, calibration.GameRight);
+                float thighAngle = SquatReferenceKinematics.SignedAngleAroundAxis(calibration.GameUp, solution.LeftLeg.ThighFrameRotation * Vector3.up, calibration.GameRight);
+                float thoraxRel = SquatReferenceKinematics.MeasureTrunkRelativeDegrees(calibration, solution);
+                float barApMidfoot = Vector3.Dot(barCenter - midfoot, calibration.GameForward);
+
+                return new WaypointMeasurement
+                {
+                    waypoint = waypoint.Waypoint.ToString(),
+                    phase = waypoint.Phase,
+                    direction = direction.ToString(),
+                    pose = PoseRecord.From(waypoint.Pose),
+                    leftDepthM = depth.LeftDepthM,
+                    rightDepthM = depth.RightDepthM,
+                    bilateralLegalReference = depth.BilateralLegalReference,
+                    feetPlanted = solution.FootAnchorsMaxErrorM <=
+                        SquatReferenceRigCalibration.FootAnchorToleranceM,
+                    footAnchorsMaxErrorMM = solution.FootAnchorsMaxErrorM * 1000f,
+                    bilateralHipSolutionErrorMM = solution.BilateralHipSolutionErrorM * 1000f,
+                    segmentLengthErrorMM = solution.SegmentLengthErrorM * 1000f,
+                    trunkRelativeAngleErrorDeg = solution.TrunkRelativeAngleErrorDeg,
+                    kneeForwardFromAnkleM = kneeFwd,
+                    pelvisHeightM = pelvisH,
+                    pelvisSetbackM = setback,
+                    shankWorldAngleDeg = shankAngle,
+                    thighWorldAngleDeg = thighAngle,
+                    thoraxRelativePelvisDeg = thoraxRel,
+                    barGhostApRelativeMidfootM = barApMidfoot,
+                    leftPlantarAnchorErrorMm = solution.LeftLeg.FootAnchorErrorM * 1000f,
+                    rightPlantarAnchorErrorMm = solution.RightLeg.FootAnchorErrorM * 1000f,
+                    leftFootPitchErrorDeg = 0f,
+                    rightFootPitchErrorDeg = 0f,
+                    leftHandBarErrorM = Vector3.Distance(leftHandPos, leftBarHand),
+                    rightHandBarErrorM = Vector3.Distance(rightHandPos, rightBarHand)
+                };
+            }
         }
 
         [Serializable]
@@ -931,54 +1444,190 @@ namespace PowerliftingSimulator.Squat.Unity
         }
 
         [Serializable]
-        private struct LandmarkCalibrationRecord
+        private struct FrameRecord
         {
-            public string id;
-            public string boneFrame;
-            public VectorRecord localOffset_m;
-            public VectorRecord worldPreviewPosition_m;
-            public string sourceClass;
+            public string name;
+            public VectorRecord originM;
+            public VectorRecord right;
+            public VectorRecord up;
+            public VectorRecord forward;
 
-            public static LandmarkCalibrationRecord Create(string id, string frame, Vector3 localOffset, Transform bone) => new LandmarkCalibrationRecord
+            public static FrameRecord From(string name, SquatReferenceFrame frame) => new FrameRecord
             {
-                id = id,
-                boneFrame = frame,
-                localOffset_m = VectorRecord.From(localOffset),
-                worldPreviewPosition_m = VectorRecord.From(bone.TransformPoint(localOffset)),
-                sourceClass = SquatDepthGeometry.SourceClass
+                name = name,
+                originM = VectorRecord.From(frame.Origin),
+                right = VectorRecord.From(frame.Right),
+                up = VectorRecord.From(frame.Up),
+                forward = VectorRecord.From(frame.Forward)
             };
         }
 
         [Serializable]
-        private struct TimingRecord
+        private struct BoneFrameRecord
         {
-            public float fixedStepS;
-            public float descentRateMinPerS;
-            public float descentRateMaxPerS;
-            public float ascentRateMinPerS;
-            public float ascentRateMaxPerS;
-            public float maxPhaseRatePerS;
-            public float maxPhaseAccelerationPerSS;
-            public string timingClaim;
+            public string bone;
+            public FrameRecord frame;
+            public QuaternionRecord boneFromFrame;
+
+            public static BoneFrameRecord From(SquatReferenceBoneFrame source) => new BoneFrameRecord
+            {
+                bone = source.Bone.ToString(),
+                frame = FrameRecord.From(source.Bone.ToString(), source.AnatomicalFrameBind),
+                boneFromFrame = QuaternionRecord.From(source.BoneFromAnatomicalFrame)
+            };
         }
 
         [Serializable]
-        private struct ContinuityRecord
+        private struct FootRecord
         {
-            public float maxKeyPoseValueDiscontinuity;
-            public float reversalPoseDiscontinuity;
-            public float lockoutPoseDiscontinuity;
-            public string curve;
+            public string side;
+            public string footBone;
+            public string toeBone;
+            public FrameRecord plantedFrame;
+            public VectorRecord plantarAnchorWorldM;
+            public VectorRecord plantarAnchorInBoneLocalM;
+            public VectorRecord ankleCenterWorldM;
+
+            public static FootRecord From(string side, SquatReferenceFootCalibration source) => new FootRecord
+            {
+                side = side,
+                footBone = source.FootBone.name,
+                toeBone = source.ToeBone.name,
+                plantedFrame = FrameRecord.From("planted_" + side, source.AnatomicalFrameBind),
+                plantarAnchorWorldM = VectorRecord.From(source.PlantarAnchorWorld),
+                plantarAnchorInBoneLocalM = VectorRecord.From(source.PlantarAnchorInBoneLocal),
+                ankleCenterWorldM = VectorRecord.From(source.BindAnkleCenter)
+            };
         }
 
         [Serializable]
-        private struct RootCorrectionRecord
+        private struct JointCentersRecord
         {
-            public string owner;
+            public VectorRecord leftHipM;
+            public VectorRecord rightHipM;
+            public VectorRecord leftKneeM;
+            public VectorRecord rightKneeM;
+            public VectorRecord leftAnkleM;
+            public VectorRecord rightAnkleM;
+            public VectorRecord pelvisM;
+            public VectorRecord thoraxM;
+
+            public static JointCentersRecord From(SquatReferenceRigCalibration source) => new JointCentersRecord
+            {
+                leftHipM = VectorRecord.From(source.LeftHipCenterBindWorld),
+                rightHipM = VectorRecord.From(source.RightHipCenterBindWorld),
+                leftKneeM = VectorRecord.From(source.LeftKneeCenterBindWorld),
+                rightKneeM = VectorRecord.From(source.RightKneeCenterBindWorld),
+                leftAnkleM = VectorRecord.From(source.LeftAnkleCenterBindWorld),
+                rightAnkleM = VectorRecord.From(source.RightAnkleCenterBindWorld),
+                pelvisM = VectorRecord.From(source.HipCenterBindWorld),
+                thoraxM = VectorRecord.From(source.ThoraxCenterBindWorld)
+            };
+        }
+
+        [Serializable]
+        private struct SegmentLengthsRecord
+        {
+            public float leftThighM;
+            public float rightThighM;
+            public float leftShankM;
+            public float rightShankM;
+            public float hipWidthM;
+
+            public static SegmentLengthsRecord From(SquatReferenceRigCalibration source) => new SegmentLengthsRecord
+            {
+                leftThighM = source.LeftThighLengthM,
+                rightThighM = source.RightThighLengthM,
+                leftShankM = source.LeftShankLengthM,
+                rightShankM = source.RightShankLengthM,
+                hipWidthM = source.HipWidthM
+            };
+        }
+
+        [Serializable]
+        private struct FixtureRecord
+        {
+            public string fixture;
+            public float expectedDegrees;
+            public float measuredDegrees;
+            public float errorDegrees;
+            public bool passed;
+            public string visualProof;
+
+            public static FixtureRecord[] From(SquatReferenceCalibrationReport report)
+            {
+                FixtureRecord[] records = new FixtureRecord[report.Results.Count];
+                for (int index = 0; index < records.Length; index++)
+                {
+                    SquatReferenceCalibrationFixtureResult result = report.Results[index];
+                    records[index] = new FixtureRecord
+                    {
+                        fixture = result.Fixture.ToString(),
+                        expectedDegrees = result.ExpectedDegrees,
+                        measuredDegrees = result.MeasuredDegrees,
+                        errorDegrees = result.ErrorDegrees,
+                        passed = result.Passed,
+                        visualProof = result.VisualProof
+                    };
+                }
+                return records;
+            }
+        }
+
+        [Serializable]
+        private struct TrunkMappingRecord
+        {
+            public bool thoraxRelativeToPelvis;
+            public float spineWeight;
+            public float chestWeight;
+            public float upperChestWeight;
+            public float totalWeight;
+            public float cervicalCompensationFraction;
+            public float headCompensationFraction;
+        }
+
+        [Serializable]
+        private struct SolverRecord
+        {
             public string mode;
-            public string source;
-            public bool deterministic;
-            public int physicalHierarchyWrites;
+            public VectorRecord fixedLeftPlantarAnchor;
+            public VectorRecord fixedRightPlantarAnchor;
+            public float bilateralToleranceM;
+            public float footAnchorToleranceM;
+            public float segmentLengthToleranceM;
+            public bool usesRendererBounds;
+            public bool usesIkFramework;
+        }
+
+        [Serializable]
+        private struct DepthRecord
+        {
+            public string sourceClass;
+            public string criterion;
+            public float marginM;
+            public float leftBottomDepthM;
+            public float rightBottomDepthM;
+            public bool feetPlanted;
+            public bool bilateralSolutionValid;
+            public bool legalDepthWithPlantedFeet;
+        }
+
+        [Serializable]
+        private struct QualityGateRecord
+        {
+            public bool JOINT_AXIS_CALIBRATION;
+            public float FOOT_ANCHORS_MAX_ERROR_MM;
+            public float BILATERAL_HIP_SOLUTION_MAX_ERROR_MM;
+            public float SEGMENT_LENGTH_ERROR;
+            public float SEGMENT_LENGTH_ERROR_MM;
+            public float TRUNK_RELATIVE_ANGLE_ERROR_DEG;
+            public string ROOT_BOUNDS_AUTHORITY;
+            public bool LEGAL_DEPTH_WITH_PLANTED_FEET;
+            public bool RENDER_RATE_INDEPENDENCE;
+            public bool BAR_SUPPORT_HAND_TARGETS;
+            public float BAR_GHOST_AP_MIDFOOT_M;
+            public float LEFT_HAND_BAR_ERROR_M;
+            public float RIGHT_HAND_BAR_ERROR_M;
         }
 
         [Serializable]
@@ -994,25 +1643,35 @@ namespace PowerliftingSimulator.Squat.Unity
         }
 
         [Serializable]
-        private struct RuleSourceRecord
-        {
-            public string title;
-            public string effectiveDate;
-            public string version;
-            public string sourceClass;
-            public string depthCriterion;
-            public float depthMarginM;
-        }
-
-        [Serializable]
         private struct VectorRecord
         {
             public float x;
             public float y;
             public float z;
 
-            public static VectorRecord From(Vector3 value) => new VectorRecord { x = value.x, y = value.y, z = value.z };
+            public static VectorRecord From(Vector3 value) => new VectorRecord
+            {
+                x = value.x,
+                y = value.y,
+                z = value.z
+            };
         }
 
+        [Serializable]
+        private struct QuaternionRecord
+        {
+            public float x;
+            public float y;
+            public float z;
+            public float w;
+
+            public static QuaternionRecord From(Quaternion value) => new QuaternionRecord
+            {
+                x = value.x,
+                y = value.y,
+                z = value.z,
+                w = value.w
+            };
+        }
     }
 }

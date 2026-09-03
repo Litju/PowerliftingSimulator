@@ -15,7 +15,6 @@ public static class SquatReferencePreviewBuilder
     private const string AthleteMaterialPath = "Assets/Characters/Athlete/Materials/CanonicalAthlete.mat";
     private const string FloorMaterialPath = "Assets/Characters/Athlete/Materials/CalibrationFloor.mat";
     private const string GhostMaterialPath = "Assets/Characters/Athlete/Materials/SquatReferenceGhost.mat";
-    private const float ImportedModelLiftMeters = 0.10173738f;
 
     [MenuItem("Powerlifting Simulator/GAM-10/Build Squat Reference Preview")]
     public static void BuildSquatReferencePreview()
@@ -35,7 +34,7 @@ public static class SquatReferencePreviewBuilder
         GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(model, scene);
         instance.name = "ReferencePreviewRig_GAM10";
         instance.transform.SetParent(frame.transform, false);
-        instance.transform.SetLocalPositionAndRotation(Vector3.up * ImportedModelLiftMeters, Quaternion.identity);
+        instance.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
         instance.transform.localScale = Vector3.one;
 
         Animator animator = instance.GetComponentInChildren<Animator>(true)
@@ -150,7 +149,29 @@ public static class SquatReferencePreviewBuilder
         camera.fieldOfView = 34f;
         camera.nearClipPlane = 0.05f;
         camera.farClipPlane = 50f;
-        camera.transform.position = new Vector3(2.7f, 1.04f, 3.85f);
+        camera.transform.position = new Vector3(3.6f, 1.04f, 1.25f);
         camera.transform.LookAt(new Vector3(0f, 0.95f, 0f), Vector3.up);
+    }
+
+    public const string PreviewExecutablePath = "Builds/GAM10/Windows/PowerliftingSimulator-GAM10-ReferencePreview.exe";
+
+    [MenuItem("Powerlifting Simulator/GAM-10/Build Reference Preview Standalone")]
+    public static void BuildPreviewStandalone()
+    {
+        string projectRoot = Directory.GetParent(Application.dataPath).FullName;
+        string outputPath = Path.Combine(projectRoot, PreviewExecutablePath.Replace('/', Path.DirectorySeparatorChar));
+        Directory.CreateDirectory(Path.GetDirectoryName(outputPath));
+
+        var options = new BuildPlayerOptions
+        {
+            scenes = new[] { ScenePath },
+            locationPathName = outputPath,
+            target = BuildTarget.StandaloneWindows64,
+            options = BuildOptions.None
+        };
+
+        Debug.Log($"GAM10_BUILD scene={ScenePath} target={options.target}");
+        UnityEditor.Build.Reporting.BuildReport report = BuildPipeline.BuildPlayer(options);
+        Debug.Log($"GAM10_BUILD result={report.summary.result} path={outputPath}");
     }
 }

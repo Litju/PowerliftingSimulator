@@ -183,7 +183,7 @@ namespace PowerliftingSimulator.Squat
 
     public sealed class SquatReferenceProfile
     {
-        private const string ProfileIdValue = "CANONICAL_POWERLIFTING_SQUAT_V1";
+        private const string ProfileIdValue = "CANONICAL_POWERLIFTING_SQUAT_V2_CLOSED_CHAIN";
         private const string ClaimClassValue = "BIOMECHANICALLY_INFORMED_GAME_CALIBRATION";
         private static readonly float[] Phases = { 0f, 0.25f, 0.55f, 0.64f, 0.82f, 1f };
         private static readonly SquatReferenceProfile Canonical = CreateCanonical();
@@ -289,11 +289,11 @@ namespace PowerliftingSimulator.Squat
         private static SquatReferenceProfile CreateCanonical()
         {
             SquatReferencePose standing = Pose(0f, 0f, 0f, 0f, 0f, 0f, 0f);
-            SquatReferencePose quarter = Pose(10f, 30f, 25f, 8f, 48f, 25f, 8f);
-            SquatReferencePose nearParallel = Pose(16f, 68f, 54f, 17f, 58f, 38f, 10f);
-            SquatReferencePose sticking = Pose(15f, 61f, 48f, 15f, 55f, 34f, 9f);
-            SquatReferencePose earlyAscent = Pose(18f, 82f, 63f, 20f, 60f, 40f, 10f);
-            SquatReferencePose legalBottom = Pose(21f, 108f, 84f, 24f, 64f, 46f, 11f);
+            SquatReferencePose quarter = Pose(10f, 32f, 30f, 10f, 0f, 0f, 0f);
+            SquatReferencePose nearParallel = Pose(21f, 78f, 77f, 15f, 0f, 0f, 0f);
+            SquatReferencePose sticking = Pose(22f, 82f, 81f, 15f, 0f, 0f, 0f);
+            SquatReferencePose earlyAscent = Pose(25f, 100f, 98f, 16f, 0f, 0f, 0f);
+            SquatReferencePose legalBottom = Pose(27f, 114f, 111f, 16f, 0f, 0f, 0f);
             SquatReferenceWaypointRecord[] waypoints =
             {
                 new(SquatReferenceWaypoint.STANDING, 0f, standing),
