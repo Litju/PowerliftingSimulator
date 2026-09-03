@@ -58,13 +58,13 @@
             "shankWorldAngleDeg": 6.432599067687988,
             "thighWorldAngleDeg": 0.013395876623690129,
             "thoraxRelativePelvisDeg": 0.0,
-            "barGhostApRelativeMidfootM": -0.13109144568443299,
+            "barGhostApRelativeMidfootM": -0.08240817487239838,
             "leftPlantarAnchorErrorMm": 0.0,
             "rightPlantarAnchorErrorMm": 0.0,
             "leftFootPitchErrorDeg": 0.0,
             "rightFootPitchErrorDeg": 0.0,
-            "leftHandBarErrorM": 4.933162358611298e-7,
-            "rightHandBarErrorM": 3.424026147058612e-7
+            "leftHandBarErrorM": 4.787541456607869e-7,
+            "rightHandBarErrorM": 5.101879878566251e-7
         },
         {
             "waypoint": "QUARTER_DESCENT",
@@ -93,13 +93,13 @@
             "shankWorldAngleDeg": 16.432598114013673,
             "thighWorldAngleDeg": -21.986608505249025,
             "thoraxRelativePelvisDeg": 10.000001907348633,
-            "barGhostApRelativeMidfootM": -0.11823788285255432,
+            "barGhostApRelativeMidfootM": -0.08102001249790192,
             "leftPlantarAnchorErrorMm": 0.0,
             "rightPlantarAnchorErrorMm": 0.0,
             "leftFootPitchErrorDeg": 0.0,
             "rightFootPitchErrorDeg": 0.0,
-            "leftHandBarErrorM": 6.316756753221853e-7,
-            "rightHandBarErrorM": 4.6671806330778056e-7
+            "leftHandBarErrorM": 4.893051936960546e-7,
+            "rightHandBarErrorM": 5.341603923625371e-7
         },
         {
             "waypoint": "NEAR_PARALLEL",
@@ -128,13 +128,13 @@
             "shankWorldAngleDeg": 27.432600021362306,
             "thighWorldAngleDeg": -56.98659896850586,
             "thoraxRelativePelvisDeg": 15.000003814697266,
-            "barGhostApRelativeMidfootM": -0.1218334287405014,
+            "barGhostApRelativeMidfootM": -0.09881313145160675,
             "leftPlantarAnchorErrorMm": 0.0,
             "rightPlantarAnchorErrorMm": 0.0,
             "leftFootPitchErrorDeg": 0.0,
             "rightFootPitchErrorDeg": 0.0,
-            "leftHandBarErrorM": 5.164063736629032e-7,
-            "rightHandBarErrorM": 4.7145164216999549e-7
+            "leftHandBarErrorM": 4.810675591215841e-7,
+            "rightHandBarErrorM": 3.379148267868004e-7
         },
         {
             "waypoint": "LEGAL_BOTTOM",
@@ -163,13 +163,13 @@
             "shankWorldAngleDeg": 33.43259811401367,
             "thighWorldAngleDeg": -86.98660278320313,
             "thoraxRelativePelvisDeg": 16.000003814697267,
-            "barGhostApRelativeMidfootM": -0.1141895055770874,
+            "barGhostApRelativeMidfootM": -0.0957888811826706,
             "leftPlantarAnchorErrorMm": 0.0,
             "rightPlantarAnchorErrorMm": 0.0,
             "leftFootPitchErrorDeg": 0.0,
             "rightFootPitchErrorDeg": 0.0,
-            "leftHandBarErrorM": 4.1536569028721717e-7,
-            "rightHandBarErrorM": 4.349505786649388e-7
+            "leftHandBarErrorM": 4.6271645715023626e-7,
+            "rightHandBarErrorM": 6.093554816288815e-7
         },
         {
             "waypoint": "EARLY_ASCENT",
@@ -198,13 +198,13 @@
             "shankWorldAngleDeg": 31.432601928710939,
             "thighWorldAngleDeg": -74.98661041259766,
             "thoraxRelativePelvisDeg": 16.0000057220459,
-            "barGhostApRelativeMidfootM": -0.12132182717323303,
+            "barGhostApRelativeMidfootM": -0.10198496282100678,
             "leftPlantarAnchorErrorMm": 0.0,
             "rightPlantarAnchorErrorMm": 0.0,
             "leftFootPitchErrorDeg": 0.0,
             "rightFootPitchErrorDeg": 0.0,
-            "leftHandBarErrorM": 3.291773964519962e-7,
-            "rightHandBarErrorM": 5.372689884097781e-7
+            "leftHandBarErrorM": 4.267693611836876e-7,
+            "rightHandBarErrorM": 5.908549951527675e-7
         },
         {
             "waypoint": "STICKING",
@@ -233,13 +233,13 @@
             "shankWorldAngleDeg": 28.432598114013673,
             "thighWorldAngleDeg": -59.986602783203128,
             "thoraxRelativePelvisDeg": 15.000001907348633,
-            "barGhostApRelativeMidfootM": -0.11872231960296631,
+            "barGhostApRelativeMidfootM": -0.09661303460597992,
             "leftPlantarAnchorErrorMm": 0.0,
             "rightPlantarAnchorErrorMm": 0.0,
             "leftFootPitchErrorDeg": 0.0,
             "rightFootPitchErrorDeg": 0.0,
-            "leftHandBarErrorM": 3.5270454645797147e-7,
-            "rightHandBarErrorM": 4.965128823641862e-7
+            "leftHandBarErrorM": 3.95442668832402e-7,
+            "rightHandBarErrorM": 5.331722263690608e-7
         },
         {
             "waypoint": "LOCKOUT",
@@ -268,13 +268,13 @@
             "shankWorldAngleDeg": 6.432599067687988,
             "thighWorldAngleDeg": 0.013395876623690129,
             "thoraxRelativePelvisDeg": 0.0,
-            "barGhostApRelativeMidfootM": -0.13109144568443299,
+            "barGhostApRelativeMidfootM": -0.08240817487239838,
             "leftPlantarAnchorErrorMm": 0.0,
             "rightPlantarAnchorErrorMm": 0.0,
             "leftFootPitchErrorDeg": 0.0,
             "rightFootPitchErrorDeg": 0.0,
-            "leftHandBarErrorM": 4.933162358611298e-7,
-            "rightHandBarErrorM": 3.424026147058612e-7
+            "leftHandBarErrorM": 4.787541456607869e-7,
+            "rightHandBarErrorM": 5.101879878566251e-7
         }
     ],
     "phaseConvention": "s_q in [0,1]; 0=standing/lockout, 1=canonical legal-bottom; descent increases, ascent decreases",
@@ -372,9 +372,13 @@
         "LEGAL_DEPTH_WITH_PLANTED_FEET": true,
         "RENDER_RATE_INDEPENDENCE": true,
         "BAR_SUPPORT_HAND_TARGETS": true,
-        "BAR_GHOST_AP_MIDFOOT_M": -0.1141895055770874,
-        "LEFT_HAND_BAR_ERROR_M": 4.1536569028721717e-7,
-        "RIGHT_HAND_BAR_ERROR_M": 4.349505786649388e-7
+        "BAR_GHOST_AP_MIDFOOT_M": -0.0957888811826706,
+        "LEFT_HAND_BAR_ERROR_M": 4.6271645715023626e-7,
+        "RIGHT_HAND_BAR_ERROR_M": 6.093554816288815e-7,
+        "PALM_BAR_SURFACE_ERROR_L_MM": 6.48237943649292,
+        "PALM_BAR_SURFACE_ERROR_R_MM": 6.482381343841553,
+        "FOREARM_HAND_ANGLE_L_DEG": 1.7878315448760987,
+        "FOREARM_HAND_ANGLE_R_DEG": 1.7878315448760987
     },
     "knownLimitations": [
         "Reference motion is deterministic game calibration, not motion-capture ground truth.",

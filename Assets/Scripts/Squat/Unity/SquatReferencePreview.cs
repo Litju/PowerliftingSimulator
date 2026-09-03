@@ -36,6 +36,19 @@ namespace PowerliftingSimulator.Squat.Unity
 
         private readonly LandmarkMarker[] _landmarkMarkers = new LandmarkMarker[4];
         private readonly List<PoseBind> _bindPose = new List<PoseBind>();
+        private static readonly float[] FingerCurlAngles = new[]
+        {
+            // Thumb: wraps under/around the bar
+            20f, 25f, 20f,
+            // Index: wraps over and around the bar
+            35f, 45f, 30f,
+            // Middle: wraps over and around the bar
+            35f, 45f, 30f,
+            // Ring: wraps over and around the bar
+            35f, 45f, 30f,
+            // Pinky: wraps over and around the bar
+            35f, 45f, 30f
+        };
         private Transform _hips;
         private Transform _spine;
         private Transform _chest;
@@ -66,6 +79,14 @@ namespace PowerliftingSimulator.Squat.Unity
         private Vector3 _rightStandingFootAnchor;
         private Vector3 _leftBarHand;
         private Vector3 _rightBarHand;
+        private Transform[] _leftFingers;
+        private Transform[] _rightFingers;
+        private Quaternion[] _leftFingerBindRotations;
+        private Quaternion[] _rightFingerBindRotations;
+        private float _leftForearmHandAngleDeg;
+        private float _rightForearmHandAngleDeg;
+        private float _leftPalmBarSurfaceErrorM;
+        private float _rightPalmBarSurfaceErrorM;
         private SquatDepthObservation _depth;
         private SquatReferenceSample _sample;
         private SquatPhaseDirection _direction;
@@ -212,6 +233,8 @@ namespace PowerliftingSimulator.Squat.Unity
                 $"Trunk relative error: {TrunkRelativeAngleErrorDeg:F3} deg");
             GUILayout.Label($"Pose valid: {_referencePoseValid}   Feet planted: {_feetPlanted}   " +
                 $"Root bounds authority: {RootBoundsAuthority}");
+            GUILayout.Label($"Grip: Palm L/R: {_leftPalmBarSurfaceErrorM * 1000f:F1}/{_rightPalmBarSurfaceErrorM * 1000f:F1} mm   " +
+                $"Wrist L/R: {_leftForearmHandAngleDeg:F1}/{_rightForearmHandAngleDeg:F1} deg");
 
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("AUTO"))
@@ -566,7 +589,11 @@ namespace PowerliftingSimulator.Squat.Unity
                 BAR_SUPPORT_HAND_TARGETS = Vector3.Distance(_leftHand.position, _leftBarHand) <= 0.005f && Vector3.Distance(_rightHand.position, _rightBarHand) <= 0.005f,
                 BAR_GHOST_AP_MIDFOOT_M = Vector3.Dot(barCenterBottom - midfootStanding, _calibration.GameForward),
                 LEFT_HAND_BAR_ERROR_M = Vector3.Distance(_leftHand.position, _leftBarHand),
-                RIGHT_HAND_BAR_ERROR_M = Vector3.Distance(_rightHand.position, _rightBarHand)
+                RIGHT_HAND_BAR_ERROR_M = Vector3.Distance(_rightHand.position, _rightBarHand),
+                PALM_BAR_SURFACE_ERROR_L_MM = _leftPalmBarSurfaceErrorM * 1000f,
+                PALM_BAR_SURFACE_ERROR_R_MM = _rightPalmBarSurfaceErrorM * 1000f,
+                FOREARM_HAND_ANGLE_L_DEG = _leftForearmHandAngleDeg,
+                FOREARM_HAND_ANGLE_R_DEG = _rightForearmHandAngleDeg
             };
 
             MeasurementArtifact artifact = new MeasurementArtifact
@@ -686,6 +713,37 @@ namespace PowerliftingSimulator.Squat.Unity
             _rightForearm = RequireBone(HumanBodyBones.RightLowerArm);
             _leftHand = RequireBone(HumanBodyBones.LeftHand);
             _rightHand = RequireBone(HumanBodyBones.RightHand);
+
+            _leftFingers = new Transform[15];
+            _rightFingers = new Transform[15];
+            _leftFingerBindRotations = new Quaternion[15];
+            _rightFingerBindRotations = new Quaternion[15];
+
+            HumanBodyBones[] leftBones = new[]
+            {
+                HumanBodyBones.LeftThumbProximal, HumanBodyBones.LeftThumbIntermediate, HumanBodyBones.LeftThumbDistal,
+                HumanBodyBones.LeftIndexProximal, HumanBodyBones.LeftIndexIntermediate, HumanBodyBones.LeftIndexDistal,
+                HumanBodyBones.LeftMiddleProximal, HumanBodyBones.LeftMiddleIntermediate, HumanBodyBones.LeftMiddleDistal,
+                HumanBodyBones.LeftRingProximal, HumanBodyBones.LeftRingIntermediate, HumanBodyBones.LeftRingDistal,
+                HumanBodyBones.LeftLittleProximal, HumanBodyBones.LeftLittleIntermediate, HumanBodyBones.LeftLittleDistal
+            };
+
+            HumanBodyBones[] rightBones = new[]
+            {
+                HumanBodyBones.RightThumbProximal, HumanBodyBones.RightThumbIntermediate, HumanBodyBones.RightThumbDistal,
+                HumanBodyBones.RightIndexProximal, HumanBodyBones.RightIndexIntermediate, HumanBodyBones.RightIndexDistal,
+                HumanBodyBones.RightMiddleProximal, HumanBodyBones.RightMiddleIntermediate, HumanBodyBones.RightMiddleDistal,
+                HumanBodyBones.RightRingProximal, HumanBodyBones.RightRingIntermediate, HumanBodyBones.RightRingDistal,
+                HumanBodyBones.RightLittleProximal, HumanBodyBones.RightLittleIntermediate, HumanBodyBones.RightLittleDistal
+            };
+
+            for (int i = 0; i < 15; i++)
+            {
+                _leftFingers[i] = referenceAnimator.GetBoneTransform(leftBones[i]);
+                _rightFingers[i] = referenceAnimator.GetBoneTransform(rightBones[i]);
+                if (_leftFingers[i] != null) _leftFingerBindRotations[i] = _leftFingers[i].localRotation;
+                if (_rightFingers[i] != null) _rightFingerBindRotations[i] = _rightFingers[i].localRotation;
+            }
         }
 
         private void CacheBindPose()
@@ -908,8 +966,8 @@ namespace PowerliftingSimulator.Squat.Unity
                 thoraxForward * SquatReferenceKinematics.ArmBackOffsetM +
                 thoraxUp * SquatReferenceKinematics.ArmBarHeightM;
 
-            _leftBarHand = barCenter - thoraxRight * SquatReferenceKinematics.ArmBarHalfWidthM;
-            _rightBarHand = barCenter + thoraxRight * SquatReferenceKinematics.ArmBarHalfWidthM;
+            Vector3 leftBarGripCenterline = barCenter - thoraxRight * SquatReferenceKinematics.ArmBarHalfWidthM;
+            Vector3 rightBarGripCenterline = barCenter + thoraxRight * SquatReferenceKinematics.ArmBarHalfWidthM;
 
             ApplyArmSide(
                 _leftUpperArm,
@@ -918,11 +976,14 @@ namespace PowerliftingSimulator.Squat.Unity
                 _calibration.LeftUpperArm,
                 _calibration.LeftForearm,
                 _calibration.LeftHand,
-                _leftBarHand,
+                leftBarGripCenterline,
                 thoraxForward,
                 thoraxUp,
                 thoraxRight,
-                isLeft: true);
+                isLeft: true,
+                out _leftBarHand,
+                out _leftForearmHandAngleDeg,
+                out _leftPalmBarSurfaceErrorM);
 
             ApplyArmSide(
                 _rightUpperArm,
@@ -931,11 +992,14 @@ namespace PowerliftingSimulator.Squat.Unity
                 _calibration.RightUpperArm,
                 _calibration.RightForearm,
                 _calibration.RightHand,
-                _rightBarHand,
+                rightBarGripCenterline,
                 thoraxForward,
                 thoraxUp,
                 thoraxRight,
-                isLeft: false);
+                isLeft: false,
+                out _rightBarHand,
+                out _rightForearmHandAngleDeg,
+                out _rightPalmBarSurfaceErrorM);
         }
 
         private void ApplyArmSide(
@@ -945,11 +1009,14 @@ namespace PowerliftingSimulator.Squat.Unity
             SquatReferenceBoneFrame upperArmFrame,
             SquatReferenceBoneFrame forearmFrame,
             SquatReferenceBoneFrame handFrame,
-            Vector3 handTarget,
+            Vector3 barGripCenterline,
             Vector3 thoraxForward,
             Vector3 thoraxUp,
             Vector3 thoraxRight,
-            bool isLeft)
+            bool isLeft,
+            out Vector3 solvedHandTarget,
+            out float forearmHandAngleDeg,
+            out float palmBarSurfaceErrorM)
         {
             Vector3 shoulder = upperArm.position;
             Vector3 forearmBindPosition = isLeft
@@ -961,19 +1028,57 @@ namespace PowerliftingSimulator.Squat.Unity
             float sideSign = isLeft ? -1f : 1f;
             Vector3 poleHint = -thoraxUp * 0.90f - thoraxForward * 0.15f + thoraxRight * (sideSign * 0.45f);
 
+            // 1. Approximate two-bone solve to find forearm approach vector towards bar
             SolveTwoBone(
                 shoulder,
-                handTarget,
+                barGripCenterline,
+                upperLength,
+                forearmLength,
+                poleHint,
+                out Vector3 approxElbow,
+                out Vector3 approxHand);
+            Vector3 forearmApproachDir = (approxHand - approxElbow).normalized;
+
+            Vector3 approxUpperDir = (approxElbow - shoulder).normalized;
+            Vector3 approxArmNormal = Vector3.Cross(approxUpperDir, forearmApproachDir);
+            if (approxArmNormal.sqrMagnitude < 1e-6f)
+                approxArmNormal = Vector3.Cross(approxUpperDir, poleHint);
+            if (approxArmNormal.sqrMagnitude < 1e-6f)
+                approxArmNormal = isLeft ? -thoraxUp : thoraxUp;
+            approxArmNormal.Normalize();
+
+            Quaternion approxForearmRot = ConstructArmBoneRotation(forearmApproachDir, approxArmNormal);
+            Quaternion handBindRelativeToForearm = Quaternion.Inverse(forearmFrame.BindRotation) * handFrame.BindRotation;
+            Quaternion approxHandRot = approxForearmRot * handBindRelativeToForearm;
+
+            // 2. Palm contact target and hand bone target
+            // In FBX local space:
+            // Right hand: local +X is palm normal, local +Y is longitudinal axis (wrist to knuckles)
+            // Left hand: local -X is palm normal, local +Y is longitudinal axis
+            Vector3 palmOffset = isLeft ? new Vector3(-0.018f, 0.050f, 0f) : new Vector3(0.018f, 0.050f, 0f);
+            Vector3 palmNormalWorld = approxHandRot * (isLeft ? Vector3.left : Vector3.right);
+            Vector3 barRadialDir = -palmNormalWorld; // vector from bar centerline toward palm
+            const float barRadius = 0.0145f;
+            Vector3 barAxis = thoraxRight;
+            Vector3 palmContactTarget = barGripCenterline + barRadialDir * barRadius;
+            Vector3 handBoneTarget = palmContactTarget - approxHandRot * palmOffset;
+
+            // 3. Accurate two-bone solve to target hand bone position
+            SolveTwoBone(
+                shoulder,
+                handBoneTarget,
                 upperLength,
                 forearmLength,
                 poleHint,
                 out Vector3 elbow,
                 out Vector3 solvedHand);
+            solvedHandTarget = solvedHand;
 
+            // 5. Arm bone rotations
             Vector3 upperDir = (elbow - shoulder).normalized;
-            Vector3 forearmDir = (solvedHand - elbow).normalized;
+            Vector3 forearmFinalDir = (solvedHand - elbow).normalized;
 
-            Vector3 armNormal = Vector3.Cross(upperDir, forearmDir);
+            Vector3 armNormal = Vector3.Cross(upperDir, forearmFinalDir);
             if (armNormal.sqrMagnitude < 1e-6f)
                 armNormal = Vector3.Cross(upperDir, poleHint);
             if (armNormal.sqrMagnitude < 1e-6f)
@@ -981,16 +1086,34 @@ namespace PowerliftingSimulator.Squat.Unity
             armNormal.Normalize();
 
             Quaternion upperRot = ConstructArmBoneRotation(upperDir, armNormal);
-            Quaternion forearmRot = ConstructArmBoneRotation(forearmDir, armNormal);
+            Quaternion forearmRot = ConstructArmBoneRotation(forearmFinalDir, armNormal);
 
-            Quaternion handBindRelativeToForearm = Quaternion.Inverse(forearmFrame.BindRotation) * handFrame.BindRotation;
-            Quaternion baseHandRot = forearmRot * handBindRelativeToForearm;
-            Quaternion wristAdjustment = Quaternion.Euler(30f, 0f, 0f);
-            Quaternion handRot = baseHandRot * wristAdjustment;
+            Quaternion handRot = forearmRot * handBindRelativeToForearm;
 
             upperArm.SetPositionAndRotation(shoulder, upperRot);
             forearm.SetPositionAndRotation(elbow, forearmRot);
             hand.SetPositionAndRotation(solvedHand, handRot);
+
+            // 6. Quality measurements
+            forearmHandAngleDeg = Vector3.Angle(forearmFinalDir, handRot * Vector3.up);
+            Vector3 palmCenterWorld = solvedHand + handRot * palmOffset;
+            Vector3 toPalm = palmCenterWorld - barGripCenterline;
+            Vector3 radialOffset = Vector3.ProjectOnPlane(toPalm, barAxis);
+            palmBarSurfaceErrorM = Mathf.Abs(radialOffset.magnitude - barRadius);
+
+            // 7. CANONICAL_BACK_SQUAT_GRIP_V1: author static finger curls around bar
+            Transform[] fingers = isLeft ? _leftFingers : _rightFingers;
+            Quaternion[] bindRots = isLeft ? _leftFingerBindRotations : _rightFingerBindRotations;
+            if (fingers != null && bindRots != null)
+            {
+                for (int i = 0; i < 15; i++)
+                {
+                    if (fingers[i] != null)
+                    {
+                        fingers[i].localRotation = bindRots[i] * Quaternion.Euler(FingerCurlAngles[i], 0f, 0f);
+                    }
+                }
+            }
         }
 
         private static Quaternion ConstructArmBoneRotation(Vector3 boneDir, Vector3 armPlaneNormal)
@@ -1627,6 +1750,10 @@ namespace PowerliftingSimulator.Squat.Unity
             public float BAR_GHOST_AP_MIDFOOT_M;
             public float LEFT_HAND_BAR_ERROR_M;
             public float RIGHT_HAND_BAR_ERROR_M;
+            public float PALM_BAR_SURFACE_ERROR_L_MM;
+            public float PALM_BAR_SURFACE_ERROR_R_MM;
+            public float FOREARM_HAND_ANGLE_L_DEG;
+            public float FOREARM_HAND_ANGLE_R_DEG;
         }
 
         [Serializable]
