@@ -1,0 +1,63 @@
+# GAM-10 qualification receipt
+
+MISSION=POWERLIFTING_SIMULATOR_GAM_10_SQUAT_DOMAIN_AND_REFERENCE_MOTION
+STATUS=PASS
+IMPLEMENTATION_HEAD=8457669d25b76def2d144bef12f75f78b4f6da09
+
+PROFILE_ID=CANONICAL_POWERLIFTING_SQUAT_V2_CLOSED_CHAIN
+CLAIM_CLASS=BIOMECHANICALLY_INFORMED_GAME_CALIBRATION
+
+STATE_MACHINE=SETUP, UNRACK, WALKOUT, SETTLE, SQUAT_COMMAND, DESCENT, BOTTOM, REVERSAL, ASCENT, STICKING, LOCKOUT, RACK_COMMAND, RERACK, COMPLETE, FAILURE
+
+PHASE_CONVENTION=s_q in [0,1]; 0=standing/lockout; 1=canonical legal-bottom; descent increases; ascent decreases
+
+REFERENCE_WAYPOINTS=STANDING, QUARTER_DESCENT, NEAR_PARALLEL, LEGAL_BOTTOM, EARLY_ASCENT, STICKING, LOCKOUT
+
+REFERENCE_OWNER=SquatReferencePreview / measured foot-anchored reference hierarchy only
+POSE_ROOT_SOURCE=measured plantar foot anchors; fixed standing anchors; renderer bounds absent
+ROOT_BOUNDS_AUTHORITY=ABSENT
+
+PHYSICAL_RIG_WRITES=0
+PHYSICAL_ANIMATOR_WRITES=0
+PHYSICAL_BAR_COUPLING=NO
+BALANCE_CONTROLLER=NO
+
+LEGAL_DEPTH_SOURCE=bilateral landmark geometry; RULE_DERIVED_GAME_PROXY; max(leftDepthM,rightDepthM) <= -0.005 m
+LEFT_BOTTOM_DEPTH_M=-0.0763130784034729
+RIGHT_BOTTOM_DEPTH_M=-0.0763130784034729
+DEPTH_MARGIN_M=0.005
+
+JOINT_AXIS_CALIBRATION=PASS
+FOOT_ANCHORS_MAX_ERROR_MM=0
+BILATERAL_HIP_SOLUTION_MAX_ERROR_MM=0.00011920928955078125
+SEGMENT_LENGTH_ERROR_MM=0.000029802322387695313
+TRUNK_RELATIVE_ANGLE_ERROR_DEG=0.000003751874373847386
+
+LEGAL_DEPTH_WITH_PLANTED_FEET=PASS
+REFERENCE_CONTINUITY=C0 PASS; piecewise cubic Hermite curves; max key-pose value discontinuity 0.0; C1 within segments
+REVERSAL_CONTINUITY=PASS; reversal held at phase-rate zero; reversal pose discontinuity 0.0
+RENDER_RATE_INDEPENDENCE=PASS
+
+FOCUSED_PLAYMODE_FINAL_HEAD=4/4 PASS
+FULL_PLAYMODE_FINAL_HEAD=33/33 PASS
+PRIOR_FULL_PLAYMODE=33/33 PASS
+FULL_EDITMODE=55/55 PASS
+
+MASTER_SPEC=68 files; hashes PASS; dependencies PASS
+DIFF_CHECK=PASS
+
+VISUAL_EVIDENCE=Artifacts/Evidence/GAM-10/V2-closed-chain/
+MEASUREMENT=Artifacts/Measurements/GAM-10-squat-reference-v2.json
+CALIBRATION=Artifacts/Measurements/GAM-10-squat-joint-frame-calibration-v2.json
+
+OWNER_ACCEPTED=YES
+
+KNOWN_LIMITATIONS:
+- deterministic biomechanically informed game calibration
+- not motion-capture ground truth
+- not subject-specific clinical biomechanics
+- current bar ghost location is reference calibration only
+- actual physical bar/back coupling and load path are GAM-11
+- no physical squat controller or balance controller exists in GAM-10
+
+NEXT_ACTION=MERGE GAM-10; AUTHORIZE GAM-11

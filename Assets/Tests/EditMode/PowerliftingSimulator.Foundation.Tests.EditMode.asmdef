@@ -5,7 +5,8 @@
         "PowerliftingSimulator.Foundation",
         "PowerliftingSimulator.Foundation.Unity",
         "PowerliftingSimulator.Athlete",
-        "PowerliftingSimulator.Equipment"
+        "PowerliftingSimulator.Equipment",
+        "PowerliftingSimulator.Squat"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"

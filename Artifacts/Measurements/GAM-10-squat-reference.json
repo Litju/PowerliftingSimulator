@@ -1,0 +1,264 @@
+{
+    "schema": "GAM10_SQUAT_REFERENCE_V1",
+    "mission": "POWERLIFTING_SIMULATOR_GAM_10_SQUAT_DOMAIN_AND_REFERENCE_MOTION",
+    "unityVersion": "6000.3.22f1",
+    "profile": "CANONICAL_POWERLIFTING_SQUAT_V1",
+    "claimClass": "BIOMECHANICALLY_INFORMED_GAME_CALIBRATION",
+    "referenceOwner": "SquatReferencePreview / dedicated preview hierarchy only",
+    "physicalAuthorityTouched": false,
+    "asset": {
+        "provider": "Quaternius",
+        "pack": "Universal Base Characters[Standard]",
+        "modelPath": "Assets/Characters/Athlete/Source/Superhero_Male_FullBody.fbx",
+        "modelSha256": "79344418d754a59730b79d1874752e9592143db34abe8adf138fa9a92a4768e9",
+        "avatar": "Superhero_Male_FullBodyAvatar"
+    },
+    "states": [
+        "SETUP",
+        "UNRACK",
+        "WALKOUT",
+        "SETTLE",
+        "SQUAT_COMMAND",
+        "DESCENT",
+        "BOTTOM",
+        "REVERSAL",
+        "ASCENT",
+        "STICKING",
+        "LOCKOUT",
+        "RACK_COMMAND",
+        "RERACK",
+        "COMPLETE",
+        "FAILURE"
+    ],
+    "waypoints": [
+        {
+            "waypoint": "STANDING",
+            "phase": 0.0,
+            "direction": "Descent",
+            "pose": {
+                "ankleDorsiflexionRad": 0.0,
+                "kneeFlexionRad": 0.0,
+                "hipFlexionRad": 0.0,
+                "trunkFlexionRad": 0.0,
+                "shoulderFlexionRad": 0.0,
+                "elbowFlexionRad": 0.0,
+                "wristExtensionRad": 0.0
+            },
+            "leftDepthM": 0.3067002296447754,
+            "rightDepthM": 0.3067002296447754,
+            "bilateralLegalReference": false
+        },
+        {
+            "waypoint": "QUARTER_DESCENT",
+            "phase": 0.25,
+            "direction": "Descent",
+            "pose": {
+                "ankleDorsiflexionRad": 0.1745329201221466,
+                "kneeFlexionRad": 0.5235987901687622,
+                "hipFlexionRad": 0.4363323152065277,
+                "trunkFlexionRad": 0.13962633907794953,
+                "shoulderFlexionRad": 0.8377580642700195,
+                "elbowFlexionRad": 0.4363323152065277,
+                "wristExtensionRad": 0.13962633907794953
+            },
+            "leftDepthM": 0.2697889804840088,
+            "rightDepthM": 0.2697889804840088,
+            "bilateralLegalReference": false
+        },
+        {
+            "waypoint": "NEAR_PARALLEL",
+            "phase": 0.550000011920929,
+            "direction": "Descent",
+            "pose": {
+                "ankleDorsiflexionRad": 0.27925267815589907,
+                "kneeFlexionRad": 1.186823844909668,
+                "hipFlexionRad": 0.9424777626991272,
+                "trunkFlexionRad": 0.296705961227417,
+                "shoulderFlexionRad": 1.0122909545898438,
+                "elbowFlexionRad": 0.6632251143455505,
+                "wristExtensionRad": 0.1745329201221466
+            },
+            "leftDepthM": 0.13982731103897096,
+            "rightDepthM": 0.13982731103897096,
+            "bilateralLegalReference": false
+        },
+        {
+            "waypoint": "LEGAL_BOTTOM",
+            "phase": 1.0,
+            "direction": "Descent",
+            "pose": {
+                "ankleDorsiflexionRad": 0.36651915311813357,
+                "kneeFlexionRad": 1.8849555253982545,
+                "hipFlexionRad": 1.4660766124725342,
+                "trunkFlexionRad": 0.41887903213500979,
+                "shoulderFlexionRad": 1.1170107126235963,
+                "elbowFlexionRad": 0.8028514385223389,
+                "wristExtensionRad": 0.19198621809482575
+            },
+            "leftDepthM": -0.05905228853225708,
+            "rightDepthM": -0.05905228853225708,
+            "bilateralLegalReference": true
+        },
+        {
+            "waypoint": "EARLY_ASCENT",
+            "phase": 0.8199999928474426,
+            "direction": "Ascent",
+            "pose": {
+                "ankleDorsiflexionRad": 0.3141592741012573,
+                "kneeFlexionRad": 1.4311699867248536,
+                "hipFlexionRad": 1.0995573997497559,
+                "trunkFlexionRad": 0.3490658402442932,
+                "shoulderFlexionRad": 1.0471975803375245,
+                "elbowFlexionRad": 0.6981316804885864,
+                "wristExtensionRad": 0.1745329201221466
+            },
+            "leftDepthM": 0.08650708198547363,
+            "rightDepthM": 0.08650708198547363,
+            "bilateralLegalReference": false
+        },
+        {
+            "waypoint": "STICKING",
+            "phase": 0.6399999856948853,
+            "direction": "Ascent",
+            "pose": {
+                "ankleDorsiflexionRad": 0.2617993950843811,
+                "kneeFlexionRad": 1.0646508932113648,
+                "hipFlexionRad": 0.8377580642700195,
+                "trunkFlexionRad": 0.2617993950843811,
+                "shoulderFlexionRad": 0.9599310755729675,
+                "elbowFlexionRad": 0.593411922454834,
+                "wristExtensionRad": 0.15707963705062867
+            },
+            "leftDepthM": 0.17392432689666749,
+            "rightDepthM": 0.17392432689666749,
+            "bilateralLegalReference": false
+        },
+        {
+            "waypoint": "LOCKOUT",
+            "phase": 0.0,
+            "direction": "Descent",
+            "pose": {
+                "ankleDorsiflexionRad": 0.0,
+                "kneeFlexionRad": 0.0,
+                "hipFlexionRad": 0.0,
+                "trunkFlexionRad": 0.0,
+                "shoulderFlexionRad": 0.0,
+                "elbowFlexionRad": 0.0,
+                "wristExtensionRad": 0.0
+            },
+            "leftDepthM": 0.3067002296447754,
+            "rightDepthM": 0.3067002296447754,
+            "bilateralLegalReference": false
+        }
+    ],
+    "phaseConvention": "s_q in [0,1]; 0=standing/lockout, 1=canonical legal-bottom; descent increases, ascent decreases",
+    "landmarkCalibration": [
+        {
+            "id": "leftHipCreaseProxy",
+            "boneFrame": "Hips / R_i local",
+            "localOffset_m": {
+                "x": -0.05500001460313797,
+                "y": -0.035860877484083179,
+                "z": 0.07306844741106034
+            },
+            "worldPreviewPosition_m": {
+                "x": -0.055000029504299167,
+                "y": 0.9958375096321106,
+                "z": 0.017000144347548486
+            },
+            "sourceClass": "RULE_DERIVED_GAME_PROXY"
+        },
+        {
+            "id": "rightHipCreaseProxy",
+            "boneFrame": "Hips / R_i local",
+            "localOffset_m": {
+                "x": 0.05500001460313797,
+                "y": -0.035860877484083179,
+                "z": 0.07306844741106034
+            },
+            "worldPreviewPosition_m": {
+                "x": 0.055000029504299167,
+                "y": 0.9958375096321106,
+                "z": 0.01700013317167759
+            },
+            "sourceClass": "RULE_DERIVED_GAME_PROXY"
+        },
+        {
+            "id": "leftKneeTopProxy",
+            "boneFrame": "LeftLowerLeg / R_i local",
+            "localOffset_m": {
+                "x": -5.510911746531929e-18,
+                "y": -0.048637885600328448,
+                "z": -0.029738077893853189
+            },
+            "worldPreviewPosition_m": {
+                "x": -0.11430510878562927,
+                "y": 1.0548897981643677,
+                "z": 0.44071805477142336
+            },
+            "sourceClass": "RULE_DERIVED_GAME_PROXY"
+        },
+        {
+            "id": "rightKneeTopProxy",
+            "boneFrame": "RightLowerLeg / R_i local",
+            "localOffset_m": {
+                "x": -5.510911746531929e-18,
+                "y": -0.048637885600328448,
+                "z": -0.029738077893853189
+            },
+            "worldPreviewPosition_m": {
+                "x": 0.11430518329143524,
+                "y": 1.0548897981643677,
+                "z": 0.44071805477142336
+            },
+            "sourceClass": "RULE_DERIVED_GAME_PROXY"
+        }
+    ],
+    "referenceTiming": {
+        "fixedStepS": 0.009999999776482582,
+        "descentRateMinPerS": 0.0,
+        "descentRateMaxPerS": 0.47999998927116396,
+        "ascentRateMinPerS": -0.6800000071525574,
+        "ascentRateMaxPerS": 0.0,
+        "maxPhaseRatePerS": 0.75,
+        "maxPhaseAccelerationPerSS": 2.200000047683716,
+        "timingClaim": "GAME_CALIBRATION; visually credible unloaded/reference timing, not human normative timing"
+    },
+    "continuity": {
+        "maxKeyPoseValueDiscontinuity": 0.0,
+        "reversalPoseDiscontinuity": 0.0,
+        "lockoutPoseDiscontinuity": 0.0,
+        "curve": "Piecewise cubic Hermite; C0 at shared keys; C1 within each segment; reversal held at phase-rate zero"
+    },
+    "referenceRootCorrection": {
+        "owner": "SquatReferencePreview / dedicated preview hierarchy only",
+        "mode": "preview-only deterministic vertical floor clearance",
+        "source": "reference renderer bounds min.y; referenceRoot only",
+        "deterministic": true,
+        "physicalHierarchyWrites": 0
+    },
+    "coordinateConventions": {
+        "worldFrame": "W",
+        "referenceFrame": "R_i",
+        "up": "+Y",
+        "forward": "+Z",
+        "right": "+X",
+        "internalAngles": "radians",
+        "unityConversion": "one adapter applies calibrated bone-local Quaternion.AngleAxis corrections"
+    },
+    "ruleSource": {
+        "title": "IPF Technical Rule Book",
+        "effectiveDate": "01 March 2026",
+        "version": "3",
+        "sourceClass": "RULE_DERIVED_GAME_PROXY",
+        "depthCriterion": "max(leftDepthM,rightDepthM) <= -depthMarginM",
+        "depthMarginM": 0.004999999888241291
+    },
+    "knownLimitations": [
+        "Reference motion is biomechanically informed game calibration, not motion-capture ground truth.",
+        "It is not optimal, subject-specific, clinical, inverse-dynamics, or muscle-force analysis.",
+        "Landmarks are stable bone-attached rule proxies, not measurement-grade hip-crease anatomy.",
+        "This preview does not execute a physical squat, balance controller, or bar-on-back coupling.",
+        "STICKING is an authored ascent waypoint; loaded runtime sticking detection belongs to a later unit."
+  ]
+}

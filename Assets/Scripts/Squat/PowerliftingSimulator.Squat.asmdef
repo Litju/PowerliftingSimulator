@@ -1,0 +1,16 @@
+{
+    "name": "PowerliftingSimulator.Squat",
+    "rootNamespace": "PowerliftingSimulator.Squat",
+    "references": [
+        "PowerliftingSimulator.Foundation"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}
