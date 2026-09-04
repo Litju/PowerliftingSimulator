@@ -34,7 +34,9 @@ namespace PowerliftingSimulator.Squat.Unity
         [SerializeField] private bool showLandmarks;
         [SerializeField] private bool showReferenceBarGhost = true;
 
-        public const float HandPronationDeg = 60f;
+        public const float ForearmPronationDeg = 45f;
+        public const float HumerusAxialDeg = 20f;
+        public const float HandAxialCompensationDeg = 0f;
         public const float FingerMcpDeg = 55f;
         public const float FingerPipDeg = 75f;
         public const float FingerDipDeg = 50f;
@@ -1055,7 +1057,10 @@ namespace PowerliftingSimulator.Squat.Unity
                 approxArmNormal = isLeft ? -thoraxUp : thoraxUp;
             approxArmNormal.Normalize();
 
-            Quaternion approxForearmRot = ConstructArmBoneRotation(forearmApproachDir, approxArmNormal);
+            Quaternion approxBaseForearmRot = ConstructArmBoneRotation(forearmApproachDir, approxArmNormal);
+            float approxForearmPronationSignedDeg = isLeft ? ForearmPronationDeg : -ForearmPronationDeg;
+            Quaternion approxForearmAxial = Quaternion.AngleAxis(approxForearmPronationSignedDeg, forearmApproachDir);
+            Quaternion approxForearmRot = approxForearmAxial * approxBaseForearmRot;
             Quaternion handBindRelativeToForearm = Quaternion.Inverse(forearmFrame.BindRotation) * handFrame.BindRotation;
             Quaternion approxHandRot = approxForearmRot * handBindRelativeToForearm;
 
@@ -1093,14 +1098,18 @@ namespace PowerliftingSimulator.Squat.Unity
                 armNormal = isLeft ? -thoraxUp : thoraxUp;
             armNormal.Normalize();
 
-            Quaternion upperRot = ConstructArmBoneRotation(upperDir, armNormal);
-            Quaternion forearmRot = ConstructArmBoneRotation(forearmFinalDir, armNormal);
+            Quaternion baseUpperRot = ConstructArmBoneRotation(upperDir, armNormal);
+            float humerusSignedDeg = isLeft ? -HumerusAxialDeg : HumerusAxialDeg;
+            Quaternion humerusAxial = Quaternion.AngleAxis(humerusSignedDeg, upperDir);
+            Quaternion upperRot = humerusAxial * baseUpperRot;
+
+            Quaternion baseForearmRot = ConstructArmBoneRotation(forearmFinalDir, armNormal);
+            float forearmPronationSignedDeg = isLeft ? ForearmPronationDeg : -ForearmPronationDeg;
+            Quaternion forearmAxial = Quaternion.AngleAxis(forearmPronationSignedDeg, forearmFinalDir);
+            Quaternion forearmRot = forearmAxial * baseForearmRot;
 
             Quaternion baseHandRot = forearmRot * handBindRelativeToForearm;
-            Vector3 handLongitudinalAxis = forearmFinalDir;
-            float pronationSignedDeg = isLeft ? HandPronationDeg : -HandPronationDeg;
-            Quaternion axialPronation = Quaternion.AngleAxis(pronationSignedDeg, handLongitudinalAxis);
-            Quaternion handRot = axialPronation * baseHandRot;
+            Quaternion handRot = baseHandRot;
 
             upperArm.SetPositionAndRotation(shoulder, upperRot);
             forearm.SetPositionAndRotation(elbow, forearmRot);
