@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="4" result="Failed(Child)" total="4" passed="3" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-05 10:14:30Z" end-time="2026-09-05 10:14:34Z" duration="4.7553362">
+  <test-suite type="TestSuite" id="1052" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="37" result="Failed" site="Child" start-time="2026-09-05 10:14:30Z" end-time="2026-09-05 10:14:34Z" duration="4.755336" total="4" passed="3" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1046" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="C:/Users/Educacion/Desktop/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="37" result="Failed" site="Child" start-time="2026-09-05 10:14:30Z" end-time="2026-09-05 10:14:34Z" duration="4.738317" total="4" passed="3" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="20084" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1047" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="37" result="Failed" site="Child" start-time="2026-09-05 10:14:30Z" end-time="2026-09-05 10:14:34Z" duration="4.735624" total="4" passed="3" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1048" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="37" result="Failed" site="Child" start-time="2026-09-05 10:14:30Z" end-time="2026-09-05 10:14:34Z" duration="4.733908" total="4" passed="3" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestFixture" id="1017" name="PhysicalSquatControlPlayModeTests" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests" classname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests" runstate="Runnable" testcasecount="4" result="Failed" site="Child" start-time="2026-09-05 10:14:30Z" end-time="2026-09-05 10:14:34Z" duration="4.729365" total="4" passed="3" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1018" name="G1_UNLOADED_PHYSICAL_SQUAT_QUALIFICATION" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests.G1_UNLOADED_PHYSICAL_SQUAT_QUALIFICATION" methodname="G1_UNLOADED_PHYSICAL_SQUAT_QUALIFICATION" classname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests" runstate="Runnable" seed="74685104" result="Passed" start-time="2026-09-05 10:14:30Z" end-time="2026-09-05 10:14:31Z" duration="1.181703" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[THIGH: axis=(1.00, 0.00, 0.00) secAxis=(0.00, -1.00, 0.00) lowX=-120 highX=120
+SHANK: axis=(1.00, 0.00, 0.00) secAxis=(0.00, -0.99, 0.11) lowX=-145 highX=145
+FOOT:  axis=(1.00, 0.00, 0.00) secAxis=(0.00, 1.00, 0.00) lowX=-55 highX=55
+[G1 Tick 000] sq=0.00 pelvis=(-0.003,1.020,-0.012) thorax=(-0.004,1.388,0.021) foot=(-0.113,0.049,0.006) shank=(-0.114,0.386,-0.041) apErr=-0.008
+  Ankle: req=(1.22, 0.00, 0.14) act=(358.48, 0.03, 359.14) errRad=0.048
+  Knee:  req=(0.34, 0.00, 0.06) act=(0.42, 0.00, 359.99) errRad=-0.001
+  Hip:   req=(359.68, 0.00, 0.00) act=(0.11, 359.97, 0.33) errRad=-0.008
+  Abd:   req=(0.74, 0.00, 0.07) act=(0.10, 359.97, 0.49) errRad=0.011
+[G1 Tick 001] sq=0.01 pelvis=(-0.003,1.020,-0.010) thorax=(-0.005,1.387,0.024) foot=(-0.113,0.049,0.006) shank=(-0.114,0.387,-0.040) apErr=-0.006
+  Ankle: req=(1.48, 0.00, 0.15) act=(358.28, 0.03, 359.05) errRad=0.056
+  Knee:  req=(0.68, 0.00, 0.07) act=(0.47, 0.00, 359.99) errRad=0.004
+  Hip:   req=(359.36, 0.00, 0.00) act=(0.00, 359.98, 0.34) errRad=-0.011
+  Abd:   req=(0.60, 0.00, 0.07) act=(0.02, 359.97, 0.53) errRad=0.010
+[G1 Tick 010] sq=0.03 pelvis=(-0.002,1.022,0.008) thorax=(-0.006,1.388,0.047) foot=(-0.114,0.049,0.006) shank=(-0.114,0.389,-0.027) apErr=0.013
+  Ankle: req=(3.58, 0.00, 0.13) act=(356.67, 359.96, 359.12) errRad=0.120
+  Knee:  req=(3.86, 0.00, 0.06) act=(2.57, 0.00, 359.99) errRad=0.023
+  Hip:   req=(356.41, 0.00, 0.00) act=(357.78, 359.98, 0.25) errRad=-0.024
+  Abd:   req=(359.16, 0.00, 0.07) act=(359.11, 359.99, 0.72) errRad=0.001
+[G1 Tick 025] sq=0.08 pelvis=(-0.002,1.018,0.030) thorax=(-0.007,1.380,0.079) foot=(-0.114,0.050,0.006) shank=(-0.114,0.387,-0.007) apErr=0.043
+  Ankle: req=(5.28, 0.00, 0.08) act=(352.79, 359.88, 359.48) errRad=0.218
+  Knee:  req=(9.47, 0.00, 0.04) act=(8.02, 359.99, 359.99) errRad=0.025
+  Hip:   req=(351.22, 0.00, 0.00) act=(352.52, 359.98, 0.16) errRad=-0.023
+  Abd:   req=(356.98, 0.00, 0.04) act=(357.30, 0.05, 0.88) errRad=-0.005
+[G1 Tick 050] sq=0.15 pelvis=(-0.011,1.007,0.025) thorax=(-0.012,1.364,0.098) foot=(-0.115,0.050,0.006) shank=(-0.118,0.382,0.012) apErr=0.066
+  Ankle: req=(2.87, 0.00, 0.16) act=(348.07, 359.76, 359.81) errRad=0.258
+  Knee:  req=(19.35, 0.00, 0.07) act=(18.04, 359.98, 0.00) errRad=0.023
+  Hip:   req=(342.09, 0.00, 0.00) act=(342.89, 359.92, 0.37) errRad=-0.014
+  Abd:   req=(355.67, 0.00, 0.08) act=(356.64, 0.09, 0.30) errRad=-0.017
+[G1 Tick 075] sq=0.23 pelvis=(-0.007,0.989,-0.004) thorax=(-0.005,1.342,0.093) foot=(-0.115,0.050,0.006) shank=(-0.117,0.378,0.026) apErr=0.062
+  Ankle: req=(358.40, 0.00, 0.05) act=(344.96, 359.83, 359.96) errRad=0.235
+  Knee:  req=(29.21, 0.00, 0.02) act=(28.35, 359.99, 0.00) errRad=0.015
+  Hip:   req=(332.72, 0.00, 0.00) act=(333.12, 359.82, 0.59) errRad=-0.007
+  Abd:   req=(356.59, 0.00, 0.02) act=(358.07, 0.04, 359.84) errRad=-0.026
+[G1 Tick 100] sq=0.30 pelvis=(0.004,0.960,-0.056) thorax=(0.001,1.308,0.067) foot=(-0.113,0.049,0.006) shank=(-0.112,0.372,0.030) apErr=0.037
+  Ankle: req=(351.46, 0.00, 359.91) act=(342.95, 359.99, 359.37) errRad=0.148
+  Knee:  req=(39.42, 0.00, 359.96) act=(38.93, 0.01, 359.98) errRad=0.008
+  Hip:   req=(322.57, 0.00, 0.00) act=(323.21, 359.94, 0.11) errRad=-0.011
+  Abd:   req=(359.09, 0.00, 359.95) act=(0.40, 0.09, 0.78) errRad=-0.023
+[G1 Tick 125] sq=0.38 pelvis=(0.010,0.915,-0.115) thorax=(0.015,1.251,0.045) foot=(-0.114,0.050,0.006) shank=(-0.110,0.367,0.036) apErr=0.010
+  Ankle: req=(345.43, 0.00, 359.69) act=(341.02, 359.69, 0.13) errRad=0.077
+  Knee:  req=(51.70, 0.00, 359.86) act=(51.32, 359.98, 359.97) errRad=0.007
+  Hip:   req=(310.05, 0.00, 0.00) act=(310.77, 359.78, 0.21) errRad=-0.013
+  Abd:   req=(1.65, 0.00, 359.84) act=(4.02, 0.20, 0.24) errRad=-0.041
+[G1 Tick 150] sq=0.45 pelvis=(0.017,0.857,-0.158) thorax=(0.016,1.172,0.043) foot=(-0.113,0.050,0.006) shank=(-0.107,0.361,0.045) apErr=0.000
+  Ankle: req=(342.30, 0.00, 359.52) act=(338.31, 0.39, 0.11) errRad=0.070
+  Knee:  req=(64.32, 0.00, 359.79) act=(64.44, 0.06, 359.99) errRad=-0.002
+  Hip:   req=(297.06, 0.00, 0.00) act=(296.88, 0.12, 359.75) errRad=0.003
+  Abd:   req=(2.75, 0.00, 359.76) act=(7.44, 0.24, 0.80) errRad=-0.082
+[G1 Tick 175] sq=0.53 pelvis=(0.009,0.804,-0.145) thorax=(0.013,1.118,0.059) foot=(-0.114,0.050,0.006) shank=(-0.111,0.351,0.073) apErr=0.015
+  Ankle: req=(342.88, 0.00, 359.42) act=(333.12, 0.07, 359.98) errRad=0.170
+  Knee:  req=(75.34, 0.00, 359.74) act=(76.61, 0.19, 0.26) errRad=-0.022
+  Hip:   req=(285.72, 0.00, 0.00) act=(288.04, 0.27, 359.17) errRad=-0.040
+  Abd:   req=(1.66, 0.00, 359.71) act=(5.76, 0.66, 0.02) errRad=-0.072
+[G1 Tick 200] sq=0.60 pelvis=(0.017,0.764,-0.142) thorax=(0.028,1.086,0.048) foot=(-0.114,0.050,0.006) shank=(-0.107,0.341,0.086) apErr=0.016
+  Ankle: req=(339.91, 0.00, 359.01) act=(329.13, 359.79, 1.07) errRad=0.188
+  Knee:  req=(80.62, 0.00, 359.55) act=(84.52, 0.56, 0.65) errRad=-0.068
+  Hip:   req=(280.32, 0.00, 0.00) act=(284.28, 0.64, 357.98) errRad=-0.069
+  Abd:   req=(1.62, 0.00, 359.50) act=(3.07, 0.79, 359.96) errRad=-0.025
+[G1 Tick 225] sq=0.68 pelvis=(0.038,0.744,-0.156) thorax=(0.044,1.073,0.022) foot=(-0.113,0.050,0.006) shank=(-0.104,0.342,0.083) apErr=-0.001
+  Ankle: req=(336.15, 0.00, 358.85) act=(329.26, 2.22, 1.12) errRad=0.120
+  Knee:  req=(85.27, 0.00, 359.48) act=(87.28, 3.33, 3.37) errRad=-0.035
+  Hip:   req=(275.89, 0.00, 0.00) act=(283.04, 3.21, 354.91) errRad=-0.124
+  Abd:   req=(3.13, 0.00, 359.42) act=(2.50, 0.41, 0.06) errRad=0.011
+[G1 Tick 250] sq=0.75 pelvis=(0.031,0.689,-0.172) thorax=(0.027,1.030,-0.014) foot=(-0.114,0.050,0.005) shank=(-0.109,0.334,0.087) apErr=-0.022
+  Ankle: req=(332.02, 0.00, 359.39) act=(327.45, 2.98, 0.28) errRad=0.079
+  Knee:  req=(86.57, 180.00, 179.72) act=(84.28, 177.58, 177.65) errRad=-0.040
+  Hip:   req=(271.82, 180.00, 180.00) act=(279.82, 8.19, 349.80) errRad=-0.201
+  Abd:   req=(5.04, 0.00, 359.69) act=(1.11, 1.25, 0.32) errRad=0.069
+[G1 Tick 275] sq=0.83 pelvis=(-0.002,0.641,-0.172) thorax=(-0.013,0.991,-0.038) foot=(-0.114,0.049,0.007) shank=(-0.120,0.326,0.101) apErr=-0.036
+  Ankle: req=(328.98, 0.00, 0.16) act=(324.77, 1.45, 358.78) errRad=0.074
+  Knee:  req=(79.37, 180.00, 180.07) act=(75.39, 178.95, 179.15) errRad=-0.069
+  Hip:   req=(278.59, 180.00, 180.00) act=(276.88, 9.56, 347.64) errRad=-0.268
+  Abd:   req=(6.34, 0.00, 0.08) act=(359.42, 0.99, 0.08) errRad=0.121
+[G1 Tick 300] sq=0.90 pelvis=(0.005,0.596,-0.183) thorax=(-0.004,0.953,-0.069) foot=(-0.114,0.049,0.007) shank=(-0.118,0.324,0.101) apErr=-0.054
+  Ankle: req=(326.15, 0.00, 0.23) act=(324.51, 1.72, 358.85) errRad=0.029
+  Knee:  req=(73.34, 180.00, 180.11) act=(69.34, 179.00, 179.20) errRad=-0.070
+  Hip:   req=(284.20, 180.00, 180.00) act=(274.43, 19.94, 337.23) errRad=-0.320
+  Abd:   req=(7.86, 0.00, 0.12) act=(357.95, 1.92, 0.10) errRad=0.173
+[G1 Tick 325] sq=0.98 pelvis=(0.007,0.555,-0.189) thorax=(-0.025,0.918,-0.094) foot=(-0.116,0.051,0.004) shank=(-0.135,0.322,0.093) apErr=-0.066
+  Ankle: req=(323.71, 0.00, 0.72) act=(324.18, 7.33, 356.18) errRad=-0.004
+  Knee:  req=(67.55, 180.00, 180.32) act=(63.95, 178.62, 178.83) errRad=-0.063
+  Hip:   req=(289.56, 180.00, 180.00) act=(272.91, 52.63, 304.97) errRad=-0.371
+  Abd:   req=(8.89, 0.00, 0.36) act=(357.64, 1.77, 0.06) errRad=0.196
+[G1 Tick 350] sq=1.00 pelvis=(-0.019,0.529,-0.188) thorax=(-0.031,0.896,-0.112) foot=(-0.115,0.050,0.008) shank=(-0.127,0.318,0.109) apErr=-0.076
+  Ankle: req=(321.52, 0.00, 0.56) act=(323.20, 0.02, 359.16) errRad=-0.029
+  Knee:  req=(66.00, 180.00, 180.25) act=(59.44, 179.31, 179.62) errRad=-0.114
+  Hip:   req=(291.00, 180.00, 180.00) act=(271.83, 61.74, 295.14) errRad=-0.381
+  Abd:   req=(9.73, 0.00, 0.28) act=(356.07, 2.70, 359.59) errRad=0.238
+[G1 Tick 375] sq=0.96 pelvis=(0.016,0.548,-0.196) thorax=(-0.002,0.915,-0.117) foot=(-0.115,0.051,0.005) shank=(-0.122,0.325,0.095) apErr=-0.083
+  Ankle: req=(321.81, 0.00, 0.23) act=(324.97, 4.22, 358.51) errRad=-0.054
+  Knee:  req=(68.79, 180.00, 180.10) act=(62.93, 179.03, 179.16) errRad=-0.102
+  Hip:   req=(288.42, 180.00, 180.00) act=(273.04, 49.17, 308.19) errRad=-0.355
+  Abd:   req=(10.34, 0.00, 0.11) act=(356.45, 2.36, 0.13) errRad=0.242
+[G1 Tick 400] sq=0.89 pelvis=(-0.005,0.595,-0.200) thorax=(-0.030,0.954,-0.091) foot=(-0.116,0.051,0.006) shank=(-0.132,0.331,0.089) apErr=-0.074
+  Ankle: req=(325.40, 0.00, 0.64) act=(327.23, 4.63, 357.35) errRad=-0.030
+  Knee:  req=(74.30, 180.00, 180.29) act=(69.55, 178.47, 178.75) errRad=-0.083
+  Hip:   req=(283.31, 180.00, 180.00) act=(274.04, 24.61, 333.61) errRad=-0.296
+  Abd:   req=(9.60, 0.00, 0.32) act=(358.21, 1.79, 359.93) errRad=0.199
+[G1 Tick 425] sq=0.81 pelvis=(-0.004,0.628,-0.186) thorax=(-0.003,0.980,-0.054) foot=(-0.113,0.049,0.009) shank=(-0.111,0.329,0.099) apErr=-0.050
+  Ankle: req=(329.64, 0.00, 359.96) act=(326.39, 357.84, 0.53) errRad=0.057
+  Knee:  req=(80.56, 180.00, 179.98) act=(74.07, 179.41, 179.68) errRad=-0.113
+  Hip:   req=(277.47, 180.00, 180.00) act=(276.01, 12.03, 346.47) errRad=-0.233
+  Abd:   req=(7.52, 0.00, 359.98) act=(358.67, 3.44, 0.11) errRad=0.154
+[G1 Tick 450] sq=0.74 pelvis=(0.042,0.686,-0.179) thorax=(0.020,1.025,-0.020) foot=(-0.112,0.049,0.006) shank=(-0.112,0.337,0.078) apErr=-0.031
+  Ankle: req=(332.61, 0.00, 359.31) act=(329.44, 6.08, 357.70) errRad=0.057
+  Knee:  req=(88.22, 180.00, 179.69) act=(84.74, 174.75, 174.90) errRad=-0.060
+  Hip:   req=(270.27, 180.00, 180.00) act=(278.40, 13.40, 346.21) errRad=-0.147
+  Abd:   req=(5.80, 0.00, 359.66) act=(359.62, 2.50, 0.63) errRad=0.108
+[G1 Tick 475] sq=0.66 pelvis=(0.019,0.739,-0.162) thorax=(0.036,1.068,0.013) foot=(-0.115,0.050,0.008) shank=(-0.105,0.344,0.086) apErr=-0.013
+  Ankle: req=(336.48, 0.00, 358.61) act=(330.77, 359.06, 2.56) errRad=0.100
+  Knee:  req=(84.15, 0.00, 359.37) act=(87.68, 1.01, 1.22) errRad=-0.062
+  Hip:   req=(276.95, 0.00, 0.00) act=(281.27, 2.91, 357.47) errRad=-0.075
+  Abd:   req=(4.13, 0.00, 359.30) act=(359.64, 2.55, 0.21) errRad=0.078
+[G1 Tick 500] sq=0.59 pelvis=(0.061,0.765,-0.160) thorax=(0.090,1.086,0.028) foot=(-0.112,0.052,0.008) shank=(-0.087,0.350,0.077) apErr=-0.004
+  Ankle: req=(338.46, 0.00, 358.00) act=(332.39, 359.08, 3.32) errRad=0.107
+  Knee:  req=(80.45, 0.00, 359.10) act=(82.29, 359.96, 0.04) errRad=-0.032
+  Hip:   req=(280.48, 0.00, 0.00) act=(283.39, 2.13, 358.10) errRad=-0.051
+  Abd:   req=(3.34, 0.00, 359.00) act=(0.64, 2.42, 0.59) errRad=0.047
+[G1 Tick 525] sq=0.51 pelvis=(0.098,0.791,-0.161) thorax=(0.106,1.108,0.037) foot=(-0.111,0.052,0.006) shank=(-0.083,0.355,0.057) apErr=0.000
+  Ankle: req=(340.34, 0.00, 358.00) act=(334.76, 4.39, 2.21) errRad=0.095
+  Knee:  req=(73.01, 0.00, 359.10) act=(75.71, 0.74, 0.64) errRad=-0.047
+  Hip:   req=(288.11, 0.00, 0.00) act=(286.56, 4.77, 355.94) errRad=0.028
+  Abd:   req=(2.91, 0.00, 359.00) act=(2.84, 0.74, 0.99) errRad=0.001
+[G1 Tick 550] sq=0.44 pelvis=(0.056,0.853,-0.143) thorax=(0.105,1.162,0.062) foot=(-0.112,0.052,0.008) shank=(-0.087,0.362,0.056) apErr=0.010
+  Ankle: req=(344.98, 0.00, 358.00) act=(337.03, 357.96, 3.61) errRad=0.140
+  Knee:  req=(61.71, 0.00, 359.10) act=(65.67, 359.74, 359.87) errRad=-0.069
+  Hip:   req=(299.77, 0.00, 0.00) act=(294.90, 359.07, 0.57) errRad=0.085
+  Abd:   req=(1.82, 0.00, 359.00) act=(6.44, 0.21, 358.24) errRad=-0.081
+[G1 Tick 575] sq=0.36 pelvis=(0.065,0.909,-0.112) thorax=(0.134,1.226,0.072) foot=(-0.111,0.053,0.008) shank=(-0.084,0.371,0.044) apErr=0.024
+  Ankle: req=(349.90, 0.00, 358.00) act=(340.12, 356.44, 3.66) errRad=0.174
+  Knee:  req=(49.76, 0.00, 359.10) act=(53.26, 359.63, 359.86) errRad=-0.061
+  Hip:   req=(312.07, 0.00, 0.00) act=(307.02, 358.14, 1.33) errRad=0.088
+  Abd:   req=(0.42, 0.00, 359.00) act=(6.42, 1.23, 355.77) errRad=-0.104
+[G1 Tick 600] sq=0.29 pelvis=(0.111,0.951,-0.066) thorax=(0.134,1.294,0.074) foot=(-0.108,0.055,0.007) shank=(-0.073,0.379,0.027) apErr=0.035
+  Ankle: req=(353.39, 0.00, 358.00) act=(343.67, 3.09, 0.43) errRad=0.169
+  Knee:  req=(37.90, 0.00, 359.10) act=(40.43, 0.31, 359.99) errRad=-0.044
+  Hip:   req=(324.13, 0.00, 0.00) act=(319.96, 0.81, 358.41) errRad=0.073
+  Abd:   req=(359.18, 0.00, 359.00) act=(2.27, 358.91, 359.89) errRad=-0.054
+[G1 Tick 625] sq=0.21 pelvis=(0.084,0.984,-0.038) thorax=(0.120,1.336,0.069) foot=(-0.110,0.054,0.008) shank=(-0.081,0.384,0.017) apErr=0.037
+  Ankle: req=(356.53, 0.00, 358.00) act=(347.12, 359.89, 1.62) errRad=0.164
+  Knee:  req=(26.90, 0.00, 359.10) act=(29.21, 0.00, 359.96) errRad=-0.040
+  Hip:   req=(334.97, 0.00, 0.00) act=(331.58, 0.13, 359.04) errRad=0.059
+  Abd:   req=(358.60, 0.00, 359.00) act=(0.72, 359.68, 358.72) errRad=-0.037
+[G1 Tick 650] sq=0.14 pelvis=(0.050,1.004,-0.013) thorax=(0.081,1.362,0.069) foot=(-0.112,0.051,0.008) shank=(-0.095,0.386,0.004) apErr=0.037
+  Ankle: req=(359.50, 0.00, 358.00) act=(349.89, 358.75, 2.02) errRad=0.168
+  Knee:  req=(17.26, 0.00, 359.10) act=(19.40, 359.89, 359.96) errRad=-0.037
+  Hip:   req=(344.07, 0.00, 0.00) act=(341.17, 359.58, 359.53) errRad=0.050
+  Abd:   req=(358.02, 0.00, 359.00) act=(359.69, 0.70, 357.92) errRad=-0.029
+[G1 Tick 675] sq=0.06 pelvis=(0.029,1.016,0.004) thorax=(0.060,1.377,0.061) foot=(-0.113,0.050,0.007) shank=(-0.103,0.389,-0.012) apErr=0.035
+  Ankle: req=(2.12, 0.00, 358.74) act=(353.29, 359.67, 1.50) errRad=0.154
+  Knee:  req=(8.13, 0.00, 359.43) act=(10.09, 359.97, 359.98) errRad=-0.034
+  Hip:   req=(352.46, 0.00, 0.00) act=(349.83, 359.80, 0.11) errRad=0.046
+  Abd:   req=(357.55, 0.00, 359.37) act=(358.51, 0.14, 357.26) errRad=-0.017
+[G1 Tick 700] sq=0.00 pelvis=(0.029,1.019,0.035) thorax=(0.021,1.382,0.056) foot=(-0.112,0.050,0.007) shank=(-0.100,0.388,-0.024) apErr=0.037
+  Ankle: req=(5.11, 0.00, 359.82) act=(355.99, 1.50, 0.07) errRad=0.159
+  Knee:  req=(0.00, 0.00, 359.92) act=(0.93, 0.11, 359.93) errRad=-0.016
+  Hip:   req=(0.00, 0.00, 0.00) act=(358.90, 0.26, 359.22) errRad=0.019
+  Abd:   req=(356.80, 0.00, 359.91) act=(355.73, 359.06, 1.59) errRad=0.019
+[G1 Tick 725] sq=0.00 pelvis=(-0.025,1.021,0.035) thorax=(-0.043,1.383,0.062) foot=(-0.113,0.049,0.007) shank=(-0.122,0.387,-0.024) apErr=0.038
+  Ankle: req=(5.42, 0.00, 1.40) act=(355.74, 359.15, 357.84) errRad=0.168
+  Knee:  req=(0.00, 0.00, 0.63) act=(0.21, 359.93, 0.00) errRad=-0.004
+  Hip:   req=(0.00, 0.00, 0.00) act=(359.68, 359.92, 0.45) errRad=0.006
+  Abd:   req=(356.71, 0.00, 0.70) act=(356.42, 0.08, 1.99) errRad=0.005
+[G1 Tick 750] sq=0.00 pelvis=(-0.050,1.020,0.037) thorax=(-0.062,1.382,0.059) foot=(-0.114,0.049,0.008) shank=(-0.132,0.386,-0.022) apErr=0.040
+  Ankle: req=(5.56, 0.00, 1.92) act=(355.28, 358.08, 356.58) errRad=0.178
+  Knee:  req=(0.00, 0.00, 0.86) act=(0.51, 359.84, 0.03) errRad=-0.009
+  Hip:   req=(0.00, 0.00, 0.00) act=(359.95, 359.49, 1.59) errRad=0.001
+  Abd:   req=(356.59, 0.00, 0.96) act=(355.68, 1.11, 0.43) errRad=0.016
+[G1 Tick 775] sq=0.00 pelvis=(-0.022,1.020,0.043) thorax=(-0.055,1.380,0.062) foot=(-0.111,0.049,0.007) shank=(-0.118,0.386,-0.023) apErr=0.042
+  Ankle: req=(5.85, 0.00, 1.68) act=(355.62, 0.98, 356.90) errRad=0.179
+  Knee:  req=(0.00, 0.00, 0.76) act=(0.20, 0.07, 359.95) errRad=-0.003
+  Hip:   req=(0.00, 0.00, 0.00) act=(359.76, 0.10, 0.24) errRad=0.004
+  Abd:   req=(356.37, 0.00, 0.84) act=(355.49, 359.30, 3.49) errRad=0.016
+[G1 Tick 799] sq=0.00 pelvis=(-0.037,1.020,0.039) thorax=(-0.068,1.382,0.065) foot=(-0.113,0.049,0.007) shank=(-0.126,0.386,-0.024) apErr=0.042
+  Ankle: req=(5.80, 0.00, 1.84) act=(355.51, 359.54, 356.63) errRad=0.179
+  Knee:  req=(0.00, 0.00, 0.83) act=(0.20, 359.96, 0.00) errRad=-0.004
+  Hip:   req=(0.00, 0.00, 0.00) act=(359.63, 0.00, 0.56) errRad=0.007
+  Abd:   req=(356.36, 0.00, 0.92) act=(356.23, 359.74, 3.34) errRad=0.002
+]]></output>
+            </test-case>
+            <test-case id="1019" name="G2_BARBELL_25KG_PHYSICAL_SQUAT_QUALIFICATION" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests.G2_BARBELL_25KG_PHYSICAL_SQUAT_QUALIFICATION" methodname="G2_BARBELL_25KG_PHYSICAL_SQUAT_QUALIFICATION" classname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests" runstate="Runnable" seed="1417340995" result="Passed" start-time="2026-09-05 10:14:31Z" end-time="2026-09-05 10:14:32Z" duration="1.125413" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[G2 Tick 000] sq=0.00 state=DESCENT barY=1.443 pelvisY=1.019 apErr=-0.031 sep=0.009
+[G2 Tick 025] sq=0.08 state=DESCENT barY=1.438 pelvisY=1.015 apErr=0.025 sep=0.010
+[G2 Tick 050] sq=0.15 state=DESCENT barY=1.418 pelvisY=1.005 apErr=0.060 sep=0.009
+[G2 Tick 075] sq=0.23 state=DESCENT barY=1.407 pelvisY=0.983 apErr=0.049 sep=0.009
+[G2 Tick 100] sq=0.30 state=DESCENT barY=1.390 pelvisY=0.955 apErr=0.015 sep=0.008
+[G2 Tick 125] sq=0.38 state=DESCENT barY=1.349 pelvisY=0.910 apErr=-0.014 sep=0.008
+[G2 Tick 150] sq=0.45 state=DESCENT barY=1.283 pelvisY=0.852 apErr=-0.017 sep=0.008
+[G2 Tick 175] sq=0.53 state=DESCENT barY=1.228 pelvisY=0.800 apErr=0.004 sep=0.009
+[G2 Tick 200] sq=0.60 state=DESCENT barY=1.192 pelvisY=0.764 apErr=0.014 sep=0.010
+[G2 Tick 225] sq=0.68 state=DESCENT barY=1.177 pelvisY=0.742 apErr=-0.006 sep=0.009
+[G2 Tick 250] sq=0.75 state=DESCENT barY=1.127 pelvisY=0.687 apErr=-0.024 sep=0.010
+[G2 Tick 275] sq=0.83 state=DESCENT barY=1.075 pelvisY=0.628 apErr=-0.044 sep=0.011
+[G2 Tick 300] sq=0.90 state=DESCENT barY=1.036 pelvisY=0.587 apErr=-0.060 sep=0.011
+[G2 Tick 325] sq=0.98 state=DESCENT barY=0.996 pelvisY=0.545 apErr=-0.072 sep=0.011
+[G2 Tick 350] sq=1.00 state=BOTTOM barY=0.970 pelvisY=0.520 apErr=-0.083 sep=0.012
+[G2 Tick 375] sq=0.96 state=ASCENT barY=0.986 pelvisY=0.533 apErr=-0.091 sep=0.011
+[G2 Tick 400] sq=0.89 state=ASCENT barY=1.031 pelvisY=0.578 apErr=-0.083 sep=0.011
+[G2 Tick 425] sq=0.81 state=ASCENT barY=1.076 pelvisY=0.626 apErr=-0.058 sep=0.010
+[G2 Tick 450] sq=0.74 state=ASCENT barY=1.126 pelvisY=0.681 apErr=-0.034 sep=0.009
+[G2 Tick 475] sq=0.66 state=ASCENT barY=1.171 pelvisY=0.732 apErr=-0.019 sep=0.008
+[G2 Tick 500] sq=0.59 state=ASCENT barY=1.197 pelvisY=0.762 apErr=-0.009 sep=0.007
+[G2 Tick 525] sq=0.51 state=ASCENT barY=1.222 pelvisY=0.791 apErr=-0.003 sep=0.008
+[G2 Tick 550] sq=0.44 state=ASCENT barY=1.274 pelvisY=0.848 apErr=0.002 sep=0.008
+[G2 Tick 575] sq=0.36 state=ASCENT barY=1.345 pelvisY=0.910 apErr=0.024 sep=0.007
+[G2 Tick 600] sq=0.29 state=ASCENT barY=1.392 pelvisY=0.954 apErr=0.037 sep=0.007
+[G2 Tick 625] sq=0.21 state=ASCENT barY=1.421 pelvisY=0.985 apErr=0.032 sep=0.007
+[G2 Tick 650] sq=0.14 state=ASCENT barY=1.434 pelvisY=1.003 apErr=0.023 sep=0.007
+[G2 Tick 675] sq=0.06 state=ASCENT barY=1.440 pelvisY=1.014 apErr=0.018 sep=0.008
+[G2 Tick 700] sq=0.00 state=LOCKOUT barY=1.432 pelvisY=1.018 apErr=0.022 sep=0.008
+[G2 Tick 725] sq=0.00 state=LOCKOUT barY=1.425 pelvisY=1.017 apErr=0.028 sep=0.008
+[G2 Tick 750] sq=0.00 state=LOCKOUT barY=1.424 pelvisY=1.017 apErr=0.031 sep=0.008
+[G2 Tick 775] sq=0.00 state=LOCKOUT barY=1.423 pelvisY=1.016 apErr=0.031 sep=0.009
+[G2 Tick 799] sq=0.00 state=LOCKOUT barY=1.422 pelvisY=1.016 apErr=0.029 sep=0.009
+]]></output>
+            </test-case>
+            <test-case id="1020" name="G3_BARBELL_105KG_PHYSICAL_SQUAT_QUALIFICATION" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests.G3_BARBELL_105KG_PHYSICAL_SQUAT_QUALIFICATION" methodname="G3_BARBELL_105KG_PHYSICAL_SQUAT_QUALIFICATION" classname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests" runstate="Runnable" seed="57574170" result="Failed" start-time="2026-09-05 10:14:32Z" end-time="2026-09-05 10:14:33Z" duration="1.440248" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Bar did not return to standing lockout height.
+  Expected: less than 0.150000006f
+  But was:  1.19842958f
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests+<G3_BARBELL_105KG_PHYSICAL_SQUAT_QUALIFICATION>d__12.MoveNext () [0x0022f] in C:\Users\Educacion\Desktop\Projects\PowerliftingSimulator\Assets\Tests\PlayMode\PhysicalSquatControlPlayModeTests.cs:217
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[[G3 Tick 000] sq=0.00 state=DESCENT barY=1.421 pelvisY=1.016 apErr=-0.080 sep=0.027
+[G3 Tick 025] sq=0.08 state=DESCENT barY=1.410 pelvisY=1.006 apErr=-0.033 sep=0.025
+[G3 Tick 050] sq=0.15 state=DESCENT barY=1.376 pelvisY=0.994 apErr=0.028 sep=0.026
+[G3 Tick 075] sq=0.23 state=DESCENT barY=1.317 pelvisY=0.968 apErr=0.089 sep=0.026
+[G3 Tick 100] sq=0.30 state=DESCENT barY=1.206 pelvisY=0.918 apErr=0.145 sep=0.025
+[G3 Tick 125] sq=0.38 state=DESCENT barY=1.004 pelvisY=0.799 apErr=0.222 sep=0.023
+[G3 Tick 150] sq=0.45 state=DESCENT barY=0.611 pelvisY=0.492 apErr=0.323 sep=0.031
+[G3 Tick 175] sq=0.53 state=DESCENT barY=0.225 pelvisY=0.176 apErr=0.400 sep=0.041
+[G3 Tick 200] sq=0.60 state=DESCENT barY=0.223 pelvisY=0.164 apErr=0.302 sep=0.033
+[G3 Tick 225] sq=0.68 state=DESCENT barY=0.225 pelvisY=0.153 apErr=0.299 sep=0.034
+[G3 Tick 250] sq=0.75 state=DESCENT barY=0.225 pelvisY=0.146 apErr=0.298 sep=0.034
+[G3 Tick 275] sq=0.83 state=DESCENT barY=0.223 pelvisY=0.138 apErr=0.288 sep=0.034
+[G3 Tick 300] sq=0.90 state=DESCENT barY=0.223 pelvisY=0.140 apErr=0.289 sep=0.034
+[G3 Tick 325] sq=0.98 state=DESCENT barY=0.223 pelvisY=0.143 apErr=0.288 sep=0.034
+[G3 Tick 350] sq=1.00 state=BOTTOM barY=0.223 pelvisY=0.147 apErr=0.286 sep=0.033
+[G3 Tick 375] sq=0.96 state=ASCENT barY=0.223 pelvisY=0.148 apErr=0.291 sep=0.033
+[G3 Tick 400] sq=0.89 state=ASCENT barY=0.224 pelvisY=0.152 apErr=0.291 sep=0.032
+[G3 Tick 425] sq=0.81 state=ASCENT barY=0.225 pelvisY=0.158 apErr=0.306 sep=0.033
+[G3 Tick 450] sq=0.74 state=ASCENT barY=0.224 pelvisY=0.164 apErr=0.305 sep=0.032
+[G3 Tick 475] sq=0.66 state=ASCENT barY=0.223 pelvisY=0.167 apErr=0.320 sep=0.036
+[G3 Tick 500] sq=0.59 state=ASCENT barY=0.224 pelvisY=0.174 apErr=0.315 sep=0.032
+[G3 Tick 525] sq=0.51 state=ASCENT barY=0.224 pelvisY=0.185 apErr=0.332 sep=0.034
+[G3 Tick 550] sq=0.44 state=ASCENT barY=0.225 pelvisY=0.227 apErr=0.339 sep=0.031
+[G3 Tick 575] sq=0.36 state=ASCENT barY=0.224 pelvisY=0.259 apErr=0.360 sep=0.035
+[G3 Tick 600] sq=0.29 state=ASCENT barY=0.224 pelvisY=0.290 apErr=0.364 sep=0.032
+[G3 Tick 625] sq=0.21 state=ASCENT barY=0.225 pelvisY=0.316 apErr=0.380 sep=0.034
+[G3 Tick 650] sq=0.14 state=ASCENT barY=0.224 pelvisY=0.337 apErr=0.376 sep=0.032
+[G3 Tick 675] sq=0.06 state=ASCENT barY=0.224 pelvisY=0.353 apErr=0.382 sep=0.031
+[G3 Tick 700] sq=0.00 state=LOCKOUT barY=0.223 pelvisY=0.366 apErr=0.384 sep=0.032
+[G3 Tick 725] sq=0.00 state=LOCKOUT barY=0.223 pelvisY=0.366 apErr=0.385 sep=0.033
+[G3 Tick 750] sq=0.00 state=LOCKOUT barY=0.223 pelvisY=0.367 apErr=0.384 sep=0.033
+[G3 Tick 775] sq=0.00 state=LOCKOUT barY=0.223 pelvisY=0.367 apErr=0.384 sep=0.032
+[G3 Tick 799] sq=0.00 state=LOCKOUT barY=0.223 pelvisY=0.367 apErr=0.384 sep=0.032
+]]></output>
+            </test-case>
+            <test-case id="1021" name="G4_MUTATION_GATES_REJECT_FORBIDDEN_AUTHORITY" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests.G4_MUTATION_GATES_REJECT_FORBIDDEN_AUTHORITY" methodname="G4_MUTATION_GATES_REJECT_FORBIDDEN_AUTHORITY" classname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests" runstate="Runnable" seed="1641163640" result="Passed" start-time="2026-09-05 10:14:33Z" end-time="2026-09-05 10:14:34Z" duration="0.949344" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: C:/Users/Educacion/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
