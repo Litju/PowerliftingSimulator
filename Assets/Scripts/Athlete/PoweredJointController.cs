@@ -10,7 +10,8 @@ namespace PowerliftingSimulator.Athlete
         Passive,
         PoweredNeutral,
         ZeroActivation,
-        SelectedJointPulse
+        SelectedJointPulse,
+        Controlled
     }
 
     public readonly struct JointFamilyProfile
@@ -213,6 +214,18 @@ namespace PowerliftingSimulator.Athlete
             joint.RequestedCommand = command;
         }
 
+        public void ApplyCommand(string childId, JointCommand command, ulong tick = 0)
+        {
+            PoweredJointRuntime joint = GetJoint(childId);
+            if (!joint.Profile.HasValue)
+                throw new InvalidOperationException($"Joint '{childId}' is passive.");
+            if (tick != 0 && joint.LastCommandTick == tick)
+                throw new InvalidOperationException($"Joint '{childId}' already received a target command for tick {tick}. Simultaneous target authorities on the same joint are forbidden.");
+            joint.LastCommandTick = tick;
+            Mode = PoweredAthleteMode.Controlled;
+            joint.RequestedCommand = command;
+        }
+
         public PoweredJointRuntime GetJoint(string childId) =>
             _jointById.TryGetValue(childId, out PoweredJointRuntime joint)
                 ? joint
@@ -250,7 +263,7 @@ namespace PowerliftingSimulator.Athlete
                 if (!float.IsFinite(maximumForce))
                     throw new InvalidOperationException($"Joint '{joint.Id}' produced non-finite authority.");
 
-                WritePoweredJoint(joint, targetVelocity, maximumForce);
+                WritePoweredJoint(joint, targetVelocity, maximumForce, command.CapacityScale);
                 joint.Diagnostic = BuildDiagnostic(joint, targetVelocity, maximumForce, activation, command.CapacityScale);
             }
         }
@@ -334,7 +347,7 @@ namespace PowerliftingSimulator.Athlete
             joint.slerpDrive = ZeroDrive();
         }
 
-        private static void WritePoweredJoint(PoweredJointRuntime joint, Vector3 targetVelocity, float maximumForce)
+        private static void WritePoweredJoint(PoweredJointRuntime joint, Vector3 targetVelocity, float maximumForce, float capacityScale = 1f)
         {
             ConfigurableJoint configurable = joint.Joint;
             JointFamilyProfile profile = joint.Profile.Value;
@@ -345,7 +358,7 @@ namespace PowerliftingSimulator.Athlete
             if (joint.Recipe.Kind == PhysicalJointKind.Hinge)
             {
                 configurable.rotationDriveMode = RotationDriveMode.XYAndZ;
-                configurable.angularXDrive = Drive(profile, maximumForce);
+                configurable.angularXDrive = Drive(profile, maximumForce, capacityScale);
                 configurable.angularYZDrive = ZeroDrive();
                 configurable.slerpDrive = ZeroDrive();
             }
@@ -354,14 +367,14 @@ namespace PowerliftingSimulator.Athlete
                 configurable.rotationDriveMode = RotationDriveMode.Slerp;
                 configurable.angularXDrive = ZeroDrive();
                 configurable.angularYZDrive = ZeroDrive();
-                configurable.slerpDrive = Drive(profile, maximumForce);
+                configurable.slerpDrive = Drive(profile, maximumForce, capacityScale);
             }
         }
 
-        private static JointDrive Drive(JointFamilyProfile profile, float maximumForce) => new JointDrive
+        private static JointDrive Drive(JointFamilyProfile profile, float maximumForce, float capacityScale = 1f) => new JointDrive
         {
-            positionSpring = profile.Spring,
-            positionDamper = profile.Damper,
+            positionSpring = profile.Spring * Mathf.Max(0.1f, capacityScale),
+            positionDamper = profile.Damper * Mathf.Sqrt(Mathf.Max(0.1f, capacityScale)),
             maximumForce = maximumForce,
             useAcceleration = false
         };
@@ -474,6 +487,7 @@ namespace PowerliftingSimulator.Athlete
             public JointCommand RequestedCommand { get; internal set; }
             public Quaternion AppliedTarget { get; internal set; }
             public PoweredJointDiagnostic Diagnostic { get; internal set; }
+            public ulong LastCommandTick { get; internal set; }
 
             internal PhysicalAthleteRig.JointRuntime Runtime { get; }
 
@@ -482,6 +496,7 @@ namespace PowerliftingSimulator.Athlete
                 RequestedCommand = JointCommand.Neutral(0f);
                 AppliedTarget = Quaternion.identity;
                 Diagnostic = default;
+                LastCommandTick = ulong.MaxValue;
             }
         }
     }

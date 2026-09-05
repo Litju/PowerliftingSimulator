@@ -4,7 +4,10 @@
     "references": [
         "PowerliftingSimulator.Squat",
         "PowerliftingSimulator.Foundation",
-        "PowerliftingSimulator.Athlete"
+        "PowerliftingSimulator.Foundation.Unity",
+        "PowerliftingSimulator.Athlete",
+        "PowerliftingSimulator.Equipment",
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

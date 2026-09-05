@@ -38,6 +38,7 @@ namespace PowerliftingSimulator.Athlete
         private GameObject _physicalRoot;
         private DebugMarker _wholeBodyComMarker;
         private PoweredJointController _poweredController;
+        private float _totalMassKg;
         private bool _inspectionFrozen;
         private bool _gameplayPerformanceProfile;
         private bool _savedShowVisibleMesh;
@@ -54,10 +55,52 @@ namespace PowerliftingSimulator.Athlete
         public IReadOnlyDictionary<string, SegmentRuntime> Segments => _segments;
         public IReadOnlyList<JointRuntime> Joints => _joints;
         public bool IsInspectionFrozen => _inspectionFrozen;
-        public float TotalMassKg => _segments.Values.Sum(segment => segment.Body.mass);
+        public float TotalMassKg => _totalMassKg;
         public float MaxInitialNonAdjacentPenetrationMeters { get; private set; }
         public PoweredJointController PoweredController => _poweredController;
         public bool IsGameplayPerformanceProfileActive => _gameplayPerformanceProfile;
+        public IPhysicalAthleteCommandSource CommandSource => _commandSource;
+        public Animator ReferenceAnimator => referenceAnimator;
+
+        private IPhysicalAthleteCommandSource _commandSource;
+
+        public void SetCommandSource(IPhysicalAthleteCommandSource commandSource)
+        {
+            _commandSource = commandSource;
+        }
+
+        /// <summary>
+        /// Primes the standing command before the first local PhysicsScene
+        /// tick. This is initialization, not a second physics callback or
+        /// simulation step; the registered PrePhysicsStep remains the only
+        /// per-tick command/drive path.
+        /// </summary>
+        public void PrimeCommandSource()
+        {
+            if (_commandSource == null || _poweredController == null)
+                return;
+
+            SimulationTime time = new SimulationTime(0ul, 0d);
+            _commandSource.PrepareCommands(
+                PhysicalObservation.Empty(time),
+                time,
+                PlayerIntentFrame.Empty,
+                _poweredController);
+            _poweredController.Step(time, PlayerIntentFrame.Empty);
+        }
+
+        public void PrePhysicsStep(SimulationTime time, PlayerIntentFrame intent)
+        {
+            if (_commandSource != null)
+            {
+                PhysicalObservation previousObservation = (foundation != null && foundation.Runtime != null && foundation.Runtime.IsInitialized)
+                    ? foundation.Runtime.PreviousObservation
+                    : default;
+                _commandSource.PrepareCommands(previousObservation, time, intent, _poweredController);
+            }
+
+            _poweredController.Step(time, intent);
+        }
 
         public void SetGameplayPerformanceProfile(bool enabled)
         {
@@ -139,7 +182,7 @@ namespace PowerliftingSimulator.Athlete
                 CreateJoint(recipe);
 
             _poweredController = new PoweredJointController(_joints);
-            foundation.Runtime.RegisterPrePhysicsStep(_poweredController.Step);
+            foundation.Runtime.RegisterPrePhysicsStep(PrePhysicsStep);
 
             DisableAdjacentSelfCollision();
             MaxInitialNonAdjacentPenetrationMeters = MeasureInitialNonAdjacentPenetration();
@@ -174,18 +217,25 @@ namespace PowerliftingSimulator.Athlete
 
         public void StartPoweredNeutral()
         {
+            // Authoring/qualification mode owns the command path until the
+            // gameplay adapter is explicitly restored. This keeps the single
+            // registered pre-physics callback while preventing a gameplay
+            // source from overwriting the requested mutation mode.
+            _commandSource = null;
             ResetToMode(PoweredAthleteMode.PoweredNeutral);
             _status = "POWERED NEUTRAL: finite open-loop joint authority";
         }
 
         public void StartZeroActivation()
         {
+            _commandSource = null;
             ResetToMode(PoweredAthleteMode.ZeroActivation);
             _status = "ZERO ACTIVATION: powered architecture, maximumForce = 0";
         }
 
         public void StartSelectedJointPulse(bool positive)
         {
+            _commandSource = null;
             ResetToMode(PoweredAthleteMode.SelectedJointPulse);
             _poweredController.SetPulse(positive);
             _status = $"JOINT PULSE: {_poweredController.SelectedJointId} {(positive ? "+" : "-")}20 deg";
@@ -258,6 +308,7 @@ namespace PowerliftingSimulator.Athlete
             bodyObject.transform.SetPositionAndRotation(center, rotation);
             Rigidbody body = bodyObject.AddComponent<Rigidbody>();
             body.mass = PhysicalAthleteDefinition.PrototypeBodyMassKg * recipe.MassFraction;
+            _totalMassKg += body.mass;
             body.useGravity = true;
             body.isKinematic = false;
             body.linearDamping = 0.04f;
@@ -271,13 +322,36 @@ namespace PowerliftingSimulator.Athlete
 
             Vector3 dimensions = ResolveDimensions(recipe, measuredLength);
             Collider collider = AddCollider(bodyObject, recipe.Collider, dimensions);
+            if (recipe.Id.EndsWith("_foot", StringComparison.Ordinal))
+            {
+                // Foot contact remains ordinary dynamic collision; the grip
+                // material only makes the authored plantar contact less
+                // susceptible to solver jitter during the squat.
+                collider.material = new PhysicsMaterial("GAM11_FootGrip")
+                {
+                    dynamicFriction = 1.00f,
+                    staticFriction = 1.00f,
+                    bounciness = 0f,
+                    frictionCombine = PhysicsMaterialCombine.Maximum,
+                    bounceCombine = PhysicsMaterialCombine.Minimum
+                };
+            }
             body.inertiaTensor = PhysicalAthleteDefinition.BoxInertia(body.mass, dimensions);
             body.inertiaTensorRotation = Quaternion.identity;
 
             Renderer proxyRenderer = CreateProxyVisual(bodyObject.transform, recipe.Collider, dimensions);
             Transform visibleBone = RequireBone(visibleAnimator, recipe.VisibleBone);
+            Transform referenceBone = RequireBone(referenceAnimator, recipe.VisibleBone);
             Vector3 bodyToVisiblePosition = Quaternion.Inverse(body.rotation) * (visibleBone.position - body.position);
-            var runtime = new SegmentRuntime(recipe, body, collider, proxyRenderer, dimensions, bodyToVisiblePosition);
+            Quaternion bodyToReferenceBoneRotation = Quaternion.Inverse(body.rotation) * referenceBone.rotation;
+            var runtime = new SegmentRuntime(
+                recipe,
+                body,
+                collider,
+                proxyRenderer,
+                dimensions,
+                bodyToVisiblePosition,
+                bodyToReferenceBoneRotation);
             _segments.Add(recipe.Id, runtime);
 
             if (recipe.ParentId == null)
@@ -823,7 +897,14 @@ namespace PowerliftingSimulator.Athlete
 
         public sealed class SegmentRuntime
         {
-            public SegmentRuntime(PhysicalSegmentRecipe recipe, Rigidbody body, Collider collider, Renderer proxyRenderer, Vector3 dimensionsMeters, Vector3 bodyToVisiblePosition)
+            public SegmentRuntime(
+                PhysicalSegmentRecipe recipe,
+                Rigidbody body,
+                Collider collider,
+                Renderer proxyRenderer,
+                Vector3 dimensionsMeters,
+                Vector3 bodyToVisiblePosition,
+                Quaternion bodyToReferenceBoneRotation)
             {
                 Recipe = recipe;
                 Body = body;
@@ -831,6 +912,7 @@ namespace PowerliftingSimulator.Athlete
                 ProxyRenderer = proxyRenderer;
                 DimensionsMeters = dimensionsMeters;
                 BodyToVisiblePosition = bodyToVisiblePosition;
+                BodyToReferenceBoneRotation = bodyToReferenceBoneRotation;
             }
             public PhysicalSegmentRecipe Recipe { get; }
             public Rigidbody Body { get; }
@@ -838,6 +920,7 @@ namespace PowerliftingSimulator.Athlete
             public Renderer ProxyRenderer { get; }
             public Vector3 DimensionsMeters { get; }
             public Vector3 BodyToVisiblePosition { get; }
+            public Quaternion BodyToReferenceBoneRotation { get; }
         }
 
         public sealed class JointRuntime
