@@ -17,6 +17,10 @@ namespace PowerliftingSimulator.Squat.Unity
         public const float MaxBalanceCorrectionRad = 0.17453f; // 10 degrees; target offset only
         private const float MaxMlBalanceCorrectionRad = 0.03491f; // 2 degrees; bounded lateral target trim
         public const float MaxBalanceBiasM = 0.025f; // 2.5 cm player balance bias
+        // Multiplier applied to the clamped ankle balance correction
+        // before it reaches the ankle target. Named so the reconciliation
+        // suite can assert it against the declared balance bound.
+        public const float AnkleBalanceOffsetFactor = 3.0f;
         public const float DefaultApKp = 0.80f;
         public const float DefaultApKd = 0.08f;
         public const float DefaultMlKp = 0.65f;
@@ -75,6 +79,20 @@ namespace PowerliftingSimulator.Squat.Unity
             BuildReferenceTargetTables(out _descentTargets, out _ascentTargets);
             _rig.SetCommandSource(this);
             _sq = 0f;
+        }
+
+        // GAM-11 reconciliation seam. Read-only projections of the GAM-10
+        // reference so a test or the owner overlay can prove the physical
+        // adapter requests the accepted movement family and nothing else.
+        public string ReferenceProfileId => _profile.ProfileId;
+
+        public SquatReferencePose ReferenceAnatomicalPose(float phase, SquatPhaseDirection direction) =>
+            _profile.Evaluate(Mathf.Clamp01(phase), direction);
+
+        public Quaternion ReferenceLogicalTarget(string jointId, float phase, SquatPhaseDirection direction)
+        {
+            ReferenceTargetFrame frame = EvaluateReferenceTarget(phase, direction);
+            return frame.ForJoint(jointId);
         }
 
         public SquatBarSaddle Saddle => _saddle;
@@ -211,7 +229,7 @@ namespace PowerliftingSimulator.Squat.Unity
             ulong tick = time.Tick;
             float trunkCorrection = Mathf.Clamp(-DefaultTrunkKp * _apComError, -0.25f, 0.25f);
             ReferenceTargetFrame referenceTarget = EvaluateReferenceTarget();
-            Quaternion ankleOffset = SagittalAndFrontal(-ankleCorrection * 3.0f, mlCorrection);
+            Quaternion ankleOffset = SagittalAndFrontal(-ankleCorrection * AnkleBalanceOffsetFactor, mlCorrection);
             Quaternion kneeOffset = SagittalAndFrontal(0f, mlCorrection * 0.45f);
             Quaternion hipOffset = Quaternion.identity;
             Quaternion braceOffset = SagittalAndFrontal(-UnitContract.DegreesToRadians(3f) * brace, 0f);
@@ -528,10 +546,12 @@ namespace PowerliftingSimulator.Squat.Unity
             return Quaternion.Inverse(joint.JointSpace) * neutralDelta * joint.JointSpace;
         }
 
-        private ReferenceTargetFrame EvaluateReferenceTarget()
+        private ReferenceTargetFrame EvaluateReferenceTarget() => EvaluateReferenceTarget(_sq, _direction);
+
+        private ReferenceTargetFrame EvaluateReferenceTarget(float phase, SquatPhaseDirection direction)
         {
-            ReferenceTargetFrame[] targets = _direction == SquatPhaseDirection.Ascent ? _ascentTargets : _descentTargets;
-            float scaled = Mathf.Clamp01(_sq) * (ReferenceTargetSampleCount - 1);
+            ReferenceTargetFrame[] targets = direction == SquatPhaseDirection.Ascent ? _ascentTargets : _descentTargets;
+            float scaled = Mathf.Clamp01(phase) * (ReferenceTargetSampleCount - 1);
             int lowerIndex = Mathf.FloorToInt(scaled);
             int upperIndex = Mathf.Min(ReferenceTargetSampleCount - 1, lowerIndex + 1);
             float interpolation = scaled - lowerIndex;
@@ -568,6 +588,22 @@ namespace PowerliftingSimulator.Squat.Unity
             public Quaternion RightThigh { get; }
             public Quaternion Abdomen { get; }
             public Quaternion Thorax { get; }
+
+            public Quaternion ForJoint(string jointId)
+            {
+                switch (jointId)
+                {
+                    case "left_foot": return LeftFoot;
+                    case "right_foot": return RightFoot;
+                    case "left_shank": return LeftShank;
+                    case "right_shank": return RightShank;
+                    case "left_thigh": return LeftThigh;
+                    case "right_thigh": return RightThigh;
+                    case "abdomen": return Abdomen;
+                    case "thorax": return Thorax;
+                    default: throw new ArgumentException($"'{jointId}' is not a squat-controlled joint.", nameof(jointId));
+                }
+            }
 
             public static ReferenceTargetFrame Interpolate(
                 ReferenceTargetFrame from,
