@@ -415,7 +415,13 @@ namespace PowerliftingSimulator.Athlete
             Vector3 relativeChild = Quaternion.Inverse(joint.Joint.transform.rotation) * relativeWorld;
             Vector3 actualVelocity = Quaternion.Inverse(joint.JointSpace) * relativeChild;
             JointFamilyProfile profile = joint.Profile.Value;
-            Vector3 conceptualTorque = profile.Spring * errorRad + profile.Damper * (targetVelocity - actualVelocity);
+            // The drive is written with the capacity-scaled spring and damper,
+            // so the demand metric has to model the same gains. Using the
+            // unscaled profile here under-reported saturation by the whole
+            // capacity scale.
+            float appliedSpring = profile.Spring * Mathf.Max(0.1f, capacityScale);
+            float appliedDamper = profile.Damper * Mathf.Sqrt(Mathf.Max(0.1f, capacityScale));
+            Vector3 conceptualTorque = appliedSpring * errorRad + appliedDamper * (targetVelocity - actualVelocity);
             float demand = conceptualTorque.magnitude / Mathf.Max(maximumForce, 0.001f);
             float xDegrees = SignedTwistDegrees(actual, Vector3.right);
             float limit = xDegrees >= 0f ? Mathf.Max(0.001f, joint.Recipe.HighDegrees) : Mathf.Max(0.001f, -joint.Recipe.LowDegrees);

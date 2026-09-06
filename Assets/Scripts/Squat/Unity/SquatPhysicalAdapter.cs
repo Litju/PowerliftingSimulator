@@ -17,10 +17,12 @@ namespace PowerliftingSimulator.Squat.Unity
         public const float MaxBalanceCorrectionRad = 0.17453f; // 10 degrees; target offset only
         private const float MaxMlBalanceCorrectionRad = 0.03491f; // 2 degrees; bounded lateral target trim
         public const float MaxBalanceBiasM = 0.025f; // 2.5 cm player balance bias
-        // Multiplier applied to the clamped ankle balance correction
-        // before it reaches the ankle target. Named so the reconciliation
-        // suite can assert it against the declared balance bound.
-        public const float AnkleBalanceOffsetFactor = 3.0f;
+        // Multiplier applied to the clamped ankle balance correction before
+        // it reaches the ankle target. It stays at 1 so the offset the ankle
+        // actually receives is the offset MaxBalanceCorrectionRad declares:
+        // the reference ankle only travels 27 deg across the whole squat, so
+        // a wider balance offset would outrank the accepted movement family.
+        public const float AnkleBalanceOffsetFactor = 1.0f;
         public const float DefaultApKp = 0.80f;
         public const float DefaultApKd = 0.08f;
         public const float DefaultMlKp = 0.65f;

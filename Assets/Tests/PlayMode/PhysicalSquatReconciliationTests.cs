@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Globalization;
 using System.IO;
@@ -196,6 +197,57 @@ namespace PowerliftingSimulator.Tests
             Assert.That(finalPelvisY, Is.GreaterThan(standingPelvisY - 0.08f), string.Format(CultureInfo.InvariantCulture,
                 "The production scene cannot hold the accepted standing pose for 5 s at {0}: standing={1:F3} m, min={2:F3} m, final={3:F3} m, max AP COM error={4:F3} m, max ankle balance correction={5:F3} rad.",
                 label, standingPelvisY, minPelvisY, finalPelvisY, maxApError, maxAnkleCorrection));
+        }
+
+        [Test]
+        public void R6_JOINT_FRAME_SIGN_CALIBRATION()
+        {
+            // At the quarter-descent waypoint every canonical anatomical angle
+            // is a positive flexion (ankle +10, knee +32, hip +30, trunk +10).
+            // Whatever sign those produce in logical joint space IS the
+            // flexion sign of the mapping, and any control offset added to a
+            // joint has to use the same sign.
+            SquatPhysicalAdapter adapter = _controller.Adapter;
+            var report = new StringBuilder();
+            foreach (string jointId in ControlledJoints)
+            {
+                Quaternion target = adapter.ReferenceLogicalTarget(jointId, 0.25f, SquatPhaseDirection.Descent);
+                Vector3 log = QuaternionLogDegrees(target);
+                report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                    "{0,-12} flexion_x_deg={1:+0.00;-0.00} y={2:+0.00;-0.00} z={3:+0.00;-0.00}",
+                    jointId, log.x, log.y, log.z));
+            }
+            Debug.Log("[R6 JOINT FRAME SIGN CALIBRATION @ s_q=0.25]" + Environment.NewLine + report);
+
+            float ankleFlexionX = QuaternionLogDegrees(
+                adapter.ReferenceLogicalTarget("left_foot", 0.25f, SquatPhaseDirection.Descent)).x;
+            Assert.That(Mathf.Abs(ankleFlexionX), Is.GreaterThan(1f),
+                "The ankle logical target barely moves at quarter descent; the mapping cannot be sign-calibrated." + Environment.NewLine + report);
+
+            // A forward COM error needs the ankle driven away from
+            // dorsiflexion. CalculateBalanceOffset returns a negative value
+            // for a positive (forward) error, so the offset the adapter finally
+            // composes onto the ankle must carry the opposite sign to the
+            // reference flexion direction.
+            float forwardError = 0.05f;
+            float correction = SquatPhysicalAdapter.CalculateBalanceOffset(forwardError, 0f, 0.01f);
+            float appliedAnkleOffsetDeg =
+                -correction * SquatPhysicalAdapter.AnkleBalanceOffsetFactor * Mathf.Rad2Deg;
+            Assert.That(appliedAnkleOffsetDeg * Mathf.Sign(ankleFlexionX), Is.LessThan(0f),
+                string.Format(CultureInfo.InvariantCulture,
+                    "The ankle balance offset drives the joint in the same direction as reference dorsiflexion. Reference flexion at quarter descent is {0:+0.00;-0.00} deg about X and a forward COM error applies {1:+0.00;-0.00} deg, so the correction pushes the centre of mass further forward instead of arresting it.{2}",
+                    ankleFlexionX, appliedAnkleOffsetDeg, Environment.NewLine + report));
+        }
+
+        private static Vector3 QuaternionLogDegrees(Quaternion rotation)
+        {
+            if (rotation.w < 0f)
+                rotation = new Quaternion(-rotation.x, -rotation.y, -rotation.z, -rotation.w);
+            float vectorMagnitude = Mathf.Sqrt(rotation.x * rotation.x + rotation.y * rotation.y + rotation.z * rotation.z);
+            if (vectorMagnitude <= 1e-6f)
+                return Vector3.zero;
+            float angle = 2f * Mathf.Atan2(vectorMagnitude, Mathf.Clamp(rotation.w, -1f, 1f));
+            return new Vector3(rotation.x, rotation.y, rotation.z) * (angle / vectorMagnitude) * Mathf.Rad2Deg;
         }
 
         [Test]
