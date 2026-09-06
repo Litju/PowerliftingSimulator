@@ -39,6 +39,8 @@ namespace PowerliftingSimulator.Squat.Unity
         private readonly ReferenceTargetFrame[] _ascentTargets;
         private const int ReferenceTargetSampleCount = 101;
         private const float LockoutTransitionSq = 0.001f;
+        private const float MinimumTrunkParticipationRad = 0.0017f; // 0.1 deg
+        private const float MaxTrunkNormalizationScale = 4f;
         private SquatState _state = SquatState.SETUP;
         private SquatPhaseDirection _direction = SquatPhaseDirection.None;
         private float _sq;
@@ -46,6 +48,7 @@ namespace PowerliftingSimulator.Squat.Unity
         // each meaningful waypoint; this is gameplay pacing, not extra
         // physical authority.
         private float _phaseRate = 0.30f;
+        private float _phaseVelocity;
         private bool _autoCycle;
         private float _bottomHoldTimer;
         private const float BottomHoldDuration = 0.20f;
@@ -127,6 +130,13 @@ namespace PowerliftingSimulator.Squat.Unity
         public float MaxDriveSaturation => _maxDriveSaturation;
         public float MinPelvisHeightM => _minPelvisHeightM;
         public bool LockoutReached => _lockoutReached;
+
+        // IPF-derived depth proxy measured on the physical bodies. Pelvis
+        // drop is kept separately as a regression metric; it is not legality.
+        public float RuleDepthLeftM { get; private set; }
+        public float RuleDepthRightM { get; private set; }
+        public bool LegalDepth { get; private set; }
+        public float WorstSideDepthM { get; private set; }
         public string FailureReason => _failureReason;
         public bool AutoCycle { get => _autoCycle; set => _autoCycle = value; }
         public float PhaseRate { get => _phaseRate; set => _phaseRate = Mathf.Clamp(value, 0.05f, 0.75f); }
@@ -191,6 +201,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 throw new ArgumentNullException(nameof(poweredController));
 
             float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
+            _phaseVelocity = 0f;
             AdvanceStateAndPhase(dt, intent);
             ComputeComAndSupport(previousObservation, intent);
 
@@ -243,6 +254,8 @@ namespace PowerliftingSimulator.Squat.Unity
             if (_rig.Segments.TryGetValue("pelvis", out PhysicalAthleteRig.SegmentRuntime pelvisSegment) && pelvisSegment.Body != null)
                 _minPelvisHeightM = Mathf.Min(_minPelvisHeightM, pelvisSegment.Body.position.y);
 
+            EvaluateRuleDepth();
+
             ulong tick = time.Tick;
             float trunkCorrection = BalanceCorrectionsEnabled
                 ? Mathf.Clamp(-DefaultTrunkKp * _apComError, -0.25f, 0.25f)
@@ -263,14 +276,22 @@ namespace PowerliftingSimulator.Squat.Unity
             Quaternion abdomenTarget = referenceTarget.Abdomen * trunkOffset;
             Quaternion thoraxTarget = referenceTarget.Thorax * trunkOffset;
 
-            poweredController.ApplyCommand("left_foot", new JointCommand(leftAnkleTarget, Vector3.zero, 1f, capacityScale * 2.5f), tick);
-            poweredController.ApplyCommand("right_foot", new JointCommand(rightAnkleTarget, Vector3.zero, 1f, capacityScale * 2.5f), tick);
-            poweredController.ApplyCommand("left_shank", new JointCommand(leftKneeTarget, Vector3.zero, 1f, capacityScale * 1.8f), tick);
-            poweredController.ApplyCommand("right_shank", new JointCommand(rightKneeTarget, Vector3.zero, 1f, capacityScale * 1.8f), tick);
-            poweredController.ApplyCommand("left_thigh", new JointCommand(leftHipTarget, Vector3.zero, 1f, capacityScale * 1.5f), tick);
-            poweredController.ApplyCommand("right_thigh", new JointCommand(rightHipTarget, Vector3.zero, 1f, capacityScale * 1.5f), tick);
-            poweredController.ApplyCommand("abdomen", new JointCommand(abdomenTarget, Vector3.zero, 1f, capacityScale * 1.5f), tick);
-            poweredController.ApplyCommand("thorax", new JointCommand(thoraxTarget, Vector3.zero, 1f, capacityScale * 1.5f), tick);
+            // Feed the canonical reference rate forward while the phase is
+            // actually moving, so the drive is not asked to hold a moving
+            // target with a standstill velocity command.
+            ReferenceRateFrame rate = Mathf.Abs(_phaseVelocity) > 1e-5f
+                ? EvaluateReferenceRatePerPhase(_sq, _direction)
+                : ReferenceRateFrame.Zero;
+            float phaseVelocity = _phaseVelocity;
+
+            poweredController.ApplyCommand("left_foot", new JointCommand(leftAnkleTarget, rate.LeftFoot * phaseVelocity, 1f, capacityScale * 2.5f), tick);
+            poweredController.ApplyCommand("right_foot", new JointCommand(rightAnkleTarget, rate.RightFoot * phaseVelocity, 1f, capacityScale * 2.5f), tick);
+            poweredController.ApplyCommand("left_shank", new JointCommand(leftKneeTarget, rate.LeftShank * phaseVelocity, 1f, capacityScale * 1.8f), tick);
+            poweredController.ApplyCommand("right_shank", new JointCommand(rightKneeTarget, rate.RightShank * phaseVelocity, 1f, capacityScale * 1.8f), tick);
+            poweredController.ApplyCommand("left_thigh", new JointCommand(leftHipTarget, rate.LeftThigh * phaseVelocity, 1f, capacityScale * 1.5f), tick);
+            poweredController.ApplyCommand("right_thigh", new JointCommand(rightHipTarget, rate.RightThigh * phaseVelocity, 1f, capacityScale * 1.5f), tick);
+            poweredController.ApplyCommand("abdomen", new JointCommand(abdomenTarget, rate.Abdomen * phaseVelocity, 1f, capacityScale * 1.5f), tick);
+            poweredController.ApplyCommand("thorax", new JointCommand(thoraxTarget, rate.Thorax * phaseVelocity, 1f, capacityScale * 1.5f), tick);
 
             ApplyArmSupport(poweredController, capacityScale, tick);
             CheckDriveSaturation(poweredController);
@@ -295,6 +316,7 @@ namespace PowerliftingSimulator.Squat.Unity
                         break;
                     case SquatState.DESCENT:
                         _sq = Mathf.Min(1f, _sq + _phaseRate * dt);
+                        _phaseVelocity = _phaseRate;
                         if (_sq >= 0.999f)
                         {
                             _sq = 1f;
@@ -318,6 +340,7 @@ namespace PowerliftingSimulator.Squat.Unity
                         break;
                     case SquatState.ASCENT:
                         _sq = Mathf.Max(0f, _sq - _phaseRate * dt);
+                        _phaseVelocity = -_phaseRate;
                         if (_sq <= LockoutTransitionSq)
                         {
                             _sq = 0f;
@@ -352,6 +375,7 @@ namespace PowerliftingSimulator.Squat.Unity
             if (_state == SquatState.DESCENT && yieldInput > 0.05f)
             {
                 _sq = Mathf.Min(1f, _sq + _phaseRate * yieldInput * dt);
+                _phaseVelocity = _phaseRate * yieldInput;
                 if (_sq >= 0.999f)
                 {
                     _sq = 1f;
@@ -377,6 +401,7 @@ namespace PowerliftingSimulator.Squat.Unity
             if (_state == SquatState.ASCENT && driveInput > 0.05f)
             {
                 _sq = Mathf.Max(0f, _sq - _phaseRate * driveInput * dt);
+                _phaseVelocity = -_phaseRate * driveInput;
                 if (_sq <= LockoutTransitionSq)
                 {
                     _sq = 0f;
@@ -404,6 +429,40 @@ namespace PowerliftingSimulator.Squat.Unity
             float balanceBias = Mathf.Clamp(intent.BalanceX, -1f, 1f) * MaxBalanceBiasM;
             _apComError = _systemCom.z - _observer.SupportApCenter;
             _mlComError = _systemCom.x - (_observer.SupportMlCenter + balanceBias);
+        }
+
+        /// <summary>
+        /// Bilateral hip-crease versus knee-top depth on the physical rig,
+        /// using the hip and knee joint anchors as the rule proxies. This is
+        /// squat legality; vertical pelvis descent is not.
+        /// </summary>
+        private void EvaluateRuleDepth()
+        {
+            if (!TryJointAnchor("left_thigh", out Vector3 leftHipCrease) ||
+                !TryJointAnchor("right_thigh", out Vector3 rightHipCrease) ||
+                !TryJointAnchor("left_shank", out Vector3 leftKneeTop) ||
+                !TryJointAnchor("right_shank", out Vector3 rightKneeTop))
+                return;
+
+            SquatDepthObservation depth = SquatDepthGeometry.Evaluate(
+                leftHipCrease.y,
+                rightHipCrease.y,
+                leftKneeTop.y,
+                rightKneeTop.y);
+            RuleDepthLeftM = depth.LeftDepthM;
+            RuleDepthRightM = depth.RightDepthM;
+            WorstSideDepthM = depth.WorstSideDepthM;
+            LegalDepth = depth.BilateralLegalReference;
+        }
+
+        private bool TryJointAnchor(string jointId, out Vector3 worldAnchor)
+        {
+            worldAnchor = Vector3.zero;
+            PoweredJointController.PoweredJointRuntime runtime = _rig.PoweredController.GetJoint(jointId);
+            if (runtime == null || runtime.Joint == null)
+                return false;
+            worldAnchor = runtime.Joint.transform.TransformPoint(runtime.Joint.anchor);
+            return true;
         }
 
         private float LowestFootBodyY()
@@ -505,6 +564,13 @@ namespace PowerliftingSimulator.Squat.Unity
             Quaternion leftFoot = ToPhysicalBodyRotation("left_foot", solution.LeftLeg.FootBoneRotation);
             Quaternion rightFoot = ToPhysicalBodyRotation("right_foot", solution.RightLeg.FootBoneRotation);
 
+            Quaternion abdomenTarget = ToLogicalJointTarget("abdomen", pelvis, abdomen);
+            Quaternion thoraxTarget = ToLogicalJointTarget("thorax", abdomen, thorax);
+            NormalizeTrunkDistribution(
+                _profile.Evaluate(phase, direction).TrunkFlexionRad,
+                ref abdomenTarget,
+                ref thoraxTarget);
+
             return new ReferenceTargetFrame(
                 ToLogicalJointTarget("left_foot", leftShank, leftFoot),
                 ToLogicalJointTarget("right_foot", rightShank, rightFoot),
@@ -512,9 +578,55 @@ namespace PowerliftingSimulator.Squat.Unity
                 ToLogicalJointTarget("right_shank", rightThigh, rightShank),
                 ToLogicalJointTarget("left_thigh", pelvis, leftThigh),
                 ToLogicalJointTarget("right_thigh", pelvis, rightThigh),
-                ToLogicalJointTarget("abdomen", pelvis, abdomen),
-                ToLogicalJointTarget("thorax", abdomen, thorax));
+                abdomenTarget,
+                thoraxTarget);
         }
+
+        /// <summary>
+        /// The canonical trunk flexion is authored across a humanoid spine
+        /// chain, but the physical rig only owns two of those segments, so the
+        /// abdomen and thorax targets together carried about half the accepted
+        /// trunk inclination. This renormalises the participating segments so
+        /// they sum to the canonical request while preserving how the
+        /// reference distributed the flexion between them. The GAM-10
+        /// reference output itself is untouched.
+        /// </summary>
+        private static void NormalizeTrunkDistribution(
+            float canonicalTrunkFlexionRad,
+            ref Quaternion abdomenTarget,
+            ref Quaternion thoraxTarget)
+        {
+            float abdomenRad = SignedSagittalRadians(abdomenTarget);
+            float thoraxRad = SignedSagittalRadians(thoraxTarget);
+            float participatingSum = abdomenRad + thoraxRad;
+            if (Mathf.Abs(participatingSum) < MinimumTrunkParticipationRad ||
+                Mathf.Abs(canonicalTrunkFlexionRad) < MinimumTrunkParticipationRad)
+                return;
+
+            float scale = canonicalTrunkFlexionRad / participatingSum;
+            if (!float.IsFinite(scale) || scale <= 0f)
+                return;
+
+            scale = Mathf.Min(scale, MaxTrunkNormalizationScale);
+            abdomenTarget = Quaternion.SlerpUnclamped(Quaternion.identity, abdomenTarget, scale);
+            thoraxTarget = Quaternion.SlerpUnclamped(Quaternion.identity, thoraxTarget, scale);
+        }
+
+        private static float SignedSagittalRadians(Quaternion rotation)
+        {
+            rotation = NormalizeCanonicalQuaternion(rotation);
+            float vectorMagnitude = Mathf.Sqrt(
+                rotation.x * rotation.x + rotation.y * rotation.y + rotation.z * rotation.z);
+            if (vectorMagnitude <= 1e-6f)
+                return 0f;
+            float angle = 2f * Mathf.Atan2(vectorMagnitude, Mathf.Clamp(rotation.w, -1f, 1f));
+            return rotation.x * (angle / vectorMagnitude);
+        }
+
+        private static Quaternion NormalizeCanonicalQuaternion(Quaternion rotation) =>
+            rotation.w < 0f
+                ? new Quaternion(-rotation.x, -rotation.y, -rotation.z, -rotation.w)
+                : rotation;
 
         private Quaternion ToPhysicalBodyRotation(string segmentId, Quaternion desiredBoneRotation)
         {
@@ -540,6 +652,74 @@ namespace PowerliftingSimulator.Squat.Unity
             int upperIndex = Mathf.Min(ReferenceTargetSampleCount - 1, lowerIndex + 1);
             float interpolation = scaled - lowerIndex;
             return ReferenceTargetFrame.Interpolate(targets[lowerIndex], targets[upperIndex], interpolation);
+        }
+
+        /// <summary>
+        /// Reference target angular rate in logical joint space, per unit of
+        /// phase. Multiplied by the current phase velocity it becomes the
+        /// feed-forward target velocity the drive expects, rather than the
+        /// zero the adapter used to send while the reference was moving.
+        /// </summary>
+        private readonly struct ReferenceRateFrame
+        {
+            public ReferenceRateFrame(
+                Vector3 leftFoot, Vector3 rightFoot,
+                Vector3 leftShank, Vector3 rightShank,
+                Vector3 leftThigh, Vector3 rightThigh,
+                Vector3 abdomen, Vector3 thorax)
+            {
+                LeftFoot = leftFoot;
+                RightFoot = rightFoot;
+                LeftShank = leftShank;
+                RightShank = rightShank;
+                LeftThigh = leftThigh;
+                RightThigh = rightThigh;
+                Abdomen = abdomen;
+                Thorax = thorax;
+            }
+
+            public Vector3 LeftFoot { get; }
+            public Vector3 RightFoot { get; }
+            public Vector3 LeftShank { get; }
+            public Vector3 RightShank { get; }
+            public Vector3 LeftThigh { get; }
+            public Vector3 RightThigh { get; }
+            public Vector3 Abdomen { get; }
+            public Vector3 Thorax { get; }
+
+            public static readonly ReferenceRateFrame Zero = new ReferenceRateFrame(
+                Vector3.zero, Vector3.zero, Vector3.zero, Vector3.zero,
+                Vector3.zero, Vector3.zero, Vector3.zero, Vector3.zero);
+        }
+
+        private ReferenceRateFrame EvaluateReferenceRatePerPhase(float phase, SquatPhaseDirection direction)
+        {
+            ReferenceTargetFrame[] targets = direction == SquatPhaseDirection.Ascent ? _ascentTargets : _descentTargets;
+            float scaled = Mathf.Clamp01(phase) * (ReferenceTargetSampleCount - 1);
+            int lowerIndex = Mathf.Clamp(Mathf.FloorToInt(scaled), 0, ReferenceTargetSampleCount - 2);
+            int upperIndex = lowerIndex + 1;
+            float phaseStep = 1f / (ReferenceTargetSampleCount - 1);
+            ReferenceTargetFrame from = targets[lowerIndex];
+            ReferenceTargetFrame to = targets[upperIndex];
+            return new ReferenceRateFrame(
+                RatePerPhase(from.LeftFoot, to.LeftFoot, phaseStep),
+                RatePerPhase(from.RightFoot, to.RightFoot, phaseStep),
+                RatePerPhase(from.LeftShank, to.LeftShank, phaseStep),
+                RatePerPhase(from.RightShank, to.RightShank, phaseStep),
+                RatePerPhase(from.LeftThigh, to.LeftThigh, phaseStep),
+                RatePerPhase(from.RightThigh, to.RightThigh, phaseStep),
+                RatePerPhase(from.Abdomen, to.Abdomen, phaseStep),
+                RatePerPhase(from.Thorax, to.Thorax, phaseStep));
+        }
+
+        private static Vector3 RatePerPhase(Quaternion from, Quaternion to, float phaseStep)
+        {
+            Quaternion delta = NormalizeCanonicalQuaternion(to * Quaternion.Inverse(from));
+            float vectorMagnitude = Mathf.Sqrt(delta.x * delta.x + delta.y * delta.y + delta.z * delta.z);
+            if (vectorMagnitude <= 1e-6f)
+                return Vector3.zero;
+            float angle = 2f * Mathf.Atan2(vectorMagnitude, Mathf.Clamp(delta.w, -1f, 1f));
+            return new Vector3(delta.x, delta.y, delta.z) * (angle / vectorMagnitude) / phaseStep;
         }
 
         private readonly struct ReferenceTargetFrame

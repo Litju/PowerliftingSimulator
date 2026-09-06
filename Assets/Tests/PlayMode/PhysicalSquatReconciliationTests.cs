@@ -251,6 +251,39 @@ namespace PowerliftingSimulator.Tests
         }
 
         [Test]
+        public void R7_PHYSICAL_TRUNK_SUMS_TO_CANONICAL_TRUNK_FLEXION()
+        {
+            SquatPhysicalAdapter adapter = _controller.Adapter;
+            var report = new StringBuilder();
+            foreach (float phase in new[] { 0.25f, 0.55f, 0.75f, 1f })
+            {
+                float canonical = adapter.ReferenceAnatomicalPose(phase, SquatPhaseDirection.Descent)
+                    .TrunkFlexionRad * Mathf.Rad2Deg;
+                float abdomen = SagittalDegrees(adapter.ReferenceLogicalTarget("abdomen", phase, SquatPhaseDirection.Descent));
+                float thorax = SagittalDegrees(adapter.ReferenceLogicalTarget("thorax", phase, SquatPhaseDirection.Descent));
+                float sum = abdomen + thorax;
+                report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                    "phase={0:F2} canonical={1:F2} abdomen={2:F2} thorax={3:F2} sum={4:F2}",
+                    phase, canonical, abdomen, thorax, sum));
+                Assert.That(sum, Is.EqualTo(canonical).Within(0.5f), string.Format(CultureInfo.InvariantCulture,
+                    "The physical trunk segments carry {0:F2} deg where the canonical reference asks for {1:F2} deg at phase {2:F2}.",
+                    sum, canonical, phase));
+            }
+            Debug.Log("[R7 TRUNK DISTRIBUTION]" + Environment.NewLine + report);
+        }
+
+        private static float SagittalDegrees(Quaternion rotation)
+        {
+            if (rotation.w < 0f)
+                rotation = new Quaternion(-rotation.x, -rotation.y, -rotation.z, -rotation.w);
+            float magnitude = Mathf.Sqrt(rotation.x * rotation.x + rotation.y * rotation.y + rotation.z * rotation.z);
+            if (magnitude <= 1e-6f)
+                return 0f;
+            float angle = 2f * Mathf.Atan2(magnitude, Mathf.Clamp(rotation.w, -1f, 1f));
+            return rotation.x * (angle / magnitude) * Mathf.Rad2Deg;
+        }
+
+        [Test]
         public void R5_BALANCE_CORRECTION_STAYS_WITHIN_ITS_DECLARED_BOUND()
         {
             // The declared bound is the clamp inside CalculateBalanceOffset.
