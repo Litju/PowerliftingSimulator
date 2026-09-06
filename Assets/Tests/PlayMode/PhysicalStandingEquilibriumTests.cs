@@ -241,6 +241,69 @@ namespace PowerliftingSimulator.Tests
             yield return null;
         }
 
+        [UnityTest]
+        public IEnumerator E6_ANKLE_PRELOAD_RETEST_ON_GROUNDED_PLANT()
+        {
+            // With the rig registered to the platform, the grounded baseline is
+            // a clean forward topple about the ankle: no sag, no buckle, and a
+            // COP sitting about 55 mm behind the COM. That static imbalance
+            // predicts roughly 2.4 deg of plantarflexion preload, which is a
+            // negative anatomical ankle bias. Small ankle-only ladder, balance
+            // off, rather than repeating the 35-condition sweep.
+            var trace = new StringBuilder();
+            trace.AppendLine("ankle_deg," + SummaryHeader());
+
+            foreach (float ankleDeg in new[] { 0f, -1f, -2f, -2.5f, -3f, -4f })
+            {
+                SquatPhysicalAdapter adapter = PrepareRun(preloadEnabled: true, balanceEnabled: false);
+                adapter.Preload.SetAnatomicalFlexionBiasDegrees(SquatJointFamily.Ankle, ankleDeg);
+
+                for (int tick = 0; tick < 300; tick++)
+                    Advance(adapter);
+
+                trace.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                    "{0:F1},{1}", ankleDeg, Summarize(adapter)));
+                yield return null;
+            }
+
+            WriteMeasurement("GAM11-ankle-preload-retest.csv", trace.ToString());
+            Debug.Log("[E6 ANKLE PRELOAD RETEST]" + Environment.NewLine + trace);
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator E7_ANKLE_PRELOAD_TO_COP_SENSITIVITY()
+        {
+            // The 3 s ladder saturates because everything has fallen by then.
+            // What actually matters is how far a commanded preload moves the
+            // centre of pressure while the athlete is still upright, because
+            // that is the quantity that has to cancel the COM-to-COP offset.
+            var trace = new StringBuilder();
+            trace.AppendLine("ankle_deg,cop_ap_t60,com_ap_t60,com_minus_cop_t60,com_vel_t60,ankle_actual_deg_t60,pelvis_y_t60,contacts");
+
+            foreach (float ankleDeg in new[] { 0f, -2f, -4f, -6f, -8f, -10f, -12f })
+            {
+                SquatPhysicalAdapter adapter = PrepareRun(preloadEnabled: true, balanceEnabled: false);
+                adapter.Preload.SetAnatomicalFlexionBiasDegrees(SquatJointFamily.Ankle, ankleDeg);
+
+                for (int tick = 0; tick < 60; tick++)
+                    Advance(adapter);
+
+                SquatBalanceObserver balance = adapter.Balance;
+                float cop = balance.HasCopEstimate ? balance.CopEstimate.z : float.NaN;
+                trace.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                    "{0:F1},{1:F5},{2:F5},{3:F5},{4:F5},{5:F2},{6:F4},{7}",
+                    ankleDeg, cop, balance.SystemCom.z, balance.SystemCom.z - cop,
+                    balance.SystemComVelocity.z, ActualDegrees("left_foot"),
+                    _rig.Segments["pelvis"].Body.position.y, balance.SupportContactCount));
+                yield return null;
+            }
+
+            WriteMeasurement("GAM11-ankle-preload-cop-sensitivity.csv", trace.ToString());
+            Debug.Log("[E7 ANKLE PRELOAD TO COP SENSITIVITY]" + Environment.NewLine + trace);
+            yield return null;
+        }
+
         // ---------------------------------------------------------------
         // Experiment B: nominal + preload, no balance feedback at all.
         // ---------------------------------------------------------------

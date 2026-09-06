@@ -102,10 +102,22 @@ namespace PowerliftingSimulator.Squat.Unity
         }
 
         /// <summary>
-        /// The qualified standing preload. Every value here comes from the
-        /// deterministic identification sweep recorded in
-        /// Artifacts/Measurements/GAM11-preload-identification.csv, not from
-        /// hand tuning.
+        /// The qualified standing preload, currently zero on every family.
+        ///
+        /// On the grounded plant the open-loop imbalance is nulled by about
+        /// -11.5 deg of ankle plantarflexion bias: the COM-to-COP offset
+        /// crosses zero between -10 and -12 deg and COM velocity at 0.6 s falls
+        /// from 0.325 to 0.011 m/s
+        /// (Artifacts/Measurements/GAM11-ankle-preload-cop-sensitivity.csv).
+        /// That value is measured but deliberately not adopted, for two
+        /// reasons. It sits on the 12 deg investigation boundary rather than
+        /// near the 6 deg soft target, and it was identified with feedback
+        /// disabled, so with the predictive balance controller running the two
+        /// corrections stack and the athlete departs backwards instead.
+        ///
+        /// A preload is a feed-forward trim for a steady gravitational moment.
+        /// It cannot stabilise an inverted pendulum on its own, so the value
+        /// that belongs here has to be identified with the loop closed.
         /// </summary>
         public static SquatEquilibriumPreload QualifiedStanding()
         {

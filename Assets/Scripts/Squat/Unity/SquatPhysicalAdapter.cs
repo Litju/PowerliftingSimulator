@@ -61,7 +61,7 @@ namespace PowerliftingSimulator.Squat.Unity
         private float _standingComMlOffset;
         private bool _hasStandingCalibration;
         private ReferenceTargetFrame _nominalReferenceTarget;
-        private readonly SquatEquilibriumPreload _preload = new SquatEquilibriumPreload();
+        private readonly SquatEquilibriumPreload _preload = SquatEquilibriumPreload.QualifiedStanding();
         private readonly float[] _familyFlexionSign = new float[5];
         private readonly System.Collections.Generic.Dictionary<string, JointTargetComposition> _composition =
             new System.Collections.Generic.Dictionary<string, JointTargetComposition>(8);
