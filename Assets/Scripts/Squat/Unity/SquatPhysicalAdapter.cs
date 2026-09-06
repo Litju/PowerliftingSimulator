@@ -52,6 +52,7 @@ namespace PowerliftingSimulator.Squat.Unity
         private const float ReversalHoldDuration = 0.10f;
         private float _reversalHoldTimer;
         private SquatBarSaddle _saddle;
+        private readonly SquatBalanceObserver _observer;
 
         // Telemetry is sampled from the previous post-physics observation.
         private Vector3 _systemCom;
@@ -65,9 +66,6 @@ namespace PowerliftingSimulator.Squat.Unity
         private float _maxDriveSaturation;
         private float _minPelvisHeightM = float.PositiveInfinity;
         private bool _lockoutReached;
-        private float _previousComZ;
-        private float _previousComX;
-        private bool _hasPreviousCom;
         private string _failureReason = "NONE";
 
         public SquatPhysicalAdapter(PhysicalAthleteRig rig, SquatReferenceProfile profile = null)
@@ -78,6 +76,7 @@ namespace PowerliftingSimulator.Squat.Unity
             int index = 0;
             foreach (PhysicalAthleteRig.SegmentRuntime segment in _rig.Segments.Values)
                 _segments[index++] = segment;
+            _observer = new SquatBalanceObserver(_rig, _segments);
             BuildReferenceTargetTables(out _descentTargets, out _ascentTargets);
             _rig.SetCommandSource(this);
             _sq = 0f;
@@ -95,6 +94,22 @@ namespace PowerliftingSimulator.Squat.Unity
         {
             ReferenceTargetFrame frame = EvaluateReferenceTarget(phase, direction);
             return frame.ForJoint(jointId);
+        }
+
+        public SquatBalanceObserver Balance => _observer;
+
+        /// <summary>
+        /// Phase 5D diagnostic switch. With this off the athlete is driven by
+        /// the GAM-10 reference alone, which separates a reference or mapping
+        /// failure from a balance failure.
+        /// </summary>
+        public bool BalanceCorrectionsEnabled { get; set; } = true;
+
+        public void SetFootContactDetectors(
+            PhysicalFootContactDetector leftFoot,
+            PhysicalFootContactDetector rightFoot)
+        {
+            _observer.SetFootContactDetectors(leftFoot, rightFoot);
         }
 
         public SquatBarSaddle Saddle => _saddle;
@@ -153,7 +168,6 @@ namespace PowerliftingSimulator.Squat.Unity
             _isCorrectionSaturated = false;
             _isDriveSaturated = false;
             _maxDriveSaturation = 0f;
-            _hasPreviousCom = false;
         }
 
         // Retained for deterministic qualification fixtures. Owner gameplay
@@ -197,23 +211,24 @@ namespace PowerliftingSimulator.Squat.Unity
 
             float brace = Mathf.Max(intent.Brace01, intent.BraceHeld ? 1f : 0f);
 
-            float comVelocityZ = _hasPreviousCom ? (_systemCom.z - _previousComZ) / dt : 0f;
-            float comVelocityX = _hasPreviousCom ? (_systemCom.x - _previousComX) / dt : 0f;
-            float ankleCorrection = CalculateBalanceOffset(_apComError, comVelocityZ, dt);
-            float mlCorrection = CalculateBalanceOffset(
-                _mlComError,
-                comVelocityX,
-                dt,
-                DefaultMlKp,
-                DefaultMlKd,
-                MaxMlBalanceCorrectionRad);
+            float comVelocityZ = _observer.SystemComVelocity.z;
+            float comVelocityX = _observer.SystemComVelocity.x;
+            float ankleCorrection = BalanceCorrectionsEnabled
+                ? CalculateBalanceOffset(_apComError, comVelocityZ, dt)
+                : 0f;
+            float mlCorrection = BalanceCorrectionsEnabled
+                ? CalculateBalanceOffset(
+                    _mlComError,
+                    comVelocityX,
+                    dt,
+                    DefaultMlKp,
+                    DefaultMlKd,
+                    MaxMlBalanceCorrectionRad)
+                : 0f;
             _balanceCorrectionRad = ankleCorrection;
             _mlBalanceCorrectionRad = mlCorrection;
             _isCorrectionSaturated = Mathf.Abs(ankleCorrection) >= MaxBalanceCorrectionRad - 0.0001f ||
                 Mathf.Abs(mlCorrection) >= MaxBalanceCorrectionRad - 0.0001f;
-            _previousComZ = _systemCom.z;
-            _previousComX = _systemCom.x;
-            _hasPreviousCom = true;
 
             // Existing GAM-7 family profiles remain the capacity starting
             // authority. Load changes the coupled dynamics; it does not select
@@ -229,7 +244,9 @@ namespace PowerliftingSimulator.Squat.Unity
                 _minPelvisHeightM = Mathf.Min(_minPelvisHeightM, pelvisSegment.Body.position.y);
 
             ulong tick = time.Tick;
-            float trunkCorrection = Mathf.Clamp(-DefaultTrunkKp * _apComError, -0.25f, 0.25f);
+            float trunkCorrection = BalanceCorrectionsEnabled
+                ? Mathf.Clamp(-DefaultTrunkKp * _apComError, -0.25f, 0.25f)
+                : 0f;
             ReferenceTargetFrame referenceTarget = EvaluateReferenceTarget();
             Quaternion ankleOffset = SagittalAndFrontal(-ankleCorrection * AnkleBalanceOffsetFactor, mlCorrection);
             Quaternion kneeOffset = SagittalAndFrontal(0f, mlCorrection * 0.45f);
@@ -372,66 +389,31 @@ namespace PowerliftingSimulator.Squat.Unity
 
         private void ComputeComAndSupport(PhysicalObservation observation, PlayerIntentFrame intent)
         {
-            Vector3 weightedPosition = Vector3.zero;
-            float totalMass = 0f;
-            bool hasObservation = observation.BodyCount > 0;
+            // Support is the plantar contact polygon the solver actually
+            // produced last step, not the midpoint of the two foot bodies.
+            // A foot body centre reports support the athlete may not have.
+            _observer.BeginPhysicsStep();
+            _observer.Observe(observation, _saddle, LowestFootBodyY());
 
-            for (int index = 0; index < _segments.Length; index++)
-            {
-                PhysicalAthleteRig.SegmentRuntime segment = _segments[index];
-                Vector3 position = segment.Body.worldCenterOfMass;
-                float mass = segment.Body.mass;
-                if (hasObservation && observation.TryGetBody(segment.Recipe.Id, out PhysicalBodyObservation bodyObservation))
-                {
-                    position = new Vector3(
-                        bodyObservation.PositionMeters.X,
-                        bodyObservation.PositionMeters.Y,
-                        bodyObservation.PositionMeters.Z);
-                    mass = bodyObservation.MassKilograms;
-                }
-                weightedPosition += position * mass;
-                totalMass += mass;
-            }
+            _systemCom = _observer.SystemCom;
+            _supportCenter = new Vector3(
+                _observer.SupportMlCenter,
+                _observer.SupportPlaneY,
+                _observer.SupportApCenter);
 
-            if (_saddle != null && _saddle.IsAttached && _saddle.Barbell != null && _saddle.Barbell.Body != null &&
-                _saddle.Barbell.Body.gameObject.activeInHierarchy)
-            {
-                Vector3 barPosition = _saddle.Barbell.Body.worldCenterOfMass;
-                float barMass = _saddle.Barbell.LoadedMassKg;
-                if (hasObservation && observation.TryGetBody("barbell", out PhysicalBodyObservation barObservation))
-                {
-                    barPosition = new Vector3(
-                        barObservation.PositionMeters.X,
-                        barObservation.PositionMeters.Y,
-                        barObservation.PositionMeters.Z);
-                    barMass = barObservation.MassKilograms;
-                }
-                weightedPosition += barPosition * barMass;
-                totalMass += barMass;
-            }
-
-            _systemCom = totalMass > 0f ? weightedPosition / totalMass : Vector3.zero;
-
-            Vector3 leftFoot = FootPosition("left_foot", observation, hasObservation);
-            Vector3 rightFoot = FootPosition("right_foot", observation, hasObservation);
-            _supportCenter = (leftFoot + rightFoot) * 0.5f;
             float balanceBias = Mathf.Clamp(intent.BalanceX, -1f, 1f) * MaxBalanceBiasM;
-            _apComError = _systemCom.z - _supportCenter.z;
-            _mlComError = _systemCom.x - (_supportCenter.x + balanceBias);
+            _apComError = _systemCom.z - _observer.SupportApCenter;
+            _mlComError = _systemCom.x - (_observer.SupportMlCenter + balanceBias);
         }
 
-        private Vector3 FootPosition(string id, PhysicalObservation observation, bool hasObservation)
+        private float LowestFootBodyY()
         {
-            if (!_rig.Segments.TryGetValue(id, out PhysicalAthleteRig.SegmentRuntime foot) || foot.Body == null)
-                return Vector3.zero;
-            if (hasObservation && observation.TryGetBody(id, out PhysicalBodyObservation footObservation))
-            {
-                return new Vector3(
-                    footObservation.PositionMeters.X,
-                    footObservation.PositionMeters.Y,
-                    footObservation.PositionMeters.Z);
-            }
-            return foot.Body.position;
+            float lowest = float.PositiveInfinity;
+            if (_rig.Segments.TryGetValue("left_foot", out PhysicalAthleteRig.SegmentRuntime left) && left.Body != null)
+                lowest = Mathf.Min(lowest, left.Body.position.y);
+            if (_rig.Segments.TryGetValue("right_foot", out PhysicalAthleteRig.SegmentRuntime right) && right.Body != null)
+                lowest = Mathf.Min(lowest, right.Body.position.y);
+            return float.IsPositiveInfinity(lowest) ? 0f : lowest;
         }
 
         private static Quaternion SagittalAndFrontal(float sagittalRad, float frontalRad)

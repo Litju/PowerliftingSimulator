@@ -80,6 +80,7 @@ namespace PowerliftingSimulator.Squat.Unity
 
             _adapter = new SquatPhysicalAdapter(athleteRig);
             AddFootContactDetectors();
+            _adapter.SetFootContactDetectors(_leftFootContact, _rightFootContact);
 
             if (barbell != null)
             {
