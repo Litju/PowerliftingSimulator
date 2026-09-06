@@ -77,7 +77,8 @@ namespace PowerliftingSimulator.Athlete
             float activation,
             float capacityScale,
             float modeledDemand,
-            float limitProximity)
+            float limitProximity,
+            Vector3 solverTorqueJointSpaceNm)
         {
             RequestedTarget = requestedTarget;
             AppliedTarget = appliedTarget;
@@ -90,6 +91,7 @@ namespace PowerliftingSimulator.Athlete
             CapacityScale = capacityScale;
             ModeledDemand = modeledDemand;
             LimitProximity = limitProximity;
+            SolverTorqueJointSpaceNm = solverTorqueJointSpaceNm;
         }
 
         public Quaternion RequestedTarget { get; }
@@ -103,6 +105,22 @@ namespace PowerliftingSimulator.Athlete
         public float CapacityScale { get; }
         public float ModeledDemand { get; }
         public float LimitProximity { get; }
+
+        /// <summary>
+        /// ENGINE_SOLVER_DIAGNOSTIC. The constraint torque PhysX actually
+        /// resolved for this joint, in joint space, so X is the calibrated
+        /// flexion axis.
+        ///
+        /// This is not the drive torque. The solver reports what it took to
+        /// satisfy every constraint on the joint at once, so it carries the
+        /// limits, the connected inertia and the contacts along with the
+        /// drive. Read it to cross-check contact mechanics, never as a
+        /// substitute for measuring what a target offset is worth.
+        /// </summary>
+        public Vector3 SolverTorqueJointSpaceNm { get; }
+
+        /// <summary>Solver torque about the calibrated flexion axis.</summary>
+        public float SolverFlexionTorqueNm => SolverTorqueJointSpaceNm.x;
     }
 
     public sealed class PoweredJointController
@@ -460,6 +478,10 @@ namespace PowerliftingSimulator.Athlete
             float xDegrees = SignedTwistDegrees(actual, Vector3.right);
             float limit = xDegrees >= 0f ? Mathf.Max(0.001f, joint.Recipe.HighDegrees) : Mathf.Max(0.001f, -joint.Recipe.LowDegrees);
             float proximity = Mathf.Clamp01(Mathf.Abs(xDegrees) / limit);
+            // currentTorque is reported in the joint's own local frame, so it
+            // needs the same rotation into joint space the error uses before
+            // its X component means flexion.
+            Vector3 solverTorque = Quaternion.Inverse(joint.JointSpace) * joint.Joint.currentTorque;
             return new PoweredJointDiagnostic(
                 joint.RequestedCommand.TargetRelativeRotation,
                 joint.AppliedTarget,
@@ -471,7 +493,8 @@ namespace PowerliftingSimulator.Athlete
                 activation,
                 capacityScale,
                 demand,
-                proximity);
+                proximity,
+                solverTorque);
         }
 
         private static Vector3 QuaternionLog(Quaternion quaternion)

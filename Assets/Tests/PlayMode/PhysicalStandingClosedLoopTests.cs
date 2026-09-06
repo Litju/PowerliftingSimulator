@@ -191,9 +191,206 @@ namespace PowerliftingSimulator.Tests
         }
 
         // ---------------------------------------------------------------
+        // Local grounded system identification.
+        //
+        // Balance off, preload off, unloaded, s_q = 0, and a held ankle
+        // target offset. The window is 0.10 s to 0.25 s after the grounded
+        // solve, which is early enough that the body has not departed far
+        // enough for the linearisation to be a fiction.
+        //
+        // Every case reloads the scene. The earlier sweeps reused one spawn
+        // across all their conditions, so each case inherited the pose the
+        // previous one fell into; that alone is enough to explain why the
+        // preload identified from them did not survive contact with the
+        // closed loop.
+        // ---------------------------------------------------------------
+        [UnityTest]
+        public IEnumerator S1_ANKLE_TARGET_AUTHORITY_IDENTIFICATION()
+        {
+            var trace = new StringBuilder();
+            trace.AppendLine(
+                "offset_deg,ankle_actual_deg,ankle_actual_vel_deg_s,solver_tau_left_nm,solver_tau_right_nm," +
+                "solver_tau_combined_nm,cop_ap,com_ap,com_ap_vel,com_ap_accel,lean_deg,fz_n," +
+                "pelvis_y,foot_pitch_deg,max_demand,contacts");
+
+            float[] offsetsDeg = { -3f, -2f, -1f, 0f, 1f, 2f, 3f };
+            var samples = new SystemIdSample[offsetsDeg.Length];
+
+            for (int index = 0; index < offsetsDeg.Length; index++)
+            {
+                yield return LoadFixture();
+
+                _controller.SetLoad(0f);
+                SquatPhysicalAdapter adapter = _controller.Adapter;
+                adapter.BalanceCorrectionsEnabled = false;
+                adapter.Preload.Enabled = false;
+                adapter.Preload.Clear();
+                adapter.AnkleSagittalOffsetOverrideRad = offsetsDeg[index] * Mathf.Deg2Rad;
+
+                for (int tick = 0; tick < WindowOpenTick; tick++)
+                    Advance();
+
+                float comApAtOpen = adapter.Balance.SystemCom.z;
+                float comVelAtOpen = adapter.Balance.SystemComVelocity.z;
+
+                for (int tick = WindowOpenTick; tick < WindowCloseTick; tick++)
+                    Advance();
+
+                SystemIdSample sample = Sample(adapter, offsetsDeg[index], comApAtOpen, comVelAtOpen);
+                samples[index] = sample;
+                trace.AppendLine(sample.ToString());
+            }
+
+            // Three different quantities, estimated independently. A slope
+            // through all seven points, not a difference between two of them,
+            // so a single noisy case cannot carry the answer.
+            float gTargetTau = Slope(samples, s => s.OffsetRad, s => s.SolverTorqueCombinedNm);
+            float kInner = -Slope(samples, s => s.LeanRad, s => s.SolverTorqueCombinedNm);
+            float gTargetCop = Slope(samples, s => s.OffsetRad, s => s.CopAp);
+
+            SquatBalanceObserver finalBalance = _controller.Adapter.Balance;
+            float kGravity = finalBalance.SystemMassKg *
+                SquatBalanceObserver.GravityMagnitudeMps2 * finalBalance.ComHeightM;
+
+            var report = new StringBuilder();
+            report.AppendLine(trace.ToString());
+            report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "# G_target_tau_Nm_per_rad,{0:F2}", gTargetTau));
+            report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "# K_inner_effective_Nm_per_rad,{0:F2}", kInner));
+            report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "# K_gravity_Nm_per_rad,{0:F2}", kGravity));
+            report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "# K_inner_over_K_gravity,{0:F4}", kGravity > 0f ? kInner / kGravity : float.NaN));
+            report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "# G_target_cop_m_per_rad,{0:F5}", gTargetCop));
+            report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "# authored_ankle_spring_per_joint_Nm_per_rad,{0:F1}", 650f));
+            report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "# G_target_tau_over_authored_pair_spring,{0:F4}", gTargetTau / 1300f));
+
+            WriteMeasurement("GAM11-ankle-system-identification.csv", report.ToString());
+            Debug.Log("[S1 ANKLE SYSTEM IDENTIFICATION]" + Environment.NewLine + report);
+            yield return null;
+        }
+
+        private const int WindowOpenTick = 10;   // 0.10 s
+        private const int WindowCloseTick = 25;  // 0.25 s
+
+        private SystemIdSample Sample(
+            SquatPhysicalAdapter adapter, float offsetDeg, float comApAtOpen, float comVelAtOpen)
+        {
+            SquatBalanceObserver balance = adapter.Balance;
+            float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
+            float windowSeconds = (WindowCloseTick - WindowOpenTick) * dt;
+
+            PoweredJointDiagnostic left = _rig.PoweredController.GetJoint("left_foot").Diagnostic;
+            PoweredJointDiagnostic right = _rig.PoweredController.GetJoint("right_foot").Diagnostic;
+
+            // Lean of the system centre of mass about the support, which is
+            // the angular displacement the inner restoring torque acts on.
+            float ankleAp = balance.SupportApCenter;
+            float leanRad = Mathf.Atan2(balance.SystemCom.z - ankleAp, Mathf.Max(1e-3f, balance.ComHeightM));
+
+            return new SystemIdSample
+            {
+                OffsetDeg = offsetDeg,
+                OffsetRad = offsetDeg * Mathf.Deg2Rad,
+                AnkleActualDeg = ActualDegrees("left_foot"),
+                AnkleActualVelDegPerS = left.ActualAngularVelocityRadS.x * Mathf.Rad2Deg,
+                SolverTorqueLeftNm = left.SolverFlexionTorqueNm,
+                SolverTorqueRightNm = right.SolverFlexionTorqueNm,
+                SolverTorqueCombinedNm = left.SolverFlexionTorqueNm + right.SolverFlexionTorqueNm,
+                CopAp = balance.HasCopEstimate ? balance.CopEstimate.z : float.NaN,
+                ComAp = balance.SystemCom.z,
+                ComApVel = balance.SystemComVelocity.z,
+                ComApAccel = (balance.SystemComVelocity.z - comVelAtOpen) / windowSeconds,
+                LeanRad = leanRad,
+                FzN = balance.TotalNormalImpulse / dt,
+                PelvisY = _rig.Segments["pelvis"].Body.position.y,
+                FootPitchDeg = FootPitchDegrees("left_foot"),
+                MaxDemand = adapter.MaxDriveSaturation,
+                Contacts = balance.SupportContactCount
+            };
+        }
+
+        private struct SystemIdSample
+        {
+            public float OffsetDeg;
+            public float OffsetRad;
+            public float AnkleActualDeg;
+            public float AnkleActualVelDegPerS;
+            public float SolverTorqueLeftNm;
+            public float SolverTorqueRightNm;
+            public float SolverTorqueCombinedNm;
+            public float CopAp;
+            public float ComAp;
+            public float ComApVel;
+            public float ComApAccel;
+            public float LeanRad;
+            public float FzN;
+            public float PelvisY;
+            public float FootPitchDeg;
+            public float MaxDemand;
+            public int Contacts;
+
+            public override string ToString() => string.Format(CultureInfo.InvariantCulture,
+                "{0:F1},{1:F3},{2:F3},{3:F3},{4:F3},{5:F3},{6:F5},{7:F5},{8:F5},{9:F5},{10:F4},{11:F1}," +
+                "{12:F4},{13:F3},{14:F3},{15}",
+                OffsetDeg, AnkleActualDeg, AnkleActualVelDegPerS,
+                SolverTorqueLeftNm, SolverTorqueRightNm, SolverTorqueCombinedNm,
+                CopAp, ComAp, ComApVel, ComApAccel, LeanRad * Mathf.Rad2Deg, FzN,
+                PelvisY, FootPitchDeg, MaxDemand, Contacts);
+        }
+
+        /// <summary>Ordinary least squares slope, skipping non-finite pairs.</summary>
+        private static float Slope(
+            SystemIdSample[] samples, Func<SystemIdSample, float> x, Func<SystemIdSample, float> y)
+        {
+            float sumX = 0f, sumY = 0f, sumXy = 0f, sumXx = 0f;
+            int count = 0;
+            foreach (SystemIdSample sample in samples)
+            {
+                float xi = x(sample);
+                float yi = y(sample);
+                if (!float.IsFinite(xi) || !float.IsFinite(yi))
+                    continue;
+                sumX += xi;
+                sumY += yi;
+                sumXy += xi * yi;
+                sumXx += xi * xi;
+                count++;
+            }
+            if (count < 2)
+                return float.NaN;
+            float denominator = count * sumXx - sumX * sumX;
+            return Mathf.Abs(denominator) < 1e-12f ? float.NaN : (count * sumXy - sumX * sumY) / denominator;
+        }
+
+        // ---------------------------------------------------------------
         // Shared harness.
         // ---------------------------------------------------------------
         private const int SettleTicks = 30;
+
+        /// <summary>
+        /// A full scene reload, which is the only reset that actually returns
+        /// every dynamic body to its authored spawn pose.
+        /// </summary>
+        private IEnumerator LoadFixture()
+        {
+            AsyncOperation load = SceneManager.LoadSceneAsync(QualificationScene, LoadSceneMode.Single);
+            while (!load.isDone)
+                yield return null;
+            yield return null;
+
+            _bootstrap = UnityEngine.Object.FindFirstObjectByType<FoundationBootstrap>();
+            _rig = UnityEngine.Object.FindFirstObjectByType<PhysicalAthleteRig>();
+            _controller = UnityEngine.Object.FindFirstObjectByType<SquatPhysicalPrototypeController>();
+            for (int frame = 0; frame < 8 && !_controller.IsInitialized; frame++)
+                yield return null;
+            Assert.That(_controller.IsInitialized, Is.True, _controller.StartupFailure);
+            _bootstrap.enabled = false;
+        }
 
         private void Advance()
         {
