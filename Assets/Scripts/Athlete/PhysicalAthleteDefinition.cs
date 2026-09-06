@@ -123,12 +123,12 @@ namespace PowerliftingSimulator.Athlete
             new PhysicalJointRecipe("right_forearm", HumanBodyBones.RightLowerArm, PhysicalJointKind.Hinge, Vector3.forward, -5f, 145f, 0f, "elbow"),
             new PhysicalJointRecipe("left_hand", HumanBodyBones.LeftHand, PhysicalJointKind.Ball, Vector3.forward, -70f, 70f, 30f, "wrist"),
             new PhysicalJointRecipe("right_hand", HumanBodyBones.RightHand, PhysicalJointKind.Ball, Vector3.forward, -70f, 70f, 30f, "wrist"),
-            new PhysicalJointRecipe("left_thigh", HumanBodyBones.LeftUpperLeg, PhysicalJointKind.Ball, Vector3.right, -120f, 120f, 50f, "hip"),
-            new PhysicalJointRecipe("right_thigh", HumanBodyBones.RightUpperLeg, PhysicalJointKind.Ball, Vector3.right, -120f, 120f, 50f, "hip"),
-            new PhysicalJointRecipe("left_shank", HumanBodyBones.LeftLowerLeg, PhysicalJointKind.Hinge, Vector3.right, -145f, 145f, 0f, "knee"),
-            new PhysicalJointRecipe("right_shank", HumanBodyBones.RightLowerLeg, PhysicalJointKind.Hinge, Vector3.right, -145f, 145f, 0f, "knee"),
-            new PhysicalJointRecipe("left_foot", HumanBodyBones.LeftFoot, PhysicalJointKind.Hinge, Vector3.right, -55f, 55f, 0f, "ankle"),
-            new PhysicalJointRecipe("right_foot", HumanBodyBones.RightFoot, PhysicalJointKind.Hinge, Vector3.right, -55f, 55f, 0f, "ankle")
+            new PhysicalJointRecipe("left_thigh", HumanBodyBones.LeftUpperLeg, PhysicalJointKind.Ball, Vector3.right, -120f, 45f, 50f, "hip"),
+            new PhysicalJointRecipe("right_thigh", HumanBodyBones.RightUpperLeg, PhysicalJointKind.Ball, Vector3.right, -120f, 45f, 50f, "hip"),
+            new PhysicalJointRecipe("left_shank", HumanBodyBones.LeftLowerLeg, PhysicalJointKind.Hinge, Vector3.right, -5f, 145f, 0f, "knee"),
+            new PhysicalJointRecipe("right_shank", HumanBodyBones.RightLowerLeg, PhysicalJointKind.Hinge, Vector3.right, -5f, 145f, 0f, "knee"),
+            new PhysicalJointRecipe("left_foot", HumanBodyBones.LeftFoot, PhysicalJointKind.Hinge, Vector3.right, -45f, 55f, 0f, "ankle"),
+            new PhysicalJointRecipe("right_foot", HumanBodyBones.RightFoot, PhysicalJointKind.Hinge, Vector3.right, -45f, 55f, 0f, "ankle")
         };
 
         public static Vector3 BoxInertia(float massKg, Vector3 sizeMeters)
