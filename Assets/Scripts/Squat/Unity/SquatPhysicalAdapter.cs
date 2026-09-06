@@ -56,6 +56,11 @@ namespace PowerliftingSimulator.Squat.Unity
         private float _reversalHoldTimer;
         private SquatBarSaddle _saddle;
         private readonly SquatBalanceObserver _observer;
+        private readonly SquatPredictiveBalanceController _balanceController = new SquatPredictiveBalanceController();
+        private float _standingComApOffset;
+        private float _standingComMlOffset;
+        private bool _hasStandingCalibration;
+        private ReferenceTargetFrame _nominalReferenceTarget;
 
         // Telemetry is sampled from the previous post-physics observation.
         private Vector3 _systemCom;
@@ -100,6 +105,7 @@ namespace PowerliftingSimulator.Squat.Unity
         }
 
         public SquatBalanceObserver Balance => _observer;
+        public SquatPredictiveBalanceController BalanceController => _balanceController;
 
         /// <summary>
         /// Phase 5D diagnostic switch. With this off the athlete is driven by
@@ -107,6 +113,13 @@ namespace PowerliftingSimulator.Squat.Unity
         /// failure from a balance failure.
         /// </summary>
         public bool BalanceCorrectionsEnabled { get; set; } = true;
+
+        /// <summary>
+        /// Diagnostic override. When set, the ankle sagittal target offset is
+        /// held at this value instead of being solved, so the achievable
+        /// centre-of-pressure travel can be measured against a known command.
+        /// </summary>
+        public float? AnkleSagittalOffsetOverrideRad { get; set; }
 
         public void SetFootContactDetectors(
             PhysicalFootContactDetector leftFoot,
@@ -178,6 +191,8 @@ namespace PowerliftingSimulator.Squat.Unity
             _isCorrectionSaturated = false;
             _isDriveSaturated = false;
             _maxDriveSaturation = 0f;
+            _balanceController.Reset();
+            _hasStandingCalibration = false;
         }
 
         // Retained for deterministic qualification fixtures. Owner gameplay
@@ -222,24 +237,26 @@ namespace PowerliftingSimulator.Squat.Unity
 
             float brace = Mathf.Max(intent.Brace01, intent.BraceHeld ? 1f : 0f);
 
-            float comVelocityZ = _observer.SystemComVelocity.z;
-            float comVelocityX = _observer.SystemComVelocity.x;
-            float ankleCorrection = BalanceCorrectionsEnabled
-                ? CalculateBalanceOffset(_apComError, comVelocityZ, dt)
-                : 0f;
-            float mlCorrection = BalanceCorrectionsEnabled
-                ? CalculateBalanceOffset(
-                    _mlComError,
-                    comVelocityX,
-                    dt,
-                    DefaultMlKp,
-                    DefaultMlKd,
-                    MaxMlBalanceCorrectionRad)
-                : 0f;
-            _balanceCorrectionRad = ankleCorrection;
-            _mlBalanceCorrectionRad = mlCorrection;
-            _isCorrectionSaturated = Mathf.Abs(ankleCorrection) >= MaxBalanceCorrectionRad - 0.0001f ||
-                Mathf.Abs(mlCorrection) >= MaxBalanceCorrectionRad - 0.0001f;
+            CalibrateStandingComRelationship();
+            float balanceBias = Mathf.Clamp(intent.BalanceX, -1f, 1f) * MaxBalanceBiasM;
+            if (BalanceCorrectionsEnabled)
+            {
+                _balanceController.Solve(
+                    _observer,
+                    _observer.SupportApCenter + _standingComApOffset,
+                    _observer.SupportMlCenter + _standingComMlOffset + balanceBias,
+                    AnkleAnchorAp(),
+                    AnkleDriveSpringNmPerRad(),
+                    dt);
+            }
+            else
+            {
+                _balanceController.Reset();
+            }
+
+            _balanceCorrectionRad = _balanceController.AnkleSagittalOffsetRad;
+            _mlBalanceCorrectionRad = _balanceController.AnkleFrontalOffsetRad;
+            _isCorrectionSaturated = _balanceController.IsAnkleOffsetSaturated;
 
             // Existing GAM-7 family profiles remain the capacity starting
             // authority. Load changes the coupled dynamics; it does not select
@@ -257,16 +274,26 @@ namespace PowerliftingSimulator.Squat.Unity
             EvaluateRuleDepth();
 
             ulong tick = time.Tick;
-            float trunkCorrection = BalanceCorrectionsEnabled
-                ? Mathf.Clamp(-DefaultTrunkKp * _apComError, -0.25f, 0.25f)
-                : 0f;
-            ReferenceTargetFrame referenceTarget = EvaluateReferenceTarget();
-            Quaternion ankleOffset = SagittalAndFrontal(-ankleCorrection * AnkleBalanceOffsetFactor, mlCorrection);
-            Quaternion kneeOffset = SagittalAndFrontal(0f, mlCorrection * 0.45f);
-            Quaternion hipOffset = Quaternion.identity;
-            Quaternion braceOffset = SagittalAndFrontal(-UnitContract.DegreesToRadians(3f) * brace, 0f);
-            Quaternion trunkOffset = braceOffset * SagittalAndFrontal(trunkCorrection, mlCorrection * 0.50f);
 
+            // NOMINAL_GAM10_TARGET, then BALANCE_OFFSET, then
+            // FINAL_JOINT_TARGET. The three stay separable so the owner
+            // overlay and the tests can see exactly how far balance moved the
+            // accepted reference.
+            ReferenceTargetFrame referenceTarget = EvaluateReferenceTarget();
+            float ankleSagittalOffset = AnkleSagittalOffsetOverrideRad ?? _balanceController.AnkleSagittalOffsetRad;
+            Quaternion ankleOffset = SagittalAndFrontal(
+                ankleSagittalOffset,
+                _balanceController.AnkleFrontalOffsetRad);
+            Quaternion kneeOffset = Quaternion.identity;
+            Quaternion hipOffset = SagittalAndFrontal(
+                _balanceController.HipSagittalOffsetRad,
+                _balanceController.HipFrontalOffsetRad);
+            Quaternion braceOffset = SagittalAndFrontal(-UnitContract.DegreesToRadians(3f) * brace, 0f);
+            Quaternion trunkOffset = braceOffset * SagittalAndFrontal(
+                _balanceController.TrunkSagittalOffsetRad,
+                _balanceController.HipFrontalOffsetRad * 0.5f);
+
+            _nominalReferenceTarget = referenceTarget;
             Quaternion leftAnkleTarget = referenceTarget.LeftFoot * ankleOffset;
             Quaternion rightAnkleTarget = referenceTarget.RightFoot * ankleOffset;
             Quaternion leftKneeTarget = referenceTarget.LeftShank * kneeOffset;
@@ -463,6 +490,42 @@ namespace PowerliftingSimulator.Squat.Unity
                 return false;
             worldAnchor = runtime.Joint.transform.TransformPoint(runtime.Joint.anchor);
             return true;
+        }
+
+        /// <summary>
+        /// The accepted standing pose is the calibration. Recording how the
+        /// system COM sat relative to the plantar support at that pose gives
+        /// the balance reference, rather than assuming the polygon centre.
+        /// A powerlifting squat holds the system over roughly that same point
+        /// throughout, so the standing relationship is also the squat
+        /// reference until the phase-specific trajectory lands.
+        /// </summary>
+        private void CalibrateStandingComRelationship()
+        {
+            if (_hasStandingCalibration || !_observer.HasSupport || _state != SquatState.SETUP)
+                return;
+            _standingComApOffset = _observer.SystemCom.z - _observer.SupportApCenter;
+            _standingComMlOffset = _observer.SystemCom.x - _observer.SupportMlCenter;
+            _hasStandingCalibration = true;
+        }
+
+        private float AnkleAnchorAp()
+        {
+            bool hasLeft = TryJointAnchor("left_foot", out Vector3 left);
+            bool hasRight = TryJointAnchor("right_foot", out Vector3 right);
+            if (hasLeft && hasRight)
+                return 0.5f * (left.z + right.z);
+            if (hasLeft)
+                return left.z;
+            if (hasRight)
+                return right.z;
+            return _observer.SupportApCenter;
+        }
+
+        private static float AnkleDriveSpringNmPerRad()
+        {
+            JointFamilyProfile? ankle = PoweredJointController.FindFamilyProfile("ankle");
+            return ankle.HasValue ? ankle.Value.Spring : 1f;
         }
 
         private float LowestFootBodyY()
