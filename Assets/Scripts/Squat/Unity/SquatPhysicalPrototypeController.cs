@@ -10,7 +10,9 @@ using UnityEngine.SceneManagement;
 
 namespace PowerliftingSimulator.Squat.Unity
 {
-    [DefaultExecutionOrder(-700)]
+    // Ahead of PhysicalAthleteRig, so the athlete is registered to the
+    // platform before the rig builds any body from the authored pose.
+    [DefaultExecutionOrder(-950)]
     [DisallowMultipleComponent]
     public sealed class SquatPhysicalPrototypeController : MonoBehaviour
     {
@@ -21,6 +23,8 @@ namespace PowerliftingSimulator.Squat.Unity
         [SerializeField] private bool autoSquatOnStart = false;
         [SerializeField] private bool attachBarSaddle = true;
         [SerializeField] private bool showDebugGui = true;
+
+        private const float PlantarSymmetryToleranceM = 0.001f;
 
         private SquatPhysicalAdapter _adapter;
         private SquatBarSaddle _saddle;
@@ -76,7 +80,10 @@ namespace PowerliftingSimulator.Squat.Unity
             }
 
             if (athleteRig.PoweredController == null)
+            {
+                RegisterAthleteToGround();
                 athleteRig.Build();
+            }
 
             _adapter = new SquatPhysicalAdapter(athleteRig);
             AddFootContactDetectors();
@@ -103,6 +110,35 @@ namespace PowerliftingSimulator.Squat.Unity
 
             _isInitialized = true;
             _startupFailure = string.Empty;
+        }
+
+        /// <summary>
+        /// Places the authored athlete so the canonical sole rests on the
+        /// platform before any body exists. The plantar plane comes from the
+        /// GAM-10 reference calibration, which owns that definition; this only
+        /// consumes it.
+        /// </summary>
+        private void RegisterAthleteToGround()
+        {
+            Animator reference = athleteRig.ReferenceAnimator;
+            if (reference == null)
+                throw new InvalidOperationException("Ground registration requires the canonical reference animator.");
+
+            SquatReferenceRigCalibration calibration = SquatReferenceRigCalibration.Build(
+                reference,
+                reference.transform.root,
+                "Assets/Scenes/Prototype/SquatPhysicalPrototype.unity");
+
+            float leftPlantarY = calibration.LeftFoot.PlantarAnchorWorld.y;
+            float rightPlantarY = calibration.RightFoot.PlantarAnchorWorld.y;
+            float asymmetry = Mathf.Abs(leftPlantarY - rightPlantarY);
+            if (asymmetry > PlantarSymmetryToleranceM)
+            {
+                throw new InvalidOperationException(
+                    $"The canonical plantar anchors are asymmetric by {asymmetry * 1000f:F2} mm (left {leftPlantarY:F4}, right {rightPlantarY:F4}). Ground registration would tilt the athlete; fix the reference calibration first.");
+            }
+
+            athleteRig.RegisterCanonicalGround(0.5f * (leftPlantarY + rightPlantarY));
         }
 
         private void AddFootContactDetectors()

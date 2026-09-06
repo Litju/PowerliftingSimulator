@@ -89,6 +89,13 @@ namespace PowerliftingSimulator.Athlete
     public static class PhysicalAthleteDefinition
     {
         public const float PrototypeBodyMassKg = 100f;
+
+        // The authoritative support surface. It is derived from the platform
+        // collider that CreatePlatformCollider actually builds, so nothing
+        // downstream has to assume a magic world zero.
+        public static readonly Vector3 PlatformCenterMeters = new Vector3(0f, -0.05f, 0f);
+        public static readonly Vector3 PlatformSizeMeters = new Vector3(5f, 0.10f, 5f);
+        public static float PlatformSupportPlaneY => PlatformCenterMeters.y + PlatformSizeMeters.y * 0.5f;
         public const float AnchorToleranceMeters = 0.0001f;
         public const string ProfileId = "GAM6_QUATERNIUS_100KG_GAME_CALIBRATION_V1";
 

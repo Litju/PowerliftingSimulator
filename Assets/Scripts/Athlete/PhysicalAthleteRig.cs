@@ -62,6 +62,57 @@ namespace PowerliftingSimulator.Athlete
         public IPhysicalAthleteCommandSource CommandSource => _commandSource;
         public Animator ReferenceAnimator => referenceAnimator;
 
+        /// <summary>
+        /// Where the canonical sole sits once ground registration has run.
+        /// Null until <see cref="RegisterCanonicalGround"/> is called, in which
+        /// case the rig builds exactly as GAM-6 authored it.
+        /// </summary>
+        public float? CanonicalPlantarPlaneY => _canonicalPlantarPlaneY;
+
+        public float GroundRegistrationOffsetMeters { get; private set; }
+
+        private float? _canonicalPlantarPlaneY;
+
+        /// <summary>
+        /// Initial construction registration, discovered by GAM-11. The rig was
+        /// authored in a frame where the canonical sole sits well above the
+        /// platform, so the athlete began every run in free fall. This moves the
+        /// authored rig once, before any body exists and long before the first
+        /// simulated tick, so that the accepted standing pose actually rests on
+        /// the support surface.
+        ///
+        /// It is not a per-tick correction and it does not change any GAM-10
+        /// geometry: the pose is identical, it is only placed on the ground.
+        /// Call before <see cref="Build"/>.
+        /// </summary>
+        /// <param name="measuredPlantarPlaneY">
+        /// The canonical plantar plane measured from the GAM-10 reference
+        /// calibration, which owns that definition.
+        /// </param>
+        public void RegisterCanonicalGround(float measuredPlantarPlaneY)
+        {
+            if (_physicalRoot != null)
+                throw new InvalidOperationException("Ground registration must happen before the physical rig is built.");
+            if (!float.IsFinite(measuredPlantarPlaneY))
+                throw new ArgumentOutOfRangeException(nameof(measuredPlantarPlaneY));
+
+            float offset = PhysicalAthleteDefinition.PlatformSupportPlaneY - measuredPlantarPlaneY;
+            foreach (Transform root in DistinctAnimatorRoots())
+                root.position += new Vector3(0f, offset, 0f);
+
+            GroundRegistrationOffsetMeters = offset;
+            _canonicalPlantarPlaneY = PhysicalAthleteDefinition.PlatformSupportPlaneY;
+        }
+
+        private Transform[] DistinctAnimatorRoots()
+        {
+            Transform referenceRoot = referenceAnimator.transform.root;
+            Transform visibleRoot = visibleAnimator.transform.root;
+            return referenceRoot == visibleRoot
+                ? new[] { referenceRoot }
+                : new[] { referenceRoot, visibleRoot };
+        }
+
         private IPhysicalAthleteCommandSource _commandSource;
 
         public void SetCommandSource(IPhysicalAthleteCommandSource commandSource)
@@ -157,6 +208,11 @@ namespace PowerliftingSimulator.Athlete
 
         private void Start()
         {
+            // A scene that needs ground registration builds the rig itself,
+            // earlier, so the authored placement is corrected before any body
+            // exists. Scenes without one keep the GAM-6 behaviour.
+            if (_physicalRoot != null)
+                return;
             Build();
         }
 
@@ -329,6 +385,7 @@ namespace PowerliftingSimulator.Athlete
             Collider collider = AddCollider(bodyObject, recipe.Collider, dimensions);
             if (recipe.Id.EndsWith("_foot", StringComparison.Ordinal))
             {
+                RegisterFootColliderToPlantarSurface(collider, bodyObject.transform, dimensions);
                 // Foot contact remains ordinary dynamic collision; the grip
                 // material only makes the authored plantar contact less
                 // susceptible to solver jitter during the squat.
@@ -410,9 +467,9 @@ namespace PowerliftingSimulator.Athlete
         {
             GameObject platform = new GameObject("PhysicalPlatform_GAM6");
             SceneManager.MoveGameObjectToScene(platform, foundation.Runtime.AuthoritativeScene);
-            platform.transform.SetPositionAndRotation(new Vector3(0f, -0.05f, 0f), Quaternion.identity);
+            platform.transform.SetPositionAndRotation(PhysicalAthleteDefinition.PlatformCenterMeters, Quaternion.identity);
             BoxCollider collider = platform.AddComponent<BoxCollider>();
-            collider.size = new Vector3(5f, 0.10f, 5f);
+            collider.size = PhysicalAthleteDefinition.PlatformSizeMeters;
             PhysicsMaterial material = new PhysicsMaterial("GAM6_PlatformContact")
             {
                 dynamicFriction = 0.75f,
@@ -475,6 +532,33 @@ namespace PowerliftingSimulator.Athlete
                 }
             }
             return maximum;
+        }
+
+        /// <summary>
+        /// Seats the foot box on the canonical sole. GAM-6 centred the box on
+        /// the foot body origin, which left its underside about 4.7 cm below
+        /// the plantar anchor the accepted reference defines, so plantar
+        /// contact happened somewhere other than where the model says the sole
+        /// is. Only the collider centre moves; size, mass, centre of mass and
+        /// inertia tensor are all authored explicitly elsewhere and are
+        /// untouched.
+        /// </summary>
+        private void RegisterFootColliderToPlantarSurface(Collider collider, Transform bodyTransform, Vector3 dimensions)
+        {
+            if (!_canonicalPlantarPlaneY.HasValue || !(collider is BoxCollider box))
+                return;
+
+            // ResolveBodyRotation gives feet an identity rotation, so the box's
+            // local Y is world Y and a scalar centre offset is well defined.
+            if (Quaternion.Angle(bodyTransform.rotation, Quaternion.identity) > 0.01f)
+            {
+                throw new InvalidOperationException(
+                    "Foot plantar registration assumes an axis-aligned neutral foot; the foot body is rotated.");
+            }
+
+            float soleWithoutOffset = bodyTransform.position.y - dimensions.y * 0.5f;
+            float correction = _canonicalPlantarPlaneY.Value - soleWithoutOffset;
+            box.center = new Vector3(box.center.x, box.center.y + correction, box.center.z);
         }
 
         private static Collider AddCollider(GameObject owner, PhysicalColliderKind kind, Vector3 dimensions)
