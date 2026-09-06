@@ -263,7 +263,7 @@ namespace PowerliftingSimulator.Athlete
                 if (!float.IsFinite(maximumForce))
                     throw new InvalidOperationException($"Joint '{joint.Id}' produced non-finite authority.");
 
-                WritePoweredJoint(joint, targetVelocity, maximumForce, command.CapacityScale);
+                WritePoweredJoint(joint, targetVelocity, maximumForce);
                 joint.Diagnostic = BuildDiagnostic(joint, targetVelocity, maximumForce, activation, command.CapacityScale);
             }
         }
@@ -347,7 +347,7 @@ namespace PowerliftingSimulator.Athlete
             joint.slerpDrive = ZeroDrive();
         }
 
-        private static void WritePoweredJoint(PoweredJointRuntime joint, Vector3 targetVelocity, float maximumForce, float capacityScale = 1f)
+        private static void WritePoweredJoint(PoweredJointRuntime joint, Vector3 targetVelocity, float maximumForce)
         {
             ConfigurableJoint configurable = joint.Joint;
             JointFamilyProfile profile = joint.Profile.Value;
@@ -358,7 +358,7 @@ namespace PowerliftingSimulator.Athlete
             if (joint.Recipe.Kind == PhysicalJointKind.Hinge)
             {
                 configurable.rotationDriveMode = RotationDriveMode.XYAndZ;
-                configurable.angularXDrive = Drive(profile, maximumForce, capacityScale);
+                configurable.angularXDrive = Drive(profile, maximumForce);
                 configurable.angularYZDrive = ZeroDrive();
                 configurable.slerpDrive = ZeroDrive();
             }
@@ -367,14 +367,17 @@ namespace PowerliftingSimulator.Athlete
                 configurable.rotationDriveMode = RotationDriveMode.Slerp;
                 configurable.angularXDrive = ZeroDrive();
                 configurable.angularYZDrive = ZeroDrive();
-                configurable.slerpDrive = Drive(profile, maximumForce, capacityScale);
+                configurable.slerpDrive = Drive(profile, maximumForce);
             }
         }
 
-        private static JointDrive Drive(JointFamilyProfile profile, float maximumForce, float capacityScale = 1f) => new JointDrive
+        // Capacity is an actuator ceiling, not a gain. The GAM-7 family
+        // spring and damper are invariant; capacityScale reaches the joint
+        // only through maximumForce.
+        private static JointDrive Drive(JointFamilyProfile profile, float maximumForce) => new JointDrive
         {
-            positionSpring = profile.Spring * Mathf.Max(0.1f, capacityScale),
-            positionDamper = profile.Damper * Mathf.Sqrt(Mathf.Max(0.1f, capacityScale)),
+            positionSpring = profile.Spring,
+            positionDamper = profile.Damper,
             maximumForce = maximumForce,
             useAcceleration = false
         };
@@ -386,6 +389,25 @@ namespace PowerliftingSimulator.Athlete
             maximumForce = 0f,
             useAcceleration = false
         };
+
+        /// <summary>
+        /// Test seams over the drive contract, so the actuator semantics can
+        /// be asserted without standing up a scene and a ConfigurableJoint.
+        /// </summary>
+        public static JointFamilyProfile? FindFamilyProfile(string family) => ResolveProfile(family);
+
+        public static JointDrive BuildDriveForTest(JointFamilyProfile profile, float maximumForce) =>
+            Drive(profile, maximumForce);
+
+        public static float ModelDemandForTest(
+            JointFamilyProfile profile,
+            Vector3 errorRad,
+            Vector3 velocityErrorRadS,
+            float maximumForce)
+        {
+            Vector3 conceptualTorque = profile.Spring * errorRad + profile.Damper * velocityErrorRadS;
+            return conceptualTorque.magnitude / Mathf.Max(maximumForce, 0.001f);
+        }
 
         private static JointFamilyProfile? ResolveProfile(string family)
         {
@@ -415,13 +437,9 @@ namespace PowerliftingSimulator.Athlete
             Vector3 relativeChild = Quaternion.Inverse(joint.Joint.transform.rotation) * relativeWorld;
             Vector3 actualVelocity = Quaternion.Inverse(joint.JointSpace) * relativeChild;
             JointFamilyProfile profile = joint.Profile.Value;
-            // The drive is written with the capacity-scaled spring and damper,
-            // so the demand metric has to model the same gains. Using the
-            // unscaled profile here under-reported saturation by the whole
-            // capacity scale.
-            float appliedSpring = profile.Spring * Mathf.Max(0.1f, capacityScale);
-            float appliedDamper = profile.Damper * Mathf.Sqrt(Mathf.Max(0.1f, capacityScale));
-            Vector3 conceptualTorque = appliedSpring * errorRad + appliedDamper * (targetVelocity - actualVelocity);
+            // Demand models the gains actually written to the drive, against
+            // the finite maximumForce ceiling that capacity scales.
+            Vector3 conceptualTorque = profile.Spring * errorRad + profile.Damper * (targetVelocity - actualVelocity);
             float demand = conceptualTorque.magnitude / Mathf.Max(maximumForce, 0.001f);
             float xDegrees = SignedTwistDegrees(actual, Vector3.right);
             float limit = xDegrees >= 0f ? Mathf.Max(0.001f, joint.Recipe.HighDegrees) : Mathf.Max(0.001f, -joint.Recipe.LowDegrees);
