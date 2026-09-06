@@ -86,6 +86,11 @@ namespace PowerliftingSimulator.Athlete
                 time,
                 PlayerIntentFrame.Empty,
                 _poweredController);
+            // The standing target, including its gravity preload, has to be
+            // fully applied on the first simulated tick. Without this the
+            // drives slew toward it while gravity is already acting, which is
+            // the sag transient the preload exists to remove.
+            _poweredController.SnapAppliedTargets();
             _poweredController.Step(time, PlayerIntentFrame.Empty);
         }
 

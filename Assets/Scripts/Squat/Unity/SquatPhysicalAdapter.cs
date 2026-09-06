@@ -61,6 +61,10 @@ namespace PowerliftingSimulator.Squat.Unity
         private float _standingComMlOffset;
         private bool _hasStandingCalibration;
         private ReferenceTargetFrame _nominalReferenceTarget;
+        private readonly SquatEquilibriumPreload _preload = new SquatEquilibriumPreload();
+        private readonly float[] _familyFlexionSign = new float[5];
+        private readonly System.Collections.Generic.Dictionary<string, JointTargetComposition> _composition =
+            new System.Collections.Generic.Dictionary<string, JointTargetComposition>(8);
 
         // Telemetry is sampled from the previous post-physics observation.
         private Vector3 _systemCom;
@@ -86,6 +90,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 _segments[index++] = segment;
             _observer = new SquatBalanceObserver(_rig, _segments);
             BuildReferenceTargetTables(out _descentTargets, out _ascentTargets);
+            CalibrateFamilyFlexionSigns();
             _rig.SetCommandSource(this);
             _sq = 0f;
         }
@@ -106,6 +111,46 @@ namespace PowerliftingSimulator.Squat.Unity
 
         public SquatBalanceObserver Balance => _observer;
         public SquatPredictiveBalanceController BalanceController => _balanceController;
+        public SquatEquilibriumPreload Preload => _preload;
+
+        /// <summary>
+        /// Where the owner-accepted GAM-10 reference puts the sole of the foot
+        /// in the standing pose. The physical foot collider is supposed to
+        /// reach this.
+        /// </summary>
+        public Vector3 LeftReferencePlantarAnchorWorld { get; private set; }
+        public Vector3 RightReferencePlantarAnchorWorld { get; private set; }
+
+        /// <summary>
+        /// The three target layers for one controlled joint, kept separate so
+        /// telemetry and tests can see each contribution rather than only the
+        /// composed result.
+        /// </summary>
+        public readonly struct JointTargetComposition
+        {
+            public JointTargetComposition(Quaternion nominal, Quaternion gravityBias, Quaternion balanceOffset, Quaternion final)
+            {
+                Nominal = nominal;
+                GravityBias = gravityBias;
+                BalanceOffset = balanceOffset;
+                Final = final;
+            }
+
+            public Quaternion Nominal { get; }
+            public Quaternion GravityBias { get; }
+            public Quaternion BalanceOffset { get; }
+            public Quaternion Final { get; }
+        }
+
+        public bool TryGetTargetComposition(string jointId, out JointTargetComposition composition) =>
+            _composition.TryGetValue(jointId, out composition);
+
+        /// <summary>
+        /// Sign that converts a canonical anatomical flexion into logical
+        /// joint space for this family, measured from the qualified reference
+        /// mapping rather than assumed.
+        /// </summary>
+        public float FamilyFlexionSign(SquatJointFamily family) => _familyFlexionSign[(int)family];
 
         /// <summary>
         /// Phase 5D diagnostic switch. With this off the athlete is driven by
@@ -193,6 +238,7 @@ namespace PowerliftingSimulator.Squat.Unity
             _maxDriveSaturation = 0f;
             _balanceController.Reset();
             _hasStandingCalibration = false;
+            _composition.Clear();
         }
 
         // Retained for deterministic qualification fixtures. Owner gameplay
@@ -275,33 +321,46 @@ namespace PowerliftingSimulator.Squat.Unity
 
             ulong tick = time.Tick;
 
-            // NOMINAL_GAM10_TARGET, then BALANCE_OFFSET, then
-            // FINAL_JOINT_TARGET. The three stay separable so the owner
-            // overlay and the tests can see exactly how far balance moved the
+            // FINAL = NOMINAL_GAM10 + GRAVITY_EQUILIBRIUM_BIAS + DYNAMIC_BALANCE.
+            // The three terms stay separable in code, telemetry and tests, so
+            // the owner overlay can show exactly how far each layer moved the
             // accepted reference.
             ReferenceTargetFrame referenceTarget = EvaluateReferenceTarget();
+            _nominalReferenceTarget = referenceTarget;
+
+            float anklePreload = PreloadLogicalRad(SquatJointFamily.Ankle);
+            float kneePreload = PreloadLogicalRad(SquatJointFamily.Knee);
+            float hipPreload = PreloadLogicalRad(SquatJointFamily.Hip);
+            float abdomenPreload = PreloadLogicalRad(SquatJointFamily.Abdomen);
+            float thoraxPreload = PreloadLogicalRad(SquatJointFamily.Thorax);
+
+            Quaternion ankleGravityBias = SagittalAndFrontal(anklePreload, 0f);
+            Quaternion kneeGravityBias = SagittalAndFrontal(kneePreload, 0f);
+            Quaternion hipGravityBias = SagittalAndFrontal(hipPreload, 0f);
+            Quaternion abdomenGravityBias = SagittalAndFrontal(abdomenPreload, 0f);
+            Quaternion thoraxGravityBias = SagittalAndFrontal(thoraxPreload, 0f);
+
             float ankleSagittalOffset = AnkleSagittalOffsetOverrideRad ?? _balanceController.AnkleSagittalOffsetRad;
-            Quaternion ankleOffset = SagittalAndFrontal(
+            Quaternion ankleBalance = SagittalAndFrontal(
                 ankleSagittalOffset,
                 _balanceController.AnkleFrontalOffsetRad);
-            Quaternion kneeOffset = Quaternion.identity;
-            Quaternion hipOffset = SagittalAndFrontal(
+            Quaternion kneeBalance = Quaternion.identity;
+            Quaternion hipBalance = SagittalAndFrontal(
                 _balanceController.HipSagittalOffsetRad,
                 _balanceController.HipFrontalOffsetRad);
             Quaternion braceOffset = SagittalAndFrontal(-UnitContract.DegreesToRadians(3f) * brace, 0f);
-            Quaternion trunkOffset = braceOffset * SagittalAndFrontal(
+            Quaternion trunkBalance = braceOffset * SagittalAndFrontal(
                 _balanceController.TrunkSagittalOffsetRad,
                 _balanceController.HipFrontalOffsetRad * 0.5f);
 
-            _nominalReferenceTarget = referenceTarget;
-            Quaternion leftAnkleTarget = referenceTarget.LeftFoot * ankleOffset;
-            Quaternion rightAnkleTarget = referenceTarget.RightFoot * ankleOffset;
-            Quaternion leftKneeTarget = referenceTarget.LeftShank * kneeOffset;
-            Quaternion rightKneeTarget = referenceTarget.RightShank * kneeOffset;
-            Quaternion leftHipTarget = referenceTarget.LeftThigh * hipOffset;
-            Quaternion rightHipTarget = referenceTarget.RightThigh * hipOffset;
-            Quaternion abdomenTarget = referenceTarget.Abdomen * trunkOffset;
-            Quaternion thoraxTarget = referenceTarget.Thorax * trunkOffset;
+            Quaternion leftAnkleTarget = Compose("left_foot", referenceTarget.LeftFoot, ankleGravityBias, ankleBalance);
+            Quaternion rightAnkleTarget = Compose("right_foot", referenceTarget.RightFoot, ankleGravityBias, ankleBalance);
+            Quaternion leftKneeTarget = Compose("left_shank", referenceTarget.LeftShank, kneeGravityBias, kneeBalance);
+            Quaternion rightKneeTarget = Compose("right_shank", referenceTarget.RightShank, kneeGravityBias, kneeBalance);
+            Quaternion leftHipTarget = Compose("left_thigh", referenceTarget.LeftThigh, hipGravityBias, hipBalance);
+            Quaternion rightHipTarget = Compose("right_thigh", referenceTarget.RightThigh, hipGravityBias, hipBalance);
+            Quaternion abdomenTarget = Compose("abdomen", referenceTarget.Abdomen, abdomenGravityBias, trunkBalance);
+            Quaternion thoraxTarget = Compose("thorax", referenceTarget.Thorax, thoraxGravityBias, trunkBalance);
 
             // Feed the canonical reference rate forward while the phase is
             // actually moving, so the drive is not asked to hold a moving
@@ -528,6 +587,42 @@ namespace PowerliftingSimulator.Squat.Unity
             return ankle.HasValue ? ankle.Value.Spring : 1f;
         }
 
+        /// <summary>
+        /// Reads the flexion direction of each joint family straight out of
+        /// the qualified reference mapping, at the quarter-descent waypoint
+        /// where every canonical angle is a positive flexion. Nothing here is
+        /// assumed; if the mapping is ever recalibrated these follow it.
+        /// </summary>
+        private void CalibrateFamilyFlexionSigns()
+        {
+            SquatReferencePose pose = _profile.Evaluate(0.25f, SquatPhaseDirection.Descent);
+            AssignSign(SquatJointFamily.Ankle, "left_foot", pose.AnkleDorsiflexionRad);
+            AssignSign(SquatJointFamily.Knee, "left_shank", pose.KneeFlexionRad);
+            AssignSign(SquatJointFamily.Hip, "left_thigh", pose.HipFlexionRad);
+            AssignSign(SquatJointFamily.Abdomen, "abdomen", pose.TrunkFlexionRad);
+            AssignSign(SquatJointFamily.Thorax, "thorax", pose.TrunkFlexionRad);
+        }
+
+        private void AssignSign(SquatJointFamily family, string jointId, float canonicalFlexionRad)
+        {
+            float logical = SignedSagittalRadians(
+                EvaluateReferenceTarget(0.25f, SquatPhaseDirection.Descent).ForJoint(jointId));
+            float sign = Mathf.Abs(logical) < 1e-4f || Mathf.Abs(canonicalFlexionRad) < 1e-4f
+                ? 1f
+                : Mathf.Sign(logical) * Mathf.Sign(canonicalFlexionRad);
+            _familyFlexionSign[(int)family] = sign;
+        }
+
+        private float PreloadLogicalRad(SquatJointFamily family) =>
+            _preload.AnatomicalFlexionBiasRad(family) * _familyFlexionSign[(int)family];
+
+        private Quaternion Compose(string jointId, Quaternion nominal, Quaternion gravityBias, Quaternion balanceOffset)
+        {
+            Quaternion final = nominal * gravityBias * balanceOffset;
+            _composition[jointId] = new JointTargetComposition(nominal, gravityBias, balanceOffset, final);
+            return final;
+        }
+
         private float LowestFootBodyY()
         {
             float lowest = float.PositiveInfinity;
@@ -578,6 +673,8 @@ namespace PowerliftingSimulator.Squat.Unity
 
             Vector3 leftStandingFootAnchor = calibration.LeftFoot.PlantarAnchorWorld;
             Vector3 rightStandingFootAnchor = calibration.RightFoot.PlantarAnchorWorld;
+            LeftReferencePlantarAnchorWorld = leftStandingFootAnchor;
+            RightReferencePlantarAnchorWorld = rightStandingFootAnchor;
             descentTargets = new ReferenceTargetFrame[ReferenceTargetSampleCount];
             ascentTargets = new ReferenceTargetFrame[ReferenceTargetSampleCount];
             for (int index = 0; index < ReferenceTargetSampleCount; index++)

@@ -226,6 +226,22 @@ namespace PowerliftingSimulator.Athlete
             joint.RequestedCommand = command;
         }
 
+        /// <summary>
+        /// Initialization only. The per-tick path rate limits the applied
+        /// target, which is correct while the simulation runs but would let
+        /// the athlete spend its first tens of milliseconds slewing toward a
+        /// standing target it should already be holding. Snapping once before
+        /// the first Simulate is not a physics step and writes no drive.
+        /// </summary>
+        public void SnapAppliedTargets()
+        {
+            foreach (PoweredJointRuntime joint in _joints)
+            {
+                if (joint.Profile.HasValue)
+                    joint.AppliedTarget = joint.RequestedCommand.TargetRelativeRotation;
+            }
+        }
+
         public PoweredJointRuntime GetJoint(string childId) =>
             _jointById.TryGetValue(childId, out PoweredJointRuntime joint)
                 ? joint
