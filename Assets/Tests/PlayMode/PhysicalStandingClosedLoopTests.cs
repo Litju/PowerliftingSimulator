@@ -287,7 +287,7 @@ namespace PowerliftingSimulator.Tests
         public IEnumerator C1_CORRECTED_ANKLE_ONLY_CLOSED_LOOP()
         {
             yield return LoadFixture();
-            StandingRun run = RunStanding("GAM11-c1-corrected-ankle-only.csv");
+            StandingRun run = RunStanding("GAM11-c1-corrected-ankle-only.csv", hipTrunkEnabled: false);
             Debug.Log("[C1 CORRECTED ANKLE ONLY] " + run.Summary + Environment.NewLine + run.Trace);
 
             Assert.That(run.InitialPelvisY, Is.GreaterThan(0.9f),
@@ -305,7 +305,7 @@ namespace PowerliftingSimulator.Tests
             for (int index = 0; index < runs.Length; index++)
             {
                 yield return LoadFixture();
-                runs[index] = RunStanding($"GAM11-standing-gate-run{index + 1}.csv");
+                runs[index] = RunStanding($"GAM11-standing-gate-run{index + 1}.csv", hipTrunkEnabled: true);
                 Debug.Log($"[G1 STANDING RUN {index + 1}] " + runs[index].Summary);
             }
 
@@ -333,6 +333,14 @@ namespace PowerliftingSimulator.Tests
                 Assert.That(run.MaxSlipMps, Is.LessThan(0.05f), "The feet are slipping. " + run.Summary);
                 Assert.That(run.SustainedSaturationFraction, Is.LessThan(0.05f),
                     "The drives are sustained at their ceiling. " + run.Summary);
+
+                // Standing is a posture, not just a centre of mass over the
+                // feet. Without this the gate passes an athlete folded double
+                // at the waist, because folding keeps the pelvis high and the
+                // COM over the support while every balance signal stays clean.
+                Assert.That(run.MaxPostureErrorDeg, Is.LessThan(10f),
+                    $"The physical pose left the canonical GAM-10 standing pose by " +
+                    $"{run.MaxPostureErrorDeg:F1} deg at {run.WorstPostureJoint}. " + run.Summary);
             }
             yield return null;
         }
@@ -636,7 +644,7 @@ namespace PowerliftingSimulator.Tests
         // One standing run: unloaded, s_q = 0, zero preload, corrected ankle
         // mapping, hip and trunk off. 1000 ticks or a fall.
         // ---------------------------------------------------------------
-        private StandingRun RunStanding(string measurementFilename)
+        private StandingRun RunStanding(string measurementFilename, bool hipTrunkEnabled)
         {
             _controller.SetLoad(0f);
             SquatPhysicalAdapter adapter = _controller.Adapter;
@@ -644,7 +652,7 @@ namespace PowerliftingSimulator.Tests
             adapter.AnkleSagittalOffsetOverrideRad = null;
             adapter.Preload.Enabled = true;
             adapter.Preload.CopyFrom(SquatEquilibriumPreload.QualifiedStanding());
-            adapter.BalanceController.HipTrunkStrategyEnabled = false;
+            adapter.BalanceController.HipTrunkStrategyEnabled = hipTrunkEnabled;
 
             var trace = new StringBuilder();
             trace.AppendLine(TraceHeader());
@@ -689,6 +697,7 @@ namespace PowerliftingSimulator.Tests
                     run.MaxAnkleAuthorityFraction = Mathf.Max(run.MaxAnkleAuthorityFraction,
                         control.AnkleAuthorityFraction);
                     run.MaxSaturation = Mathf.Max(run.MaxSaturation, adapter.MaxDriveSaturation);
+                    AccumulatePostureError(adapter, ref run);
                     run.WorstFootPitchDeg = Mathf.Max(run.WorstFootPitchDeg,
                         Mathf.Abs(FootPitchDegrees("left_foot")));
                     if (_controller.LeftFootContact != null)
@@ -738,6 +747,69 @@ namespace PowerliftingSimulator.Tests
             return run;
         }
 
+        /// <summary>
+        /// How far the ACTUAL physical pose has drifted from the canonical
+        /// GAM-10 standing pose, per joint. Balance telemetry cannot see this:
+        /// a body folded at the hip keeps its pelvis high and can hold its
+        /// centre of mass over the feet, so it passes every COM, COP, capture
+        /// and contact check while looking nothing like a person standing.
+        /// </summary>
+        private static readonly string[] PostureJoints =
+        {
+            "left_foot", "right_foot", "left_shank", "right_shank",
+            "left_thigh", "right_thigh", "abdomen", "thorax"
+        };
+
+        private void AccumulatePostureError(SquatPhysicalAdapter adapter, ref StandingRun run)
+        {
+            foreach (string jointId in PostureJoints)
+            {
+                if (!adapter.TryGetTargetComposition(jointId, out SquatPhysicalAdapter.JointTargetComposition composition))
+                    continue;
+                Quaternion actual = _rig.PoweredController.GetJoint(jointId).Diagnostic.ActualRelative;
+                float error = Quaternion.Angle(composition.Nominal, actual);
+                if (error > run.MaxPostureErrorDeg)
+                {
+                    run.MaxPostureErrorDeg = error;
+                    run.WorstPostureJoint = jointId;
+                }
+                if (jointId == "thorax")
+                    run.TrunkPostureErrorDeg = Mathf.Max(run.TrunkPostureErrorDeg, error);
+                if (jointId == "left_thigh")
+                    run.HipPostureErrorDeg = Mathf.Max(run.HipPostureErrorDeg, error);
+            }
+        }
+
+        // ---------------------------------------------------------------
+        // D1. What the owner actually sees.
+        //
+        // The 10 second gate was written with the hip and trunk channel off,
+        // and production runs it on. It also measured only balance, and a
+        // body folded at the hip holds its centre of mass over the feet, so
+        // every balance check passed while the athlete was bent double.
+        //
+        // This runs both configurations and reports posture next to balance,
+        // so the difference between them is a measurement rather than an
+        // argument.
+        // ---------------------------------------------------------------
+        [UnityTest]
+        public IEnumerator D1_STANDING_POSTURE_AGAINST_PRODUCTION_CONFIGURATION()
+        {
+            yield return LoadFixture();
+            StandingRun hipOff = RunStanding("GAM11-posture-hip-off.csv", hipTrunkEnabled: false);
+
+            yield return LoadFixture();
+            StandingRun hipOn = RunStanding("GAM11-posture-hip-on.csv", hipTrunkEnabled: true);
+
+            var report = new StringBuilder();
+            report.AppendLine("configuration," + StandingRun.Header());
+            report.AppendLine("hip_trunk_off," + hipOff.Row());
+            report.AppendLine("hip_trunk_on_production," + hipOn.Row());
+            WriteMeasurement("GAM11-standing-posture-comparison.csv", report.ToString());
+            Debug.Log("[D1 STANDING POSTURE]" + Environment.NewLine + report);
+            yield return null;
+        }
+
         private struct StandingRun
         {
             public bool Survived;
@@ -761,6 +833,10 @@ namespace PowerliftingSimulator.Tests
             public float WorstFootPitchDeg;
             public float MaxSlipMps;
             public bool LostContact;
+            public float MaxPostureErrorDeg;
+            public string WorstPostureJoint;
+            public float TrunkPostureErrorDeg;
+            public float HipPostureErrorDeg;
             public string Trace;
 
             public static string Header() =>
@@ -768,15 +844,18 @@ namespace PowerliftingSimulator.Tests
                 "final_pelvis_y,final_com_ap,final_com_ap_vel,max_com_ap,max_com_ap_vel," +
                 "worst_capture_margin,cop_min_ap,cop_max_ap,max_ankle_offset_deg," +
                 "max_ankle_authority_fraction,max_saturation,sustained_saturation," +
-                "worst_foot_pitch_deg,max_slip_mps,lost_contact";
+                "worst_foot_pitch_deg,max_slip_mps,lost_contact," +
+                "max_posture_error_deg,worst_posture_joint,trunk_posture_error_deg,hip_posture_error_deg";
 
             public string Row() => string.Format(CultureInfo.InvariantCulture,
                 "{0},{1:F2},{2},{3:F4},{4:F4},{5:F4},{6:F4},{7:F5},{8:F5},{9:F5},{10:F5}," +
-                "{11:F5},{12:F5},{13:F5},{14:F2},{15:F3},{16:F3},{17:F3},{18:F2},{19:F4},{20}",
+                "{11:F5},{12:F5},{13:F5},{14:F2},{15:F3},{16:F3},{17:F3},{18:F2},{19:F4},{20}," +
+                "{21:F2},{22},{23:F2},{24:F2}",
                 Survived, DurationSeconds, FailureMode, InitialPelvisY, SettledPelvisY, MinPelvisY,
                 FinalPelvisY, FinalComAp, FinalComApVelocity, MaxAbsComAp, MaxAbsComApVelocity,
                 WorstCaptureMargin, CopMinAp, CopMaxAp, MaxAnkleOffsetDeg, MaxAnkleAuthorityFraction,
-                MaxSaturation, SustainedSaturationFraction, WorstFootPitchDeg, MaxSlipMps, LostContact);
+                MaxSaturation, SustainedSaturationFraction, WorstFootPitchDeg, MaxSlipMps, LostContact,
+                MaxPostureErrorDeg, WorstPostureJoint ?? "NONE", TrunkPostureErrorDeg, HipPostureErrorDeg);
 
             public string Summary => Header() + " => " + Row();
         }
