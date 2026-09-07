@@ -318,11 +318,74 @@ namespace PowerliftingSimulator.Squat.Unity
             HudLabel(string.Format(CultureInfo.InvariantCulture, "BAR_SADDLE_ATTACHED: {0}", _saddle != null && _saddle.IsAttached ? "YES" : "NO"));
             HudLabel(string.Format(CultureInfo.InvariantCulture, "BAR_SADDLE_ERROR: {0}", float.IsInfinity(saddleError) ? "N/A" : saddleError.ToString("F4", CultureInfo.InvariantCulture) + " m"));
             GUILayout.EndVertical();
+
+            // The balance column. Standing is now a closed loop over these
+            // quantities, so they are what an owner review has to be able to
+            // see failing.
+            SquatBalanceObserver balance = _adapter.Balance;
+            SquatPredictiveBalanceController control = _adapter.BalanceController;
+            GUILayout.BeginVertical(GUILayout.Width(330f));
+            HudLabel(string.Format(CultureInfo.InvariantCulture,
+                "COM_AP: {0:+0.000;-0.000} m  VEL: {1:+0.000;-0.000} m/s",
+                balance.SystemCom.z, balance.SystemComVelocity.z));
+            HudLabel(string.Format(CultureInfo.InvariantCulture,
+                "COP_MEASURED_AP: {0}",
+                balance.HasCopEstimate
+                    ? balance.CopEstimate.z.ToString("+0.000;-0.000", CultureInfo.InvariantCulture) + " m"
+                    : "NONE"));
+            HudLabel(string.Format(CultureInfo.InvariantCulture,
+                "COP_DESIRED_AP: {0:+0.000;-0.000} m  ERR: {1:+0.000;-0.000} m",
+                control.CopDesiredAp, control.CopErrorAp));
+            HudLabel(string.Format(CultureInfo.InvariantCulture,
+                "CAPTURE_AP: {0:+0.000;-0.000} m", balance.CaptureAp));
+            HudLabel(string.Format(CultureInfo.InvariantCulture,
+                "SUPPORT_AP: [{0:+0.000;-0.000}, {1:+0.000;-0.000}] m",
+                balance.SupportApMin, balance.SupportApMax));
+            HudLabel(string.Format(CultureInfo.InvariantCulture,
+                "CAPTURE_MARGIN: rear {0:0.000} front {1:0.000} m",
+                balance.CaptureMarginRear, balance.CaptureMarginFront));
+            HudLabel(string.Format(CultureInfo.InvariantCulture,
+                "ANKLE_NOMINAL: {0:+0.0;-0.0} deg", HudSagittalDegrees(AnkleComposition().Nominal)));
+            HudLabel(string.Format(CultureInfo.InvariantCulture,
+                "ANKLE_BALANCE_OFFSET: {0:+0.0;-0.0} deg  ({1:P0} of bound)",
+                control.AnkleSagittalOffsetRad * Mathf.Rad2Deg, control.AnkleAuthorityFraction));
+            HudLabel(string.Format(CultureInfo.InvariantCulture,
+                "ANKLE_FINAL_TARGET: {0:+0.0;-0.0} deg", HudSagittalDegrees(AnkleComposition().Final)));
+            HudLabel(string.Format(CultureInfo.InvariantCulture,
+                "ANKLE_ACTUAL: {0:+0.0;-0.0} deg", HudAnkleActualDegrees()));
+            HudLabel(string.Format(CultureInfo.InvariantCulture,
+                "HIP/TRUNK_BALANCE: {0:+0.0;-0.0} / {1:+0.0;-0.0} deg  ({2})",
+                control.HipSagittalOffsetRad * Mathf.Rad2Deg,
+                control.TrunkSagittalOffsetRad * Mathf.Rad2Deg,
+                control.HipTrunkStrategyEnabled ? "enabled" : "off"));
+            GUILayout.EndVertical();
             GUILayout.EndHorizontal();
 
             HudLabel("CONTROLS: SPACE Brace/Confirm | S Yield/descend | W Drive/ascend | A/D Balance | R Reset | B Release saddle");
             HudLabel("LOAD_CONTROLS: 1 Unloaded | 2 25 kg | 3 105 kg");
             GUILayout.EndArea();
+        }
+
+        private SquatPhysicalAdapter.JointTargetComposition AnkleComposition()
+        {
+            _adapter.TryGetTargetComposition("left_foot", out SquatPhysicalAdapter.JointTargetComposition composition);
+            return composition;
+        }
+
+        private float HudAnkleActualDegrees() =>
+            athleteRig == null
+                ? 0f
+                : HudSagittalDegrees(athleteRig.PoweredController.GetJoint("left_foot").Diagnostic.ActualRelative);
+
+        private static float HudSagittalDegrees(Quaternion rotation)
+        {
+            if (rotation.w < 0f)
+                rotation = new Quaternion(-rotation.x, -rotation.y, -rotation.z, -rotation.w);
+            float magnitude = Mathf.Sqrt(rotation.x * rotation.x + rotation.y * rotation.y + rotation.z * rotation.z);
+            if (magnitude <= 1e-6f)
+                return 0f;
+            float angle = 2f * Mathf.Atan2(magnitude, Mathf.Clamp(rotation.w, -1f, 1f));
+            return rotation.x * (angle / magnitude) * Mathf.Rad2Deg;
         }
 
         private void HudLabel(string text)
