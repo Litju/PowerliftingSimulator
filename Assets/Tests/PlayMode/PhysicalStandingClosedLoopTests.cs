@@ -287,11 +287,47 @@ namespace PowerliftingSimulator.Tests
         public IEnumerator C1_CORRECTED_ANKLE_ONLY_CLOSED_LOOP()
         {
             yield return LoadFixture();
-            StandingRun run = RunStanding("GAM11-c1-corrected-ankle-only.csv", hipTrunkEnabled: false);
+            StandingRun run = RunStanding("GAM11-c1-corrected-ankle-only.csv", hipTrunkEnabled: false, postureGuardEnabled: true);
             Debug.Log("[C1 CORRECTED ANKLE ONLY] " + run.Summary + Environment.NewLine + run.Trace);
 
             Assert.That(run.InitialPelvisY, Is.GreaterThan(0.9f),
                 "The athlete did not spawn standing. " + run.Summary);
+            yield return null;
+        }
+
+        // ---------------------------------------------------------------
+        // The gate has to reject the thing that fooled it.
+        //
+        // Ankle balance with the posture guard switched off is the exact
+        // behaviour the owner rejected: the centre of mass stays over the
+        // feet for the full ten seconds while the trunk folds onto its
+        // anatomical limit. If a future change ever makes this pass again,
+        // the gate has stopped measuring standing.
+        // ---------------------------------------------------------------
+        [UnityTest]
+        public IEnumerator P1_COM_STABLE_BUT_POSTURE_FOLDED_MUST_FAIL()
+        {
+            yield return LoadFixture();
+            StandingRun folded = RunStanding(
+                "GAM11-pathological-folded-standing.csv",
+                hipTrunkEnabled: false,
+                postureGuardEnabled: false);
+
+            Debug.Log("[P1 PATHOLOGICAL FOLDED STANDING] " + folded.Summary);
+
+            // The balance half genuinely passes. That is the whole point:
+            // this case is only caught by the posture half.
+            Assert.That(folded.Survived, Is.True,
+                "This case is supposed to keep its centre of mass over the feet for the " +
+                "full run. If it now falls, the pathology has changed and the guard is " +
+                "being validated against stale evidence. " + folded.Summary);
+            Assert.That(folded.WorstCaptureMargin, Is.GreaterThan(0f),
+                "Balance was supposed to look healthy here. " + folded.Summary);
+
+            Assert.That(folded.Verdict(), Is.Not.EqualTo("NONE"),
+                "The folded athlete was classified as a clean standing run. " + folded.Summary);
+            Assert.That(folded.MaxPostureErrorDeg, Is.GreaterThan(PostureThresholdDeg),
+                "The known fold no longer exceeds the posture threshold. " + folded.Summary);
             yield return null;
         }
 
@@ -305,7 +341,7 @@ namespace PowerliftingSimulator.Tests
             for (int index = 0; index < runs.Length; index++)
             {
                 yield return LoadFixture();
-                runs[index] = RunStanding($"GAM11-standing-gate-run{index + 1}.csv", hipTrunkEnabled: true);
+                runs[index] = RunStanding($"GAM11-standing-gate-run{index + 1}.csv", hipTrunkEnabled: true, postureGuardEnabled: true);
                 Debug.Log($"[G1 STANDING RUN {index + 1}] " + runs[index].Summary);
             }
 
@@ -338,9 +374,13 @@ namespace PowerliftingSimulator.Tests
                 // feet. Without this the gate passes an athlete folded double
                 // at the waist, because folding keeps the pelvis high and the
                 // COM over the support while every balance signal stays clean.
-                Assert.That(run.MaxPostureErrorDeg, Is.LessThan(10f),
+                Assert.That(run.MaxPostureErrorDeg, Is.LessThan(PostureThresholdDeg),
                     $"The physical pose left the canonical GAM-10 standing pose by " +
                     $"{run.MaxPostureErrorDeg:F1} deg at {run.WorstPostureJoint}. " + run.Summary);
+                Assert.That(run.MaxLimitProximity, Is.LessThan(PinnedLimitProximity),
+                    $"{run.PinnedJoint} is resting on its anatomical limit, so the limit is " +
+                    $"holding the pose rather than the drive. " + run.Summary);
+                Assert.That(run.Verdict(), Is.EqualTo("NONE"), run.Summary);
             }
             yield return null;
         }
@@ -644,7 +684,7 @@ namespace PowerliftingSimulator.Tests
         // One standing run: unloaded, s_q = 0, zero preload, corrected ankle
         // mapping, hip and trunk off. 1000 ticks or a fall.
         // ---------------------------------------------------------------
-        private StandingRun RunStanding(string measurementFilename, bool hipTrunkEnabled)
+        private StandingRun RunStanding(string measurementFilename, bool hipTrunkEnabled, bool postureGuardEnabled)
         {
             _controller.SetLoad(0f);
             SquatPhysicalAdapter adapter = _controller.Adapter;
@@ -653,6 +693,7 @@ namespace PowerliftingSimulator.Tests
             adapter.Preload.Enabled = true;
             adapter.Preload.CopyFrom(SquatEquilibriumPreload.QualifiedStanding());
             adapter.BalanceController.HipTrunkStrategyEnabled = hipTrunkEnabled;
+            adapter.BalanceController.PostureGuardEnabled = postureGuardEnabled;
 
             var trace = new StringBuilder();
             trace.AppendLine(TraceHeader());
@@ -664,7 +705,8 @@ namespace PowerliftingSimulator.Tests
                 FailureMode = "NONE",
                 WorstCaptureMargin = float.PositiveInfinity,
                 CopMinAp = float.PositiveInfinity,
-                CopMaxAp = float.NegativeInfinity
+                CopMaxAp = float.NegativeInfinity,
+                MinPostureGuardScale = 1f
             };
             run.MinPelvisY = run.InitialPelvisY;
             int survivedTicks = totalTicks;
@@ -698,6 +740,9 @@ namespace PowerliftingSimulator.Tests
                         control.AnkleAuthorityFraction);
                     run.MaxSaturation = Mathf.Max(run.MaxSaturation, adapter.MaxDriveSaturation);
                     AccumulatePostureError(adapter, ref run);
+                    run.MinPostureGuardScale = Mathf.Min(run.MinPostureGuardScale, control.PostureGuardScale);
+                    run.MaxRawAnkleOffsetDeg = Mathf.Max(run.MaxRawAnkleOffsetDeg,
+                        Mathf.Abs(control.RawAnkleSagittalOffsetRad) * Mathf.Rad2Deg);
                     run.WorstFootPitchDeg = Mathf.Max(run.WorstFootPitchDeg,
                         Mathf.Abs(FootPitchDegrees("left_foot")));
                     if (_controller.LeftFootContact != null)
@@ -766,7 +811,13 @@ namespace PowerliftingSimulator.Tests
             {
                 if (!adapter.TryGetTargetComposition(jointId, out SquatPhysicalAdapter.JointTargetComposition composition))
                     continue;
-                Quaternion actual = _rig.PoweredController.GetJoint(jointId).Diagnostic.ActualRelative;
+                PoweredJointDiagnostic diagnostic = _rig.PoweredController.GetJoint(jointId).Diagnostic;
+                Quaternion actual = diagnostic.ActualRelative;
+                if (diagnostic.LimitProximity > run.MaxLimitProximity)
+                {
+                    run.MaxLimitProximity = diagnostic.LimitProximity;
+                    run.PinnedJoint = jointId;
+                }
                 float error = Quaternion.Angle(composition.Nominal, actual);
                 if (error > run.MaxPostureErrorDeg)
                 {
@@ -796,10 +847,10 @@ namespace PowerliftingSimulator.Tests
         public IEnumerator D1_STANDING_POSTURE_AGAINST_PRODUCTION_CONFIGURATION()
         {
             yield return LoadFixture();
-            StandingRun hipOff = RunStanding("GAM11-posture-hip-off.csv", hipTrunkEnabled: false);
+            StandingRun hipOff = RunStanding("GAM11-posture-hip-off.csv", hipTrunkEnabled: false, postureGuardEnabled: true);
 
             yield return LoadFixture();
-            StandingRun hipOn = RunStanding("GAM11-posture-hip-on.csv", hipTrunkEnabled: true);
+            StandingRun hipOn = RunStanding("GAM11-posture-hip-on.csv", hipTrunkEnabled: true, postureGuardEnabled: true);
 
             var report = new StringBuilder();
             report.AppendLine("configuration," + StandingRun.Header());
@@ -837,6 +888,10 @@ namespace PowerliftingSimulator.Tests
             public string WorstPostureJoint;
             public float TrunkPostureErrorDeg;
             public float HipPostureErrorDeg;
+            public float MaxLimitProximity;
+            public string PinnedJoint;
+            public float MinPostureGuardScale;
+            public float MaxRawAnkleOffsetDeg;
             public string Trace;
 
             public static string Header() =>
@@ -845,17 +900,39 @@ namespace PowerliftingSimulator.Tests
                 "worst_capture_margin,cop_min_ap,cop_max_ap,max_ankle_offset_deg," +
                 "max_ankle_authority_fraction,max_saturation,sustained_saturation," +
                 "worst_foot_pitch_deg,max_slip_mps,lost_contact," +
-                "max_posture_error_deg,worst_posture_joint,trunk_posture_error_deg,hip_posture_error_deg";
+                "max_posture_error_deg,worst_posture_joint,trunk_posture_error_deg,hip_posture_error_deg," +
+                "max_limit_proximity,pinned_joint,min_posture_guard_scale,max_raw_ankle_offset_deg,verdict";
 
             public string Row() => string.Format(CultureInfo.InvariantCulture,
                 "{0},{1:F2},{2},{3:F4},{4:F4},{5:F4},{6:F4},{7:F5},{8:F5},{9:F5},{10:F5}," +
                 "{11:F5},{12:F5},{13:F5},{14:F2},{15:F3},{16:F3},{17:F3},{18:F2},{19:F4},{20}," +
-                "{21:F2},{22},{23:F2},{24:F2}",
+                "{21:F2},{22},{23:F2},{24:F2},{25:F3},{26},{27:F3},{28:F2},{29}",
                 Survived, DurationSeconds, FailureMode, InitialPelvisY, SettledPelvisY, MinPelvisY,
                 FinalPelvisY, FinalComAp, FinalComApVelocity, MaxAbsComAp, MaxAbsComApVelocity,
                 WorstCaptureMargin, CopMinAp, CopMaxAp, MaxAnkleOffsetDeg, MaxAnkleAuthorityFraction,
                 MaxSaturation, SustainedSaturationFraction, WorstFootPitchDeg, MaxSlipMps, LostContact,
-                MaxPostureErrorDeg, WorstPostureJoint ?? "NONE", TrunkPostureErrorDeg, HipPostureErrorDeg);
+                MaxPostureErrorDeg, WorstPostureJoint ?? "NONE", TrunkPostureErrorDeg, HipPostureErrorDeg,
+                MaxLimitProximity, PinnedJoint ?? "NONE", MinPostureGuardScale, MaxRawAnkleOffsetDeg,
+                Verdict());
+
+            /// <summary>
+            /// Honest failure classification. A centre of mass over the feet
+            /// is not a pass if the athlete got there by folding, so posture
+            /// divergence and joint-limit pinning are named failures rather
+            /// than absences of one.
+            /// </summary>
+            public string Verdict()
+            {
+                if (!Survived)
+                    return FailureMode == "LOST_CONTACT" ? "CONTACT_LOST" : "BALANCE_LOST";
+                if (MaxLimitProximity >= PinnedLimitProximity)
+                    return "POSTURE_LIMIT";
+                if (MaxPostureErrorDeg > PostureThresholdDeg)
+                    return "POSTURE_DIVERGENCE";
+                if (SustainedSaturationFraction >= 0.05f)
+                    return "DRIVE_AUTHORITY_LIMIT";
+                return "NONE";
+            }
 
             public string Summary => Header() + " => " + Row();
         }
@@ -956,6 +1033,22 @@ namespace PowerliftingSimulator.Tests
         // ---------------------------------------------------------------
         // Shared harness.
         // ---------------------------------------------------------------
+        /// <summary>
+        /// Maximum deviation of any controlled joint from the canonical
+        /// GAM-10 standing pose. GAME_CALIBRATION, and mine rather than the
+        /// project's: the sibling suite computes the same quantity but never
+        /// asserted on it, so there was no prior threshold to inherit. It is
+        /// set where an owner would still read the athlete as standing.
+        /// </summary>
+        private const float PostureThresholdDeg = 10f;
+
+        /// <summary>
+        /// A joint resting on its anatomical limit is being held by the limit
+        /// rather than by its drive, which is a different machine from the one
+        /// the controller thinks it is commanding.
+        /// </summary>
+        private const float PinnedLimitProximity = 0.95f;
+
         private const int SettleTicks = 30;
 
         /// <summary>
