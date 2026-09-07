@@ -304,31 +304,48 @@ namespace PowerliftingSimulator.Tests
         // anatomical limit. If a future change ever makes this pass again,
         // the gate has stopped measuring standing.
         // ---------------------------------------------------------------
-        [UnityTest]
-        public IEnumerator P1_COM_STABLE_BUT_POSTURE_FOLDED_MUST_FAIL()
+        [Test]
+        public void P1_COM_STABLE_BUT_POSTURE_FOLDED_MUST_FAIL()
         {
-            yield return LoadFixture();
-            StandingRun folded = RunStanding(
-                "GAM11-pathological-folded-standing.csv",
-                hipTrunkEnabled: false,
-                postureGuardEnabled: false);
-
-            Debug.Log("[P1 PATHOLOGICAL FOLDED STANDING] " + folded.Summary);
-
-            // The balance half genuinely passes. That is the whole point:
-            // this case is only caught by the posture half.
-            Assert.That(folded.Survived, Is.True,
-                "This case is supposed to keep its centre of mass over the feet for the " +
-                "full run. If it now falls, the pathology has changed and the guard is " +
-                "being validated against stale evidence. " + folded.Summary);
-            Assert.That(folded.WorstCaptureMargin, Is.GreaterThan(0f),
-                "Balance was supposed to look healthy here. " + folded.Summary);
+            // This used to run the plant and rely on it folding. It no longer
+            // folds: after the actuator substrate repair the same
+            // configuration holds 1.97 deg of posture error instead of 38.66,
+            // with limit proximity 0.086 instead of 1.000.
+            //
+            // The guarantee still matters, so it is asserted against the
+            // classifier directly rather than against a bug that has been
+            // fixed. A run with clean balance and a folded trunk must never be
+            // called a standing run, whatever the plant happens to do.
+            var folded = new StandingRun
+            {
+                Survived = true,
+                DurationSeconds = 10f,
+                FailureMode = "NONE",
+                WorstCaptureMargin = 0.118f,
+                MaxAbsComAp = 0.033f,
+                MaxAbsComApVelocity = 0.021f,
+                SustainedSaturationFraction = 0f,
+                MaxPostureErrorDeg = 38.66f,
+                WorstPostureJoint = "abdomen",
+                MaxLimitProximity = 1.000f,
+                PinnedJoint = "abdomen"
+            };
 
             Assert.That(folded.Verdict(), Is.Not.EqualTo("NONE"),
-                "The folded athlete was classified as a clean standing run. " + folded.Summary);
-            Assert.That(folded.MaxPostureErrorDeg, Is.GreaterThan(PostureThresholdDeg),
-                "The known fold no longer exceeds the posture threshold. " + folded.Summary);
-            yield return null;
+                "A centre of mass over the feet is not a standing run when the trunk is folded " +
+                "onto its anatomical limit.");
+            Assert.That(folded.Verdict(), Is.EqualTo("POSTURE_LIMIT"));
+
+            // And the converse: balance failure must not be reported as a
+            // posture problem, or the classification is useless for diagnosis.
+            var fell = new StandingRun
+            {
+                Survived = false,
+                FailureMode = "PELVIS_COLLAPSE",
+                MaxPostureErrorDeg = 42f,
+                MaxLimitProximity = 0.9f
+            };
+            Assert.That(fell.Verdict(), Is.EqualTo("BALANCE_LOST"));
         }
 
         // ---------------------------------------------------------------
