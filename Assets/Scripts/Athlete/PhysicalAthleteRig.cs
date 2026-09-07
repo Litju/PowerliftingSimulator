@@ -400,6 +400,9 @@ namespace PowerliftingSimulator.Athlete
             }
             body.inertiaTensor = PhysicalAthleteDefinition.BoxInertia(body.mass, dimensions);
             body.inertiaTensorRotation = Quaternion.identity;
+            // The athlete pays for its own drive convergence; the platform and
+            // barbell keep the project default.
+            PhysicalAthleteSolverProfile.Apply(body);
 
             Renderer proxyRenderer = CreateProxyVisual(bodyObject.transform, recipe.Collider, dimensions);
             Transform visibleBone = RequireBone(visibleAnimator, recipe.VisibleBone);
