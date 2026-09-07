@@ -156,7 +156,12 @@ namespace PowerliftingSimulator.Tests
             Measurement measurement = MeasureStatic("left_hand");
             JointFamilyProfile profile = ResolveProfile("left_hand");
 
-            Assert.That(measurement.EffectiveStiffness, Is.EqualTo(18.9f).Within(2f),
+            // 24.9 Nm/rad, measured in the production configuration. The
+            // sweep's 18.9 was taken with each candidate paired to its own
+            // critically damped D; production still runs the authored damper
+            // of 30, which is a damping ratio near 57 against this inertia and
+            // settles the joint differently.
+            Assert.That(measurement.EffectiveStiffness, Is.EqualTo(24.9f).Within(2f),
                 "The wrist's delivered stiffness moved. It is not on its authored value and " +
                 "the contract tracks what it actually does, so this is still a real change.");
             Assert.That(measurement.EffectiveStiffness / profile.Spring, Is.LessThan(0.2f),
