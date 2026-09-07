@@ -1,0 +1,5 @@
+family,mass_kg,lever_m,authored_spring,settled_error_deg,settled_omega,gravity_moment_nm,effective_stiffness_nm_per_rad,stiffness_ratio,max_force_nm
+abdomen,13.90,0.1250,800,5.344,-0.01609,16.971,181.9,0.2274,1482.0
+thorax,21.60,0.1800,800,10.833,-0.00129,37.462,198.1,0.2477,1482.0
+left_thigh,10.00,0.0900,900,3.154,-0.03601,8.816,160.2,0.1780,2052.0
+left_foot,1.45,0.1450,650,1.324,-0.02406,2.062,89.2,0.1372,1710.0
