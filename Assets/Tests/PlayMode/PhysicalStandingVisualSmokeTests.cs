@@ -87,6 +87,12 @@ namespace PowerliftingSimulator.Tests
         [UnityTest]
         public IEnumerator V1_UNLOADED_STANDING_VISUAL_SMOKE()
         {
+            if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+            {
+                Assert.Ignore("No graphics device: the captures would be blank, which is worse " +
+                              "than not taking them. Run this suite without -nographics.");
+            }
+
             AsyncOperation load = SceneManager.LoadSceneAsync(QualificationScene, LoadSceneMode.Single);
             while (!load.isDone)
                 yield return null;
