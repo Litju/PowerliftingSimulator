@@ -394,7 +394,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 new JointCommand(Quaternion.identity, Vector3.zero, 1f, capacityScale * 1.5f),
                 tick);
 
-            ApplyArmSupport(poweredController, capacityScale, tick);
+            ApplyUpperLimbReference(poweredController, referenceTarget, rate, phaseVelocity, capacityScale, tick);
             CheckDriveSaturation(poweredController);
         }
 
@@ -649,22 +649,45 @@ namespace PowerliftingSimulator.Squat.Unity
             return sagittal * frontal;
         }
 
-        private void ApplyArmSupport(PoweredJointController controller, float capacityScale, ulong tick)
+        /// <summary>
+        /// Drives the physical upper limbs from the accepted GAM-10 bar-support
+        /// reference. These joints carry no balance or gravity term, so the
+        /// final target is the reference target: the arms present the accepted
+        /// setup, they do not participate in the balance law.
+        ///
+        /// The hands stay presentation-only. No hand-bar constraint exists;
+        /// the load still runs bar to upper-back saddle to thorax.
+        /// </summary>
+        private void ApplyUpperLimbReference(
+            PoweredJointController controller,
+            ReferenceTargetFrame referenceTarget,
+            ReferenceRateFrame rate,
+            float phaseVelocity,
+            float capacityScale,
+            ulong tick)
         {
-            // Hands are presentation-only in V1. Keep the arm chain at its
-            // authored neutral posture so it cannot become an asymmetric
-            // upper-body torque while the thorax is balanced under the bar.
-            Quaternion leftShoulderRot = Quaternion.identity;
-            Quaternion rightShoulderRot = Quaternion.identity;
-            Quaternion elbowRot = Quaternion.identity;
-            Quaternion wristRot = Quaternion.identity;
+            ApplyUpperLimbJoint(controller, "left_upper_arm", referenceTarget.LeftUpperArm, rate.LeftUpperArm, phaseVelocity, capacityScale, tick);
+            ApplyUpperLimbJoint(controller, "right_upper_arm", referenceTarget.RightUpperArm, rate.RightUpperArm, phaseVelocity, capacityScale, tick);
+            ApplyUpperLimbJoint(controller, "left_forearm", referenceTarget.LeftForearm, rate.LeftForearm, phaseVelocity, capacityScale, tick);
+            ApplyUpperLimbJoint(controller, "right_forearm", referenceTarget.RightForearm, rate.RightForearm, phaseVelocity, capacityScale, tick);
+            ApplyUpperLimbJoint(controller, "left_hand", referenceTarget.LeftHand, rate.LeftHand, phaseVelocity, capacityScale, tick);
+            ApplyUpperLimbJoint(controller, "right_hand", referenceTarget.RightHand, rate.RightHand, phaseVelocity, capacityScale, tick);
+        }
 
-            controller.ApplyCommand("left_upper_arm", new JointCommand(leftShoulderRot, Vector3.zero, 1f, capacityScale), tick);
-            controller.ApplyCommand("right_upper_arm", new JointCommand(rightShoulderRot, Vector3.zero, 1f, capacityScale), tick);
-            controller.ApplyCommand("left_forearm", new JointCommand(elbowRot, Vector3.zero, 1f, capacityScale), tick);
-            controller.ApplyCommand("right_forearm", new JointCommand(elbowRot, Vector3.zero, 1f, capacityScale), tick);
-            controller.ApplyCommand("left_hand", new JointCommand(wristRot, Vector3.zero, 1f, capacityScale), tick);
-            controller.ApplyCommand("right_hand", new JointCommand(wristRot, Vector3.zero, 1f, capacityScale), tick);
+        private void ApplyUpperLimbJoint(
+            PoweredJointController controller,
+            string jointId,
+            Quaternion referenceTarget,
+            Vector3 ratePerPhase,
+            float phaseVelocity,
+            float capacityScale,
+            ulong tick)
+        {
+            Quaternion target = Compose(jointId, referenceTarget, Quaternion.identity, Quaternion.identity);
+            controller.ApplyCommand(
+                jointId,
+                new JointCommand(target, ratePerPhase * phaseVelocity, 1f, capacityScale),
+                tick);
         }
 
         private void BuildReferenceTargetTables(
@@ -740,6 +763,17 @@ namespace PowerliftingSimulator.Squat.Unity
                 ref abdomenTarget,
                 ref thoraxTarget);
 
+            // The upper limbs come from the same accepted GAM-10 authority the
+            // rendered reference preview draws, mapped through this adapter's
+            // own physical pipeline. Their physical parent is the thorax.
+            SquatReferenceUpperLimbSolution arms = SquatReferenceUpperLimb.Solve(calibration, solution);
+            Quaternion leftUpperArm = ToPhysicalBodyRotation("left_upper_arm", arms.Left.UpperArmBoneRotation);
+            Quaternion rightUpperArm = ToPhysicalBodyRotation("right_upper_arm", arms.Right.UpperArmBoneRotation);
+            Quaternion leftForearm = ToPhysicalBodyRotation("left_forearm", arms.Left.ForearmBoneRotation);
+            Quaternion rightForearm = ToPhysicalBodyRotation("right_forearm", arms.Right.ForearmBoneRotation);
+            Quaternion leftHand = ToPhysicalBodyRotation("left_hand", arms.Left.HandBoneRotation);
+            Quaternion rightHand = ToPhysicalBodyRotation("right_hand", arms.Right.HandBoneRotation);
+
             return new ReferenceTargetFrame(
                 ToLogicalJointTarget("left_foot", leftShank, leftFoot),
                 ToLogicalJointTarget("right_foot", rightShank, rightFoot),
@@ -748,7 +782,13 @@ namespace PowerliftingSimulator.Squat.Unity
                 ToLogicalJointTarget("left_thigh", pelvis, leftThigh),
                 ToLogicalJointTarget("right_thigh", pelvis, rightThigh),
                 abdomenTarget,
-                thoraxTarget);
+                thoraxTarget,
+                ToLogicalJointTarget("left_upper_arm", thorax, leftUpperArm),
+                ToLogicalJointTarget("right_upper_arm", thorax, rightUpperArm),
+                ToLogicalJointTarget("left_forearm", leftUpperArm, leftForearm),
+                ToLogicalJointTarget("right_forearm", rightUpperArm, rightForearm),
+                ToLogicalJointTarget("left_hand", leftForearm, leftHand),
+                ToLogicalJointTarget("right_hand", rightForearm, rightHand));
         }
 
         /// <summary>
@@ -835,7 +875,10 @@ namespace PowerliftingSimulator.Squat.Unity
                 Vector3 leftFoot, Vector3 rightFoot,
                 Vector3 leftShank, Vector3 rightShank,
                 Vector3 leftThigh, Vector3 rightThigh,
-                Vector3 abdomen, Vector3 thorax)
+                Vector3 abdomen, Vector3 thorax,
+                Vector3 leftUpperArm, Vector3 rightUpperArm,
+                Vector3 leftForearm, Vector3 rightForearm,
+                Vector3 leftHand, Vector3 rightHand)
             {
                 LeftFoot = leftFoot;
                 RightFoot = rightFoot;
@@ -845,6 +888,12 @@ namespace PowerliftingSimulator.Squat.Unity
                 RightThigh = rightThigh;
                 Abdomen = abdomen;
                 Thorax = thorax;
+                LeftUpperArm = leftUpperArm;
+                RightUpperArm = rightUpperArm;
+                LeftForearm = leftForearm;
+                RightForearm = rightForearm;
+                LeftHand = leftHand;
+                RightHand = rightHand;
             }
 
             public Vector3 LeftFoot { get; }
@@ -855,10 +904,18 @@ namespace PowerliftingSimulator.Squat.Unity
             public Vector3 RightThigh { get; }
             public Vector3 Abdomen { get; }
             public Vector3 Thorax { get; }
+            public Vector3 LeftUpperArm { get; }
+            public Vector3 RightUpperArm { get; }
+            public Vector3 LeftForearm { get; }
+            public Vector3 RightForearm { get; }
+            public Vector3 LeftHand { get; }
+            public Vector3 RightHand { get; }
 
             public static readonly ReferenceRateFrame Zero = new ReferenceRateFrame(
                 Vector3.zero, Vector3.zero, Vector3.zero, Vector3.zero,
-                Vector3.zero, Vector3.zero, Vector3.zero, Vector3.zero);
+                Vector3.zero, Vector3.zero, Vector3.zero, Vector3.zero,
+                Vector3.zero, Vector3.zero, Vector3.zero, Vector3.zero,
+                Vector3.zero, Vector3.zero);
         }
 
         private ReferenceRateFrame EvaluateReferenceRatePerPhase(float phase, SquatPhaseDirection direction)
@@ -878,7 +935,13 @@ namespace PowerliftingSimulator.Squat.Unity
                 RatePerPhase(from.LeftThigh, to.LeftThigh, phaseStep),
                 RatePerPhase(from.RightThigh, to.RightThigh, phaseStep),
                 RatePerPhase(from.Abdomen, to.Abdomen, phaseStep),
-                RatePerPhase(from.Thorax, to.Thorax, phaseStep));
+                RatePerPhase(from.Thorax, to.Thorax, phaseStep),
+                RatePerPhase(from.LeftUpperArm, to.LeftUpperArm, phaseStep),
+                RatePerPhase(from.RightUpperArm, to.RightUpperArm, phaseStep),
+                RatePerPhase(from.LeftForearm, to.LeftForearm, phaseStep),
+                RatePerPhase(from.RightForearm, to.RightForearm, phaseStep),
+                RatePerPhase(from.LeftHand, to.LeftHand, phaseStep),
+                RatePerPhase(from.RightHand, to.RightHand, phaseStep));
         }
 
         private static Vector3 RatePerPhase(Quaternion from, Quaternion to, float phaseStep)
@@ -901,7 +964,13 @@ namespace PowerliftingSimulator.Squat.Unity
                 Quaternion leftThigh,
                 Quaternion rightThigh,
                 Quaternion abdomen,
-                Quaternion thorax)
+                Quaternion thorax,
+                Quaternion leftUpperArm,
+                Quaternion rightUpperArm,
+                Quaternion leftForearm,
+                Quaternion rightForearm,
+                Quaternion leftHand,
+                Quaternion rightHand)
             {
                 LeftFoot = leftFoot;
                 RightFoot = rightFoot;
@@ -911,6 +980,12 @@ namespace PowerliftingSimulator.Squat.Unity
                 RightThigh = rightThigh;
                 Abdomen = abdomen;
                 Thorax = thorax;
+                LeftUpperArm = leftUpperArm;
+                RightUpperArm = rightUpperArm;
+                LeftForearm = leftForearm;
+                RightForearm = rightForearm;
+                LeftHand = leftHand;
+                RightHand = rightHand;
             }
 
             public Quaternion LeftFoot { get; }
@@ -921,6 +996,12 @@ namespace PowerliftingSimulator.Squat.Unity
             public Quaternion RightThigh { get; }
             public Quaternion Abdomen { get; }
             public Quaternion Thorax { get; }
+            public Quaternion LeftUpperArm { get; }
+            public Quaternion RightUpperArm { get; }
+            public Quaternion LeftForearm { get; }
+            public Quaternion RightForearm { get; }
+            public Quaternion LeftHand { get; }
+            public Quaternion RightHand { get; }
 
             public Quaternion ForJoint(string jointId)
             {
@@ -934,6 +1015,12 @@ namespace PowerliftingSimulator.Squat.Unity
                     case "right_thigh": return RightThigh;
                     case "abdomen": return Abdomen;
                     case "thorax": return Thorax;
+                    case "left_upper_arm": return LeftUpperArm;
+                    case "right_upper_arm": return RightUpperArm;
+                    case "left_forearm": return LeftForearm;
+                    case "right_forearm": return RightForearm;
+                    case "left_hand": return LeftHand;
+                    case "right_hand": return RightHand;
                     default: throw new ArgumentException($"'{jointId}' is not a squat-controlled joint.", nameof(jointId));
                 }
             }
@@ -951,7 +1038,13 @@ namespace PowerliftingSimulator.Squat.Unity
                     Quaternion.Slerp(from.LeftThigh, to.LeftThigh, interpolation),
                     Quaternion.Slerp(from.RightThigh, to.RightThigh, interpolation),
                     Quaternion.Slerp(from.Abdomen, to.Abdomen, interpolation),
-                    Quaternion.Slerp(from.Thorax, to.Thorax, interpolation));
+                    Quaternion.Slerp(from.Thorax, to.Thorax, interpolation),
+                    Quaternion.Slerp(from.LeftUpperArm, to.LeftUpperArm, interpolation),
+                    Quaternion.Slerp(from.RightUpperArm, to.RightUpperArm, interpolation),
+                    Quaternion.Slerp(from.LeftForearm, to.LeftForearm, interpolation),
+                    Quaternion.Slerp(from.RightForearm, to.RightForearm, interpolation),
+                    Quaternion.Slerp(from.LeftHand, to.LeftHand, interpolation),
+                    Quaternion.Slerp(from.RightHand, to.RightHand, interpolation));
             }
         }
 
