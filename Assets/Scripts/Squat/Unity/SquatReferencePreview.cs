@@ -35,7 +35,6 @@ namespace PowerliftingSimulator.Squat.Unity
         [SerializeField] private bool showReferenceBarGhost = true;
 
         public const float ForearmPronationDeg = 0f;
-        public const float HumerusAxialDeg = 0f;
         public const float HandAxialCompensationDeg = 0f;
         public const float FingerMcpDeg = 55f;
         public const float FingerPipDeg = 75f;
@@ -935,7 +934,7 @@ namespace PowerliftingSimulator.Squat.Unity
 
             ApplyLeg(_leftThigh, _leftShank, _leftFoot, _solution.LeftLeg);
             ApplyLeg(_rightThigh, _rightShank, _rightFoot, _solution.RightLeg);
-            ApplyArmSupport(pose, _solution);
+            ApplyUpperLimbReference(_solution);
             UpdateOverlay();
         }
 
@@ -964,229 +963,50 @@ namespace PowerliftingSimulator.Squat.Unity
             foot.SetPositionAndRotation(leg.AnkleCenter, leg.FootBoneRotation);
         }
 
-        private void ApplyArmSupport(SquatReferencePose pose, SquatReferenceKinematicSolution solution)
+        private void ApplyUpperLimbReference(SquatReferenceKinematicSolution solution)
         {
-            // Clavicles are children of UpperChest and rotate hierarchically with UpperChest.
+            // Clavicles are children of UpperChest and rotate hierarchically
+            // with it, so the live shoulder roots are already posed here.
+            SquatReferenceUpperLimbSolution arms = SquatReferenceUpperLimb.Solve(
+                _calibration,
+                solution,
+                _upperChest.position,
+                _leftUpperArm.position,
+                _rightUpperArm.position);
 
-            Vector3 thoraxForward = solution.UpperChestFrameRotation * _calibration.GameForward;
-            Vector3 thoraxUp = solution.UpperChestFrameRotation * _calibration.GameUp;
-            Vector3 thoraxRight = solution.UpperChestFrameRotation * _calibration.GameRight;
+            ApplyArmSide(_leftUpperArm, _leftForearm, _leftHand, arms.Left, isLeft: true);
+            ApplyArmSide(_rightUpperArm, _rightForearm, _rightHand, arms.Right, isLeft: false);
 
-            Vector3 barCenter = _upperChest.position -
-                thoraxForward * SquatReferenceKinematics.ArmBackOffsetM +
-                thoraxUp * SquatReferenceKinematics.ArmBarHeightM;
-
-            Vector3 leftBarGripCenterline = barCenter - thoraxRight * SquatReferenceKinematics.ArmBarHalfWidthM;
-            Vector3 rightBarGripCenterline = barCenter + thoraxRight * SquatReferenceKinematics.ArmBarHalfWidthM;
-
-            ApplyArmSide(
-                _leftUpperArm,
-                _leftForearm,
-                _leftHand,
-                _calibration.LeftUpperArm,
-                _calibration.LeftForearm,
-                _calibration.LeftHand,
-                leftBarGripCenterline,
-                thoraxForward,
-                thoraxUp,
-                thoraxRight,
-                isLeft: true,
-                out _leftBarHand,
-                out _leftForearmHandAngleDeg,
-                out _leftPalmBarSurfaceErrorM);
-
-            ApplyArmSide(
-                _rightUpperArm,
-                _rightForearm,
-                _rightHand,
-                _calibration.RightUpperArm,
-                _calibration.RightForearm,
-                _calibration.RightHand,
-                rightBarGripCenterline,
-                thoraxForward,
-                thoraxUp,
-                thoraxRight,
-                isLeft: false,
-                out _rightBarHand,
-                out _rightForearmHandAngleDeg,
-                out _rightPalmBarSurfaceErrorM);
+            _leftBarHand = arms.Left.HandCenter;
+            _rightBarHand = arms.Right.HandCenter;
+            _leftForearmHandAngleDeg = arms.Left.ForearmHandAngleDeg;
+            _rightForearmHandAngleDeg = arms.Right.ForearmHandAngleDeg;
+            _leftPalmBarSurfaceErrorM = arms.Left.PalmBarSurfaceErrorM;
+            _rightPalmBarSurfaceErrorM = arms.Right.PalmBarSurfaceErrorM;
         }
 
         private void ApplyArmSide(
             Transform upperArm,
             Transform forearm,
             Transform hand,
-            SquatReferenceBoneFrame upperArmFrame,
-            SquatReferenceBoneFrame forearmFrame,
-            SquatReferenceBoneFrame handFrame,
-            Vector3 barGripCenterline,
-            Vector3 thoraxForward,
-            Vector3 thoraxUp,
-            Vector3 thoraxRight,
-            bool isLeft,
-            out Vector3 solvedHandTarget,
-            out float forearmHandAngleDeg,
-            out float palmBarSurfaceErrorM)
+            SquatReferenceUpperLimbSide side,
+            bool isLeft)
         {
-            Vector3 shoulder = upperArm.position;
-            Vector3 forearmBindPosition = isLeft
-                ? _calibration.LeftForearm.BindPosition
-                : _calibration.RightForearm.BindPosition;
-            float upperLength = Vector3.Distance(forearmBindPosition, upperArmFrame.BindPosition);
-            float forearmLength = Vector3.Distance(handFrame.BindPosition, forearmFrame.BindPosition);
+            upperArm.SetPositionAndRotation(side.ShoulderCenter, side.UpperArmBoneRotation);
+            forearm.SetPositionAndRotation(side.ElbowCenter, side.ForearmBoneRotation);
+            hand.SetPositionAndRotation(side.HandCenter, side.HandBoneRotation);
 
-            float sideSign = isLeft ? -1f : 1f;
-            Vector3 poleHint = -thoraxUp * 0.95f - thoraxForward * 0.04f + thoraxRight * (sideSign * 0.30f);
-
-            // 1. Target forward-facing palm normal
-            // The palm of the hand must face to the front of the body (+thoraxForward) with slight upward rest angle.
-            Vector3 palmNormalTarget = (thoraxForward * 0.95f + thoraxUp * 0.25f).normalized;
-
-            // 2. Approximate two-bone solve to find forearm approach vector towards bar
-            SolveTwoBone(
-                shoulder,
-                barGripCenterline,
-                upperLength,
-                forearmLength,
-                poleHint,
-                out Vector3 approxElbow,
-                out Vector3 approxHand);
-            Vector3 forearmApproachDir = (approxHand - approxElbow).normalized;
-
-            // 3. Approximate hand orientation with forward-facing palm
-            Vector3 approxHandUp = forearmApproachDir;
-            Vector3 approxPalmPerp = Vector3.ProjectOnPlane(palmNormalTarget, approxHandUp).normalized;
-            Vector3 approxHandRight = isLeft ? -approxPalmPerp : approxPalmPerp;
-            Vector3 approxHandForward = Vector3.Cross(approxHandRight, approxHandUp).normalized;
-
-            Matrix4x4 approxHandMatrix = Matrix4x4.identity;
-            approxHandMatrix.SetColumn(0, new Vector4(approxHandRight.x, approxHandRight.y, approxHandRight.z, 0f));
-            approxHandMatrix.SetColumn(1, new Vector4(approxHandUp.x, approxHandUp.y, approxHandUp.z, 0f));
-            approxHandMatrix.SetColumn(2, new Vector4(approxHandForward.x, approxHandForward.y, approxHandForward.z, 0f));
-            Quaternion approxHandRot = approxHandMatrix.rotation;
-
-            // 4. Palm contact target and hand bone target
-            // In FBX local space:
-            // Right hand: local +X is palm normal, local +Y is longitudinal axis (wrist to knuckles)
-            // Left hand: local -X is palm normal, local +Y is longitudinal axis
-            Vector3 palmOffset = isLeft ? new Vector3(-0.018f, 0.038f, 0f) : new Vector3(0.018f, 0.038f, 0f);
-            Vector3 palmNormalWorld = approxHandRot * (isLeft ? Vector3.left : Vector3.right);
-            Vector3 barRadialDir = -palmNormalWorld; // vector from bar centerline toward palm
-            const float barRadius = 0.0145f;
-            Vector3 barAxis = thoraxRight;
-            Vector3 palmContactTarget = barGripCenterline + barRadialDir * barRadius;
-            Vector3 handBoneTarget = palmContactTarget - approxHandRot * palmOffset;
-
-            // 5. Accurate two-bone solve to target hand bone position
-            SolveTwoBone(
-                shoulder,
-                handBoneTarget,
-                upperLength,
-                forearmLength,
-                poleHint,
-                out Vector3 elbow,
-                out Vector3 solvedHand);
-            solvedHandTarget = solvedHand;
-
-            // 6. Arm bone rotations
-            Vector3 upperDir = (elbow - shoulder).normalized;
-            Vector3 forearmFinalDir = (solvedHand - elbow).normalized;
-
-            // Upper arm: align longitudinal axis (+Y) to upperDir, and anterior surface (+Z, biceps) facing forward
-            Vector3 upperBoneUp = upperDir;
-            Vector3 upperBoneForward = Vector3.ProjectOnPlane(thoraxForward, upperBoneUp).normalized;
-            Vector3 upperBoneRight = Vector3.Cross(upperBoneUp, upperBoneForward).normalized;
-
-            Matrix4x4 upperMatrix = Matrix4x4.identity;
-            upperMatrix.SetColumn(0, new Vector4(upperBoneRight.x, upperBoneRight.y, upperBoneRight.z, 0f));
-            upperMatrix.SetColumn(1, new Vector4(upperBoneUp.x, upperBoneUp.y, upperBoneUp.z, 0f));
-            upperMatrix.SetColumn(2, new Vector4(upperBoneForward.x, upperBoneForward.y, upperBoneForward.z, 0f));
-            Quaternion baseUpperRot = upperMatrix.rotation;
-            float humerusSignedDeg = isLeft ? -HumerusAxialDeg : HumerusAxialDeg;
-            Quaternion humerusAxial = Quaternion.AngleAxis(humerusSignedDeg, upperDir);
-            Quaternion upperRot = humerusAxial * baseUpperRot;
-
-            // Hand rotation: longitudinal axis along forearmFinalDir, palm facing forward
-            Vector3 finalHandUp = forearmFinalDir;
-            Vector3 finalPalmPerp = Vector3.ProjectOnPlane(palmNormalTarget, finalHandUp).normalized;
-            Vector3 finalHandRight = isLeft ? -finalPalmPerp : finalPalmPerp;
-            Vector3 finalHandForward = Vector3.Cross(finalHandRight, finalHandUp).normalized;
-
-            Matrix4x4 finalHandMatrix = Matrix4x4.identity;
-            finalHandMatrix.SetColumn(0, new Vector4(finalHandRight.x, finalHandRight.y, finalHandRight.z, 0f));
-            finalHandMatrix.SetColumn(1, new Vector4(finalHandUp.x, finalHandUp.y, finalHandUp.z, 0f));
-            finalHandMatrix.SetColumn(2, new Vector4(finalHandForward.x, finalHandForward.y, finalHandForward.z, 0f));
-            Quaternion handRot = finalHandMatrix.rotation;
-
-            // Forearm rotation: derive smoothly from hand orientation via bind pose relationship
-            Quaternion handBindRelativeToForearm = Quaternion.Inverse(forearmFrame.BindRotation) * handFrame.BindRotation;
-            Quaternion forearmRot = handRot * Quaternion.Inverse(handBindRelativeToForearm);
-
-            upperArm.SetPositionAndRotation(shoulder, upperRot);
-            forearm.SetPositionAndRotation(elbow, forearmRot);
-            hand.SetPositionAndRotation(solvedHand, handRot);
-
-            // 6. Quality measurements
-            forearmHandAngleDeg = Vector3.Angle(forearmFinalDir, handRot * Vector3.up);
-            Vector3 palmCenterWorld = solvedHand + handRot * palmOffset;
-            Vector3 toPalm = palmCenterWorld - barGripCenterline;
-            Vector3 radialOffset = Vector3.ProjectOnPlane(toPalm, barAxis);
-            palmBarSurfaceErrorM = Mathf.Abs(radialOffset.magnitude - barRadius);
-
-            // 7. CANONICAL_BACK_SQUAT_GRIP_V1: author static finger curls around bar
+            // CANONICAL_BACK_SQUAT_GRIP_V1: author static finger curls around bar
             Transform[] fingers = isLeft ? _leftFingers : _rightFingers;
             Quaternion[] bindRots = isLeft ? _leftFingerBindRotations : _rightFingerBindRotations;
-            if (fingers != null && bindRots != null)
+            if (fingers == null || bindRots == null)
+                return;
+
+            for (int i = 0; i < 15; i++)
             {
-                for (int i = 0; i < 15; i++)
-                {
-                    if (fingers[i] != null)
-                    {
-                        fingers[i].localRotation = bindRots[i] * Quaternion.Euler(FingerCurlAngles[i], 0f, 0f);
-                    }
-                }
+                if (fingers[i] != null)
+                    fingers[i].localRotation = bindRots[i] * Quaternion.Euler(FingerCurlAngles[i], 0f, 0f);
             }
-        }
-
-        private static Quaternion ConstructArmBoneRotation(Vector3 boneDir, Vector3 armPlaneNormal)
-        {
-            Vector3 boneUp = boneDir.normalized;
-            Vector3 boneLeft = Vector3.ProjectOnPlane(armPlaneNormal, boneUp).normalized;
-            Vector3 boneRight = -boneLeft;
-            Vector3 boneForward = Vector3.Cross(boneRight, boneUp).normalized;
-
-            Matrix4x4 matrix = Matrix4x4.identity;
-            matrix.SetColumn(0, new Vector4(boneRight.x, boneRight.y, boneRight.z, 0f));
-            matrix.SetColumn(1, new Vector4(boneUp.x, boneUp.y, boneUp.z, 0f));
-            matrix.SetColumn(2, new Vector4(boneForward.x, boneForward.y, boneForward.z, 0f));
-            return matrix.rotation;
-        }
-
-        private static void SolveTwoBone(
-            Vector3 root,
-            Vector3 target,
-            float upperLength,
-            float lowerLength,
-            Vector3 poleHint,
-            out Vector3 elbow,
-            out Vector3 solvedTarget)
-        {
-            Vector3 delta = target - root;
-            float distance = Mathf.Max(delta.magnitude, 0.0001f);
-            Vector3 direction = delta / distance;
-            float maximum = Mathf.Max(upperLength + lowerLength - 0.0005f, 0.0001f);
-            float minimum = Mathf.Min(Mathf.Abs(upperLength - lowerLength) + 0.0005f, maximum);
-            float clampedDistance = Mathf.Clamp(distance, minimum, maximum);
-            solvedTarget = root + direction * clampedDistance;
-            float along = (upperLength * upperLength - lowerLength * lowerLength +
-                clampedDistance * clampedDistance) / (2f * clampedDistance);
-            float heightSquared = Mathf.Max(0f, upperLength * upperLength - along * along);
-            Vector3 pole = Vector3.ProjectOnPlane(poleHint, direction);
-            if (pole.sqrMagnitude < 1e-8f)
-                pole = Vector3.Cross(direction, Vector3.right);
-            if (pole.sqrMagnitude < 1e-8f)
-                pole = Vector3.Cross(direction, Vector3.forward);
-            elbow = root + direction * along + pole.normalized * Mathf.Sqrt(heightSquared);
         }
 
         private void UpdateOverlay()
