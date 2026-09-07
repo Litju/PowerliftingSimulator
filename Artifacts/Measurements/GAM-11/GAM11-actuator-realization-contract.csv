@@ -1,0 +1,9 @@
+child,family,class,drive_mode,position_iterations,dt,k_authored,k_measured,k_ratio,d_authored,max_force_nm,lambda_k,omega_n_dt,within_contract
+left_foot,ankle,LoadBearing,XYAndZ,28,0.01,650,648.43,0.9976,70,1710.0,5.72,2.391,True
+left_shank,knee,LoadBearing,XYAndZ,28,0.01,800,790.66,0.9883,80,2052.0,12.22,3.495,True
+left_thigh,hip,LoadBearing,XYAndZ,28,0.01,900,898.22,0.9980,90,2052.0,3.33,1.826,True
+abdomen,lumbar,LoadBearing,XYAndZ,28,0.01,800,799.46,0.9993,85,1482.0,1.27,1.126,True
+thorax,trunk,LoadBearing,XYAndZ,28,0.01,800,799.92,0.9999,85,1482.0,0.38,0.613,True
+left_upper_arm,shoulder,LoadBearing,XYAndZ,28,0.01,500,491.92,0.9838,55,741.0,14.88,3.858,True
+left_forearm,elbow,LoadBearing,XYAndZ,28,0.01,450,432.29,0.9606,45,570.0,37.40,6.115,True
+left_hand,wrist,DistalPose,XYAndZ,28,0.01,250,24.86,0.0994,30,256.5,88.89,9.428,False

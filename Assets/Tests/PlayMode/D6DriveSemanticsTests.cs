@@ -64,6 +64,8 @@ namespace PowerliftingSimulator.Tests
             public bool UseAcceleration;
             public float InertiaScale;
             public float SecondaryLimitDeg;
+            public float SpringOverride;
+            public float DamperOverride;
 
             public static Spec Production(string childId) => new Spec
             {
@@ -76,7 +78,9 @@ namespace PowerliftingSimulator.Tests
                 MaximumForce = ProductionMaximumForce(childId),
                 UseAcceleration = false,
                 InertiaScale = 1f,
-                SecondaryLimitDeg = FindJoint(childId).SecondaryLimitDegrees
+                SecondaryLimitDeg = FindJoint(childId).SecondaryLimitDegrees,
+                SpringOverride = -1f,
+                DamperOverride = -1f
             };
         }
 
@@ -509,6 +513,71 @@ namespace PowerliftingSimulator.Tests
         }
 
         // ---------------------------------------------------------------
+        // Wrist recalibration sweep.
+        //
+        // The hand is 0.6 kg with a sagittal inertia near 0.00028 kg m^2. At
+        // the authored 250 Nm/rad that puts K dt^2 / I near 89 and the natural
+        // frequency times the timestep near 9.4, and the drive measures about
+        // a tenth of what it is authored. The authored damper of 30 is a
+        // damping ratio near 57 against the same inertia, so both terms are
+        // out of scale for this body rather than just the spring.
+        //
+        // Each candidate is paired with its own critically damped D, since
+        // holding D at 30 while lowering K would only make the mismatch worse.
+        // The choice comes from the measured realization and step response,
+        // not from any threshold on the conditioning numbers.
+        // ---------------------------------------------------------------
+        [Test]
+        public void H9A_WRIST_RECALIBRATION_SWEEP()
+        {
+            var report = new StringBuilder();
+            report.AppendLine("k_authored,d_paired,lambda_k,omega_n_dt,k_eff,k_ratio," +
+                              "step_settled_deg,step_target_deg,tracking_error_deg,overshoot_deg,final_omega");
+
+            const float inertia = 0.00028f;
+            const float dt = 0.01f;
+
+            foreach (float spring in new[] { 250f, 100f, 50f, 25f, 10f, 5f, 2.5f })
+            {
+                float damper = 2f * Mathf.Sqrt(spring * inertia);
+
+                Spec staticSpec = Spec.Production("left_hand");
+                staticSpec.SpringOverride = spring;
+                staticSpec.DamperOverride = damper;
+                Result staticResult = MeasureStatic(staticSpec);
+
+                // Step response: command 5 deg and see where it actually ends
+                // up, and whether it gets there without ringing.
+                Spec stepSpec = staticSpec;
+                Fixture fixture = Build(stepSpec, useGravity: false, leverM: 0f);
+                fixture.SetLogicalSagittalTarget(5f * Mathf.Deg2Rad);
+                Time.fixedDeltaTime = dt;
+                float peak = 0f;
+                for (int step = 0; step < 300; step++)
+                {
+                    Physics.Simulate(dt);
+                    float current = SagittalRadians(
+                        Quaternion.Inverse(fixture.Parent.rotation) * fixture.Child.rotation) * Mathf.Rad2Deg;
+                    peak = Mathf.Max(peak, current);
+                }
+                float settled = SagittalRadians(
+                    Quaternion.Inverse(fixture.Parent.rotation) * fixture.Child.rotation) * Mathf.Rad2Deg;
+                float finalOmega = fixture.Child.angularVelocity.x;
+                Teardown(fixture);
+
+                report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                    "{0:F2},{1:F4},{2:F2},{3:F3},{4:F3},{5:F4},{6:F3},{7:F1},{8:F3},{9:F3},{10:F5}",
+                    spring, damper, spring * dt * dt / inertia,
+                    Mathf.Sqrt(spring / inertia) * dt,
+                    staticResult.EffectiveStiffness, staticResult.EffectiveStiffness / spring,
+                    settled, 5f, settled - 5f, Mathf.Max(0f, peak - 5f), finalOmega));
+            }
+
+            WriteMeasurement("GAM11-h9a-wrist-recalibration.csv", report.ToString());
+            Debug.Log("[H9A WRIST RECALIBRATION]" + Environment.NewLine + report);
+        }
+
+        // ---------------------------------------------------------------
         // Measurement. Settle, then sample only once the body is stationary.
         // ---------------------------------------------------------------
         private Result MeasureStatic(Spec spec)
@@ -637,10 +706,12 @@ namespace PowerliftingSimulator.Tests
             joint.swapBodies = false;
             joint.rotationDriveMode = spec.DriveMode;
 
+            float spring = spec.SpringOverride >= 0f ? spec.SpringOverride : profile.Spring;
+            float damper = spec.DamperOverride >= 0f ? spec.DamperOverride : profile.Damper;
             var drive = new JointDrive
             {
-                positionSpring = profile.Spring,
-                positionDamper = profile.Damper,
+                positionSpring = spring,
+                positionDamper = damper,
                 maximumForce = spec.MaximumForce,
                 useAcceleration = spec.UseAcceleration
             };
@@ -663,7 +734,14 @@ namespace PowerliftingSimulator.Tests
                 joint.slerpDrive = ZeroDrive();
             }
 
-            return new Fixture { Parent = parent, Child = child, Joint = joint, Profile = profile };
+            return new Fixture
+            {
+                Parent = parent,
+                Child = child,
+                Joint = joint,
+                Profile = new JointFamilyProfile(
+                    profile.Id, spring, damper, profile.BaseCapacityNm, profile.MaxTargetRateRadS)
+            };
         }
 
         private void Teardown(Fixture fixture)
