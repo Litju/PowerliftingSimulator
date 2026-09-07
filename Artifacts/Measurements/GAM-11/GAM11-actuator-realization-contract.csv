@@ -7,3 +7,4 @@ thorax,trunk,LoadBearing,XYAndZ,28,0.01,800,799.92,0.9999,85,1482.0,0.38,0.613,T
 left_upper_arm,shoulder,LoadBearing,XYAndZ,28,0.01,500,491.92,0.9838,55,741.0,14.88,3.858,True
 left_forearm,elbow,LoadBearing,XYAndZ,28,0.01,450,432.29,0.9606,45,570.0,37.40,6.115,True
 left_hand,wrist,DistalPose,XYAndZ,28,0.01,250,24.86,0.0994,30,256.5,88.89,9.428,False
+head_neck,neck,DistalPose,XYAndZ,28,0.01,300,299.98,0.9999,11,228.0,0.32,0.563,True
