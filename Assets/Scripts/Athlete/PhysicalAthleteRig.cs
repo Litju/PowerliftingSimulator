@@ -61,6 +61,7 @@ namespace PowerliftingSimulator.Athlete
         public bool IsGameplayPerformanceProfileActive => _gameplayPerformanceProfile;
         public IPhysicalAthleteCommandSource CommandSource => _commandSource;
         public Animator ReferenceAnimator => referenceAnimator;
+        public Animator VisibleAnimator => visibleAnimator;
 
         /// <summary>
         /// Where the canonical sole sits once ground registration has run.
