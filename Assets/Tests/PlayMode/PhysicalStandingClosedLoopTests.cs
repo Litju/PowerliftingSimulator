@@ -274,6 +274,513 @@ namespace PowerliftingSimulator.Tests
             yield return null;
         }
 
+        // ---------------------------------------------------------------
+        // C1. The corrected ankle-only closed loop, from tick zero.
+        //
+        // Same outer law as C0, same GAM-7 plant, same zero preload. The one
+        // change is that the ankle offset is now inverted through the
+        // measured target-to-COP gain instead of the joint spring. Hip and
+        // trunk are held off, so whatever this shows is the ankle's own
+        // answer.
+        // ---------------------------------------------------------------
+        [UnityTest]
+        public IEnumerator C1_CORRECTED_ANKLE_ONLY_CLOSED_LOOP()
+        {
+            yield return LoadFixture();
+            StandingRun run = RunStanding("GAM11-c1-corrected-ankle-only.csv");
+            Debug.Log("[C1 CORRECTED ANKLE ONLY] " + run.Summary + Environment.NewLine + run.Trace);
+
+            Assert.That(run.InitialPelvisY, Is.GreaterThan(0.9f),
+                "The athlete did not spawn standing. " + run.Summary);
+            yield return null;
+        }
+
+        // ---------------------------------------------------------------
+        // The 10 second gate, three exact deterministic resets.
+        // ---------------------------------------------------------------
+        [UnityTest]
+        public IEnumerator G1_TEN_SECOND_STANDING_GATE_THREE_RESETS()
+        {
+            var runs = new StandingRun[3];
+            for (int index = 0; index < runs.Length; index++)
+            {
+                yield return LoadFixture();
+                runs[index] = RunStanding($"GAM11-standing-gate-run{index + 1}.csv");
+                Debug.Log($"[G1 STANDING RUN {index + 1}] " + runs[index].Summary);
+            }
+
+            float worstDuration = float.PositiveInfinity;
+            foreach (StandingRun run in runs)
+                worstDuration = Mathf.Min(worstDuration, run.DurationSeconds);
+
+            var repeatability = new StringBuilder();
+            repeatability.AppendLine("run," + StandingRun.Header());
+            for (int index = 0; index < runs.Length; index++)
+                repeatability.AppendLine($"{index + 1},{runs[index].Row()}");
+            WriteMeasurement("GAM11-standing-gate-repeatability.csv", repeatability.ToString());
+            Debug.Log("[G1 REPEATABILITY]" + Environment.NewLine + repeatability);
+
+            foreach (StandingRun run in runs)
+            {
+                Assert.That(run.Survived, Is.True,
+                    $"Fell after {run.DurationSeconds:F2} s ({run.FailureMode}). {run.Summary}");
+                Assert.That(run.LostContact, Is.False, "Lost plantar contact. " + run.Summary);
+                Assert.That(run.FinalPelvisY, Is.GreaterThan(run.SettledPelvisY - 0.04f),
+                    "The pelvis kept sagging after the initial settle. " + run.Summary);
+                Assert.That(run.WorstCaptureMargin, Is.GreaterThan(0f),
+                    "The capture point left the support polygon. " + run.Summary);
+                Assert.That(run.WorstFootPitchDeg, Is.LessThan(12f), "The foot is tipping. " + run.Summary);
+                Assert.That(run.MaxSlipMps, Is.LessThan(0.05f), "The feet are slipping. " + run.Summary);
+                Assert.That(run.SustainedSaturationFraction, Is.LessThan(0.05f),
+                    "The drives are sustained at their ceiling. " + run.Summary);
+            }
+            yield return null;
+        }
+
+        // ---------------------------------------------------------------
+        // The calibration the controller is actually allowed to use.
+        //
+        // S1 established the target-to-COP gain; this repeats it twice, adds
+        // the fit quality and the per-foot split, and is the artifact the
+        // ankle mapping cites. Only the contact estimate is used. Solver
+        // currentTorque stays out of it: Unity reports the torque needed to
+        // satisfy every constraint on the joint, which is not the drive's
+        // authority, and the project has kept it out of the command path
+        // since GAM-7.
+        //
+        // GAME_PHYSICS_CALIBRATION. This is a property of this rig on this
+        // platform in this engine, not a biomechanical constant.
+        // ---------------------------------------------------------------
+        [UnityTest]
+        public IEnumerator S2_G_TARGET_COP_CALIBRATION()
+        {
+            float[] offsetsDeg = { -3f, -2f, -1f, 0f, 1f, 2f, 3f };
+            const int repeats = 2;
+
+            var trace = new StringBuilder();
+            trace.AppendLine("repeat,offset_deg,cop_ap_combined,cop_ap_left,cop_ap_right," +
+                             "com_ap,com_minus_cop,fz_n,contacts_left,contacts_right,pelvis_y");
+
+            var byRepeat = new CopSample[repeats][];
+            for (int repeat = 0; repeat < repeats; repeat++)
+            {
+                byRepeat[repeat] = new CopSample[offsetsDeg.Length];
+                for (int index = 0; index < offsetsDeg.Length; index++)
+                {
+                    yield return LoadFixture();
+                    _controller.SetLoad(0f);
+                    SquatPhysicalAdapter adapter = _controller.Adapter;
+                    adapter.BalanceCorrectionsEnabled = false;
+                    adapter.Preload.Enabled = false;
+                    adapter.Preload.Clear();
+                    adapter.AnkleSagittalOffsetOverrideRad = offsetsDeg[index] * Mathf.Deg2Rad;
+
+                    for (int tick = 0; tick < WindowCloseTick; tick++)
+                        Advance();
+
+                    SquatBalanceObserver balance = adapter.Balance;
+                    var sample = new CopSample
+                    {
+                        OffsetRad = offsetsDeg[index] * Mathf.Deg2Rad,
+                        CopCombined = balance.HasCopEstimate ? balance.CopEstimate.z : float.NaN,
+                        CopLeft = FootCopAp(_controller.LeftFootContact),
+                        CopRight = FootCopAp(_controller.RightFootContact),
+                        ComAp = balance.SystemCom.z
+                    };
+                    byRepeat[repeat][index] = sample;
+
+                    trace.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                        "{0},{1:F1},{2:F6},{3:F6},{4:F6},{5:F6},{6:F6},{7:F1},{8},{9},{10:F4}",
+                        repeat, offsetsDeg[index], sample.CopCombined, sample.CopLeft, sample.CopRight,
+                        sample.ComAp, sample.ComAp - sample.CopCombined,
+                        balance.TotalNormalImpulse / (float)SimulationConstants.FixedDeltaTimeSeconds,
+                        _controller.LeftFootContact.CompletedContactCount,
+                        _controller.RightFootContact.CompletedContactCount,
+                        _rig.Segments["pelvis"].Body.position.y));
+                }
+            }
+
+            LinearFit combined0 = Fit(byRepeat[0], s => s.OffsetRad, s => s.CopCombined);
+            LinearFit combined1 = Fit(byRepeat[1], s => s.OffsetRad, s => s.CopCombined);
+            LinearFit left = Fit(byRepeat[0], s => s.OffsetRad, s => s.CopLeft);
+            LinearFit right = Fit(byRepeat[0], s => s.OffsetRad, s => s.CopRight);
+
+            // The static shift the controller has to buy: at zero commanded
+            // offset the COP sits behind the COM, and equilibrium needs it
+            // underneath. This, not the width of the support polygon, is what
+            // the ankle authority has to cover.
+            CopSample atZero = byRepeat[0][3];
+            float requiredShiftM = atZero.ComAp - atZero.CopCombined;
+            float ankleAuthorityM = combined0.Slope * SquatPredictiveBalanceController.MaxAnkleSagittalOffsetRad;
+
+            var report = new StringBuilder();
+            report.AppendLine(trace.ToString());
+            report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "# G_target_cop_combined_m_per_rad,{0:F5}", combined0.Slope));
+            report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "# G_target_cop_r2,{0:F6}", combined0.RSquared));
+            report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "# G_target_cop_max_abs_residual_m,{0:F7}", combined0.MaxAbsResidual));
+            report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "# G_target_cop_repeat_m_per_rad,{0:F5}", combined1.Slope));
+            report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "# G_target_cop_repeatability_rel,{0:F6}",
+                Mathf.Abs(combined1.Slope - combined0.Slope) / Mathf.Max(1e-9f, Mathf.Abs(combined0.Slope))));
+            report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "# G_target_cop_left_m_per_rad,{0:F5}", left.Slope));
+            report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "# G_target_cop_right_m_per_rad,{0:F5}", right.Slope));
+            report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "# required_static_cop_shift_m,{0:F5}", requiredShiftM));
+            report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "# ankle_cop_authority_at_bound_m,{0:F5}", ankleAuthorityM));
+            report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "# authority_margin_m,{0:F5}", ankleAuthorityM - requiredShiftM));
+
+            WriteMeasurement("GAM11-g-target-cop-calibration.csv", report.ToString());
+            Debug.Log("[S2 G_TARGET_COP CALIBRATION]" + Environment.NewLine + report);
+
+            Assert.That(combined0.Slope, Is.GreaterThan(0f),
+                "A more positive ankle target must move the centre of pressure forward. " +
+                "If this sign flips, the ankle calibration is wrong and nothing downstream is safe.");
+            Assert.That(combined0.RSquared, Is.GreaterThan(0.99f),
+                "The target-to-COP response is not linear enough inside +/-3 deg for a single " +
+                "scalar inversion; a piecewise calibration is required instead.");
+            Assert.That(
+                Mathf.Abs(combined1.Slope - combined0.Slope) / Mathf.Abs(combined0.Slope),
+                Is.LessThan(0.02f),
+                "The calibration did not repeat within 2 percent.");
+            yield return null;
+        }
+
+        private static float FootCopAp(PhysicalFootContactDetector foot)
+        {
+            if (foot == null)
+                return float.NaN;
+            float impulse = 0f;
+            float weighted = 0f;
+            for (int index = 0; index < foot.CompletedContactCount; index++)
+            {
+                float normalImpulse = foot.CompletedNormalImpulse(index);
+                impulse += normalImpulse;
+                weighted += normalImpulse * foot.CompletedContactPoint(index).z;
+            }
+            return impulse > 1e-6f ? weighted / impulse : float.NaN;
+        }
+
+        private struct CopSample
+        {
+            public float OffsetRad;
+            public float CopCombined;
+            public float CopLeft;
+            public float CopRight;
+            public float ComAp;
+        }
+
+        private struct LinearFit
+        {
+            public float Slope;
+            public float Intercept;
+            public float RSquared;
+            public float MaxAbsResidual;
+        }
+
+        private static LinearFit Fit(CopSample[] samples, Func<CopSample, float> x, Func<CopSample, float> y)
+        {
+            float sumX = 0f, sumY = 0f, sumXy = 0f, sumXx = 0f;
+            int count = 0;
+            foreach (CopSample sample in samples)
+            {
+                float xi = x(sample), yi = y(sample);
+                if (!float.IsFinite(xi) || !float.IsFinite(yi))
+                    continue;
+                sumX += xi; sumY += yi; sumXy += xi * yi; sumXx += xi * xi; count++;
+            }
+            if (count < 2)
+                return new LinearFit { Slope = float.NaN, Intercept = float.NaN, RSquared = float.NaN };
+
+            float denominator = count * sumXx - sumX * sumX;
+            float slope = Mathf.Abs(denominator) < 1e-12f ? float.NaN : (count * sumXy - sumX * sumY) / denominator;
+            float intercept = (sumY - slope * sumX) / count;
+            float meanY = sumY / count;
+
+            float residualSquares = 0f, totalSquares = 0f, maxAbsResidual = 0f;
+            foreach (CopSample sample in samples)
+            {
+                float xi = x(sample), yi = y(sample);
+                if (!float.IsFinite(xi) || !float.IsFinite(yi))
+                    continue;
+                float residual = yi - (slope * xi + intercept);
+                residualSquares += residual * residual;
+                totalSquares += (yi - meanY) * (yi - meanY);
+                maxAbsResidual = Mathf.Max(maxAbsResidual, Mathf.Abs(residual));
+            }
+            return new LinearFit
+            {
+                Slope = slope,
+                Intercept = intercept,
+                RSquared = totalSquares > 1e-18f ? 1f - residualSquares / totalSquares : float.NaN,
+                MaxAbsResidual = maxAbsResidual
+            };
+        }
+
+        // ---------------------------------------------------------------
+        // Reset isolation. The identification above is only worth anything
+        // if every case really does start from the same plant.
+        //
+        // adapter.Reset() clears controller state and leaves the rigidbodies
+        // exactly where they were, so the sweeps that relied on it had each
+        // case inherit the pose the previous one fell into. This pins the
+        // reset that actually works so that cannot come back.
+        // ---------------------------------------------------------------
+        [UnityTest]
+        public IEnumerator R1_IDENTIFICATION_CANDIDATES_START_FROM_IDENTICAL_PLANT()
+        {
+            var first = new PlantSnapshot[2];
+            var second = new PlantSnapshot[2];
+
+            for (int trial = 0; trial < 2; trial++)
+            {
+                yield return LoadFixture();
+                _controller.SetLoad(0f);
+                SquatPhysicalAdapter adapter = _controller.Adapter;
+                adapter.BalanceCorrectionsEnabled = false;
+                adapter.Preload.Enabled = false;
+                adapter.Preload.Clear();
+
+                first[trial] = CapturePlant(adapter);
+
+                // Drive the trial somewhere clearly different from spawn, so
+                // a reset that does nothing would be obvious.
+                adapter.AnkleSagittalOffsetOverrideRad = -8f * Mathf.Deg2Rad;
+                for (int tick = 0; tick < 60; tick++)
+                    Advance();
+                second[trial] = CapturePlant(adapter);
+            }
+
+            Assert.That(second[0].PelvisY, Is.Not.EqualTo(first[0].PelvisY).Within(1e-4f),
+                "The trial never left its spawn state, so this proves nothing about resetting.");
+
+            AssertPlantEquivalent(first[0], first[1], "spawn state after a full fixture reload");
+
+            // The same reset the contaminated sweeps used, for contrast.
+            _controller.Adapter.Reset();
+            PlantSnapshot afterControllerReset = CapturePlant(_controller.Adapter);
+            Assert.That(
+                Mathf.Abs(afterControllerReset.PelvisY - first[0].PelvisY),
+                Is.GreaterThan(1e-3f),
+                "adapter.Reset() appears to restore the physical bodies. If that is now true the " +
+                "identification harness can be simplified, but it was not true when this was written.");
+
+            Debug.Log(string.Format(CultureInfo.InvariantCulture,
+                "[R1 RESET ISOLATION] spawn pelvisY={0:F6}/{1:F6} disturbed pelvisY={2:F6} " +
+                "afterAdapterReset pelvisY={3:F6}",
+                first[0].PelvisY, first[1].PelvisY, second[0].PelvisY, afterControllerReset.PelvisY));
+            yield return null;
+        }
+
+        private PlantSnapshot CapturePlant(SquatPhysicalAdapter adapter)
+        {
+            var snapshot = new PlantSnapshot
+            {
+                PelvisY = _rig.Segments["pelvis"].Body.position.y,
+                ComAp = adapter.Balance.SystemCom.z,
+                ComApVel = adapter.Balance.SystemComVelocity.z,
+                Contacts = adapter.Balance.SupportContactCount,
+                AnkleActualDeg = ActualDegrees("left_foot")
+            };
+            foreach (string id in PlantSegments)
+            {
+                Rigidbody body = _rig.Segments[id].Body;
+                snapshot.Position += body.position;
+                snapshot.Rotation += new Vector3(body.rotation.x, body.rotation.y, body.rotation.z);
+                snapshot.LinearVelocity += body.linearVelocity;
+                snapshot.AngularVelocity += body.angularVelocity;
+            }
+            return snapshot;
+        }
+
+        private static readonly string[] PlantSegments =
+        {
+            "pelvis", "abdomen", "thorax", "left_thigh", "right_thigh",
+            "left_shank", "right_shank", "left_foot", "right_foot"
+        };
+
+        private static void AssertPlantEquivalent(PlantSnapshot a, PlantSnapshot b, string what)
+        {
+            Assert.That((a.Position - b.Position).magnitude, Is.LessThan(1e-5f), "Positions differ at " + what);
+            Assert.That((a.Rotation - b.Rotation).magnitude, Is.LessThan(1e-5f), "Rotations differ at " + what);
+            Assert.That((a.LinearVelocity - b.LinearVelocity).magnitude, Is.LessThan(1e-5f),
+                "Linear velocities differ at " + what);
+            Assert.That((a.AngularVelocity - b.AngularVelocity).magnitude, Is.LessThan(1e-5f),
+                "Angular velocities differ at " + what);
+            Assert.That(a.Contacts, Is.EqualTo(b.Contacts), "Contact state differs at " + what);
+            Assert.That(a.AnkleActualDeg, Is.EqualTo(b.AnkleActualDeg).Within(1e-4f),
+                "Controller-visible joint state differs at " + what);
+        }
+
+        private struct PlantSnapshot
+        {
+            public Vector3 Position;
+            public Vector3 Rotation;
+            public Vector3 LinearVelocity;
+            public Vector3 AngularVelocity;
+            public float PelvisY;
+            public float ComAp;
+            public float ComApVel;
+            public int Contacts;
+            public float AnkleActualDeg;
+        }
+
+        // ---------------------------------------------------------------
+        // One standing run: unloaded, s_q = 0, zero preload, corrected ankle
+        // mapping, hip and trunk off. 1000 ticks or a fall.
+        // ---------------------------------------------------------------
+        private StandingRun RunStanding(string measurementFilename)
+        {
+            _controller.SetLoad(0f);
+            SquatPhysicalAdapter adapter = _controller.Adapter;
+            adapter.BalanceCorrectionsEnabled = true;
+            adapter.AnkleSagittalOffsetOverrideRad = null;
+            adapter.Preload.Enabled = true;
+            adapter.Preload.CopyFrom(SquatEquilibriumPreload.QualifiedStanding());
+            adapter.BalanceController.HipTrunkStrategyEnabled = false;
+
+            var trace = new StringBuilder();
+            trace.AppendLine(TraceHeader());
+
+            const int totalTicks = 1000;
+            var run = new StandingRun
+            {
+                InitialPelvisY = _rig.Segments["pelvis"].Body.position.y,
+                FailureMode = "NONE",
+                WorstCaptureMargin = float.PositiveInfinity,
+                CopMinAp = float.PositiveInfinity,
+                CopMaxAp = float.NegativeInfinity
+            };
+            run.MinPelvisY = run.InitialPelvisY;
+            int survivedTicks = totalTicks;
+            int saturatedTicks = 0;
+            int measuredTicks = 0;
+
+            for (int tick = 0; tick < totalTicks; tick++)
+            {
+                Advance();
+                SquatBalanceObserver balance = adapter.Balance;
+                SquatPredictiveBalanceController control = adapter.BalanceController;
+                float pelvisY = _rig.Segments["pelvis"].Body.position.y;
+
+                if (tick < 100 ? tick % 5 == 0 : tick % 10 == 0)
+                    trace.AppendLine(TraceRow(tick, adapter));
+
+                if (tick == SettleTicks)
+                    run.SettledPelvisY = pelvisY;
+                if (tick >= SettleTicks)
+                {
+                    measuredTicks++;
+                    run.MinPelvisY = Mathf.Min(run.MinPelvisY, pelvisY);
+                    run.WorstCaptureMargin = Mathf.Min(run.WorstCaptureMargin,
+                        Mathf.Min(balance.CaptureMarginFront, balance.CaptureMarginRear));
+                    run.MaxAbsComApVelocity = Mathf.Max(run.MaxAbsComApVelocity,
+                        Mathf.Abs(balance.SystemComVelocity.z));
+                    run.MaxAbsComAp = Mathf.Max(run.MaxAbsComAp, Mathf.Abs(balance.SystemCom.z));
+                    run.MaxAnkleOffsetDeg = Mathf.Max(run.MaxAnkleOffsetDeg,
+                        Mathf.Abs(control.AnkleSagittalOffsetRad) * Mathf.Rad2Deg);
+                    run.MaxAnkleAuthorityFraction = Mathf.Max(run.MaxAnkleAuthorityFraction,
+                        control.AnkleAuthorityFraction);
+                    run.MaxSaturation = Mathf.Max(run.MaxSaturation, adapter.MaxDriveSaturation);
+                    run.WorstFootPitchDeg = Mathf.Max(run.WorstFootPitchDeg,
+                        Mathf.Abs(FootPitchDegrees("left_foot")));
+                    if (_controller.LeftFootContact != null)
+                        run.MaxSlipMps = Mathf.Max(run.MaxSlipMps, _controller.LeftFootContact.SlipSpeed);
+                    if (adapter.MaxDriveSaturation >= 1f)
+                        saturatedTicks++;
+                    if (!balance.HasSupport)
+                        run.LostContact = true;
+                    if (balance.HasCopEstimate)
+                    {
+                        run.CopMinAp = Mathf.Min(run.CopMinAp, balance.CopEstimate.z);
+                        run.CopMaxAp = Mathf.Max(run.CopMaxAp, balance.CopEstimate.z);
+                    }
+                }
+
+                if (pelvisY < run.InitialPelvisY - 0.25f)
+                {
+                    run.FailureMode = "PELVIS_COLLAPSE";
+                    survivedTicks = tick + 1;
+                    break;
+                }
+                if (!balance.HasSupport && tick > SettleTicks)
+                {
+                    run.FailureMode = "LOST_CONTACT";
+                    survivedTicks = tick + 1;
+                    break;
+                }
+                if (Mathf.Abs(FootPitchDegrees("left_foot")) > 25f)
+                {
+                    run.FailureMode = "FOOT_TIPPED";
+                    survivedTicks = tick + 1;
+                    break;
+                }
+            }
+
+            trace.AppendLine(TraceRow(survivedTicks, adapter));
+            WriteMeasurement(measurementFilename, trace.ToString());
+
+            run.Survived = survivedTicks >= totalTicks;
+            run.DurationSeconds = survivedTicks * (float)SimulationConstants.FixedDeltaTimeSeconds;
+            run.FinalPelvisY = _rig.Segments["pelvis"].Body.position.y;
+            run.FinalComAp = adapter.Balance.SystemCom.z;
+            run.FinalComApVelocity = adapter.Balance.SystemComVelocity.z;
+            run.SustainedSaturationFraction =
+                measuredTicks > 0 ? saturatedTicks / (float)measuredTicks : 0f;
+            run.Trace = trace.ToString();
+            return run;
+        }
+
+        private struct StandingRun
+        {
+            public bool Survived;
+            public float DurationSeconds;
+            public string FailureMode;
+            public float InitialPelvisY;
+            public float SettledPelvisY;
+            public float MinPelvisY;
+            public float FinalPelvisY;
+            public float FinalComAp;
+            public float FinalComApVelocity;
+            public float MaxAbsComAp;
+            public float MaxAbsComApVelocity;
+            public float WorstCaptureMargin;
+            public float CopMinAp;
+            public float CopMaxAp;
+            public float MaxAnkleOffsetDeg;
+            public float MaxAnkleAuthorityFraction;
+            public float MaxSaturation;
+            public float SustainedSaturationFraction;
+            public float WorstFootPitchDeg;
+            public float MaxSlipMps;
+            public bool LostContact;
+            public string Trace;
+
+            public static string Header() =>
+                "survived,duration_s,failure,initial_pelvis_y,settled_pelvis_y,min_pelvis_y," +
+                "final_pelvis_y,final_com_ap,final_com_ap_vel,max_com_ap,max_com_ap_vel," +
+                "worst_capture_margin,cop_min_ap,cop_max_ap,max_ankle_offset_deg," +
+                "max_ankle_authority_fraction,max_saturation,sustained_saturation," +
+                "worst_foot_pitch_deg,max_slip_mps,lost_contact";
+
+            public string Row() => string.Format(CultureInfo.InvariantCulture,
+                "{0},{1:F2},{2},{3:F4},{4:F4},{5:F4},{6:F4},{7:F5},{8:F5},{9:F5},{10:F5}," +
+                "{11:F5},{12:F5},{13:F5},{14:F2},{15:F3},{16:F3},{17:F3},{18:F2},{19:F4},{20}",
+                Survived, DurationSeconds, FailureMode, InitialPelvisY, SettledPelvisY, MinPelvisY,
+                FinalPelvisY, FinalComAp, FinalComApVelocity, MaxAbsComAp, MaxAbsComApVelocity,
+                WorstCaptureMargin, CopMinAp, CopMaxAp, MaxAnkleOffsetDeg, MaxAnkleAuthorityFraction,
+                MaxSaturation, SustainedSaturationFraction, WorstFootPitchDeg, MaxSlipMps, LostContact);
+
+            public string Summary => Header() + " => " + Row();
+        }
+
         private const int WindowOpenTick = 10;   // 0.10 s
         private const int WindowCloseTick = 25;  // 0.25 s
 

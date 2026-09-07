@@ -292,7 +292,6 @@ namespace PowerliftingSimulator.Squat.Unity
                     _observer.SupportApCenter + _standingComApOffset,
                     _observer.SupportMlCenter + _standingComMlOffset + balanceBias,
                     AnkleAnchorAp(),
-                    AnkleDriveSpringNmPerRad(),
                     dt);
             }
             else
@@ -579,12 +578,6 @@ namespace PowerliftingSimulator.Squat.Unity
             if (hasRight)
                 return right.z;
             return _observer.SupportApCenter;
-        }
-
-        private static float AnkleDriveSpringNmPerRad()
-        {
-            JointFamilyProfile? ankle = PoweredJointController.FindFamilyProfile("ankle");
-            return ankle.HasValue ? ankle.Value.Spring : 1f;
         }
 
         /// <summary>

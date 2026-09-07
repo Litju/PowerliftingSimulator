@@ -26,9 +26,8 @@ namespace PowerliftingSimulator.Squat.Unity
         // sits well inside the reference excursion. It is not the tipping
         // guard: that is the clamp holding the desired COP inside the measured
         // support polygon, which is what actually stops the foot rotating.
-        // At 10 deg the ankle could only realise about 0.05 m of COP travel
-        // while the COM needed 0.11 m, so the ankle ran out before the COP
-        // could ever get ahead of the COM.
+        // At the measured 0.204 m/rad it is worth 53 mm of centre-of-pressure
+        // travel, against the 52 mm the grounded standing state needs.
         public const float MaxAnkleSagittalOffsetRad = 0.26180f;   // 15 deg
         public const float MaxHipSagittalOffsetRad = 0.12217f;     // 7 deg
         public const float MaxTrunkSagittalOffsetRad = 0.10472f;   // 6 deg
@@ -48,13 +47,66 @@ namespace PowerliftingSimulator.Squat.Unity
         private const float MaxOffsetRateRadPerSecond = 4f;
         private const float HipBlendOnsetFraction = 0.85f;
         private const float HipStrategyGain = 0.35f;
-        private const float CopFeedbackGain = 1.0f;
-        private const float MinimumAnkleSpringNmPerRad = 1f;
+
+        /// <summary>
+        /// GAME_PHYSICS_CALIBRATION. Metres of measured centre-of-pressure
+        /// travel per radian of commanded ankle target offset, identified on
+        /// the grounded unloaded plant with balance and preload off, over
+        /// +/-3 deg with a fresh scene reload per sample
+        /// (Artifacts/Measurements/GAM11-g-target-cop-calibration.csv,
+        /// R^2 = 0.99997, left 0.209 and right 0.200 m/rad).
+        ///
+        /// This replaces inverting the plant through the authored joint
+        /// spring. A ConfigurableJoint drive is solved together with the
+        /// body inertias, the other joints and the contacts, so
+        /// positionSpring times target error is not what the target offset
+        /// is worth at the ground. Reasoning through the spring implied
+        /// about 0.66 m/rad and so under-commanded the ankle by roughly
+        /// 3.2x, which is what the athlete fell from in C0.
+        ///
+        /// It is a property of this rig on this platform in this engine, not
+        /// a biomechanical constant, and it does not change the GAM-7 spring,
+        /// damper or force ceiling, which stay exactly as authored.
+        /// </summary>
+        public const float MeasuredTargetToCopMPerRad = 0.20446f;
+
+        /// <summary>
+        /// Proportional gain on centre-of-pressure error. There is no
+        /// integrator, so the loop settles where the residual error is worth
+        /// the offset that holds it: a required shift s settles at
+        /// s/(1+K) of error and K/(1+K) * s/G of ankle offset.
+        ///
+        /// At the measured 52 mm standing requirement, K = 4 asks for about
+        /// 11.7 deg of the 15 deg bound and leaves the rest for the moving
+        /// part of the job.
+        /// </summary>
+        public const float DefaultCopTrackingGain = 4f;
+
+        /// <summary>Keeps the plant inversion finite if a gain is misconfigured.</summary>
+        private const float MinimumTargetToCopMPerRad = 0.01f;
 
         public float ComKp { get; set; } = DefaultComKp;
         public float ComKd { get; set; } = DefaultComKd;
         public float MlComKp { get; set; } = DefaultMlComKp;
         public float MlComKd { get; set; } = DefaultMlComKd;
+        public float CopTrackingGain { get; set; } = DefaultCopTrackingGain;
+
+        /// <summary>
+        /// The identified target-to-COP gain the ankle mapping inverts.
+        /// Settable so an experiment can measure the plant it is actually
+        /// running on; it is never derived from the joint drive parameters.
+        /// </summary>
+        public float TargetToCopMPerRad { get; set; } = MeasuredTargetToCopMPerRad;
+
+        /// <summary>Ankle target bound, so an experiment can test it.</summary>
+        public float AnkleSagittalBoundRad { get; set; } = MaxAnkleSagittalOffsetRad;
+
+        /// <summary>
+        /// The proximal channel. Turning it off isolates the ankle, which is
+        /// how the question "is the ankle actually out of authority" gets a
+        /// measured answer instead of an assumed one.
+        /// </summary>
+        public bool HipTrunkStrategyEnabled { get; set; } = true;
 
         // Actuation outputs. These are target offsets in the sagittal and
         // frontal planes, in radians, already bounded and rate limited.
@@ -81,6 +133,13 @@ namespace PowerliftingSimulator.Squat.Unity
         public bool IsAnkleOffsetSaturated { get; private set; }
         public float RequestedAnkleTorqueNm { get; private set; }
 
+        /// <summary>
+        /// How much of the ankle target bound the current command is using.
+        /// This is the honest measure of remaining ankle authority, and the
+        /// gate any second strategy has to be justified against.
+        /// </summary>
+        public float AnkleAuthorityFraction { get; private set; }
+
         public void Reset()
         {
             AnkleSagittalOffsetRad = 0f;
@@ -90,6 +149,7 @@ namespace PowerliftingSimulator.Squat.Unity
             HipFrontalOffsetRad = 0f;
             HipStrategyBlend = 0f;
             IsAnkleOffsetSaturated = false;
+            AnkleAuthorityFraction = 0f;
             IsActive = false;
             HasCopMeasurement = false;
         }
@@ -101,17 +161,11 @@ namespace PowerliftingSimulator.Squat.Unity
         /// Anteroposterior position of the ankle joint anchors, the point the
         /// ankle torque acts about when it shifts the centre of pressure.
         /// </param>
-        /// <param name="ankleSpringNmPerRad">
-        /// The invariant GAM-7 ankle drive spring. A target offset is worth
-        /// spring times offset of extra torque, which is how a torque request
-        /// becomes a target offset without ever writing a torque.
-        /// </param>
         public void Solve(
             SquatBalanceObserver balance,
             float comRefAp,
             float comRefMl,
             float ankleAnchorAp,
-            float ankleSpringNmPerRad,
             float dt)
         {
             if (balance == null)
@@ -161,27 +215,30 @@ namespace PowerliftingSimulator.Squat.Unity
             CopDesiredAp = Mathf.Clamp(copDesired, copMin, copMax);
             CopErrorAp = CopMeasuredAp - CopDesiredAp;
 
-            // Ankle strategy. The torque that would place the COP where we
-            // want it, expressed as the target offset worth that torque.
-            // Feed-forward from the reduced-order model, plus proportional
-            // feedback on the COP the engine actually produced. The
-            // feed-forward mapping assumes a rigid inverted pendulum, and a
-            // segmented body does not deliver the whole of it; the feedback
-            // term closes that gap without accumulating any state.
-            float copFeedback = HasCopMeasurement
-                ? CopFeedbackGain * (CopDesiredAp - CopMeasuredAp)
-                : 0f;
-            float requestedTorque = balance.SystemMassKg * SquatBalanceObserver.GravityMagnitudeMps2 *
-                (CopDesiredAp - ankleAnchorAp + copFeedback);
-            RequestedAnkleTorqueNm = requestedTorque;
-            float perAnkleTorque = 0.5f * requestedTorque;
-            float spring = Mathf.Max(MinimumAnkleSpringNmPerRad, ankleSpringNmPerRad);
+            // Ankle strategy. The offset is inverted through the measured
+            // target-to-COP gain, on the COP error the engine actually
+            // reported. Positive logical X at the ankle is plantarflexion,
+            // which drives the centre of pressure forward; R6 calibrates that
+            // sign and the identification confirms it.
+            //
+            // With no COP measurement there is nothing to track, so the
+            // reduced-order model stands in: place the COP where the outer
+            // law asked relative to the ankle, through the same measured
+            // gain rather than through the joint spring.
+            float gain = Mathf.Max(MinimumTargetToCopMPerRad, TargetToCopMPerRad);
+            float ankleTargetOffset = HasCopMeasurement
+                ? CopTrackingGain * (CopDesiredAp - CopMeasuredAp) / gain
+                : (CopDesiredAp - ankleAnchorAp) / gain;
 
-            // Positive logical X at the ankle is plantarflexion, which drives
-            // the centre of pressure forward. R6 calibrates that sign.
-            float ankleTargetOffset = perAnkleTorque / spring;
-            float saturationFraction = Mathf.Abs(ankleTargetOffset) / MaxAnkleSagittalOffsetRad;
+            // Kept as a diagnostic so the contact-moment cross-check has the
+            // reduced-order moment to compare against. It no longer feeds the
+            // actuator mapping.
+            RequestedAnkleTorqueNm = balance.SystemMassKg *
+                SquatBalanceObserver.GravityMagnitudeMps2 * (CopDesiredAp - ankleAnchorAp);
+
+            float saturationFraction = Mathf.Abs(ankleTargetOffset) / AnkleSagittalBoundRad;
             IsAnkleOffsetSaturated = saturationFraction >= 1f;
+            AnkleAuthorityFraction = saturationFraction;
 
             // Hip strategy blends in when the ankle runs out of authority or
             // the capture point closes on the edge of support.
@@ -191,8 +248,9 @@ namespace PowerliftingSimulator.Squat.Unity
             // capture margin stays a diagnostic; driving the blend from it
             // turned the hip on hardest exactly when the stance was most
             // fragile, and the hip offset then accelerated the collapse.
-            HipStrategyBlend = Mathf.Clamp01(
-                Mathf.InverseLerp(HipBlendOnsetFraction, 1f, saturationFraction));
+            HipStrategyBlend = HipTrunkStrategyEnabled
+                ? Mathf.Clamp01(Mathf.InverseLerp(HipBlendOnsetFraction, 1f, saturationFraction))
+                : 0f;
 
             // Hip strategy. This controller can only hold a bounded target
             // offset, so the useful hip action is the steady one: for a COM
@@ -206,7 +264,7 @@ namespace PowerliftingSimulator.Squat.Unity
             float trunkTargetOffset = -hipTargetOffset * 0.5f;
 
             float maxStep = MaxOffsetRateRadPerSecond * dt;
-            AnkleSagittalOffsetRad = Step(AnkleSagittalOffsetRad, ankleTargetOffset, MaxAnkleSagittalOffsetRad, maxStep);
+            AnkleSagittalOffsetRad = Step(AnkleSagittalOffsetRad, ankleTargetOffset, AnkleSagittalBoundRad, maxStep);
             HipSagittalOffsetRad = Step(HipSagittalOffsetRad, hipTargetOffset, MaxHipSagittalOffsetRad, maxStep);
             TrunkSagittalOffsetRad = Step(TrunkSagittalOffsetRad, trunkTargetOffset, MaxTrunkSagittalOffsetRad, maxStep);
 
@@ -238,7 +296,7 @@ namespace PowerliftingSimulator.Squat.Unity
         private void DecayToward(float dt)
         {
             float maxStep = MaxOffsetRateRadPerSecond * dt;
-            AnkleSagittalOffsetRad = Step(AnkleSagittalOffsetRad, 0f, MaxAnkleSagittalOffsetRad, maxStep);
+            AnkleSagittalOffsetRad = Step(AnkleSagittalOffsetRad, 0f, AnkleSagittalBoundRad, maxStep);
             HipSagittalOffsetRad = Step(HipSagittalOffsetRad, 0f, MaxHipSagittalOffsetRad, maxStep);
             TrunkSagittalOffsetRad = Step(TrunkSagittalOffsetRad, 0f, MaxTrunkSagittalOffsetRad, maxStep);
             AnkleFrontalOffsetRad = Step(AnkleFrontalOffsetRad, 0f, MaxAnkleFrontalOffsetRad, maxStep);
