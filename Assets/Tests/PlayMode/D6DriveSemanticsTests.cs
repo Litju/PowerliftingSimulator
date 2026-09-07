@@ -68,7 +68,7 @@ namespace PowerliftingSimulator.Tests
             public static Spec Production(string childId) => new Spec
             {
                 ChildId = childId,
-                DriveMode = ProductionDriveMode(childId),
+                DriveMode = RotationDriveMode.XYAndZ,
                 SecondaryMotion = ProductionSecondaryMotion(childId),
                 Dt = 0.01f,
                 SolverIterations = 6,
@@ -106,21 +106,25 @@ namespace PowerliftingSimulator.Tests
                 bool hinge = recipe.Kind == PhysicalJointKind.Hinge;
 
                 Fixture fixture = Build(Spec.Production(childId), useGravity: false, leverM: 0f);
-                Assert.That(fixture.Joint.rotationDriveMode,
-                    Is.EqualTo(hinge ? RotationDriveMode.XYAndZ : RotationDriveMode.Slerp),
-                    $"{childId} drive mode must match production.");
+                Assert.That(fixture.Joint.rotationDriveMode, Is.EqualTo(RotationDriveMode.XYAndZ),
+                    $"{childId} must drive through the per-axis drives. Slerp realises a quarter " +
+                    "of the authored spring.");
                 Assert.That(fixture.Joint.angularYMotion,
                     Is.EqualTo(hinge ? ConfigurableJointMotion.Locked : ConfigurableJointMotion.Limited),
                     $"{childId} secondary angular motion must match production.");
 
-                JointDrive driven = hinge ? fixture.Joint.angularXDrive : fixture.Joint.slerpDrive;
-                JointDrive idle = hinge ? fixture.Joint.slerpDrive : fixture.Joint.angularXDrive;
+                JointDrive driven = fixture.Joint.angularXDrive;
+                JointDrive swing = fixture.Joint.angularYZDrive;
+                JointDrive idle = fixture.Joint.slerpDrive;
+                Assert.That(swing.positionSpring, Is.EqualTo(hinge ? 0f : fixture.Profile.Spring),
+                    $"{childId}: a hinge locks its swing axes, a ball joint has to power them or " +
+                    "the conversion deletes two anatomical degrees of freedom.");
                 Assert.That(driven.positionSpring, Is.EqualTo(fixture.Profile.Spring),
                     $"{childId} must carry the family spring on the drive production actually uses.");
                 Assert.That(driven.positionDamper, Is.EqualTo(fixture.Profile.Damper));
                 Assert.That(driven.useAcceleration, Is.False);
                 Assert.That(idle.positionSpring, Is.EqualTo(0f),
-                    $"{childId} must leave the unused drive at zero, as production does.");
+                    $"{childId} must leave slerpDrive at zero, as production does.");
                 Assert.That(fixture.Joint.angularXMotion, Is.EqualTo(ConfigurableJointMotion.Limited));
                 Assert.That(fixture.Joint.configuredInWorldSpace, Is.False);
                 Assert.That(fixture.Joint.projectionMode, Is.EqualTo(JointProjectionMode.None));
@@ -308,13 +312,214 @@ namespace PowerliftingSimulator.Tests
         }
 
         // ---------------------------------------------------------------
+        // Multi-axis anatomical parity.
+        //
+        // Slerp drives the whole orientation error as one shortest arc.
+        // XYAndZ splits it into a twist drive on X and a swing drive on Y and
+        // Z. For the ball families that is the change being proposed, so each
+        // one has to show that a pure command about each intended axis still
+        // moves that axis, in the right direction, without dragging the
+        // others along. Consistency is not a reason to convert a family that
+        // fails this.
+        // ---------------------------------------------------------------
+        [Test]
+        public void H9_MULTI_AXIS_DRIVE_SEMANTICS_PARITY()
+        {
+            var report = new StringBuilder();
+            report.AppendLine("child,family,drive_mode,commanded_axis,commanded_deg," +
+                              "response_x_deg,response_y_deg,response_z_deg,intended_axis_deg," +
+                              "worst_cross_axis_deg,cross_axis_fraction,sign_correct");
+
+            string[] ballChildren = { "abdomen", "thorax", "left_thigh", "left_upper_arm", "left_hand" };
+            foreach (string childId in ballChildren)
+            {
+                foreach (RotationDriveMode mode in new[] { RotationDriveMode.Slerp, RotationDriveMode.XYAndZ })
+                {
+                    foreach (int axis in new[] { 0, 1, 2 })
+                    {
+                        foreach (float commandDeg in new[] { -5f, 5f })
+                        {
+                            Spec spec = Spec.Production(childId);
+                            spec.DriveMode = mode;
+                            spec.SecondaryMotion = ConfigurableJointMotion.Limited;
+                            spec.SolverIterations = 32;
+
+                            Fixture fixture = Build(spec, useGravity: false, leverM: 0f);
+                            fixture.SetLogicalTarget(axis, commandDeg * Mathf.Deg2Rad);
+
+                            Time.fixedDeltaTime = spec.Dt;
+                            for (int step = 0; step < 300; step++)
+                                Physics.Simulate(spec.Dt);
+
+                            Vector3 response = LogicalDegrees(
+                                Quaternion.Inverse(fixture.Parent.rotation) * fixture.Child.rotation);
+                            float intended = response[axis];
+                            float worstCross = 0f;
+                            for (int other = 0; other < 3; other++)
+                                if (other != axis)
+                                    worstCross = Mathf.Max(worstCross, Mathf.Abs(response[other]));
+
+                            report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                                "{0},{1},{2},{3},{4:F1},{5:F3},{6:F3},{7:F3},{8:F3},{9:F3},{10:F4},{11}",
+                                childId, FindJoint(childId).Family, mode, "XYZ"[axis], commandDeg,
+                                response.x, response.y, response.z, intended, worstCross,
+                                Mathf.Abs(intended) > 1e-4f ? worstCross / Mathf.Abs(intended) : float.NaN,
+                                Mathf.Sign(intended) == Mathf.Sign(commandDeg)));
+
+                            Teardown(fixture);
+                        }
+                    }
+                }
+            }
+
+            WriteMeasurement("GAM11-h9-multiaxis-parity.csv", report.ToString());
+            Debug.Log("[H9 MULTI AXIS PARITY]" + Environment.NewLine + report);
+        }
+
+        private static Vector3 LogicalDegrees(Quaternion rotation)
+        {
+            if (rotation.w < 0f)
+                rotation = new Quaternion(-rotation.x, -rotation.y, -rotation.z, -rotation.w);
+            float magnitude = Mathf.Sqrt(
+                rotation.x * rotation.x + rotation.y * rotation.y + rotation.z * rotation.z);
+            if (magnitude <= 1e-6f)
+                return Vector3.zero;
+            float angle = 2f * Mathf.Atan2(magnitude, Mathf.Clamp(rotation.w, -1f, 1f));
+            float scale = angle / magnitude * Mathf.Rad2Deg;
+            return new Vector3(rotation.x * scale, rotation.y * scale, rotation.z * scale);
+        }
+
+        // ---------------------------------------------------------------
+        // Minimum converged solver profile on the final drive semantics.
+        //
+        // Every powered family, three fresh fixtures each, sweeping position
+        // iterations until all of them realize their authored spring within
+        // five percent. The answer is the smallest count that clears every
+        // family, not the largest count available.
+        // ---------------------------------------------------------------
+        [Test]
+        public void H9_MINIMUM_SOLVER_PROFILE()
+        {
+            string[] families =
+            {
+                "left_foot", "left_shank", "left_thigh", "abdomen", "thorax",
+                "left_upper_arm", "left_forearm", "left_hand"
+            };
+
+            var report = new StringBuilder();
+            report.AppendLine("iterations,child,family,authored_k,k_mean,k_min,k_max,k_sd," +
+                              "ratio_mean,within_5pct");
+            var verdict = new StringBuilder();
+            verdict.AppendLine("iterations,families_within_5pct,worst_family,worst_ratio");
+
+            foreach (int iterations in new[] { 16, 20, 24, 28, 32 })
+            {
+                int passing = 0;
+                string worstFamily = "NONE";
+                float worstDeviation = 0f;
+                float worstRatio = float.NaN;
+
+                foreach (string childId in families)
+                {
+                    var ratios = new float[3];
+                    var stiffness = new float[3];
+                    for (int run = 0; run < 3; run++)
+                    {
+                        Spec spec = Spec.Production(childId);
+                        spec.SolverIterations = iterations;
+                        Result result = MeasureStatic(spec);
+                        stiffness[run] = result.EffectiveStiffness;
+                        ratios[run] = result.Ratio;
+                    }
+
+                    float mean = (ratios[0] + ratios[1] + ratios[2]) / 3f;
+                    float kMean = (stiffness[0] + stiffness[1] + stiffness[2]) / 3f;
+                    float kMin = Mathf.Min(stiffness[0], Mathf.Min(stiffness[1], stiffness[2]));
+                    float kMax = Mathf.Max(stiffness[0], Mathf.Max(stiffness[1], stiffness[2]));
+                    float sd = Mathf.Sqrt((
+                        (stiffness[0] - kMean) * (stiffness[0] - kMean) +
+                        (stiffness[1] - kMean) * (stiffness[1] - kMean) +
+                        (stiffness[2] - kMean) * (stiffness[2] - kMean)) / 3f);
+                    bool within = mean >= 0.95f && mean <= 1.05f;
+                    if (within)
+                        passing++;
+                    if (Mathf.Abs(mean - 1f) > worstDeviation)
+                    {
+                        worstDeviation = Mathf.Abs(mean - 1f);
+                        worstFamily = childId;
+                        worstRatio = mean;
+                    }
+
+                    report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                        "{0},{1},{2},{3:F0},{4:F2},{5:F2},{6:F2},{7:F4},{8:F4},{9}",
+                        iterations, childId, FindJoint(childId).Family,
+                        ResolveProfile(childId).Spring, kMean, kMin, kMax, sd, mean, within));
+                }
+
+                verdict.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                    "{0},{1}/{2},{3},{4:F4}", iterations, passing, families.Length,
+                    worstFamily, worstRatio));
+            }
+
+            var combined = new StringBuilder();
+            combined.Append(report);
+            combined.AppendLine("# verdict");
+            combined.Append(verdict);
+            WriteMeasurement("GAM11-h9-solver-profile-selection.csv", combined.ToString());
+            Debug.Log("[H9 MINIMUM SOLVER PROFILE]" + Environment.NewLine + combined);
+        }
+
+        // ---------------------------------------------------------------
+        // Is the wrist result a plant defect or a measurement floor?
+        //
+        // The hand is 0.6 kg on a 0.07 m lever against a 250 Nm/rad spring,
+        // so its true equilibrium deflection is about 0.094 deg. If the
+        // measurement cannot resolve an angle that small the ratio will read
+        // low no matter how well the drive behaves. Loading the same fixture
+        // harder moves the expected angle up without touching the actuator:
+        // if the ratio climbs toward one as the angle grows, the earlier
+        // number was the method, not the wrist.
+        // ---------------------------------------------------------------
+        [Test]
+        public void H9_WRIST_MEASUREMENT_FLOOR()
+        {
+            var report = new StringBuilder();
+            report.AppendLine("child,lever_m,expected_deg,settled_deg,gravity_moment_nm,k_eff,ratio");
+
+            foreach (string childId in new[] { "left_hand", "abdomen" })
+            {
+                JointFamilyProfile profile = ResolveProfile(childId);
+                foreach (float lever in new[] { 0.07f, 0.25f, 0.5f, 1.0f, 2.0f })
+                {
+                    Spec spec = Spec.Production(childId);
+                    spec.SolverIterations = 28;
+                    Result result = MeasureStaticWithLever(spec, lever);
+                    float mass = FindSegment(childId).MassFraction * 100f;
+                    float expectedDeg = mass * 9.81f * lever / profile.Spring * Mathf.Rad2Deg;
+
+                    report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                        "{0},{1:F3},{2:F4},{3:F4},{4:F4},{5:F2},{6:F4}",
+                        childId, lever, expectedDeg, result.SettledDeg,
+                        result.GravityMoment, result.EffectiveStiffness, result.Ratio));
+                }
+            }
+
+            WriteMeasurement("GAM11-h9-wrist-measurement-floor.csv", report.ToString());
+            Debug.Log("[H9 WRIST MEASUREMENT FLOOR]" + Environment.NewLine + report);
+        }
+
+        // ---------------------------------------------------------------
         // Measurement. Settle, then sample only once the body is stationary.
         // ---------------------------------------------------------------
         private Result MeasureStatic(Spec spec)
         {
             PhysicalSegmentRecipe segment = FindSegment(spec.ChildId);
             Vector3 size = segment.DimensionsMeters;
-            float lever = 0.5f * Mathf.Max(size.x, Mathf.Max(size.y, size.z));
+            return MeasureStaticWithLever(spec, 0.5f * Mathf.Max(size.x, Mathf.Max(size.y, size.z)));
+        }
+
+        private Result MeasureStaticWithLever(Spec spec, float lever)
+        {
 
             Time.fixedDeltaTime = spec.Dt;
             Fixture fixture = Build(spec, useGravity: true, leverM: lever);
@@ -359,6 +564,14 @@ namespace PowerliftingSimulator.Tests
             public Rigidbody Child;
             public ConfigurableJoint Joint;
             public JointFamilyProfile Profile;
+
+            public void SetLogicalTarget(int axis, float radians)
+            {
+                Vector3 direction = axis == 0 ? Vector3.right : axis == 1 ? Vector3.up : Vector3.forward;
+                Quaternion logical = Quaternion.AngleAxis(radians * Mathf.Rad2Deg, direction);
+                Joint.targetRotation = PoweredJointController.ToUnityTargetRotation(logical);
+                Joint.targetAngularVelocity = Vector3.zero;
+            }
 
             public void SetLogicalSagittalTarget(float sagittalRad)
             {
@@ -439,8 +652,14 @@ namespace PowerliftingSimulator.Tests
             }
             else
             {
+                // A hinge locks Y and Z, so only the twist drive can act. A
+                // ball joint has to carry the family spring on the swing drive
+                // as well, or converting it to XYAndZ silently deletes two
+                // anatomical degrees of freedom: with angularYZDrive left at
+                // zero the secondary axes measured exactly 0.000 response.
+                bool hinge = FindJoint(spec.ChildId).Kind == PhysicalJointKind.Hinge;
                 joint.angularXDrive = drive;
-                joint.angularYZDrive = ZeroDrive();
+                joint.angularYZDrive = hinge ? ZeroDrive() : drive;
                 joint.slerpDrive = ZeroDrive();
             }
 

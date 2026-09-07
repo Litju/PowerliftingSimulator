@@ -389,20 +389,25 @@ namespace PowerliftingSimulator.Athlete
             configurable.targetRotation = ToUnityTargetRotation(joint.AppliedTarget);
             configurable.targetAngularVelocity = -targetVelocity;
 
-            if (joint.Recipe.Kind == PhysicalJointKind.Hinge)
-            {
-                configurable.rotationDriveMode = RotationDriveMode.XYAndZ;
-                configurable.angularXDrive = Drive(profile, maximumForce);
-                configurable.angularYZDrive = ZeroDrive();
-                configurable.slerpDrive = ZeroDrive();
-            }
-            else
-            {
-                configurable.rotationDriveMode = RotationDriveMode.Slerp;
-                configurable.angularXDrive = ZeroDrive();
-                configurable.angularYZDrive = ZeroDrive();
-                configurable.slerpDrive = Drive(profile, maximumForce);
-            }
+            // Every powered joint drives through the per-axis drives. Slerp
+            // realises only a quarter of the authored positionSpring: once the
+            // solver is given enough iterations to converge, the abdomen,
+            // thorax, hip and ankle fixtures all settle at 0.249 to 0.250 of
+            // it, while the same fixtures on XYAndZ settle at 1.000
+            // (Artifacts/Measurements/GAM-11/GAM11-h8-drivemode-by-iteration.csv).
+            // Four families, four different masses and inertias, one ratio.
+            //
+            // A hinge locks its swing axes, so only the twist drive can act.
+            // A ball joint has to power the swing drive too: leaving
+            // angularYZDrive at zero deletes two anatomical degrees of freedom
+            // outright, and the parity fixture measured exactly 0.000 response
+            // on both secondary axes before this was corrected.
+            configurable.rotationDriveMode = RotationDriveMode.XYAndZ;
+            configurable.angularXDrive = Drive(profile, maximumForce);
+            configurable.angularYZDrive = joint.Recipe.Kind == PhysicalJointKind.Hinge
+                ? ZeroDrive()
+                : Drive(profile, maximumForce);
+            configurable.slerpDrive = ZeroDrive();
         }
 
         // Capacity is an actuator ceiling, not a gain. The GAM-7 family
