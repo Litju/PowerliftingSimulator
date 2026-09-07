@@ -171,6 +171,100 @@ namespace PowerliftingSimulator.Tests
         }
 
         // ---------------------------------------------------------------
+        // A2. How much canonical posture an ankle command costs.
+        //
+        // The guard has to know which direction of ankle command eats posture
+        // margin, and how fast. Guessing the sign from the way the athlete
+        // looks is exactly how the last two mistakes happened, so it is
+        // measured: a held ankle offset, balance off, preload off, a full
+        // scene reload per sample, and the posture response read at 1.5 s,
+        // late enough for the trunk to have responded and early enough that
+        // the body has not departed.
+        //
+        // GAME_PHYSICS_CALIBRATION.
+        // ---------------------------------------------------------------
+        [UnityTest]
+        public IEnumerator A2_ANKLE_COMMAND_TO_POSTURE_COST()
+        {
+            float[] offsetsDeg = { -9f, -6f, -3f, 0f, 3f, 6f, 9f };
+            var trace = new StringBuilder();
+            trace.AppendLine("ankle_offset_deg,abdomen_deg,thorax_deg,hip_l_deg," +
+                             "abdomen_posture_err,thorax_posture_err,hip_posture_err," +
+                             "max_posture_err,abdomen_limit_proximity,com_ap,cop_ap");
+
+            var samples = new float[offsetsDeg.Length];
+            var abdomenSigned = new float[offsetsDeg.Length];
+
+            for (int index = 0; index < offsetsDeg.Length; index++)
+            {
+                yield return LoadFixture();
+                _controller.SetLoad(0f);
+                SquatPhysicalAdapter adapter = _controller.Adapter;
+                adapter.BalanceCorrectionsEnabled = false;
+                adapter.Preload.Enabled = false;
+                adapter.Preload.Clear();
+                adapter.AnkleSagittalOffsetOverrideRad = offsetsDeg[index] * Mathf.Deg2Rad;
+
+                // 0.6 s. The audit's own trace puts the athlete still upright
+                // here, pelvis at 0.97, whereas by 1.5 s a held offset with no
+                // balance has already toppled it and the sample would be
+                // measuring the fall instead of the posture response.
+                for (int tick = 0; tick < 60; tick++)
+                    Advance();
+
+                PoweredJointDiagnostic abdomen = _rig.PoweredController.GetJoint("abdomen").Diagnostic;
+                PoweredJointDiagnostic thorax = _rig.PoweredController.GetJoint("thorax").Diagnostic;
+                PoweredJointDiagnostic hip = _rig.PoweredController.GetJoint("left_thigh").Diagnostic;
+                adapter.TryGetTargetComposition("abdomen", out SquatPhysicalAdapter.JointTargetComposition abdomenTarget);
+                adapter.TryGetTargetComposition("thorax", out SquatPhysicalAdapter.JointTargetComposition thoraxTarget);
+                adapter.TryGetTargetComposition("left_thigh", out SquatPhysicalAdapter.JointTargetComposition hipTarget);
+
+                float abdomenError = Quaternion.Angle(abdomenTarget.Nominal, abdomen.ActualRelative);
+                float thoraxError = Quaternion.Angle(thoraxTarget.Nominal, thorax.ActualRelative);
+                float hipError = Quaternion.Angle(hipTarget.Nominal, hip.ActualRelative);
+                samples[index] = Mathf.Max(abdomenError, Mathf.Max(thoraxError, hipError));
+                abdomenSigned[index] = SagittalDegrees(abdomen.ActualRelative);
+
+                trace.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                    "{0:F1},{1:F3},{2:F3},{3:F3},{4:F3},{5:F3},{6:F3},{7:F3},{8:F3},{9:F5},{10:F5}",
+                    offsetsDeg[index], abdomenSigned[index], SagittalDegrees(thorax.ActualRelative),
+                    SagittalDegrees(hip.ActualRelative),
+                    abdomenError, thoraxError, hipError, samples[index], abdomen.LimitProximity,
+                    adapter.Balance.SystemCom.z,
+                    adapter.Balance.HasCopEstimate ? adapter.Balance.CopEstimate.z : float.NaN));
+            }
+
+            float slopeAbdomen = Slope(offsetsDeg, abdomenSigned);
+            float slopeMaxError = Slope(offsetsDeg, samples);
+            trace.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "# d_abdomen_deg_per_ankle_deg,{0:F4}", slopeAbdomen));
+            trace.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "# d_max_posture_error_deg_per_ankle_deg,{0:F4}", slopeMaxError));
+
+            WriteMeasurement("GAM11-ankle-to-posture-cost.csv", trace.ToString());
+            Debug.Log("[A2 ANKLE COMMAND TO POSTURE COST]" + Environment.NewLine + trace);
+            yield return null;
+        }
+
+        private static float Slope(float[] x, float[] y)
+        {
+            float sumX = 0f, sumY = 0f, sumXy = 0f, sumXx = 0f;
+            int count = 0;
+            for (int index = 0; index < x.Length; index++)
+            {
+                if (!float.IsFinite(x[index]) || !float.IsFinite(y[index]))
+                    continue;
+                sumX += x[index]; sumY += y[index];
+                sumXy += x[index] * y[index]; sumXx += x[index] * x[index];
+                count++;
+            }
+            if (count < 2)
+                return float.NaN;
+            float denominator = count * sumXx - sumX * sumX;
+            return Mathf.Abs(denominator) < 1e-12f ? float.NaN : (count * sumXy - sumX * sumY) / denominator;
+        }
+
+        // ---------------------------------------------------------------
         // Shared harness. Every case reloads the scene, which is the only
         // reset that returns the bodies to their authored spawn pose.
         // ---------------------------------------------------------------

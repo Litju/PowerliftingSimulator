@@ -108,6 +108,60 @@ namespace PowerliftingSimulator.Squat.Unity
         /// </summary>
         public bool HipTrunkStrategyEnabled { get; set; } = true;
 
+        /// <summary>
+        /// The posture guard. Off reproduces the rejected behaviour, where
+        /// the loop buys a centred centre of mass with as much canonical
+        /// posture as the trunk will give it, so the gate has something to
+        /// keep failing against.
+        /// </summary>
+        public bool PostureGuardEnabled { get; set; } = true;
+
+        /// <summary>
+        /// Posture error, in radians, at which the guard begins withdrawing
+        /// the ankle command that is causing it. Below this the ankle has its
+        /// full authority; the athlete is allowed to sway.
+        /// </summary>
+        public const float PostureGuardOnsetRad = 0.06981f;   // 4 deg
+
+        /// <summary>
+        /// Posture error at which the harmful direction is withdrawn
+        /// entirely. It sits under the 10 deg standing threshold so the guard
+        /// acts before the gate would fail, rather than confirming the failure
+        /// after it happens.
+        /// </summary>
+        public const float PostureGuardFullRad = 0.13963f;    // 8 deg
+
+        /// <summary>
+        /// Joint-limit proximity at which the guard stops trusting the drive.
+        /// A joint resting on its limit is held by the limit, so any command
+        /// pushing further into it is buying nothing.
+        /// </summary>
+        public const float LimitGuardOnset = 0.55f;
+        public const float LimitGuardFull = 0.85f;
+
+        /// <summary>
+        /// Posture error growth, rad/s, at which the trend term counts fully.
+        /// The guard keys on the trend rather than on a direction because the
+        /// direction is not stable: probing the plant at 0.6 s says a more
+        /// positive ankle command improves trunk posture by 0.58 deg/deg, at
+        /// 1.5 s the same probe says it costs 1.74 deg/deg, and the closed
+        /// loop agrees with neither, holding the ankle at its bound while the
+        /// trunk folds onto its limit over seconds
+        /// (Artifacts/Measurements/GAM11-ankle-to-posture-cost.csv). A guard
+        /// built on a fixed harmful direction would be calibrated to whichever
+        /// window it happened to be measured in. Growth and limit proximity
+        /// are observable in the loop and do not depend on that sign.
+        /// </summary>
+        public const float PostureGuardRateFullRadPerS = 0.17453f;   // 10 deg/s
+
+        // Posture state, supplied by the adapter from the previous
+        // post-physics observation.
+        public float PostureErrorRad { get; private set; }
+        public float PostureErrorRateRadPerS { get; private set; }
+        public float PostureLimitProximity { get; private set; }
+        public float PostureGuardScale { get; private set; } = 1f;
+        public float RawAnkleSagittalOffsetRad { get; private set; }
+
         // Actuation outputs. These are target offsets in the sagittal and
         // frontal planes, in radians, already bounded and rate limited.
         public float AnkleSagittalOffsetRad { get; private set; }
@@ -148,6 +202,11 @@ namespace PowerliftingSimulator.Squat.Unity
             AnkleFrontalOffsetRad = 0f;
             HipFrontalOffsetRad = 0f;
             HipStrategyBlend = 0f;
+            PostureGuardScale = 1f;
+            RawAnkleSagittalOffsetRad = 0f;
+            PostureErrorRad = 0f;
+            PostureErrorRateRadPerS = 0f;
+            PostureLimitProximity = 0f;
             IsAnkleOffsetSaturated = false;
             AnkleAuthorityFraction = 0f;
             IsActive = false;
@@ -236,6 +295,15 @@ namespace PowerliftingSimulator.Squat.Unity
             RequestedAnkleTorqueNm = balance.SystemMassKg *
                 SquatBalanceObserver.GravityMagnitudeMps2 * (CopDesiredAp - ankleAnchorAp);
 
+            // Posture guard. Balance may not buy a centred centre of mass
+            // with unbounded canonical posture: withdraw ankle authority as
+            // posture error grows, and as a joint closes on its anatomical
+            // limit, where the limit rather than the drive would be holding
+            // the pose.
+            RawAnkleSagittalOffsetRad = ankleTargetOffset;
+            PostureGuardScale = ComputePostureGuardScale();
+            ankleTargetOffset *= PostureGuardScale;
+
             float saturationFraction = Mathf.Abs(ankleTargetOffset) / AnkleSagittalBoundRad;
             IsAnkleOffsetSaturated = saturationFraction >= 1f;
             AnkleAuthorityFraction = saturationFraction;
@@ -269,6 +337,39 @@ namespace PowerliftingSimulator.Squat.Unity
             TrunkSagittalOffsetRad = Step(TrunkSagittalOffsetRad, trunkTargetOffset, MaxTrunkSagittalOffsetRad, maxStep);
 
             SolveFrontal(balance, comRefMl, maxStep);
+        }
+
+        /// <summary>
+        /// Continuous, bounded and allocation-free. Posture error alone does
+        /// not withdraw authority, because the settle transient is large and
+        /// recovers on its own; it takes error that is both past the onset and
+        /// still growing. Limit proximity withdraws on its own, since a joint
+        /// approaching its limit has no more room to lend whatever the trend.
+        /// </summary>
+        private float ComputePostureGuardScale()
+        {
+            if (!PostureGuardEnabled)
+                return 1f;
+
+            float excess = Mathf.InverseLerp(PostureGuardOnsetRad, PostureGuardFullRad, PostureErrorRad);
+            float growth = Mathf.Clamp01(
+                Mathf.Max(0f, PostureErrorRateRadPerS) / PostureGuardRateFullRadPerS);
+            float postureScale = 1f - excess * growth;
+
+            float limitScale = 1f - Mathf.InverseLerp(LimitGuardOnset, LimitGuardFull, PostureLimitProximity);
+            return Mathf.Clamp01(Mathf.Min(postureScale, limitScale));
+        }
+
+        /// <summary>
+        /// Posture state from the previous post-physics observation. The
+        /// controller never reads the physical rig itself; the adapter owns
+        /// that and hands the summary in.
+        /// </summary>
+        public void ObservePosture(float postureErrorRad, float postureErrorRateRadPerS, float limitProximity)
+        {
+            PostureErrorRad = float.IsFinite(postureErrorRad) ? Mathf.Max(0f, postureErrorRad) : 0f;
+            PostureErrorRateRadPerS = float.IsFinite(postureErrorRateRadPerS) ? postureErrorRateRadPerS : 0f;
+            PostureLimitProximity = float.IsFinite(limitProximity) ? Mathf.Clamp01(limitProximity) : 0f;
         }
 
         private void SolveFrontal(SquatBalanceObserver balance, float comRefMl, float maxStep)

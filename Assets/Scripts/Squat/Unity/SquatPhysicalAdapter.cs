@@ -236,6 +236,11 @@ namespace PowerliftingSimulator.Squat.Unity
             _isCorrectionSaturated = false;
             _isDriveSaturated = false;
             _maxDriveSaturation = 0f;
+            _postureErrorRad = 0f;
+            _postureErrorRateRadPerS = 0f;
+            _postureLimitProximity = 0f;
+            _postureWorstJoint = "NONE";
+            _hasPostureHistory = false;
             _balanceController.Reset();
             _hasStandingCalibration = false;
             _composition.Clear();
@@ -285,6 +290,7 @@ namespace PowerliftingSimulator.Squat.Unity
 
             CalibrateStandingComRelationship();
             float balanceBias = Mathf.Clamp(intent.BalanceX, -1f, 1f) * MaxBalanceBiasM;
+            ObserveCanonicalPosture(dt);
             if (BalanceCorrectionsEnabled)
             {
                 _balanceController.Solve(
@@ -937,6 +943,77 @@ namespace PowerliftingSimulator.Squat.Unity
                     Quaternion.Slerp(from.Abdomen, to.Abdomen, interpolation),
                     Quaternion.Slerp(from.Thorax, to.Thorax, interpolation));
             }
+        }
+
+        /// <summary>
+        /// Canonical posture error for the joints standing depends on, read
+        /// from the previous post-physics state in logical joint coordinates
+        /// rather than from world-space appearance, plus how close any of them
+        /// is to its anatomical limit.
+        ///
+        /// This is what stops balance from spending posture: the controller
+        /// cannot withdraw authority from a cost it cannot see.
+        /// </summary>
+        /// <summary>
+        /// The joints the balance strategy spends, which deliberately
+        /// excludes the ankles it commands. An authorised ankle offset shows
+        /// up as ankle deviation from the canonical pose by construction, so
+        /// feeding the ankles to the guard makes it read its own command as
+        /// damage and throttle itself to nothing: with them included the
+        /// guard scale went to zero and the athlete fell at 1.72 s. The ankle
+        /// is bounded by its own target bound; this measures what the ankle
+        /// is costing everything else.
+        /// </summary>
+        private static readonly string[] CanonicalPostureJoints =
+        {
+            "left_thigh", "right_thigh", "abdomen", "thorax",
+            "left_shank", "right_shank"
+        };
+
+        public float CanonicalPostureErrorRad => _postureErrorRad;
+        public float CanonicalPostureErrorRateRadPerS => _postureErrorRateRadPerS;
+        public float CanonicalPostureLimitProximity => _postureLimitProximity;
+        public string CanonicalPostureWorstJoint => _postureWorstJoint;
+
+        private float _postureErrorRad;
+        private float _postureErrorRateRadPerS;
+        private float _postureLimitProximity;
+        private string _postureWorstJoint = "NONE";
+        private bool _hasPostureHistory;
+
+        private void ObserveCanonicalPosture(float dt)
+        {
+            float worstError = 0f;
+            float worstLimit = 0f;
+            string worstJoint = "NONE";
+
+            for (int index = 0; index < CanonicalPostureJoints.Length; index++)
+            {
+                string jointId = CanonicalPostureJoints[index];
+                if (!_composition.TryGetValue(jointId, out JointTargetComposition composition))
+                    continue;
+                PoweredJointController.PoweredJointRuntime joint = _rig.PoweredController.GetJoint(jointId);
+                if (joint == null)
+                    continue;
+
+                float errorRad = Quaternion.Angle(composition.Nominal, joint.Diagnostic.ActualRelative) * Mathf.Deg2Rad;
+                if (errorRad > worstError)
+                {
+                    worstError = errorRad;
+                    worstJoint = jointId;
+                }
+                worstLimit = Mathf.Max(worstLimit, joint.Diagnostic.LimitProximity);
+            }
+
+            _postureErrorRateRadPerS = _hasPostureHistory && dt > 0f
+                ? (worstError - _postureErrorRad) / dt
+                : 0f;
+            _postureErrorRad = worstError;
+            _postureLimitProximity = worstLimit;
+            _postureWorstJoint = worstJoint;
+            _hasPostureHistory = true;
+
+            _balanceController.ObservePosture(_postureErrorRad, _postureErrorRateRadPerS, _postureLimitProximity);
         }
 
         private void CheckDriveSaturation(PoweredJointController controller)
