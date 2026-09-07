@@ -138,7 +138,20 @@ namespace PowerliftingSimulator.Athlete
             new JointFamilyProfile("trunk", 800f, 85f, 260f, 1.8f),
             new JointFamilyProfile("shoulder", 500f, 55f, 130f, 2.5f),
             new JointFamilyProfile("elbow", 450f, 45f, 100f, 3.0f),
-            new JointFamilyProfile("wrist", 250f, 30f, 45f, 2.5f)
+            new JointFamilyProfile("wrist", 250f, 30f, 45f, 2.5f),
+            // GAME_PHYSICS_NECK_POSTURE_CALIBRATION. GAM-7 left head_neck
+            // passive, which was fine while the athlete was a collapse
+            // fixture and is not now: the rendered standing evidence has the
+            // head neutral at spawn and thrown into hard extension by ten
+            // seconds, on a body that is otherwise stable.
+            //
+            // 300 Nm/rad holds the head to 2.35 deg on a worst-case
+            // horizontal lever, and the damper is the critically damped value
+            // for the head's own inertia rather than a trunk number: 8.1 kg at
+            // 0.095 kg m^2 is a different regime, and copying a trunk damper
+            // here would make the joint sluggish rather than stable
+            // (Artifacts/Measurements/GAM-11/GAM11-h9b-neck-characterization.csv).
+            new JointFamilyProfile("neck", 300f, 11f, 40f, 2.0f)
         };
 
         private static readonly string[] PulseJointIds =

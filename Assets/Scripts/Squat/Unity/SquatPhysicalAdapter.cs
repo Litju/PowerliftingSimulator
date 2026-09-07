@@ -384,6 +384,16 @@ namespace PowerliftingSimulator.Squat.Unity
             poweredController.ApplyCommand("abdomen", new JointCommand(abdomenTarget, rate.Abdomen * phaseVelocity, 1f, capacityScale * 1.5f), tick);
             poweredController.ApplyCommand("thorax", new JointCommand(thoraxTarget, rate.Thorax * phaseVelocity, 1f, capacityScale * 1.5f), tick);
 
+            // The head holds its canonical neutral relative to the thorax and
+            // nothing else. It is a postural actuator, not part of the balance
+            // law: no centre of mass, centre of pressure or capture state
+            // reaches it. Without a command at all its activation stays zero,
+            // which is what left the head unheld.
+            poweredController.ApplyCommand(
+                "head_neck",
+                new JointCommand(Quaternion.identity, Vector3.zero, 1f, capacityScale * 1.5f),
+                tick);
+
             ApplyArmSupport(poweredController, capacityScale, tick);
             CheckDriveSaturation(poweredController);
         }
