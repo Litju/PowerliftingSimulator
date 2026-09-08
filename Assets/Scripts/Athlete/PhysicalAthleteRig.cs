@@ -448,8 +448,23 @@ namespace PowerliftingSimulator.Athlete
             joint.angularXMotion = ConfigurableJointMotion.Limited;
             joint.angularYMotion = recipe.Kind == PhysicalJointKind.Hinge ? ConfigurableJointMotion.Locked : ConfigurableJointMotion.Limited;
             joint.angularZMotion = recipe.Kind == PhysicalJointKind.Hinge ? ConfigurableJointMotion.Locked : ConfigurableJointMotion.Limited;
-            joint.lowAngularXLimit = Limit(recipe.LowDegrees);
-            joint.highAngularXLimit = Limit(recipe.HighDegrees);
+            // Unity measures its angular X limits in the opposite sense to the
+            // targetRotation a drive is given, and PoweredJointController
+            // already inverts the target on the way in
+            // (ToUnityTargetRotation). Writing the authored range un-inverted
+            // therefore mirrored every asymmetric joint: an elbow authored to
+            // flex 145 deg and hyperextend 5 could only flex 5.
+            //
+            // Measured on an isolated production-parity hinge with no gravity
+            // and no contact, commanded to 118.795 deg: the authored order
+            // settles at 5.000 deg, the inverted order at 118.795 deg, which is
+            // exactly what a fully widened joint reaches
+            // (Artifacts/Measurements/GAM-11/GAM11-elbow-limit-convention.csv).
+            //
+            // The authored anatomical range is unchanged. Only the direction it
+            // is applied in is corrected.
+            joint.lowAngularXLimit = Limit(-recipe.HighDegrees);
+            joint.highAngularXLimit = Limit(-recipe.LowDegrees);
             joint.angularYLimit = Limit(recipe.SecondaryLimitDegrees);
             joint.angularZLimit = Limit(recipe.SecondaryLimitDegrees);
             joint.projectionMode = JointProjectionMode.None;
