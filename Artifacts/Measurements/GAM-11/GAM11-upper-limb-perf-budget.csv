@@ -1,0 +1,5 @@
+metric,p95_ms,budget_ms,status
+physics_step,0.3211,2.0000,PASS
+catch_up_frame,1.2221,8.0000,PASS
+foundation_frame,0.3469,10.0000,PASS
+controller_execution,0.0502,0.2500,PASS
