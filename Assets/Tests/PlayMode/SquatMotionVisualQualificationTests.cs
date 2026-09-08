@@ -93,19 +93,19 @@ namespace PowerliftingSimulator.Tests
             FoundationRuntime runtime = bootstrap.Runtime;
             SquatPhysicalAdapter adapter = controller.Adapter;
 
-            // Settle standing for 30 ticks
+            // Settle standing for 30 ticks so drives reach bar-shelf posture
             for (int i = 0; i < 30; i++)
                 runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds);
 
             Camera camera = Camera.main ?? Object.FindFirstObjectByType<Camera>();
             Assert.That(camera, Is.Not.Null);
 
-            // Capture standing setup with 25kg barbell on back
-            CaptureView(camera, "phys_squat_01_standing_oblique.png",
+            // Capture settled standing setup with 25kg barbell on back
+            CaptureView(camera, "phys_25kg_01_standing_oblique.png",
                 new Vector3(2.0f, 1.35f, 1.8f), new Vector3(0f, 0.9f, 0f));
-            CaptureView(camera, "phys_squat_01_standing_side.png",
+            CaptureView(camera, "phys_25kg_01_standing_side.png",
                 new Vector3(2.6f, 1.1f, 0f), new Vector3(0f, 0.9f, 0f));
-            CaptureView(camera, "phys_squat_01_standing_front.png",
+            CaptureView(camera, "phys_25kg_01_standing_front.png",
                 new Vector3(0f, 1.25f, 2.4f), new Vector3(0f, 0.9f, 0f));
 
             adapter.StartSquat();
@@ -125,7 +125,75 @@ namespace PowerliftingSimulator.Tests
                 if (captureIndex < captureTicks.Length && tick == captureTicks[captureIndex])
                 {
                     yield return null;
-                    string tag = $"phys_tick_{tick:D3}_sq_{adapter.Sq:F2}";
+                    string tag = $"phys_25kg_tick_{tick:D3}_sq_{adapter.Sq:F2}";
+                    CaptureView(camera, $"{tag}_oblique.png",
+                        new Vector3(2.0f, 1.35f, 1.8f), new Vector3(0f, 0.9f, 0f));
+                    CaptureView(camera, $"{tag}_side.png",
+                        new Vector3(2.6f, 1.1f, 0f), new Vector3(0f, 0.9f, 0f));
+                    captureIndex++;
+                }
+            }
+
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator SQUAT_PHYSICAL_PROTOTYPE_105KG_MOTION_VISUAL_CAPTURE()
+        {
+            AsyncOperation load = SceneManager.LoadSceneAsync(PhysicalScene, LoadSceneMode.Single);
+            Assert.That(load, Is.Not.Null);
+            while (!load.isDone)
+                yield return null;
+            yield return null;
+
+            FoundationBootstrap bootstrap = Object.FindFirstObjectByType<FoundationBootstrap>();
+            SquatPhysicalPrototypeController controller = Object.FindFirstObjectByType<SquatPhysicalPrototypeController>();
+            PhysicalAthleteRig rig = Object.FindFirstObjectByType<PhysicalAthleteRig>();
+
+            Assert.That(bootstrap, Is.Not.Null);
+            Assert.That(controller, Is.Not.Null);
+            Assert.That(rig, Is.Not.Null);
+
+            for (int f = 0; f < 5 && !controller.IsInitialized; f++)
+                yield return null;
+
+            controller.SetLoad(105f);
+            FoundationRuntime runtime = bootstrap.Runtime;
+            SquatPhysicalAdapter adapter = controller.Adapter;
+
+            // Settle standing for 30 ticks so drives reach bar-shelf posture
+            for (int i = 0; i < 30; i++)
+                runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds);
+
+            Camera camera = Camera.main ?? Object.FindFirstObjectByType<Camera>();
+            Assert.That(camera, Is.Not.Null);
+
+            // Capture settled standing setup with 105kg loaded barbell on back
+            CaptureView(camera, "phys_105kg_01_standing_oblique.png",
+                new Vector3(2.0f, 1.35f, 1.8f), new Vector3(0f, 0.9f, 0f));
+            CaptureView(camera, "phys_105kg_01_standing_side.png",
+                new Vector3(2.6f, 1.1f, 0f), new Vector3(0f, 0.9f, 0f));
+            CaptureView(camera, "phys_105kg_01_standing_front.png",
+                new Vector3(0f, 1.25f, 2.4f), new Vector3(0f, 0.9f, 0f));
+
+            adapter.StartSquat();
+
+            int totalTicks = Mathf.CeilToInt(8.0f / (float)SimulationConstants.FixedDeltaTimeSeconds);
+            int[] captureTicks = new[] { 50, 100, 175, 250, 325, 350 };
+            int captureIndex = 0;
+
+            for (int tick = 0; tick < totalTicks; tick++)
+            {
+                runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds);
+                if (controller.LeftFootContact != null)
+                    controller.LeftFootContact.PhysicsTickUpdate((float)SimulationConstants.FixedDeltaTimeSeconds);
+                if (controller.RightFootContact != null)
+                    controller.RightFootContact.PhysicsTickUpdate((float)SimulationConstants.FixedDeltaTimeSeconds);
+
+                if (captureIndex < captureTicks.Length && tick == captureTicks[captureIndex])
+                {
+                    yield return null;
+                    string tag = $"phys_105kg_tick_{tick:D3}_sq_{adapter.Sq:F2}";
                     CaptureView(camera, $"{tag}_oblique.png",
                         new Vector3(2.0f, 1.35f, 1.8f), new Vector3(0f, 0.9f, 0f));
                     CaptureView(camera, $"{tag}_side.png",
