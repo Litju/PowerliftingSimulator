@@ -436,8 +436,9 @@ namespace PowerliftingSimulator.Athlete
             joint.autoConfigureConnectedAnchor = false;
             joint.anchor = child.Body.transform.InverseTransformPoint(anchorWorld);
             joint.connectedAnchor = parent.Body.transform.InverseTransformPoint(anchorWorld);
-            joint.axis = child.Body.transform.InverseTransformDirection(recipe.PrimaryAxisWorld.normalized);
-            Vector3 secondaryWorld = Mathf.Abs(Vector3.Dot(recipe.PrimaryAxisWorld.normalized, Vector3.up)) < 0.9f
+            Vector3 primaryAxisWorld = ResolvePrimaryAxisWorld(recipe, child);
+            joint.axis = child.Body.transform.InverseTransformDirection(primaryAxisWorld);
+            Vector3 secondaryWorld = Mathf.Abs(Vector3.Dot(primaryAxisWorld, Vector3.up)) < 0.9f
                 ? Vector3.up
                 : Vector3.forward;
             joint.secondaryAxis = child.Body.transform.InverseTransformDirection(secondaryWorld);
@@ -455,6 +456,44 @@ namespace PowerliftingSimulator.Athlete
             joint.enableCollision = false;
             joint.enablePreprocessing = true;
             _joints.Add(new JointRuntime(recipe, joint, anchorWorld));
+        }
+
+        /// <summary>
+        /// A hinge that declares BindFlexionTransverse gets the anatomical
+        /// flexion axis measured from the reference bind pose instead of an
+        /// authored world direction.
+        ///
+        /// The elbows used world forward, which is a flexion axis for an arm
+        /// held out sideways and a lateral swing axis for the arm hanging at
+        /// the setup pose. Measured at that pose it bought 0.066 of its travel
+        /// as flexion; the bind-derived axis buys 0.91 to 0.95, and it mirrors
+        /// between sides on its own rather than sharing one world direction.
+        /// </summary>
+        private Vector3 ResolvePrimaryAxisWorld(PhysicalJointRecipe recipe, SegmentRuntime child)
+        {
+            if (recipe.AxisSource == PhysicalJointAxisSource.World)
+                return recipe.PrimaryAxisWorld.normalized;
+
+            Transform proximal = RequireBone(referenceAnimator, child.Recipe.ProximalBone);
+            Transform distal = RequireBone(referenceAnimator, child.Recipe.DistalBone);
+            Transform parentProximal = RequireBone(
+                referenceAnimator, _segments[child.Recipe.ParentId].Recipe.ProximalBone);
+
+            Vector3 parentLongAxis = (proximal.position - parentProximal.position).normalized;
+            Vector3 forward = referenceAnimator.transform.root.forward;
+            Vector3 axis = Vector3.Cross(parentLongAxis, forward);
+            if (axis.sqrMagnitude < 1e-6f)
+                throw new InvalidOperationException(
+                    $"Cannot derive a flexion axis for '{recipe.ChildId}': the parent segment is " +
+                    "parallel to the body forward direction at bind.");
+
+            // Positive command must flex, so the authored low/high limits mean
+            // hyperextension and flexion in that order.
+            Vector3 segmentLongAxis = (distal.position - proximal.position).normalized;
+            Vector3 flexionTravel = Vector3.Cross(axis.normalized, segmentLongAxis);
+            if (Vector3.Dot(flexionTravel, forward) < 0f)
+                axis = -axis;
+            return axis.normalized;
         }
 
         private void DisableAdjacentSelfCollision()
