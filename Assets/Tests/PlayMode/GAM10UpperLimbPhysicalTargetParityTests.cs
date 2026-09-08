@@ -110,8 +110,9 @@ namespace PowerliftingSimulator.Tests
 
         /// <summary>
         /// The six accepted upper-limb logical targets at one reference phase,
-        /// derived from the GAM-10 authority rather than read back from the
-        /// adapter. Ordered to match <see cref="UpperLimbJointIds"/>.
+        /// derived from the GAM-10 task-space authority through the physical
+        /// projection rather than read back from the adapter. Ordered to match
+        /// <see cref="UpperLimbJointIds"/>.
         /// </summary>
         private Quaternion[] ExpectedUpperLimbTargets(
             SquatReferenceRigCalibration calibration,
@@ -130,21 +131,16 @@ namespace PowerliftingSimulator.Tests
             Quaternion thorax = PhysicalBodyRotation(
                 "thorax",
                 solution.ChestFrameRotation * calibration.Chest.BoneFromAnatomicalFrame);
-            Quaternion leftUpperArm = PhysicalBodyRotation("left_upper_arm", arms.Left.UpperArmBoneRotation);
-            Quaternion rightUpperArm = PhysicalBodyRotation("right_upper_arm", arms.Right.UpperArmBoneRotation);
-            Quaternion leftForearm = PhysicalBodyRotation("left_forearm", arms.Left.ForearmBoneRotation);
-            Quaternion rightForearm = PhysicalBodyRotation("right_forearm", arms.Right.ForearmBoneRotation);
-            Quaternion leftHand = PhysicalBodyRotation("left_hand", arms.Left.HandBoneRotation);
-            Quaternion rightHand = PhysicalBodyRotation("right_hand", arms.Right.HandBoneRotation);
+            PhysicalUpperLimbTargets left = SquatPhysicalUpperLimbProjection.Project(
+                _rig, calibration, arms.Left, thorax, isLeft: true);
+            PhysicalUpperLimbTargets right = SquatPhysicalUpperLimbProjection.Project(
+                _rig, calibration, arms.Right, thorax, isLeft: false);
 
             return new[]
             {
-                LogicalJointTarget("left_upper_arm", thorax, leftUpperArm),
-                LogicalJointTarget("right_upper_arm", thorax, rightUpperArm),
-                LogicalJointTarget("left_forearm", leftUpperArm, leftForearm),
-                LogicalJointTarget("right_forearm", rightUpperArm, rightForearm),
-                LogicalJointTarget("left_hand", leftForearm, leftHand),
-                LogicalJointTarget("right_hand", rightForearm, rightHand)
+                left.UpperArm, right.UpperArm,
+                left.Forearm, right.Forearm,
+                left.Hand, right.Hand
             };
         }
 

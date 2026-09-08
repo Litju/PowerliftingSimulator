@@ -764,15 +764,16 @@ namespace PowerliftingSimulator.Squat.Unity
                 ref thoraxTarget);
 
             // The upper limbs come from the same accepted GAM-10 authority the
-            // rendered reference preview draws, mapped through this adapter's
-            // own physical pipeline. Their physical parent is the thorax.
+            // rendered reference preview draws, but they reach the physical
+            // joints through the task-space projection rather than as raw bone
+            // rotations: the preview's forearm quaternion is not a statement
+            // about which joint owns which rotation, and a one-axis elbow
+            // cannot hold it.
             SquatReferenceUpperLimbSolution arms = SquatReferenceUpperLimb.Solve(calibration, solution);
-            Quaternion leftUpperArm = ToPhysicalBodyRotation("left_upper_arm", arms.Left.UpperArmBoneRotation);
-            Quaternion rightUpperArm = ToPhysicalBodyRotation("right_upper_arm", arms.Right.UpperArmBoneRotation);
-            Quaternion leftForearm = ToPhysicalBodyRotation("left_forearm", arms.Left.ForearmBoneRotation);
-            Quaternion rightForearm = ToPhysicalBodyRotation("right_forearm", arms.Right.ForearmBoneRotation);
-            Quaternion leftHand = ToPhysicalBodyRotation("left_hand", arms.Left.HandBoneRotation);
-            Quaternion rightHand = ToPhysicalBodyRotation("right_hand", arms.Right.HandBoneRotation);
+            PhysicalUpperLimbTargets leftArm = SquatPhysicalUpperLimbProjection.Project(
+                _rig, calibration, arms.Left, thorax, isLeft: true);
+            PhysicalUpperLimbTargets rightArm = SquatPhysicalUpperLimbProjection.Project(
+                _rig, calibration, arms.Right, thorax, isLeft: false);
 
             return new ReferenceTargetFrame(
                 ToLogicalJointTarget("left_foot", leftShank, leftFoot),
@@ -783,12 +784,12 @@ namespace PowerliftingSimulator.Squat.Unity
                 ToLogicalJointTarget("right_thigh", pelvis, rightThigh),
                 abdomenTarget,
                 thoraxTarget,
-                ToLogicalJointTarget("left_upper_arm", thorax, leftUpperArm),
-                ToLogicalJointTarget("right_upper_arm", thorax, rightUpperArm),
-                ToLogicalJointTarget("left_forearm", leftUpperArm, leftForearm),
-                ToLogicalJointTarget("right_forearm", rightUpperArm, rightForearm),
-                ToLogicalJointTarget("left_hand", leftForearm, leftHand),
-                ToLogicalJointTarget("right_hand", rightForearm, rightHand));
+                leftArm.UpperArm,
+                rightArm.UpperArm,
+                leftArm.Forearm,
+                rightArm.Forearm,
+                leftArm.Hand,
+                rightArm.Hand);
         }
 
         /// <summary>

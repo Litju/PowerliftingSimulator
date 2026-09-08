@@ -284,7 +284,14 @@ namespace PowerliftingSimulator.Tests
             File.WriteAllText(Path.GetFullPath(MeasurementPath), report + posture.ToString());
 
             foreach (string jointId in UpperLimbJointIds)
-                Debug.Log($"[SETUP POSE] {jointId} max tracking error {worstErrorDeg[jointId]:F3} deg");
+            {
+                PoweredJointController.PoweredJointRuntime j = _rig.PoweredController.GetJoint(jointId);
+                Debug.Log($"[SETUP POSE] {jointId} max tracking error {worstErrorDeg[jointId]:F3} deg; " +
+                          $"activation={j.Diagnostic.Activation:F2} maxForce={j.Diagnostic.MaximumForceNm:F1} " +
+                          $"demand={j.Diagnostic.ModeledDemand:F2} limitProximity={j.Diagnostic.LimitProximity:F3} " +
+                          $"solverTorque={j.Diagnostic.SolverTorqueJointSpaceNm} " +
+                          $"errorRad={j.Diagnostic.ErrorRad}");
+            }
             Debug.Log($"[SETUP POSE] COM AP T-pose={neutralArmCom.z:F5} m, GAM-10 setup={setupCom.z:F5} m, " +
                       $"delta={delta.z:F5} m; ML delta={delta.x:F5} m; height delta={delta.y:F5} m");
             Debug.Log($"[SETUP POSE] captured to {EvidenceDirectory}");
