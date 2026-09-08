@@ -246,7 +246,7 @@ namespace PowerliftingSimulator.Athlete
             _poweredController = new PoweredJointController(_joints);
             foundation.Runtime.RegisterPrePhysicsStep(PrePhysicsStep);
 
-            DisableAdjacentSelfCollision();
+            ApplySelfCollisionPolicy();
             MaxInitialNonAdjacentPenetrationMeters = MeasureInitialNonAdjacentPenetration();
             CreatePlatformCollider();
             BuildVisibleFollower();
@@ -511,14 +511,9 @@ namespace PowerliftingSimulator.Athlete
             return axis.normalized;
         }
 
-        private void DisableAdjacentSelfCollision()
+        private void ApplySelfCollisionPolicy()
         {
-            foreach (JointRuntime joint in _joints)
-            {
-                SegmentRuntime child = _segments[joint.Recipe.ChildId];
-                SegmentRuntime parent = _segments[child.Recipe.ParentId];
-                Physics.IgnoreCollision(parent.Collider, child.Collider, true);
-            }
+            PhysicalAthleteSelfCollisionPolicy.Apply(_joints, _segments);
         }
 
         private void CreatePlatformCollider()
@@ -580,6 +575,9 @@ namespace PowerliftingSimulator.Athlete
                     SegmentRuntime second = segments[secondIndex];
                     if (string.Equals(first.Recipe.ParentId, second.Recipe.Id, StringComparison.Ordinal) ||
                         string.Equals(second.Recipe.ParentId, first.Recipe.Id, StringComparison.Ordinal))
+                        continue;
+
+                    if (Physics.GetIgnoreCollision(first.Collider, second.Collider))
                         continue;
 
                     if (Physics.ComputePenetration(
