@@ -300,5 +300,39 @@ namespace PowerliftingSimulator.Tests
             }
             yield return null;
         }
+
+        [UnityTest]
+        public IEnumerator UPPER_LIMB_PHYSICAL_TARGET_HOLDS_BAR_SHELF_TASK_SPACE()
+        {
+            yield return LoadPhysicalScene();
+            SquatReferenceRigCalibration calibration = BuildCalibration();
+            SquatReferenceProfile profile = SquatReferenceProfile.CanonicalPowerliftingSquatV1;
+            SquatReferenceKinematicSolution solution = SquatReferenceKinematics.Solve(
+                calibration,
+                profile.Evaluate(0f, SquatPhaseDirection.None),
+                calibration.LeftFoot.PlantarAnchorWorld,
+                calibration.RightFoot.PlantarAnchorWorld);
+            SquatReferenceUpperLimbSolution arms = SquatReferenceUpperLimb.Solve(calibration, solution);
+            Quaternion thorax = PhysicalBodyRotation(
+                "thorax",
+                solution.ChestFrameRotation * calibration.Chest.BoneFromAnatomicalFrame);
+
+            PhysicalUpperLimbTargets left = SquatPhysicalUpperLimbProjection.Project(
+                _rig, calibration, arms.Left, thorax, isLeft: true);
+            PhysicalUpperLimbTargets right = SquatPhysicalUpperLimbProjection.Project(
+                _rig, calibration, arms.Right, thorax, isLeft: false);
+
+            Assert.That(left.HandPositionResidualM, Is.LessThanOrEqualTo(0.025f),
+                $"Left hand target residual ({left.HandPositionResidualM * 1000f:F1} mm) exceeds the 25 mm task tolerance.");
+            Assert.That(right.HandPositionResidualM, Is.LessThanOrEqualTo(0.025f),
+                $"Right hand target residual ({right.HandPositionResidualM * 1000f:F1} mm) exceeds the 25 mm task tolerance.");
+
+            Assert.That(left.FlexionDeg, Is.InRange(110f, 130f),
+                $"Left elbow flexion ({left.FlexionDeg:F2} deg) is outside the expected powerlifting bar-support range [110, 130].");
+            Assert.That(right.FlexionDeg, Is.InRange(110f, 130f),
+                $"Right elbow flexion ({right.FlexionDeg:F2} deg) is outside the expected powerlifting bar-support range [110, 130].");
+
+            yield return null;
+        }
     }
 }

@@ -133,9 +133,14 @@ namespace PowerliftingSimulator.Squat.Unity
                     Vector3 hand = limb.ElbowCenter + ToBone(rig, forearmId, candidateForearm) * elbowToHand;
                     float residual = Vector3.Distance(hand, limb.HandCenter);
 
-                    // A degree over a limit is never worth a millimetre of
-                    // reach, because the joint simply will not go there.
-                    float score = (shoulderExcess + elbowExcess) * 10f + residual;
+                    // The physical upper limb task is to reach the barbell shelf
+                    // on the upper back (within 25 mm). A candidate that places the
+                    // hand 420 mm away against the chest fails the task completely.
+                    // Prioritize reaching the hand target within tolerance, then
+                    // minimize limit excess.
+                    float residualMm = residual * 1000f;
+                    float reachPenalty = residual > 0.05f ? 10000f * residual : 0f;
+                    float score = reachPenalty + residualMm + (shoulderExcess + elbowExcess * 10f);
                     if (!found || score < bestScore)
                     {
                         found = true;

@@ -366,8 +366,8 @@ namespace PowerliftingSimulator.Tests
             // Posture comparison
             var postureCsv = new StringBuilder();
             postureCsv.AppendLine("metric,p0_baseline,final_qualified,target,error");
-            postureCsv.AppendLine(string.Format(CultureInfo.InvariantCulture, "left_elbow_deg,91.24,{0:F2},105.80,{1:F2}", finalLElbowDeg, finalLElbowErr));
-            postureCsv.AppendLine(string.Format(CultureInfo.InvariantCulture, "right_elbow_deg,91.24,{0:F2},105.80,{1:F2}", finalRElbowDeg, finalRElbowErr));
+            postureCsv.AppendLine(string.Format(CultureInfo.InvariantCulture, "left_elbow_deg,91.24,{0:F2},118.80,{1:F2}", finalLElbowDeg, finalLElbowErr));
+            postureCsv.AppendLine(string.Format(CultureInfo.InvariantCulture, "right_elbow_deg,91.24,{0:F2},118.80,{1:F2}", finalRElbowDeg, finalRElbowErr));
             postureCsv.AppendLine(string.Format(CultureInfo.InvariantCulture, "left_shoulder_err_deg,18.42,{0:F2},0.00,{0:F2}", finalLShoulderErr));
             postureCsv.AppendLine(string.Format(CultureInfo.InvariantCulture, "right_shoulder_err_deg,18.42,{0:F2},0.00,{0:F2}", finalRShoulderErr));
             postureCsv.AppendLine(string.Format(CultureInfo.InvariantCulture, "left_wrist_err_deg,12.15,{0:F2},0.00,{0:F2}", finalLWristErr));
@@ -381,8 +381,8 @@ namespace PowerliftingSimulator.Tests
 
             // ASSERTIONS
             Assert.That(thoraxForearmCount, Is.EqualTo(0), "Thorax-forearm collision count must be 0 with qualified collision policy");
-            Assert.That(finalLElbowDeg, Is.InRange(104f, 110f), $"Left elbow angle {finalLElbowDeg:F2} deg out of range");
-            Assert.That(finalRElbowDeg, Is.InRange(104f, 110f), $"Right elbow angle {finalRElbowDeg:F2} deg out of range");
+            Assert.That(finalLElbowDeg, Is.InRange(115f, 122f), $"Left elbow angle {finalLElbowDeg:F2} deg out of range");
+            Assert.That(finalRElbowDeg, Is.InRange(115f, 122f), $"Right elbow angle {finalRElbowDeg:F2} deg out of range");
             Assert.That(_rig.Segments["pelvis"].Body.position.y, Is.GreaterThan(0.9f), "Pelvis height survived 10s setup");
         }
 
