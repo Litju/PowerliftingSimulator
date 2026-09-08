@@ -1,0 +1,3 @@
+joint,requested_x,requested_y,requested_z,applied_x,applied_y,applied_z,target_velocity_x,target_velocity_y,target_velocity_z
+left_forearm,118.7948,0.0000,0.0000,118.7948,0.0000,0.0000,0.00000,0.00000,0.00000
+right_forearm,118.7948,0.0000,0.0000,118.7948,0.0000,0.0000,0.00000,0.00000,0.00000

@@ -1,0 +1,10 @@
+body_a,body_b,penetration_depth_m,separation_x,separation_y,separation_z
+left_upper_arm,left_forearm,0.02861,-0.223,0.624,-0.748
+right_upper_arm,right_forearm,0.02848,0.178,0.630,-0.756
+left_forearm,thorax,0.00013,-0.513,0.107,0.852
+left_forearm,left_upper_arm,0.02861,0.223,-0.624,0.748
+left_forearm,left_hand,0.00835,-0.860,-0.069,-0.506
+right_forearm,right_upper_arm,0.02848,-0.178,-0.630,0.756
+right_forearm,right_hand,0.00504,0.904,-0.036,-0.426
+left_hand,left_forearm,0.00835,0.860,0.069,0.506
+right_hand,right_forearm,0.00504,-0.904,0.036,0.426
