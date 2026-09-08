@@ -1,0 +1,9 @@
+side,phase,direction,flexion_deg,flexion_limit_margin_deg,hand_position_error_m,forearm_direction_error_deg,shoulder_roll_change_deg
+left,0.00,Descent,118.795,26.205,0.01497,3.522,118.406
+left,0.25,Descent,118.795,26.205,0.01497,3.522,118.406
+left,0.55,Descent,118.795,26.205,0.01497,3.522,118.406
+left,1.00,Descent,118.795,26.205,0.01497,3.522,118.406
+right,0.00,Descent,118.795,26.205,0.01497,3.522,118.406
+right,0.25,Descent,118.795,26.205,0.01497,3.522,118.406
+right,0.55,Descent,118.795,26.205,0.01497,3.522,118.406
+right,1.00,Descent,118.795,26.205,0.01497,3.522,118.406

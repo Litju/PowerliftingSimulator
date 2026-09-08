@@ -1,0 +1,11 @@
+side,command_deg,included_angle_deg,anterior_swing_deg,anatomical_sense
+left,-10.0,6.4777,-6.4635,EXTENSION
+left,-5.0,1.4776,-1.4775,EXTENSION
+left,0.0,3.5222,3.5198,FLEXION
+left,5.0,8.5222,8.4902,FLEXION
+left,10.0,13.5222,13.3961,FLEXION
+right,-10.0,6.4777,-6.4635,EXTENSION
+right,-5.0,1.4778,-1.4775,EXTENSION
+right,0.0,3.5223,3.5198,FLEXION
+right,5.0,8.5222,8.4903,FLEXION
+right,10.0,13.5222,13.3961,FLEXION
