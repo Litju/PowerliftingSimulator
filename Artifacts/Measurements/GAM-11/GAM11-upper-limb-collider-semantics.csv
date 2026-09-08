@@ -1,0 +1,4 @@
+segment_id,recipe_dimensions,collider_type,collider_center,capsule_radius_m,capsule_height_m,capsule_direction,box_size_m,box_center_m,body_scale,bone_length_m,coverage_ratio
+left_forearm,"(0.10, 0.00, 0.10)",CapsuleCollider,"(0.00, 0.00, 0.00)",0.0475,0.2046,1,"(0.00, 0.00, 0.00)","(0.00, 0.00, 0.00)","(1.00, 1.00, 1.00)",0.2436,0.8400
+right_forearm,"(0.10, 0.00, 0.10)",CapsuleCollider,"(0.00, 0.00, 0.00)",0.0475,0.2046,1,"(0.00, 0.00, 0.00)","(0.00, 0.00, 0.00)","(1.00, 1.00, 1.00)",0.2436,0.8400
+thorax,"(0.36, 0.28, 0.20)",BoxCollider,"(0.00, 0.00, 0.00)",0.0000,0.0000,-1,"(0.36, 0.28, 0.20)","(0.00, 0.00, 0.00)","(1.00, 1.00, 1.00)",0.3457,0.8100

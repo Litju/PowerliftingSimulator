@@ -1,0 +1,3 @@
+side,target_flexion_deg,overlaps,penetration_depth_m,normal_x,normal_y,normal_z
+left,118.795,True,0.13057,-1.000,0.000,0.000
+right,118.795,True,0.13057,1.000,0.000,0.000
