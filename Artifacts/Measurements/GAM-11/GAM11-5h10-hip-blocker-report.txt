@@ -1,0 +1,23 @@
+GAM-11 PHASE 5H10 HIP FLEXION BLOCKER DISCRIMINATION (unloaded)
+
+--- as-built joint configuration, read from the running plant ---
+left_foot     recipe[-45,55] secondary=0 | asBuilt angX=Limited low=-55.0 high=45.0 angY=Locked limY=0.0 angZ=Locked limZ=0.0 | drive spring=650 damper=70 maxForce=1710 mode=XYAndZ axis=(1.00, 0.00, 0.00) secondaryAxis=(0.00, 1.00, 0.00)
+right_foot    recipe[-45,55] secondary=0 | asBuilt angX=Limited low=-55.0 high=45.0 angY=Locked limY=0.0 angZ=Locked limZ=0.0 | drive spring=650 damper=70 maxForce=1710 mode=XYAndZ axis=(1.00, 0.00, 0.00) secondaryAxis=(0.00, 1.00, 0.00)
+left_shank    recipe[-5,145] secondary=0 | asBuilt angX=Limited low=-145.0 high=5.0 angY=Locked limY=0.0 angZ=Locked limZ=0.0 | drive spring=800 damper=80 maxForce=2052 mode=XYAndZ axis=(1.00, 0.00, 0.00) secondaryAxis=(0.00, -0.99, 0.11)
+right_shank   recipe[-5,145] secondary=0 | asBuilt angX=Limited low=-145.0 high=5.0 angY=Locked limY=0.0 angZ=Locked limZ=0.0 | drive spring=800 damper=80 maxForce=2052 mode=XYAndZ axis=(1.00, 0.00, 0.00) secondaryAxis=(0.00, -0.99, 0.11)
+left_thigh    recipe[-120,45] secondary=50 | asBuilt angX=Limited low=-45.0 high=120.0 angY=Limited limY=50.0 angZ=Limited limZ=50.0 | drive spring=900 damper=90 maxForce=2052 mode=XYAndZ axis=(1.00, 0.00, 0.00) secondaryAxis=(0.00, -1.00, 0.00)
+right_thigh   recipe[-120,45] secondary=50 | asBuilt angX=Limited low=-45.0 high=120.0 angY=Limited limY=50.0 angZ=Limited limZ=50.0 | drive spring=900 damper=90 maxForce=2052 mode=XYAndZ axis=(1.00, 0.00, 0.00) secondaryAxis=(0.00, -1.00, 0.00)
+abdomen       recipe[-35,45] secondary=25 | asBuilt angX=Limited low=-45.0 high=35.0 angY=Limited limY=25.0 angZ=Limited limZ=25.0 | drive spring=800 damper=85 maxForce=1482 mode=XYAndZ axis=(1.00, 0.00, 0.00) secondaryAxis=(0.00, 0.99, -0.10)
+thorax        recipe[-35,50] secondary=30 | asBuilt angX=Limited low=-50.0 high=35.0 angY=Limited limY=30.0 angZ=Limited limZ=30.0 | drive spring=800 damper=85 maxForce=1482 mode=XYAndZ axis=(1.00, 0.00, 0.00) secondaryAxis=(0.00, 0.99, 0.13)
+
+--- self-collision state for the hip's neighbours ---
+left_thigh    <-> pelvis     colliders=(CapsuleCollider,BoxCollider) policyIgnored=False reason=NONE
+left_thigh    <-> abdomen    colliders=(CapsuleCollider,BoxCollider) policyIgnored=False reason=NONE
+right_thigh   <-> pelvis     colliders=(CapsuleCollider,BoxCollider) policyIgnored=False reason=NONE
+right_thigh   <-> abdomen    colliders=(CapsuleCollider,BoxCollider) policyIgnored=False reason=NONE
+left_thigh    <-> right_thigh colliders=(CapsuleCollider,CapsuleCollider) policyIgnored=False reason=NONE
+left_thigh    <-> left_shank colliders=(CapsuleCollider,CapsuleCollider) policyIgnored=False reason=NONE
+
+--- contact census over the descent, ranked by total normal impulse ---
+  left_thigh <-> abdomen: ticks=504 maxImpulse=29.79 totalImpulse=8163.9 first=148 last=399 normal=(-0.65, 0.09, -0.76)
+  right_thigh <-> abdomen: ticks=508 maxImpulse=32.74 totalImpulse=7257.2 first=146 last=399 normal=(-0.66, -0.08, -0.75)

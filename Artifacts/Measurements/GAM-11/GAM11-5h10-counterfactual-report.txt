@@ -1,0 +1,56 @@
+GAM-11 PHASE 5H10 THIGH-ABDOMEN SUPPRESSION COUNTERFACTUAL
+Identical unloaded descent. The only difference is Physics.IgnoreCollision
+on left_thigh/abdomen and right_thigh/abdomen. Nothing is tuned.
+
+--- 0kg-baseline ---
+load=0kg settlePelvisY=0.9792 finalPelvisY=0.1585 finalSq=0.89 settleTrunk=2.2deg maxDemand=3.17 maxSaddleF=0N maxSaddleT=0Nm maxSaddleSep=0.0000m settleSaddleSep=0.0000m
+     250  LOAD_CHAIN_TRACKING_DIVERGENCE       track_err=20.2 deg at right_thigh
+     250  POSTURE_TRACKING_BREAKDOWN           err=0.350 rad at right_thigh
+     293  LOAD_CHAIN_AT_ANGULAR_LIMIT          proximity=0.981 at left_foot
+     307  FOOT_SLIP                            slip=0.058 m/s
+     323  CAPTURE_OUTSIDE_SUPPORT              capture_ap=-0.1565 outside [-0.1558,0.1358]
+     342  COM_OUTSIDE_SUPPORT                  com_ap=-0.1545 outside [-0.1544,0.1365]
+     375  TRUNK_PITCH_DIVERGENCE               trunk=-42.9 deg, settle 2.2 deg
+     380  ADAPTER_DECLARED_FAILURE             COM_OUTSIDE_SUPPORT
+     388  DRIVE_SATURATED                      demand=1.58 at left_hand
+     394  PLANTAR_CONTACT_LOST                 no plantar contact this tick
+   never  ANGULAR_VELOCITY_BLOWUP              
+   never  CONTROL_LAW_LEFT_REFERENCE           
+   never  COP_OUTSIDE_SUPPORT                  
+   never  LOAD_CHAIN_DRIVE_SATURATED           
+   never  NON_FINITE_STATE                     
+   never  SADDLE_ANGULAR_X_BEYOND_LIMIT        
+   never  SADDLE_ANGULAR_Y_BEYOND_LIMIT        
+   never  SADDLE_ANGULAR_Z_BEYOND_LIMIT        
+   never  SADDLE_FORCE_HALF_OF_BREAK           
+   never  SADDLE_JOINT_DESTROYED               
+   never  SADDLE_SEPARATION_BEYOND_LINEAR_LIMIT 
+   never  SADDLE_SEPARATION_IMPLAUSIBLE        
+   never  SADDLE_TORQUE_HALF_OF_BREAK          
+
+--- 0kg-thigh-abdomen-suppressed ---
+load=0kg settlePelvisY=0.9792 finalPelvisY=0.5297 finalSq=0.89 settleTrunk=2.2deg maxDemand=0.29 maxSaddleF=0N maxSaddleT=0Nm maxSaddleSep=0.0000m settleSaddleSep=0.0000m
+     308  TRUNK_PITCH_DIVERGENCE               trunk=47.2 deg, settle 2.2 deg
+     364  LOAD_CHAIN_AT_ANGULAR_LIMIT          proximity=0.980 at left_foot
+     366  CAPTURE_OUTSIDE_SUPPORT              capture_ap=0.1371 outside [-0.1547,0.1353]
+     391  LOAD_CHAIN_TRACKING_DIVERGENCE       track_err=20.0 deg at left_foot
+     396  COM_OUTSIDE_SUPPORT                  com_ap=0.1358 outside [-0.1545,0.1353]
+   never  ADAPTER_DECLARED_FAILURE             
+   never  ANGULAR_VELOCITY_BLOWUP              
+   never  CONTROL_LAW_LEFT_REFERENCE           
+   never  COP_OUTSIDE_SUPPORT                  
+   never  DRIVE_SATURATED                      
+   never  FOOT_SLIP                            
+   never  LOAD_CHAIN_DRIVE_SATURATED           
+   never  NON_FINITE_STATE                     
+   never  PLANTAR_CONTACT_LOST                 
+   never  POSTURE_TRACKING_BREAKDOWN           
+   never  SADDLE_ANGULAR_X_BEYOND_LIMIT        
+   never  SADDLE_ANGULAR_Y_BEYOND_LIMIT        
+   never  SADDLE_ANGULAR_Z_BEYOND_LIMIT        
+   never  SADDLE_FORCE_HALF_OF_BREAK           
+   never  SADDLE_JOINT_DESTROYED               
+   never  SADDLE_SEPARATION_BEYOND_LINEAR_LIMIT 
+   never  SADDLE_SEPARATION_IMPLAUSIBLE        
+   never  SADDLE_TORQUE_HALF_OF_BREAK          
+
