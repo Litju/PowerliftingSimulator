@@ -243,6 +243,7 @@ namespace PowerliftingSimulator.Squat.Unity
             _hasPostureHistory = false;
             _balanceController.Reset();
             _hasStandingCalibration = false;
+            _qualificationPhaseVelocity = 0f;
             _composition.Clear();
         }
 
@@ -257,6 +258,33 @@ namespace PowerliftingSimulator.Squat.Unity
             _failureReason = "NONE";
         }
 
+        /// <summary>
+        /// Qualification only. Places the reference phase directly and reports
+        /// the phase velocity that goes with it, so a fixture can ask what the
+        /// plant does at a held pose rather than only what it does while
+        /// sweeping through one.
+        ///
+        /// This writes no physical state. The bodies still have to reach the
+        /// pose through the same drives, against the same gravity, and the
+        /// composition layers are untouched — it moves the reference clock and
+        /// nothing else. Gameplay never calls it: the owner path is
+        /// Brace/Yield/Drive through PlayerIntentFrame.
+        /// </summary>
+        public void HoldReferencePhaseForQualification(
+            float phase,
+            SquatPhaseDirection direction,
+            SquatState state,
+            float phaseVelocityPerSecond = 0f)
+        {
+            _sq = Mathf.Clamp01(phase);
+            _direction = direction;
+            _state = state;
+            _autoCycle = false;
+            _qualificationPhaseVelocity = phaseVelocityPerSecond;
+        }
+
+        private float _qualificationPhaseVelocity;
+
         public void PrepareCommands(
             PhysicalObservation previousObservation,
             SimulationTime time,
@@ -269,6 +297,10 @@ namespace PowerliftingSimulator.Squat.Unity
             float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
             _phaseVelocity = 0f;
             AdvanceStateAndPhase(dt, intent);
+            // A held qualification phase does not advance itself, so the rate
+            // feed-forward has to come from the fixture that placed it.
+            if (!_autoCycle && _qualificationPhaseVelocity != 0f)
+                _phaseVelocity = _qualificationPhaseVelocity;
             ComputeComAndSupport(previousObservation, intent);
 
             if (_saddle != null && _saddle.IsBroken)
