@@ -1,0 +1,21 @@
+GAM-11 PHASE 5H11 T1 RUNTIME COLLIDER SEMANTICS
+Values read from the running production objects, not from recipe names.
+
+left_thigh   Capsule radius=0.0900 height=0.3602 direction=1 center=(0.0000,0.0000,0.0000) lossyScale=(1.0000,1.0000,1.0000) worldRadius=0.0900 worldHeight=0.3602 worldCylinderHalf=0.0901 contactOffset=0.0100 recipeDims=(0.1800,0.3602,0.1800)
+right_thigh  Capsule radius=0.0900 height=0.3602 direction=1 center=(0.0000,0.0000,0.0000) lossyScale=(1.0000,1.0000,1.0000) worldRadius=0.0900 worldHeight=0.3602 worldCylinderHalf=0.0901 contactOffset=0.0100 recipeDims=(0.1800,0.3602,0.1800)
+abdomen      Box size=(0.2500,0.1600,0.1700) center=(0.0000,0.0000,0.0000) lossyScale=(1.0000,1.0000,1.0000) worldHalfExtents=(0.1250,0.0800,0.0850) contactOffset=0.0100 recipeDims=(0.2500,0.1600,0.1700)
+pelvis       Box size=(0.3000,0.2000,0.1800) center=(0.0000,0.0000,0.0000) lossyScale=(1.0000,1.0000,1.0000) worldHalfExtents=(0.1500,0.1000,0.0900) contactOffset=0.0100 recipeDims=(0.3000,0.2000,0.1800)
+
+--- collider geometry to mass property coupling ---
+left_thigh   mass=10.000 kg com=(0.0000,0.0000,0.0000) dimensions=(0.1800,0.3602,0.1800) BoxInertia(dimensions)=(0.1351,0.0540,0.1351) inertiaTensor=(0.1351,0.0540,0.1351) coupled=True
+right_thigh  mass=10.000 kg com=(0.0000,0.0000,0.0000) dimensions=(0.1800,0.3602,0.1800) BoxInertia(dimensions)=(0.1351,0.0540,0.1351) inertiaTensor=(0.1351,0.0540,0.1351) coupled=True
+abdomen      mass=13.900 kg com=(0.0000,0.0000,0.0000) dimensions=(0.2500,0.1600,0.1700) BoxInertia(dimensions)=(0.0631,0.1059,0.1020) inertiaTensor=(0.0631,0.1059,0.1020) coupled=True
+
+COLLIDER_GEOMETRY_COUPLED_TO_MASS_PROPERTIES = YES for inertiaTensor (same dimensions vector feeds AddCollider and BoxInertia); NO for mass (MassFraction) and NO for centre of mass (authored zero).
+
+--- hip anchor and thigh capsule registration ---
+left_thigh   hipAnchor=(-0.1144,0.9768,-0.0353) referenceHipBone=(-0.1143,0.9787,-0.0360) anchorError=0.00199 m | femurLength=0.4288 capsuleWorldHeight=0.3602 radius=0.0900 | bodyOrigin=(-0.1144,0.8012,-0.0359) bodyToAnchor=0.1756 m | proximalCapAboveAnchor=0.3557 m proximalCylinderAboveAnchor=0.2657 m | axisDotFemur=-1.0000
+right_thigh  hipAnchor=(0.1142,0.9769,-0.0355) referenceHipBone=(0.1143,0.9787,-0.0360) anchorError=0.00190 m | femurLength=0.4288 capsuleWorldHeight=0.3602 radius=0.0900 | bodyOrigin=(0.1142,0.8013,-0.0359) bodyToAnchor=0.1756 m | proximalCapAboveAnchor=0.3557 m proximalCylinderAboveAnchor=0.2657 m | axisDotFemur=-1.0000
+
+--- abdomen registration ---
+abdomen      anchor=(-0.0001,1.0772,-0.0056) referenceSpine=(0.0000,1.0795,-0.0069) anchorError=0.00260 m | boxCentre=(-0.0001,1.1301,0.0004) halfExtents=(0.1250,0.0800,0.0850) | lowestFaceCentre=(-0.0001,1.0506,-0.0087) lowestFaceY=1.0506 | referenceHipsY=0.9566 referenceSpineY=1.0795 referenceChestY=1.1853 | spineToChest=0.1064 m boxHeight=0.1600 m

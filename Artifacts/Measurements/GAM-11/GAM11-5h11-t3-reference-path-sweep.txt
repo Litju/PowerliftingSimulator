@@ -1,0 +1,8 @@
+GAM-11 PHASE 5H11 T3 REFERENCE PATH PROXY FEASIBILITY
+Thighs rotated about the as-built hip anchors, abdomen about its own,
+both by the angles the accepted GAM-10 reference commands. No body moved.
+
+MAX_HIP_FLEXION_COMMANDED       = 111.0 deg
+PROXY_CONTACT_ONSET_HIP_DEG     = 51.2 deg (surfaces within contactOffset 0.0200 m)
+PROXY_PENETRATION_ONSET_HIP_DEG = 64.1 deg (surfaces actually intersect)
+PROXY_PENETRATION_AT_111_DEG    = 0.0826 m

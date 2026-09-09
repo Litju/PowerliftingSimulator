@@ -1,0 +1,9 @@
+GAM-11 PHASE 5H11 T2 CONTACT VERSUS GEOMETRIC PENETRATION
+thigh contactOffset=0.0100 m  abdomen contactOffset=0.0100 m  sum=0.0200 m
+
+FIRST_CONTACT_TICK              = 146   hip 53.2 deg
+FIRST_GEOMETRIC_OVERLAP_TICK    = 167   hip 64.7 deg
+FIRST_POSITIVE_PENETRATION_TICK = 168
+FIRST_LOAD_BEARING_CONTACT_TICK = 167   hip 64.7 deg
+
+CONTACT_OFFSET_CONTRIBUTION: the contact leads real overlap by 21 ticks.
