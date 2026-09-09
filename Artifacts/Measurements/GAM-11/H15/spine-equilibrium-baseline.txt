@@ -1,0 +1,23 @@
+GAM-11 PHASE 5H15 E1 SPINE EQUILIBRIUM BASELINE AND GRAVITATIONAL MOMENT
+Fresh reset per sample, ramped at the production rate then held with zero
+phase velocity for 400 ticks, averaged over the last 100.
+error is actual minus the GAM-10 nominal, the reference miss the phase is about.
+tau_g is the gravitational generalized moment about the joint's calibrated
+flexion axis, from engine masses and centres of mass.
+
+load  s_q   settled  abdNom  abdAct  abdErr  drift  demand |  thoNom  thoAct  thoErr  drift  demand |  tauG_abd  tauG_tho  err/tauG
+   0  0.00  True       0.00   -1.23   -1.23   0.009   0.012 |    0.00   -1.18   -1.18   0.007   0.010 |     -10.3     -14.6   0.12001
+   0  0.25  True       4.00    7.39    3.39   0.000   0.032 |    6.00    7.54    1.54   0.000   0.015 |      40.5      22.8   0.08377
+   0  0.55  True       6.00   13.63    7.63   0.001   0.072 |    8.99   12.97    3.97  -0.001   0.038 |      88.3      56.5   0.08638
+   0  0.80  True       6.37   14.71    8.33  -0.007   0.079 |    9.55   13.91    4.36  -0.002   0.042 |      96.0      61.9   0.08678
+   0  1.00  True       6.40   14.90    8.50  -0.006   0.081 |    9.59   14.02    4.43  -0.001   0.042 |      97.6      62.9   0.08713
+  25  0.00  True       0.00   -6.95   -6.95  -0.012   0.050 |    0.00   -5.60   -5.60  -0.005   0.043 |     -80.4     -78.5   0.08650
+  25  0.25  True       4.00    6.21    2.21  -0.056   0.015 |    6.00    6.03    0.03  -0.037   0.001 |      27.0       2.3   0.08179
+  25  0.55  True       6.00   16.81   10.81  -0.020   0.078 |    8.99   14.43    5.44  -0.007   0.043 |     130.2      80.2   0.08304
+  25  0.80  True       6.37   18.36   11.99  -0.001   0.087 |    9.55   15.71    6.16  -0.004   0.049 |     144.1      90.8   0.08319
+  25  1.00  True       6.40   15.68    9.29  -0.005   0.070 |    9.59   15.20    5.61  -0.002   0.041 |     132.7      82.5   0.07000
+
+Settled samples with a material abdomen gravity moment: 10. Error sign agrees with the gravitational flexion direction in 10 of them.
+error / gravity-moment ratio spans 0.07000 to 0.12001 deg per N.m, a spread of 1.71x.
+GRAVITY_EQUILIBRIUM_CAUSALITY = HIGH
+
