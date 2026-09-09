@@ -40,6 +40,23 @@ anything: proxy contact at 51.2°, penetration at 64.1°, and reaching the
 commanded 111° would need **82.6 mm** of interpenetration — more than the
 abdomen box's entire half-thickness.
 
+Two penetration figures appear in this receipt and they are different
+measurements, not a discrepancy:
+
+- **82.6 mm — `PROXY_MTV_PENETRATION_RUNTIME`.** `Physics.ComputePenetration`,
+  the PhysX minimum translation vector, evaluated on the *production runtime
+  colliders* posed by rotating the settled physical bodies about their as-built
+  joint anchors by the reference angles (T3, physical scene).
+- **72.1 mm — `PROXY_SEGMENT_TO_BOX_DEPTH_REFERENCE`.** An analytic
+  segment-to-oriented-box closest-point distance minus the capsule radius,
+  evaluated on proxies *reconstructed from the posed reference skeleton* (V1,
+  preview scene).
+
+The second is not an MTV and systematically under-reads it once the capsule is
+deeply inside the box, so 72.1 ≤ 82.6 is the expected ordering. Both are far
+past the abdomen box's 80 mm half-thickness and both support the same
+classification.
+
 ## The skin measurement, and the trap in it
 
 The first version of this measurement reported a flat 4.3–5.9 mm gap at every
@@ -53,7 +70,7 @@ once, gives the real answer:
 | hip | 0° | 40° | 51° | 65° | 80° | 95° | 111° |
 |---|---|---|---|---|---|---|---|
 | skin gap (r=0.16) | 53.4 mm | 39.3 | 32.5 | 33.1 | 36.2 | 12.4 | **13.4 mm** |
-| proxy penetration | 0 | 0 | 0 | 0 | 11.0 | 38.7 | **72.1 mm** |
+| proxy segment-to-box depth | 0 | 0 | 0 | 0 | 11.0 | 38.7 | **72.1 mm** |
 
 The body walks the path with a centimetre to spare. The primitives demand seven.
 
