@@ -121,6 +121,7 @@ reported for completeness, not as the cause.
 
 ## Test status
 
+- **MasterSpec: `STATUS=PASS`** — 68 files, `HASHES=PASS`, `DEPENDENCIES=PASS`.
 - Full EditMode: 67/67 pass.
 - Targeted PlayMode (collision matrix, upper-limb contracts, setup pose, ground
   registration, actuator realization, standing closed loop, shared substrate,
@@ -131,17 +132,38 @@ reported for completeness, not as the cause.
   byte-identically either way. `G1` moves *past* its foot-lift assertion and
   fails later on lockout recovery; `G2` improves from 1.297 to 1.132 m of bar
   height error. `G3` is 105 kg and out of scope.
+- **Full PlayMode sweep: 130 total, 126 pass, 4 fail** — exactly the same four,
+  and no others anywhere in the suite. `Artifacts/GAM11-5h11-playmode-full.xml`.
 - Physical squat gates unloaded and 25 kg: still **FAIL**, for the new forward
   cause. Not relaxed.
 
 ## Visual review
 
-Re-captured 25 kg motion evidence on the repaired plant and viewed it. At
-sq=0.80 the athlete is in a recognisable deep squat with the bar on the back; at
-sq=1.00 it is very deep with the trunk far forward and the bar beginning to
-tilt, which is the new forward failure showing. **No gross interpenetration of
-the visible thigh through the torso at any captured pose** — the fold looks
-anatomical. Owner visual review is still required.
+Re-captured the 25 kg motion evidence on the repaired plant and viewed every
+required phase: standing (front, side, oblique), the former contact-onset region
+at sq=0.56, near-parallel at sq=0.80, the deepest reached pose at sq=1.00, and
+the first new divergence at sq=0.97.
+
+**The H11 acceptance criterion passes.** There is no gross interpenetration of
+the visible thigh through the torso at any captured pose; the hip fold reads as
+anatomical throughout, which is the specific failure mode a pair-filtering
+repair had to be checked against.
+
+Two observations recorded rather than acted on, both belonging to the new
+forward cause and not to the collision repair:
+
+1. **At the bottom the trunk goes close to horizontal**, considerably flatter
+   than a competition squat should be. This is the forward drift the
+   measurements already report, seen from the side.
+2. **The bar rides forward over the shoulders at the deepest and reversal
+   poses** and its roll becomes visible from sq=0.56 onward. The saddle stays
+   inside its limits throughout (max separation 0.0076 m, no angular exceedance
+   at 25 kg), so this is the shelf angle following the trunk rather than a
+   coupling failure. Before the repair the athlete was on the floor at these
+   ticks, so this is not a regression — but it is a real part of the picture the
+   next phase inherits.
+
+Owner visual review is still required.
 
 ## Not done here
 
