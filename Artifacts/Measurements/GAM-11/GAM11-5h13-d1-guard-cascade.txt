@@ -1,0 +1,16 @@
+GAM-11 PHASE 5H13 D1 POSTURE GUARD CASCADE
+Held pose, full production composition. raw is the balance law's
+request before the guard; guarded is the same request after it.
+blend_from_raw applies the controller's own hip blend rule to the raw
+demand, which is what the strategy would have seen without the guard.
+
+load  s_q   guardScale  rawAnkleDeg  guardedDeg  rawAuth  guardedAuth  blendActual  blendFromRaw  driver
+   0  0.55      0.5582         7.59        4.24    0.506        0.283        0.000         0.000  right_thigh
+   0  0.80      0.1662       -17.46       -2.90    1.164        0.193        0.000         1.000  right_thigh
+   0  1.00      0.0000        33.54        0.00    2.236        0.000        0.000         1.000  left_thigh
+  25  0.55      0.9736       -14.09      -13.71    0.939        0.914        0.429         0.594  left_thigh
+  25  0.80      0.1287        79.14       10.19    5.276        0.679        0.000         1.000  left_thigh
+  25  1.00      0.0000        18.41        0.00    1.227        0.000        0.000         1.000  right_thigh
+
+Samples with guard scale at or below 0.5: 4, of which the raw demand would have blended the hip in further: 4.
+GUARD_SUPPRESSES_PROXIMAL_STRATEGY = YES

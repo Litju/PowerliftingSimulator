@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="3" result="Passed" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-09 07:26:04Z" end-time="2026-09-09 07:26:11Z" duration="6.6909087">
+  <test-suite type="TestSuite" id="1190" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="143" result="Passed" start-time="2026-09-09 07:26:04Z" end-time="2026-09-09 07:26:11Z" duration="6.690909" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1184" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="C:/Users/Educacion/Desktop/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="143" result="Passed" start-time="2026-09-09 07:26:04Z" end-time="2026-09-09 07:26:11Z" duration="6.658407" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="13244" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1185" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="143" result="Passed" start-time="2026-09-09 07:26:04Z" end-time="2026-09-09 07:26:11Z" duration="6.651790" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1186" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="143" result="Passed" start-time="2026-09-09 07:26:04Z" end-time="2026-09-09 07:26:11Z" duration="6.645175" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1064" name="PhaseAwareBalancePlantTests" fullname="PowerliftingSimulator.Tests.PhaseAwareBalancePlantTests" classname="PowerliftingSimulator.Tests.PhaseAwareBalancePlantTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-09 07:26:04Z" end-time="2026-09-09 07:26:11Z" duration="6.635218" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1065" name="D1_GUARD_CASCADE_AND_PROXIMAL_SUPPRESSION" fullname="PowerliftingSimulator.Tests.PhaseAwareBalancePlantTests.D1_GUARD_CASCADE_AND_PROXIMAL_SUPPRESSION" methodname="D1_GUARD_CASCADE_AND_PROXIMAL_SUPPRESSION" classname="PowerliftingSimulator.Tests.PhaseAwareBalancePlantTests" runstate="Runnable" seed="1227900703" result="Passed" start-time="2026-09-09 07:26:04Z" end-time="2026-09-09 07:26:08Z" duration="3.869598" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[GAM-11 PHASE 5H13 D1 POSTURE GUARD CASCADE
+Held pose, full production composition. raw is the balance law's
+request before the guard; guarded is the same request after it.
+blend_from_raw applies the controller's own hip blend rule to the raw
+demand, which is what the strategy would have seen without the guard.
+
+load  s_q   guardScale  rawAnkleDeg  guardedDeg  rawAuth  guardedAuth  blendActual  blendFromRaw  driver
+   0  0.55      0.5582         7.59        4.24    0.506        0.283        0.000         0.000  right_thigh
+   0  0.80      0.1662       -17.46       -2.90    1.164        0.193        0.000         1.000  right_thigh
+   0  1.00      0.0000        33.54        0.00    2.236        0.000        0.000         1.000  left_thigh
+  25  0.55      0.9736       -14.09      -13.71    0.939        0.914        0.429         0.594  left_thigh
+  25  0.80      0.1287        79.14       10.19    5.276        0.679        0.000         1.000  left_thigh
+  25  1.00      0.0000        18.41        0.00    1.227        0.000        0.000         1.000  right_thigh
+
+Samples with guard scale at or below 0.5: 4, of which the raw demand would have blended the hip in further: 4.
+GUARD_SUPPRESSES_PROXIMAL_STRATEGY = YES
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1066" name="D2_NOMINAL_VERSUS_CORRECTION_INDUCED_LIMIT_MARGIN" fullname="PowerliftingSimulator.Tests.PhaseAwareBalancePlantTests.D2_NOMINAL_VERSUS_CORRECTION_INDUCED_LIMIT_MARGIN" methodname="D2_NOMINAL_VERSUS_CORRECTION_INDUCED_LIMIT_MARGIN" classname="PowerliftingSimulator.Tests.PhaseAwareBalancePlantTests" runstate="Runnable" seed="1800008846" result="Passed" start-time="2026-09-09 07:26:08Z" end-time="2026-09-09 07:26:10Z" duration="1.735026" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[GAM-11 PHASE 5H13 D2 NOMINAL VERSUS CORRECTION-INDUCED LIMIT MARGIN
+Angles are the calibrated flexion axis in joint space, degrees.
+prox is |q| / the authored range on the side q sits on, which is exactly
+the quantity PoweredJointDiagnostic.LimitProximity reports and the guard reads.
+consumed is prox_actual - prox_nominal expressed in degrees of range: the
+part of the occupancy the accepted reference did not ask for.
+
+load  s_q   joint         range[low,high]   qNom     qFinal   qAct    proxNom  proxFin  proxAct  consumedDeg  reducesMargin
+   0  0.00  left_shank    [  -5.0, 145.0]     0.00     0.00    -0.04    0.000    0.000    0.008        0.040  False
+   0  0.00  left_thigh    [-120.0,  45.0]     0.00     0.00    -0.14    0.000    0.000    0.001        0.137  False
+   0  0.00  abdomen       [ -35.0,  45.0]     0.00     0.00    -1.24    0.000    0.000    0.036        1.245  False
+   0  0.00  thorax        [ -35.0,  50.0]     0.00     0.00    -1.19    0.000    0.000    0.034        1.190  False
+   0  0.55  left_shank    [  -5.0, 145.0]    78.00    78.00    85.82    0.538    0.538    0.592        7.817  False
+   0  0.55  left_thigh    [-120.0,  45.0]   -77.00   -77.00   -81.53    0.642    0.642    0.679        4.525  False
+   0  0.55  abdomen       [ -35.0,  45.0]     6.00     6.00    13.67    0.133    0.133    0.304        7.673  False
+   0  0.55  thorax        [ -35.0,  50.0]     8.99     8.99    12.99    0.180    0.180    0.260        3.997  False
+   0  0.80  left_shank    [  -5.0, 145.0]    98.29    98.29   105.62    0.678    0.678    0.728        7.333  False
+   0  0.80  left_thigh    [-120.0,  45.0]   -96.39   -96.39  -101.87    0.803    0.803    0.849        5.481  False
+   0  0.80  abdomen       [ -35.0,  45.0]     6.37     6.37    15.95    0.142    0.142    0.355        9.584  False
+   0  0.80  thorax        [ -35.0,  50.0]     9.55     9.55    14.49    0.191    0.191    0.290        4.940  False
+   0  1.00  left_shank    [  -5.0, 145.0]   114.00   114.00   121.11    0.786    0.786    0.835        7.113  False
+   0  1.00  left_thigh    [-120.0,  45.0]  -111.00  -111.00  -115.90    0.925    0.925    0.966        4.900  False
+   0  1.00  abdomen       [ -35.0,  45.0]     6.40     6.40    15.83    0.142    0.142    0.352        9.429  False
+   0  1.00  thorax        [ -35.0,  50.0]     9.59     9.59    13.84    0.192    0.192    0.277        4.253  False
+  25  0.00  left_shank    [  -5.0, 145.0]     0.00     0.00     5.34    0.000    0.000    0.037        5.339  False
+  25  0.00  left_thigh    [-120.0,  45.0]     0.00    -7.00    -3.55    0.000    0.058    0.030        3.550  True
+  25  0.00  abdomen       [ -35.0,  45.0]     0.00     6.00    -2.91    0.000    0.133    0.083        2.906  True
+  25  0.00  thorax        [ -35.0,  50.0]     0.00     6.00    -1.09    0.000    0.120    0.031        1.087  True
+  25  0.55  left_shank    [  -5.0, 145.0]    78.00    78.00    87.08    0.538    0.538    0.601        9.081  False
+  25  0.55  left_thigh    [-120.0,  45.0]   -77.00   -77.00   -83.44    0.642    0.642    0.695        6.441  False
+  25  0.55  abdomen       [ -35.0,  45.0]     6.00     6.00    17.44    0.133    0.133    0.388       11.441  False
+  25  0.55  thorax        [ -35.0,  50.0]     8.99     8.99    14.86    0.180    0.180    0.297        5.862  False
+  25  0.80  left_shank    [  -5.0, 145.0]    98.29    98.29   105.11    0.678    0.678    0.725        6.826  False
+  25  0.80  left_thigh    [-120.0,  45.0]   -96.39   -96.39  -104.72    0.803    0.803    0.873        8.324  False
+  25  0.80  abdomen       [ -35.0,  45.0]     6.37     6.37    22.58    0.142    0.142    0.502       16.206  False
+  25  0.80  thorax        [ -35.0,  50.0]     9.55     9.55    17.62    0.191    0.191    0.352        8.068  False
+  25  1.00  left_shank    [  -5.0, 145.0]   114.00   114.00   114.92    0.786    0.786    0.793        0.916  False
+  25  1.00  left_thigh    [-120.0,  45.0]  -111.00  -111.00  -112.08    0.925    0.925    0.934        1.085  False
+  25  1.00  abdomen       [ -35.0,  45.0]     6.40     6.40     4.83    0.142    0.142    0.107       -1.565  False
+  25  1.00  thorax        [ -35.0,  50.0]     9.59     9.59     9.08    0.192    0.192    0.182       -0.511  False
+
+NOMINAL_HIP_LIMIT_OCCUPANCY  load 0 kg  s_q 0.80 = 0.8033   actual 0.8490   unexpected consumption 5.481 deg
+NOMINAL_HIP_LIMIT_OCCUPANCY  load 0 kg  s_q 1.00 = 0.9250   actual 0.9658   unexpected consumption 4.900 deg
+NOMINAL_HIP_LIMIT_OCCUPANCY  load 25 kg  s_q 0.80 = 0.8033   actual 0.8726   unexpected consumption 8.324 deg
+NOMINAL_HIP_LIMIT_OCCUPANCY  load 25 kg  s_q 1.00 = 0.9250   actual 0.9340   unexpected consumption 1.085 deg
+
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1067" name="D3_FOUR_WAY_MODEL_DECOMPOSITION" fullname="PowerliftingSimulator.Tests.PhaseAwareBalancePlantTests.D3_FOUR_WAY_MODEL_DECOMPOSITION" methodname="D3_FOUR_WAY_MODEL_DECOMPOSITION" classname="PowerliftingSimulator.Tests.PhaseAwareBalancePlantTests" runstate="Runnable" seed="679365229" result="Passed" start-time="2026-09-09 07:26:10Z" end-time="2026-09-09 07:26:11Z" duration="0.997401" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[GAM-11 PHASE 5H13 D3 FOUR-WAY BALANCE MODEL DECOMPOSITION
+One recorded descent per load, replayed offline through the controller's
+own equations. No physics step is taken and no production value changes.
+
+  M00  standing COM reference   + standing target-to-COP gain  (production today)
+  M10  phase COM reference      + standing gain
+  M01  standing COM reference   + phase-local gain
+  M11  phase COM reference      + phase-local gain
+
+The phase gain table qualifies only s_q 0.00 and 0.55. Deeper than 0.55 it
+holds the 0.55 value; those samples are flagged gain_extrapolated in the CSV.
+
+Ankle request is degrees before the 15 deg bound. exceeded counts the
+samples whose request the bound would have to clip.
+
+load  model  maxRawAnkleRequestDeg  samplesOverBound
+   0  M00                   143.32                20
+   0  M10                   167.79                81
+   0  M01                    76.08                15
+   0  M11                    89.07                77
+  25  M00                   180.59                39
+  25  M10                   196.04                69
+  25  M01                    95.87                30
+  25  M11                   104.07                63
+
+load 0 kg: COM reference alone moves the peak request 24.47 deg (17.1 pct of M00), plant gain alone -67.24 deg (-46.9 pct), both -54.25 deg (-37.9 pct).
+load 25 kg: COM reference alone moves the peak request 15.45 deg (8.6 pct of M00), plant gain alone -84.73 deg (-46.9 pct), both -76.53 deg (-42.4 pct).
+
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+Saving results to: C:/Users/Educacion/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
