@@ -90,8 +90,8 @@ namespace PowerliftingSimulator.Tests
                 SquatPredictiveBalanceController bc = _controller.Adapter?.BalanceController;
                 if (bc != null)
                 {
-                    bc.LimitSemantics = SquatPredictiveBalanceController.LimitGuardSemantics.AbsoluteOccupancy;
-                    bc.ProximalTriggerSource = SquatPredictiveBalanceController.ProximalTrigger.GuardedAnkleCommand;
+                    bc.LimitSemantics = SquatPredictiveBalanceController.LimitGuardSemantics.UnexpectedMarginConsumption;
+                    bc.ProximalTriggerSource = SquatPredictiveBalanceController.ProximalTrigger.RawAnkleDemand;
                     bc.TargetToCopMPerRad = SquatPredictiveBalanceController.MeasuredTargetToCopMPerRad;
                     bc.PostureGuardEnabled = true;
                 }

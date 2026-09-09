@@ -187,8 +187,29 @@ namespace PowerliftingSimulator.Squat.Unity
             RawAnkleDemand
         }
 
-        public LimitGuardSemantics LimitSemantics { get; set; } = LimitGuardSemantics.AbsoluteOccupancy;
-        public ProximalTrigger ProximalTriggerSource { get; set; } = ProximalTrigger.GuardedAnkleCommand;
+        /// <summary>
+        /// UnexpectedMarginConsumption is production. AbsoluteOccupancy was,
+        /// and withdrew the entire ankle channel at squat depth because the
+        /// accepted GAM-10 reference commands 111 deg of hip flexion against a
+        /// 120 deg range: a correctly executed deep squat read 0.93 and closed
+        /// a guard whose 0.55 and 0.85 thresholds were set standing. Measured
+        /// at s_q 0.55, 0.80 and 1.00 under both loads, the hip's composed
+        /// target equals its nominal target exactly, so the quantity that rule
+        /// read carried no information at all about the correction it removed
+        /// (GAM11-5h13-d2-limit-margins.csv, GAM11-5h13-e1-guard-candidates-static.txt).
+        /// </summary>
+        public LimitGuardSemantics LimitSemantics { get; set; } =
+            LimitGuardSemantics.UnexpectedMarginConsumption;
+
+        /// <summary>
+        /// RawAnkleDemand is production. Reading the blend from the guarded
+        /// command meant the guard removed the ankle and then hid the removal
+        /// from the strategy that exists to rescue it: at 25 kg s_q 0.80 the
+        /// balance law asked for 5.28 bounds of ankle correction and the hip
+        /// blend stayed at zero because the guarded command looked like 0.679
+        /// of authority used (GAM11-5h13-d1-guard-cascade.txt).
+        /// </summary>
+        public ProximalTrigger ProximalTriggerSource { get; set; } = ProximalTrigger.RawAnkleDemand;
 
         // Posture state, supplied by the adapter from the previous
         // post-physics observation.
