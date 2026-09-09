@@ -732,11 +732,12 @@ namespace PowerliftingSimulator.Squat.Unity
         }
 
         /// <summary>
-        /// Off reproduces the 5H15 command, whose target angular velocity
-        /// carries the nominal reference derivative only while its target
-        /// position also carries the gravity bias.
+        /// On is production since 5H16. Off reproduces the 5H15 command, whose
+        /// target angular velocity carried the nominal reference derivative
+        /// only while its target position also carried the gravity bias, so
+        /// the drive was told to travel along one path and arrive on another.
         /// </summary>
-        public bool SpineBiasRateFeedforwardEnabled { get; set; }
+        public bool SpineBiasRateFeedforwardEnabled { get; set; } = true;
 
         private static Quaternion SagittalAndFrontal(float sagittalRad, float frontalRad)
         {

@@ -102,24 +102,6 @@ namespace PowerliftingSimulator.Squat.Unity
         }
 
         /// <summary>
-        /// The qualified standing preload, currently zero on every family.
-        ///
-        /// On the grounded plant the open-loop imbalance is nulled by about
-        /// -11.5 deg of ankle plantarflexion bias: the COM-to-COP offset
-        /// crosses zero between -10 and -12 deg and COM velocity at 0.6 s falls
-        /// from 0.325 to 0.011 m/s
-        /// (Artifacts/Measurements/GAM11-ankle-preload-cop-sensitivity.csv).
-        /// That value is measured but deliberately not adopted, for two
-        /// reasons. It sits on the 12 deg investigation boundary rather than
-        /// near the 6 deg soft target, and it was identified with feedback
-        /// disabled, so with the predictive balance controller running the two
-        /// corrections stack and the athlete departs backwards instead.
-        ///
-        /// A preload is a feed-forward trim for a steady gravitational moment.
-        /// It cannot stabilise an inverted pendulum on its own, so the value
-        /// that belongs here has to be identified with the loop closed.
-        /// </summary>
-        /// <summary>
         /// GAME_PHYSICS_SPINE_EQUILIBRIUM_CALIBRATION.
         ///
         /// Anatomical flexion bias, in degrees, that lets the finite spine
@@ -133,14 +115,11 @@ namespace PowerliftingSimulator.Squat.Unity
         /// perturbation. Provenance:
         /// Artifacts/Measurements/GAM-11/H15/spine-coupled-response.csv.
         ///
-        /// Two entries deliberately depart from the raw solve.
+        /// The standing knot lives in the four StandingBiasDegrees properties
+        /// rather than in these arrays, because 5H15 shipped it at zero and
+        /// 5H16 qualified it separately. Index 0 of each array is unused.
         ///
-        /// Standing is held at zero at both loads. The measurement asks for
-        /// +0.83 deg unloaded and +3.93 deg at 25 kg, because with the bar the
-        /// spine leans back rather than forward, but standing is already a
-        /// qualified state and moving its setpoint is a plant change that
-        /// needs its own authorization rather than a side effect of repairing
-        /// the deep squat.
+        /// One entry still departs from the raw solve.
         ///
         /// The loaded bottom holds the s_q 0.80 value. Its own solve returned
         /// -19.15 deg against a 12 deg hard bound, on the one sample whose
@@ -177,12 +156,20 @@ namespace PowerliftingSimulator.Squat.Unity
         /// walks and a lerp.
         /// </summary>
         /// <summary>
-        /// Standing knot, held separately from the rest of the table so it can
-        /// be qualified on its own. 5H15 measured +0.83 deg unloaded and
-        /// +3.93 at 25 kg for the abdomen, and +0.92 / +3.67 for the thorax,
-        /// but withheld them: standing is an already qualified state and
-        /// moving its setpoint is a plant change that needs its own evidence.
-        /// Zero reproduces the 5H15 shipped behaviour.
+        /// Standing knot, held separately from the rest of the table because
+        /// it needed its own qualification. 5H15 solved these from the same
+        /// closed-loop response as the deep knots but withheld them, since
+        /// standing was already a qualified state.
+        ///
+        /// 5H16 qualified them: three independent ten-second holds per case,
+        /// production balance on, nothing else varied. At 25 kg the abdomen
+        /// reference miss goes from -6.92 deg to +0.25 and world trunk from
+        /// -7.75 to -0.47, with the support interval, the centre of pressure,
+        /// the contact count and the hip all unmoved and the drift still under
+        /// 0.03 deg over the measurement window
+        /// (Artifacts/Measurements/GAM-11/H16/standing-bias-authorization.csv).
+        ///
+        /// Setting these to zero reproduces the 5H15 shipped behaviour.
         /// </summary>
         public float StandingAbdomenBiasDegrees0Kg { get; set; }
         public float StandingThoraxBiasDegrees0Kg { get; set; }
@@ -259,6 +246,24 @@ namespace PowerliftingSimulator.Squat.Unity
         private static float ValueAt(float[] values, float standingValue, int index) =>
             index == 0 ? standingValue : values[index];
 
+        /// <summary>
+        /// The qualified standing preload. The flat per-family bias is zero on
+        /// every family; the spine additionally carries the standing knot of
+        /// its phase-dependent table, qualified in 5H16.
+        ///
+        /// On the grounded plant the open-loop ankle imbalance is nulled by
+        /// about -11.5 deg of plantarflexion bias: the COM-to-COP offset
+        /// crosses zero between -10 and -12 deg and COM velocity at 0.6 s falls
+        /// from 0.325 to 0.011 m/s
+        /// (Artifacts/Measurements/GAM11-ankle-preload-cop-sensitivity.csv).
+        /// That value is measured but deliberately not adopted, for two
+        /// reasons. It sits on the 12 deg investigation boundary rather than
+        /// near the 6 deg soft target, and it was identified with feedback
+        /// disabled, so with the predictive balance controller running the two
+        /// corrections stack and the athlete departs backwards instead. The
+        /// spine values below avoid exactly that trap: they were identified
+        /// with the loop closed.
+        /// </summary>
         public static SquatEquilibriumPreload QualifiedStanding()
         {
             var preload = new SquatEquilibriumPreload();
@@ -267,6 +272,12 @@ namespace PowerliftingSimulator.Squat.Unity
             preload.SetAnatomicalFlexionBiasDegrees(SquatJointFamily.Hip, 0f);
             preload.SetAnatomicalFlexionBiasDegrees(SquatJointFamily.Abdomen, 0f);
             preload.SetAnatomicalFlexionBiasDegrees(SquatJointFamily.Thorax, 0f);
+            // Qualified in 5H16. The flat family bias above stays zero; these
+            // are the standing knot of the phase-dependent spine table.
+            preload.StandingAbdomenBiasDegrees0Kg = 0.83f;
+            preload.StandingThoraxBiasDegrees0Kg = 0.92f;
+            preload.StandingAbdomenBiasDegrees25Kg = 3.93f;
+            preload.StandingThoraxBiasDegrees25Kg = 3.67f;
             return preload;
         }
     }
