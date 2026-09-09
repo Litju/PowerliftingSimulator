@@ -153,6 +153,13 @@ namespace PowerliftingSimulator.Tests
             Collider rightThigh = _rig.Segments["right_thigh"].Collider;
             Collider abdomen = _rig.Segments["abdomen"].Collider;
 
+            // This fixture characterizes the contact, so it has to hold the
+            // contact open. Once the qualified exception is in the production
+            // policy this measurement would otherwise report nothing and the
+            // evidence for the classification would quietly erase itself.
+            Physics.IgnoreCollision(leftThigh, abdomen, false);
+            Physics.IgnoreCollision(rightThigh, abdomen, false);
+
             PairProbe probe = PairProbe.Attach(_rig, new[] { "left_thigh", "right_thigh" }, "abdomen");
 
             for (int i = 0; i < SettleTicks; i++)
@@ -355,6 +362,100 @@ namespace PowerliftingSimulator.Tests
             WriteMeasurement("GAM11-5h11-t3-reference-path-sweep.csv", trace.ToString());
             WriteMeasurement("GAM11-5h11-t3-reference-path-sweep.txt", report.ToString());
             Debug.Log(report.ToString());
+            yield return null;
+        }
+
+        // ------------------------------------------------------------------
+        // T4. The repair, verified against the exact window H10 measured.
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// The claim under test is narrow and it is the only claim this phase
+        /// is allowed to make: the thigh/abdomen contact is no longer what
+        /// stops the hip. Whether the athlete completes a squat is a different
+        /// question, measured separately and not required here.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator T4_OLD_H10_FIRST_CAUSE_REMOVED()
+        {
+            _controller.SetLoad(0f);
+            SquatPhysicalAdapter adapter = _controller.Adapter;
+            adapter.BalanceCorrectionsEnabled = true;
+            FoundationRuntime runtime = _bootstrap.Runtime;
+            PoweredJointController powered = _rig.PoweredController;
+            float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
+
+            Collider leftThigh = _rig.Segments["left_thigh"].Collider;
+            Collider rightThigh = _rig.Segments["right_thigh"].Collider;
+            Collider abdomen = _rig.Segments["abdomen"].Collider;
+            Assert.That(Physics.GetIgnoreCollision(leftThigh, abdomen), Is.True,
+                "The production policy must already suppress left_thigh/abdomen before this runs.");
+            Assert.That(Physics.GetIgnoreCollision(rightThigh, abdomen), Is.True,
+                "The production policy must already suppress right_thigh/abdomen before this runs.");
+
+            PairProbe probe = PairProbe.Attach(_rig, new[] { "left_thigh", "right_thigh" }, "abdomen");
+
+            for (int i = 0; i < SettleTicks; i++)
+            {
+                runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds);
+                TickFootDetectors(dt);
+            }
+
+            var trace = new StringBuilder();
+            trace.AppendLine("tick,hip_target_deg,hip_actual_deg,hip_track_err_deg,hip_limit_prox,hip_demand," +
+                             "thigh_abdomen_contact,thigh_abdomen_impulse,knee_actual_deg,pelvis_y");
+
+            int contactTicks = 0;
+            float worstWindowTrackingError = 0f;
+            float deepestHipActual = 0f;
+            float deepestHipTarget = 0f;
+
+            adapter.StartSquat();
+            for (int tick = 0; tick < SquatTicks; tick++)
+            {
+                probe.BeginTick();
+                runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds);
+                TickFootDetectors(dt);
+
+                PoweredJointController.PoweredJointRuntime hip = powered.GetJoint("right_thigh");
+                PoweredJointController.PoweredJointRuntime knee = powered.GetJoint("right_shank");
+                float actual = SignedTwistDegrees(hip.Diagnostic.ActualRelative, Vector3.right);
+                float target = SignedTwistDegrees(hip.AppliedTarget, Vector3.right);
+                float trackErr = Quaternion.Angle(hip.AppliedTarget, hip.Diagnostic.ActualRelative);
+
+                if (probe.ContactThisTick)
+                    contactTicks++;
+                // The window H10 measured the block in.
+                if (tick >= 146 && tick <= 250)
+                    worstWindowTrackingError = Mathf.Max(worstWindowTrackingError, trackErr);
+                if (Mathf.Abs(actual) > Mathf.Abs(deepestHipActual))
+                    deepestHipActual = actual;
+                if (Mathf.Abs(target) > Mathf.Abs(deepestHipTarget))
+                    deepestHipTarget = target;
+
+                trace.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                    "{0},{1:F2},{2:F2},{3:F2},{4:F3},{5:F3},{6},{7:F3},{8:F2},{9:F4}",
+                    tick, target, actual, trackErr, hip.Diagnostic.LimitProximity, hip.Diagnostic.ModeledDemand,
+                    probe.ContactThisTick ? 1 : 0, probe.ImpulseThisTick,
+                    SignedTwistDegrees(knee.Diagnostic.ActualRelative, Vector3.right),
+                    _rig.Segments["pelvis"].Body.position.y));
+            }
+
+            string summary = string.Format(CultureInfo.InvariantCulture,
+                "thighAbdomenContactTicks={0} worstTrackingErrorInH10Window={1:F2} deg " +
+                "deepestHipTarget={2:F2} deg deepestHipActual={3:F2} deg deficit={4:F2} deg",
+                contactTicks, worstWindowTrackingError, deepestHipTarget, deepestHipActual,
+                Mathf.Abs(deepestHipTarget) - Mathf.Abs(deepestHipActual));
+
+            WriteMeasurement("GAM11-5h11-t4-first-cause-removed.csv", trace.ToString());
+            WriteMeasurement("GAM11-5h11-t4-first-cause-removed.txt",
+                "GAM-11 PHASE 5H11 T4 OLD FIRST CAUSE REMOVED" + Environment.NewLine + summary + Environment.NewLine);
+            Debug.Log("[T4 OLD H10 FIRST CAUSE REMOVED] " + summary);
+
+            Assert.That(contactTicks, Is.Zero,
+                "The thigh and abdomen still collide. " + summary);
+            Assert.That(worstWindowTrackingError, Is.LessThan(20f),
+                "The hip still falls more than twenty degrees behind inside the window H10 measured the block in. " + summary);
             yield return null;
         }
 

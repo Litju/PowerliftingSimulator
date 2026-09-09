@@ -1,0 +1,1431 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="30" result="Failed(Child)" total="30" passed="26" failed="4" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-09 01:47:05Z" end-time="2026-09-09 01:47:33Z" duration="28.0418254">
+  <test-suite type="TestSuite" id="1173" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="130" result="Failed" site="Child" start-time="2026-09-09 01:47:05Z" end-time="2026-09-09 01:47:33Z" duration="28.041825" total="30" passed="26" failed="4" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1167" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="C:/Users/Educacion/Desktop/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="130" result="Failed" site="Child" start-time="2026-09-09 01:47:05Z" end-time="2026-09-09 01:47:33Z" duration="28.021271" total="30" passed="26" failed="4" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="13788" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1168" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="130" result="Failed" site="Child" start-time="2026-09-09 01:47:05Z" end-time="2026-09-09 01:47:33Z" duration="28.010605" total="30" passed="26" failed="4" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1169" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="130" result="Failed" site="Child" start-time="2026-09-09 01:47:05Z" end-time="2026-09-09 01:47:33Z" duration="28.001787" total="30" passed="26" failed="4" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestFixture" id="1053" name="PhysicalAnkleCopAuthorityTests" fullname="PowerliftingSimulator.Tests.PhysicalAnkleCopAuthorityTests" classname="PowerliftingSimulator.Tests.PhysicalAnkleCopAuthorityTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-09 01:47:05Z" end-time="2026-09-09 01:47:06Z" duration="0.946345" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1054" name="A1_ANKLE_TARGET_OFFSET_TO_COP_AUTHORITY" fullname="PowerliftingSimulator.Tests.PhysicalAnkleCopAuthorityTests.A1_ANKLE_TARGET_OFFSET_TO_COP_AUTHORITY" methodname="A1_ANKLE_TARGET_OFFSET_TO_COP_AUTHORITY" classname="PowerliftingSimulator.Tests.PhysicalAnkleCopAuthorityTests" runstate="Runnable" seed="89934445" result="Passed" start-time="2026-09-09 01:47:05Z" end-time="2026-09-09 01:47:06Z" duration="0.928964" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[A1 ANKLE COP AUTHORITY] supportAp=[-0.1547,0.1353] bestCopAp=0.2519 atOffset=18.0deg reachableFraction=1.402
+commanded_offset_deg,cop_ap,com_ap,cop_minus_com,ankle_actual_deg,foot_pitch_deg,contacts
+0.0,-0.0510,0.0210,-0.0720,-4.51,0.00,8
+3.0,0.0094,0.1069,-0.0975,-8.52,0.00,8
+6.0,0.1138,0.2560,-0.1422,-16.43,0.00,8
+9.0,0.1341,0.5171,-0.3830,-20.92,-12.45,6
+12.0,0.1311,0.9924,-0.8613,-8.99,-62.06,8
+15.0,0.2519,1.2951,-1.0432,22.01,-64.71,6
+18.0,0.2519,1.2951,-1.0432,22.54,-64.91,6
+22.0,0.2519,1.2952,-1.0433,22.65,-64.83,6
+26.0,0.2519,1.2953,-1.0434,22.74,-64.75,5
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1059" name="PhysicalBarbellPlayModeTests" fullname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests" classname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-09 01:47:06Z" end-time="2026-09-09 01:47:09Z" duration="3.171824" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1061" name="GAM8_COLLAR_LAYOUT_DRIVES_PRESENTATION_AND_CHILD_COLLIDERS" fullname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests.GAM8_COLLAR_LAYOUT_DRIVES_PRESENTATION_AND_CHILD_COLLIDERS" methodname="GAM8_COLLAR_LAYOUT_DRIVES_PRESENTATION_AND_CHILD_COLLIDERS" classname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests" runstate="Runnable" seed="925746366" result="Passed" start-time="2026-09-09 01:47:06Z" end-time="2026-09-09 01:47:06Z" duration="0.497184" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1060" name="GAM8_SCENE_HAS_ONE_DYNAMIC_BAR_AND_COMPLETE_OBSERVATION" fullname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests.GAM8_SCENE_HAS_ONE_DYNAMIC_BAR_AND_COMPLETE_OBSERVATION" methodname="GAM8_SCENE_HAS_ONE_DYNAMIC_BAR_AND_COMPLETE_OBSERVATION" classname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests" runstate="Runnable" seed="1467645541" result="Passed" start-time="2026-09-09 01:47:06Z" end-time="2026-09-09 01:47:09Z" duration="2.672220" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1068" name="PhysicalSquatBalanceObservationTests" fullname="PowerliftingSimulator.Tests.PhysicalSquatBalanceObservationTests" classname="PowerliftingSimulator.Tests.PhysicalSquatBalanceObservationTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-09-09 01:47:09Z" end-time="2026-09-09 01:47:11Z" duration="1.921987" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1069" name="B1_SUPPORT_POLYGON_COMES_FROM_PLANTAR_CONTACTS" fullname="PowerliftingSimulator.Tests.PhysicalSquatBalanceObservationTests.B1_SUPPORT_POLYGON_COMES_FROM_PLANTAR_CONTACTS" methodname="B1_SUPPORT_POLYGON_COMES_FROM_PLANTAR_CONTACTS" classname="PowerliftingSimulator.Tests.PhysicalSquatBalanceObservationTests" runstate="Runnable" seed="998606862" result="Passed" start-time="2026-09-09 01:47:09Z" end-time="2026-09-09 01:47:10Z" duration="0.531859" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[B1 SUPPORT] contacts=8 ap=[-0.1547,0.1353] len=0.2900 ml=[-0.1793,0.1793] width=0.3586 planeY=0.0000 cop=(0.0058, 0.0000, -0.0442) impulse=9.2524
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1070" name="B2_COP_ESTIMATE_LIES_INSIDE_THE_SUPPORT_POLYGON" fullname="PowerliftingSimulator.Tests.PhysicalSquatBalanceObservationTests.B2_COP_ESTIMATE_LIES_INSIDE_THE_SUPPORT_POLYGON" methodname="B2_COP_ESTIMATE_LIES_INSIDE_THE_SUPPORT_POLYGON" classname="PowerliftingSimulator.Tests.PhysicalSquatBalanceObservationTests" runstate="Runnable" seed="1206871734" result="Passed" start-time="2026-09-09 01:47:10Z" end-time="2026-09-09 01:47:10Z" duration="0.440197" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1071" name="B3_REDUCED_ORDER_STATE_IS_SELF_CONSISTENT" fullname="PowerliftingSimulator.Tests.PhysicalSquatBalanceObservationTests.B3_REDUCED_ORDER_STATE_IS_SELF_CONSISTENT" methodname="B3_REDUCED_ORDER_STATE_IS_SELF_CONSISTENT" classname="PowerliftingSimulator.Tests.PhysicalSquatBalanceObservationTests" runstate="Runnable" seed="1545717540" result="Passed" start-time="2026-09-09 01:47:10Z" end-time="2026-09-09 01:47:11Z" duration="0.440445" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[B3 REDUCED ORDER] mass=100.00 com=(0.0018,1.0459,-0.0281) comVel=(0.0060,-0.0196,-0.0063) h=1.0459 omega=3.0626 captureAp=-0.0301
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1072" name="B4_STATIC_FEASIBILITY_NO_BAR_NO_BALANCE" fullname="PowerliftingSimulator.Tests.PhysicalSquatBalanceObservationTests.B4_STATIC_FEASIBILITY_NO_BAR_NO_BALANCE" methodname="B4_STATIC_FEASIBILITY_NO_BAR_NO_BALANCE" classname="PowerliftingSimulator.Tests.PhysicalSquatBalanceObservationTests" runstate="Runnable" seed="1338580407" result="Passed" start-time="2026-09-09 01:47:11Z" end-time="2026-09-09 01:47:11Z" duration="0.506978" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[B4 STATIC FEASIBILITY] STATUS=BALANCE_CONTROLLER_REQUIRED startComAp=-0.0316 marginFront=0.1669 marginRear=0.1231
+tick,com_ap,com_vel_ap,capture_ap,cop_ap,support_ap_min,support_ap_max,margin_front,margin_rear,ankle_target_deg,ankle_actual_deg,ankle_demand,foot_pitch_deg,contacts,slip_mps
+0,-0.0318,0.0000,-0.0318,nan,-0.0318,-0.0318,0.0000,0.0000,1.15,0.00,0.008,0.00,0,0.0004
+10,-0.0295,0.0633,-0.0088,-0.0813,-0.1547,0.1353,0.1648,0.1252,0.00,-0.74,0.011,0.00,8,0.0042
+20,-0.0211,0.0958,0.0102,-0.0684,-0.1547,0.1353,0.1564,0.1336,0.00,-1.89,0.020,-0.01,8,0.0008
+30,-0.0099,0.1249,0.0309,-0.0621,-0.1547,0.1353,0.1452,0.1448,0.00,-2.88,0.025,-0.01,8,0.0010
+40,0.0044,0.1603,0.0567,-0.0573,-0.1547,0.1353,0.1308,0.1592,0.00,-3.71,0.030,-0.01,8,0.0005
+50,0.0231,0.2101,0.0915,-0.0501,-0.1547,0.1353,0.1122,0.1778,0.00,-4.61,0.037,0.00,8,0.0006
+60,0.0474,0.2731,0.1363,-0.0390,-0.1547,0.1353,0.0878,0.2022,0.00,-5.80,0.048,0.00,8,0.0009
+70,0.0788,0.3477,0.1916,-0.0236,-0.1547,0.1353,0.0565,0.2335,0.00,-7.41,0.062,0.00,8,0.0012
+80,0.1182,0.4345,0.2587,-0.0033,-0.1547,0.1353,0.0171,0.2729,0.00,-9.53,0.080,0.00,8,0.0017
+90,0.1670,0.5347,0.3390,0.0234,-0.1547,0.1353,-0.0317,0.3217,0.00,-12.22,0.102,0.00,8,0.0023
+100,0.2266,0.6491,0.4336,0.0585,-0.1547,0.1353,-0.0913,0.3813,0.00,-15.57,0.130,0.01,8,0.0034
+110,0.2985,0.7779,0.5432,0.1081,-0.1547,0.1353,-0.1632,0.4532,0.00,-19.72,0.163,0.01,8,0.0039
+120,0.3838,0.9238,0.6685,0.1353,-0.1547,0.1353,-0.2485,0.5385,0.00,-24.24,0.202,-0.92,8,0.0076
+130,0.4880,1.1541,0.8338,0.1347,-0.1548,0.1350,-0.3531,0.6429,0.00,-27.40,0.203,-5.11,8,0.0461
+140,0.6189,1.4418,1.0335,0.1334,0.0441,0.1336,-0.4853,0.5748,0.00,-28.13,0.184,-14.25,6,0.0150
+150,0.7779,1.7041,1.2345,0.1325,0.0922,0.1335,-0.6444,0.6857,0.00,-26.14,0.146,-29.31,8,0.0233
+160,0.9574,1.8482,1.3890,0.1317,0.1296,0.1528,-0.8047,0.8278,0.00,-19.24,0.057,-52.58,8,0.0293
+170,1.1420,1.8247,1.4511,0.1418,0.1407,0.2288,-0.9132,1.0013,0.00,-4.64,0.056,-83.41,8,0.5981
+180,1.2529,0.2539,1.2891,0.2674,0.1665,0.2738,-0.9791,1.0864,0.00,7.12,0.110,-79.49,8,0.0261
+190,1.2684,-0.0080,1.2672,0.2711,0.2668,0.2748,-0.9936,1.0016,0.00,10.27,0.055,-76.49,4,0.0166
+200,1.2661,0.0025,1.2664,0.2709,0.2668,0.2748,-0.9913,0.9993,0.00,9.67,0.066,-76.96,4,0.0100
+210,1.2661,-0.0013,1.2659,0.2708,0.1799,0.2748,-0.9913,1.0862,0.00,9.72,0.065,-77.02,5,0.0115
+220,1.2661,-0.0009,1.2660,0.2708,0.2668,0.2748,-0.9913,0.9993,0.00,9.72,0.066,-77.05,4,0.0128
+230,1.2661,-0.0008,1.2660,0.2708,0.2668,0.2748,-0.9913,0.9993,0.00,9.70,0.066,-77.03,4,0.0096
+240,1.2661,0.0000,1.2661,nan,1.2661,1.2661,0.0000,0.0000,0.00,9.75,0.065,-77.03,0,0.0000
+250,1.2661,0.0000,1.2661,nan,1.2661,1.2661,0.0000,0.0000,0.00,9.75,0.065,-77.03,0,0.0000
+260,1.2661,0.0000,1.2661,nan,1.2661,1.2661,0.0000,0.0000,0.00,9.75,0.065,-77.03,0,0.0000
+270,1.2661,0.0000,1.2661,nan,1.2661,1.2661,0.0000,0.0000,0.00,9.75,0.065,-77.03,0,0.0000
+280,1.2661,0.0000,1.2661,nan,1.2661,1.2661,0.0000,0.0000,0.00,9.75,0.065,-77.03,0,0.0000
+290,1.2661,0.0000,1.2661,nan,1.2661,1.2661,0.0000,0.0000,0.00,9.75,0.065,-77.03,0,0.0000
+299,1.2661,0.0000,1.2661,nan,1.2661,1.2661,0.0000,0.0000,0.00,9.75,0.065,-77.03,0,0.0000
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1073" name="PhysicalSquatControlPlayModeTests" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests" classname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests" runstate="Runnable" testcasecount="4" result="Failed" site="Child" start-time="2026-09-09 01:47:11Z" end-time="2026-09-09 01:47:14Z" duration="2.704530" total="4" passed="1" failed="3" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1074" name="G1_UNLOADED_PHYSICAL_SQUAT_QUALIFICATION" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests.G1_UNLOADED_PHYSICAL_SQUAT_QUALIFICATION" methodname="G1_UNLOADED_PHYSICAL_SQUAT_QUALIFICATION" classname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests" runstate="Runnable" seed="1002751930" result="Failed" start-time="2026-09-09 01:47:11Z" end-time="2026-09-09 01:47:12Z" duration="0.768834" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Did not recover to lockout height: standing=0.979, final=0.137
+  Expected: less than 0.119999997f
+  But was:  0.84145993f
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests+<G1_UNLOADED_PHYSICAL_SQUAT_QUALIFICATION>d__10.MoveNext () [0x00823] in C:\Users\Educacion\Desktop\Projects\PowerliftingSimulator\Assets\Tests\PlayMode\PhysicalSquatControlPlayModeTests.cs:125
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[THIGH: axis=(1.00, 0.00, 0.00) secAxis=(0.00, -1.00, 0.00) lowX=-45 highX=120
+SHANK: axis=(1.00, 0.00, 0.00) secAxis=(0.00, -0.99, 0.11) lowX=-145 highX=5
+FOOT:  axis=(1.00, 0.00, 0.00) secAxis=(0.00, 1.00, 0.00) lowX=-55 highX=45
+[G1 Tick 000] sq=0.00 pelvis=(0.003,0.979,-0.029) thorax=(0.002,1.345,-0.016) foot=(-0.114,0.002,-0.010) shank=(-0.113,0.344,-0.055) apErr=-0.018
+  Ankle: req=(7.55, 0.00, 0.21) act=(359.01, 0.13, 359.94) errRad=0.129
+  Knee:  req=(0.34, 0.00, 0.00) act=(0.16, 0.01, 359.99) errRad=0.003
+  Hip:   req=(359.68, 0.00, 0.10) act=(0.35, 0.00, 0.02) errRad=-0.012
+  Abd:   req=(0.04, 0.00, 0.05) act=(357.91, 359.97, 0.55) errRad=0.037
+[G1 Tick 001] sq=0.01 pelvis=(0.003,0.979,-0.029) thorax=(0.002,1.345,-0.017) foot=(-0.114,0.002,-0.010) shank=(-0.113,0.344,-0.056) apErr=-0.018
+  Ankle: req=(9.73, 0.00, 0.20) act=(359.13, 0.14, 359.92) errRad=0.147
+  Knee:  req=(0.68, 0.00, 0.00) act=(359.92, 0.01, 359.99) errRad=0.013
+  Hip:   req=(359.38, 0.00, 0.10) act=(0.57, 0.00, 0.02) errRad=-0.021
+  Abd:   req=(0.08, 0.00, 0.05) act=(357.89, 359.95, 0.57) errRad=0.038
+[G1 Tick 010] sq=0.03 pelvis=(0.004,0.979,-0.029) thorax=(0.002,1.345,-0.021) foot=(-0.114,0.002,-0.010) shank=(-0.113,0.345,-0.056) apErr=-0.019
+  Ankle: req=(6.23, 0.00, 0.17) act=(359.43, 0.12, 359.98) errRad=0.114
+  Knee:  req=(3.86, 0.00, 0.00) act=(359.36, 0.01, 359.99) errRad=0.079
+  Hip:   req=(356.41, 0.00, 0.08) act=(1.11, 0.02, 0.00) errRad=-0.082
+  Abd:   req=(0.51, 0.00, 0.04) act=(357.62, 359.93, 0.59) errRad=0.050
+[G1 Tick 025] sq=0.08 pelvis=(0.003,0.978,-0.039) thorax=(0.002,1.344,-0.021) foot=(-0.114,0.002,-0.010) shank=(-0.113,0.344,-0.052) apErr=-0.019
+  Ankle: req=(2.00, 0.00, 0.09) act=(358.36, 0.07, 359.96) errRad=0.064
+  Knee:  req=(9.47, 0.00, 0.00) act=(2.74, 0.01, 359.99) errRad=0.117
+  Hip:   req=(351.22, 0.00, 0.04) act=(358.11, 0.03, 0.00) errRad=-0.120
+  Abd:   req=(1.28, 0.00, 0.02) act=(358.06, 359.94, 0.56) errRad=0.056
+[G1 Tick 050] sq=0.15 pelvis=(0.002,0.970,-0.066) thorax=(0.001,1.337,-0.014) foot=(-0.114,0.002,-0.010) shank=(-0.113,0.342,-0.039) apErr=-0.020
+  Ankle: req=(0.95, 0.00, 0.04) act=(355.54, 359.99, 359.90) errRad=0.094
+  Knee:  req=(19.35, 0.00, 0.00) act=(12.13, 0.00, 0.00) errRad=0.126
+  Hip:   req=(342.09, 0.00, 0.02) act=(349.36, -0.01, 0.05) errRad=-0.127
+  Abd:   req=(2.64, 0.00, 0.01) act=(0.65, 0.02, 0.56) errRad=0.035
+[G1 Tick 075] sq=0.23 pelvis=(0.003,0.953,-0.095) thorax=(0.001,1.315,-0.004) foot=(-0.114,0.002,-0.010) shank=(-0.113,0.339,-0.025) apErr=-0.020
+  Ankle: req=(355.75, 0.00, 0.14) act=(352.22, 359.93, 359.92) errRad=0.084
+  Knee:  req=(29.21, 0.00, 0.00) act=(22.97, 0.00, 0.00) errRad=0.109
+  Hip:   req=(332.72, 0.00, 0.07) act=(339.43, 359.96, 0.12) errRad=-0.117
+  Abd:   req=(3.76, 0.00, 0.04) act=(3.65, 0.11, 0.59) errRad=0.002
+[G1 Tick 100] sq=0.30 pelvis=(0.004,0.928,-0.121) thorax=(0.004,1.281,0.004) foot=(-0.114,0.002,-0.010) shank=(-0.113,0.335,-0.011) apErr=-0.019
+  Ankle: req=(354.87, 0.00, 0.31) act=(348.95, 359.91, 0.04) errRad=0.103
+  Knee:  req=(39.42, 0.00, 0.00) act=(33.55, 0.00, -0.01) errRad=0.102
+  Hip:   req=(322.57, 0.00, 0.15) act=(329.56, 359.93, 0.21) errRad=-0.122
+  Abd:   req=(4.47, 0.00, 0.08) act=(6.21, 0.16, 0.58) errRad=-0.030
+[G1 Tick 125] sq=0.38 pelvis=(0.005,0.891,-0.147) thorax=(0.007,1.231,0.011) foot=(-0.114,0.002,-0.010) shank=(-0.112,0.329,0.005) apErr=-0.019
+  Ankle: req=(348.86, 0.00, 0.43) act=(345.25, 359.89, 0.18) errRad=0.085
+  Knee:  req=(51.70, 0.00, 0.00) act=(45.33, 359.99, 359.99) errRad=0.111
+  Hip:   req=(310.05, 0.00, 0.22) act=(318.22, 359.87, 0.34) errRad=-0.143
+  Abd:   req=(5.04, 0.00, 0.11) act=(8.06, 0.21, 0.51) errRad=-0.053
+[G1 Tick 150] sq=0.45 pelvis=(0.006,0.836,-0.175) thorax=(0.009,1.159,0.017) foot=(-0.114,0.002,-0.010) shank=(-0.112,0.322,0.022) apErr=-0.019
+  Ankle: req=(347.01, 0.00, 0.47) act=(341.15, 359.86, 0.32) errRad=0.102
+  Knee:  req=(64.32, 0.00, 0.00) act=(58.99, 359.99, 359.99) errRad=0.093
+  Hip:   req=(297.06, 0.00, 0.24) act=(304.83, 359.74, 0.52) errRad=-0.136
+  Abd:   req=(5.51, 0.00, 0.12) act=(9.88, 0.25, 0.41) errRad=-0.076
+[G1 Tick 175] sq=0.53 pelvis=(0.006,0.769,-0.200) thorax=(0.010,1.073,0.023) foot=(-0.114,0.002,-0.010) shank=(-0.111,0.315,0.037) apErr=-0.020
+  Ankle: req=(343.72, 0.00, 0.44) act=(337.37, 359.83, 0.41) errRad=0.111
+  Knee:  req=(75.34, 0.00, 0.00) act=(72.72, 359.98, 359.99) errRad=0.046
+  Hip:   req=(285.72, 0.00, 0.22) act=(291.27, 359.42, 0.84) errRad=-0.097
+  Abd:   req=(5.90, 0.00, 0.11) act=(11.69, 0.28, 0.31) errRad=-0.101
+[G1 Tick 200] sq=0.60 pelvis=(0.005,0.702,-0.219) thorax=(0.009,0.987,0.027) foot=(-0.114,0.002,-0.010) shank=(-0.111,0.308,0.048) apErr=-0.020
+  Ankle: req=(341.54, 0.00, 0.36) act=(334.37, 359.80, 0.41) errRad=0.125
+  Knee:  req=(80.62, 0.00, 0.00) act=(84.83, 359.94, 359.95) errRad=-0.073
+  Hip:   req=(280.32, 0.00, 0.18) act=(279.48, 358.43, 1.80) errRad=0.015
+  Abd:   req=(6.02, 0.00, 0.09) act=(13.42, 0.30, 0.24) errRad=-0.129
+[G1 Tick 225] sq=0.68 pelvis=(0.005,0.683,-0.222) thorax=(0.009,0.958,0.035) foot=(-0.114,0.002,-0.010) shank=(-0.111,0.306,0.051) apErr=-0.016
+  Ankle: req=(341.59, 0.00, 0.37) act=(333.52, 359.79, 0.43) errRad=0.161
+  Knee:  req=(85.27, 0.00, 0.00) act=(88.42, 359.80, 359.81) errRad=-0.055
+  Hip:   req=(275.89, 0.00, 0.18) act=(275.47, 357.08, 3.13) errRad=0.007
+  Abd:   req=(6.07, 0.00, 0.09) act=(14.54, 0.33, 0.21) errRad=-0.148
+[G1 Tick 250] sq=0.75 pelvis=(0.005,0.646,-0.224) thorax=(0.008,0.919,0.035) foot=(-0.114,0.002,-0.010) shank=(-0.112,0.302,0.058) apErr=-0.015
+  Ankle: req=(339.30, 0.00, 0.28) act=(331.78, 359.84, 0.38) errRad=0.131
+  Knee:  req=(86.57, 180.00, 180.00) act=(85.70, 180.05, 180.05) errRad=-0.015
+  Hip:   req=(271.82, 180.00, 180.14) act=(270.29, 298.06, 62.11) errRad=-0.034
+  Abd:   req=(6.27, 0.00, 0.07) act=(13.64, 0.27, 0.18) errRad=-0.129
+[G1 Tick 275] sq=0.83 pelvis=(0.003,0.586,-0.231) thorax=(0.007,0.853,0.034) foot=(-0.114,0.002,-0.010) shank=(-0.112,0.297,0.064) apErr=-0.016
+  Ankle: req=(337.04, 0.00, 0.23) act=(329.93, 359.79, 0.34) errRad=0.124
+  Knee:  req=(79.37, 180.00, 180.00) act=(76.53, 180.02, 180.02) errRad=-0.050
+  Hip:   req=(278.59, 180.00, 180.11) act=(277.90, 181.86, 178.27) errRad=-0.012
+  Abd:   req=(6.40, 0.00, 0.06) act=(14.28, 0.27, 0.19) errRad=-0.137
+[G1 Tick 300] sq=0.90 pelvis=(0.003,0.539,-0.229) thorax=(0.007,0.798,0.044) foot=(-0.114,0.002,-0.010) shank=(-0.112,0.291,0.070) apErr=-0.009
+  Ankle: req=(334.02, 0.00, 0.26) act=(328.10, 359.78, 0.38) errRad=0.103
+  Knee:  req=(73.34, 180.00, 180.00) act=(69.34, 180.01, 180.02) errRad=-0.070
+  Hip:   req=(284.20, 180.00, 180.13) act=(284.30, 181.02, 179.09) errRad=0.002
+  Abd:   req=(6.42, 0.00, 0.07) act=(14.90, 0.25, 0.19) errRad=-0.148
+[G1 Tick 325] sq=0.98 pelvis=(0.004,0.503,-0.211) thorax=(0.007,0.747,0.075) foot=(-0.114,0.002,-0.010) shank=(-0.112,0.282,0.082) apErr=0.013
+  Ankle: req=(333.22, 0.00, 0.26) act=(324.79, 359.79, 0.43) errRad=0.147
+  Knee:  req=(67.55, 180.00, 180.00) act=(63.38, 180.01, 180.01) errRad=-0.073
+  Hip:   req=(289.56, 180.00, 180.13) act=(289.91, 180.75, 179.35) errRad=0.006
+  Abd:   req=(6.40, 0.00, 0.07) act=(14.80, 0.23, 0.14) errRad=-0.147
+[G1 Tick 350] sq=1.00 pelvis=(0.003,0.471,-0.182) thorax=(0.007,0.686,0.127) foot=(-0.114,0.002,-0.010) shank=(-0.112,0.266,0.098) apErr=0.051
+  Ankle: req=(333.00, 0.00, 0.24) act=(319.74, 359.70, 0.46) errRad=0.231
+  Knee:  req=(66.00, 180.00, 180.00) act=(57.60, 180.00, 180.01) errRad=-0.147
+  Hip:   req=(291.00, 180.00, 180.12) act=(295.42, 180.62, 179.48) errRad=0.077
+  Abd:   req=(6.40, 0.00, 0.06) act=(15.55, 0.24, 0.11) errRad=-0.160
+[G1 Tick 375] sq=0.96 pelvis=(0.003,0.481,-0.130) thorax=(0.005,0.656,0.203) foot=(-0.114,0.006,-0.010) shank=(-0.112,0.249,0.123) apErr=0.109
+  Ankle: req=(333.39, 0.00, 0.06) act=(313.77, 359.75, 0.92) errRad=0.343
+  Knee:  req=(68.79, 180.00, 180.00) act=(56.69, 180.02, 180.01) errRad=-0.211
+  Hip:   req=(288.42, 180.00, 180.03) act=(296.35, 180.51, 179.58) errRad=0.138
+  Abd:   req=(6.40, 0.00, 0.01) act=(15.38, 0.33, 0.16) errRad=-0.157
+[G1 Tick 400] sq=0.89 pelvis=(-0.007,0.532,-0.095) thorax=(-0.006,0.663,0.257) foot=(-0.115,0.014,-0.009) shank=(-0.117,0.250,0.134) apErr=0.151
+  Ankle: req=(334.15, 0.00, 359.49) act=(313.80, 359.68, 0.11) errRad=0.355
+  Knee:  req=(74.30, 180.00, 180.00) act=(61.58, 180.00, 180.01) errRad=-0.222
+  Hip:   req=(283.31, 180.00, 179.74) act=(294.14, 180.89, 179.19) errRad=0.189
+  Abd:   req=(6.43, 0.00, 359.87) act=(17.49, 0.33, 0.00) errRad=-0.193
+[G1 Tick 425] sq=0.81 pelvis=(-0.008,0.584,-0.040) thorax=(-0.012,0.684,0.323) foot=(-0.114,0.023,-0.008) shank=(-0.118,0.250,0.149) apErr=0.057
+  Ankle: req=(335.09, 0.00, 359.55) act=(313.64, 359.93, 359.79) errRad=0.374
+  Knee:  req=(80.56, 180.00, 180.00) act=(67.47, 179.99, 180.00) errRad=-0.229
+  Hip:   req=(277.47, 180.00, 179.77) act=(289.35, 180.63, 179.54) errRad=0.207
+  Abd:   req=(6.39, 0.00, 359.89) act=(18.06, 0.30, 0.19) errRad=-0.204
+[G1 Tick 450] sq=0.74 pelvis=(-0.002,0.643,0.085) thorax=(-0.011,0.692,0.458) foot=(-0.111,0.044,-0.005) shank=(-0.117,0.246,0.182) apErr=0.198
+  Ankle: req=(336.32, 0.00, 359.77) act=(313.18, 359.59, 0.38) errRad=0.404
+  Knee:  req=(88.22, 180.00, 180.00) act=(74.73, 180.02, 180.04) errRad=-0.235
+  Hip:   req=(270.27, 180.00, 179.88) act=(282.45, 180.55, 179.70) errRad=0.213
+  Abd:   req=(6.23, 0.00, 359.94) act=(17.26, 0.30, 359.98) errRad=-0.192
+[G1 Tick 475] sq=0.66 pelvis=(-0.003,0.641,0.373) thorax=(-0.015,0.581,0.745) foot=(-0.107,0.090,0.015) shank=(-0.116,0.215,0.260) apErr=0.409
+  Ankle: req=(334.75, 0.00, 359.32) act=(312.30, 358.79, 2.97) errRad=0.403
+  Knee:  req=(84.15, 0.00, 0.00) act=(83.81, 180.20, 180.24) errRad=-0.210
+  Hip:   req=(276.95, 0.00, 359.66) act=(273.07, 181.48, 178.82) errRad=0.175
+  Abd:   req=(6.04, 0.00, 359.83) act=(14.23, 0.32, 359.52) errRad=-0.143
+[G1 Tick 500] sq=0.59 pelvis=(-0.023,0.416,0.752) thorax=(-0.029,0.273,1.095) foot=(-0.110,0.165,0.070) shank=(-0.121,0.128,0.370) apErr=0.717
+  Ankle: req=(338.67, 0.00, 358.90) act=(327.29, 359.91, 0.03) errRad=0.278
+  Knee:  req=(80.45, 0.00, 0.00) act=(86.79, 2.11, 2.06) errRad=-0.111
+  Hip:   req=(280.48, 0.00, 359.45) act=(280.17, 358.61, 1.14) errRad=0.005
+  Abd:   req=(6.05, 0.00, 359.73) act=(0.43, 0.19, 359.28) errRad=0.098
+[G1 Tick 525] sq=0.51 pelvis=(-0.030,0.399,0.778) thorax=(-0.037,0.243,1.114) foot=(-0.111,0.171,0.047) shank=(-0.123,0.126,0.365) apErr=0.000
+  Ankle: req=(340.18, 0.00, 0.00) act=(339.23, 0.00, 0.00) errRad=0.017
+  Knee:  req=(73.01, 0.00, 0.00) act=(80.32, 0.17, 0.15) errRad=-0.128
+  Hip:   req=(288.11, 0.00, 0.00) act=(282.68, 359.94, 0.41) errRad=0.095
+  Abd:   req=(5.81, 0.00, 0.00) act=(0.70, 0.51, 359.57) errRad=0.089
+[G1 Tick 550] sq=0.44 pelvis=(-0.026,0.386,0.789) thorax=(-0.035,0.248,1.134) foot=(-0.108,0.145,0.025) shank=(-0.120,0.119,0.344) apErr=0.796
+  Ankle: req=(342.79, 0.00, 358.98) act=(338.96, 359.14, 0.18) errRad=0.067
+  Knee:  req=(61.71, 0.00, 0.00) act=(72.97, 0.47, 0.39) errRad=-0.197
+  Hip:   req=(299.77, 0.00, 359.49) act=(291.17, 0.46, 359.53) errRad=0.150
+  Abd:   req=(5.44, 0.00, 359.74) act=(2.50, 0.53, 359.48) errRad=0.051
+[G1 Tick 575] sq=0.36 pelvis=(-0.027,0.333,0.805) thorax=(-0.035,0.214,1.156) foot=(-0.109,0.144,0.001) shank=(-0.119,0.123,0.303) apErr=0.817
+  Ankle: req=(350.15, 0.00, 358.82) act=(328.23, 359.61, 0.06) errRad=0.339
+  Knee:  req=(49.76, 0.00, 0.00) act=(64.18, 359.91, 359.94) errRad=-0.252
+  Hip:   req=(316.65, 0.00, 359.41) act=(303.05, 359.70, 359.81) errRad=0.184
+  Abd:   req=(0.94, 0.00, 359.70) act=(1.15, 0.68, 359.54) errRad=0.032
+[G1 Tick 600] sq=0.29 pelvis=(-0.032,0.251,0.854) thorax=(-0.046,0.159,1.209) foot=(-0.106,0.142,-0.006) shank=(-0.118,0.123,0.291) apErr=0.863
+  Ankle: req=(357.40, 0.00, 358.55) act=(325.00, 359.05, 0.14) errRad=0.521
+  Knee:  req=(37.90, 0.00, 0.00) act=(51.06, 0.37, 0.19) errRad=-0.230
+  Hip:   req=(328.71, 0.00, 359.28) act=(316.84, 359.93, 359.78) errRad=0.155
+  Abd:   req=(0.30, 0.00, 359.64) act=(357.69, 0.67, 359.60) errRad=0.082
+[G1 Tick 625] sq=0.21 pelvis=(-0.034,0.182,0.883) thorax=(-0.052,0.115,1.240) foot=(-0.098,0.151,-0.048) shank=(-0.116,0.119,0.281) apErr=0.955
+  Ankle: req=(343.53, 0.00, 358.25) act=(346.69, 359.66, 0.07) errRad=-0.077
+  Knee:  req=(26.90, 0.00, 0.00) act=(36.79, 359.96, 359.94) errRad=-0.172
+  Hip:   req=(334.97, 0.00, 359.12) act=(328.49, 0.24, 359.93) errRad=0.113
+  Abd:   req=(3.55, 0.00, 359.56) act=(355.07, 0.69, 359.92) errRad=0.148
+[G1 Tick 650] sq=0.14 pelvis=(-0.031,0.155,0.877) thorax=(-0.049,0.113,1.241) foot=(-0.098,0.145,-0.065) shank=(-0.114,0.130,0.260) apErr=0.952
+  Ankle: req=(9.39, 0.00, 358.34) act=(342.92, 359.98, 359.60) errRad=0.287
+  Knee:  req=(17.26, 0.00, 0.00) act=(28.33, 0.05, 0.01) errRad=-0.193
+  Hip:   req=(351.07, 0.00, 359.17) act=(341.58, 0.14, 359.79) errRad=0.166
+  Abd:   req=(358.49, 0.00, 359.59) act=(356.57, 0.02, 359.93) errRad=0.033
+[G1 Tick 675] sq=0.06 pelvis=(-0.031,0.141,0.873) thorax=(-0.049,0.114,1.240) foot=(-0.097,0.145,-0.079) shank=(-0.113,0.150,0.244) apErr=0.950
+  Ankle: req=(12.38, 0.00, 358.30) act=(341.15, 0.04, 359.61) errRad=0.545
+  Knee:  req=(8.13, 0.00, 0.00) act=(18.95, 0.00, 0.00) errRad=-0.189
+  Hip:   req=(359.46, 0.00, 359.15) act=(352.94, 359.98, 359.60) errRad=0.114
+  Abd:   req=(357.17, 0.00, 359.58) act=(358.37, 359.91, 359.79) errRad=-0.021
+[G1 Tick 700] sq=0.00 pelvis=(-0.031,0.133,0.868) thorax=(-0.049,0.118,1.237) foot=(-0.096,0.144,-0.091) shank=(-0.112,0.174,0.233) apErr=0.955
+  Ankle: req=(15.00, 0.00, 358.30) act=(341.75, 0.05, 359.56) errRad=0.580
+  Knee:  req=(0.00, 0.00, 0.00) act=(8.06, 0.00, 0.00) errRad=-0.141
+  Hip:   req=(7.00, 0.00, 359.15) act=(1.61, 359.97, 359.61) errRad=0.094
+  Abd:   req=(356.05, 0.00, 359.57) act=(359.07, 359.92, 359.81) errRad=-0.053
+[G1 Tick 725] sq=0.00 pelvis=(-0.030,0.136,0.869) thorax=(-0.049,0.117,1.237) foot=(-0.096,0.143,-0.093) shank=(-0.112,0.187,0.231) apErr=0.996
+  Ankle: req=(2.69, 0.00, 358.21) act=(343.55, 0.06, 359.57) errRad=0.389
+  Knee:  req=(0.00, 0.00, 0.00) act=(2.45, 0.00, 0.00) errRad=-0.043
+  Hip:   req=(0.00, 0.00, 359.10) act=(3.89, 359.94, 359.52) errRad=-0.068
+  Abd:   req=(0.00, 0.00, 359.55) act=(359.02, 359.92, 359.75) errRad=0.017
+[G1 Tick 750] sq=0.00 pelvis=(-0.030,0.136,0.869) thorax=(-0.049,0.118,1.237) foot=(-0.096,0.143,-0.093) shank=(-0.112,0.188,0.231) apErr=0.953
+  Ankle: req=(15.00, 0.00, 358.22) act=(344.03, 0.06, 359.49) errRad=0.481
+  Knee:  req=(0.00, 0.00, 0.00) act=(1.70, 0.00, 0.00) errRad=-0.030
+  Hip:   req=(7.00, 0.00, 359.11) act=(3.86, 359.94, 359.49) errRad=0.055
+  Abd:   req=(356.03, 0.00, 359.55) act=(358.98, 359.92, 359.71) errRad=-0.052
+[G1 Tick 775] sq=0.00 pelvis=(-0.030,0.136,0.869) thorax=(-0.049,0.118,1.237) foot=(-0.096,0.143,-0.093) shank=(-0.112,0.188,0.231) apErr=0.996
+  Ankle: req=(2.71, 0.00, 358.21) act=(343.76, 0.06, 359.55) errRad=0.385
+  Knee:  req=(0.00, 0.00, 0.00) act=(1.87, 0.00, 0.00) errRad=-0.033
+  Hip:   req=(0.00, 0.00, 359.11) act=(3.99, 359.94, 359.49) errRad=-0.070
+  Abd:   req=(0.00, 0.00, 359.55) act=(358.97, 359.92, 359.72) errRad=0.018
+[G1 Tick 799] sq=0.00 pelvis=(-0.030,0.137,0.869) thorax=(-0.049,0.118,1.237) foot=(-0.096,0.143,-0.093) shank=(-0.112,0.188,0.231) apErr=0.953
+  Ankle: req=(14.18, 0.00, 358.21) act=(344.09, 0.07, 359.50) errRad=0.439
+  Knee:  req=(0.00, 0.00, 0.00) act=(1.80, 0.00, 0.00) errRad=-0.031
+  Hip:   req=(7.00, 0.00, 359.11) act=(3.38, 359.94, 359.48) errRad=0.051
+  Abd:   req=(356.00, 0.00, 359.55) act=(358.86, 359.92, 359.70) errRad=-0.050
+]]></output>
+            </test-case>
+            <test-case id="1075" name="G2_BARBELL_25KG_PHYSICAL_SQUAT_QUALIFICATION" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests.G2_BARBELL_25KG_PHYSICAL_SQUAT_QUALIFICATION" methodname="G2_BARBELL_25KG_PHYSICAL_SQUAT_QUALIFICATION" classname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests" runstate="Runnable" seed="2141353442" result="Failed" start-time="2026-09-09 01:47:12Z" end-time="2026-09-09 01:47:12Z" duration="0.691279" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Bar did not return to standing lockout height.
+  Expected: less than 0.119999997f
+  But was:  1.13209713f
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests+<G2_BARBELL_25KG_PHYSICAL_SQUAT_QUALIFICATION>d__11.MoveNext () [0x0022f] in C:\Users\Educacion\Desktop\Projects\PowerliftingSimulator\Assets\Tests\PlayMode\PhysicalSquatControlPlayModeTests.cs:173
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[[G2 Tick 000] sq=0.00 state=DESCENT barY=1.365 pelvisY=0.975 apErr=-0.034 sep=0.020
+[G2 Tick 025] sq=0.08 state=DESCENT barY=1.352 pelvisY=0.971 apErr=-0.037 sep=0.009
+[G2 Tick 050] sq=0.15 state=DESCENT barY=1.368 pelvisY=0.963 apErr=-0.040 sep=0.007
+[G2 Tick 075] sq=0.23 state=DESCENT barY=1.378 pelvisY=0.946 apErr=-0.040 sep=0.007
+[G2 Tick 100] sq=0.30 state=DESCENT barY=1.368 pelvisY=0.921 apErr=-0.039 sep=0.006
+[G2 Tick 125] sq=0.38 state=DESCENT barY=1.334 pelvisY=0.882 apErr=-0.038 sep=0.006
+[G2 Tick 150] sq=0.45 state=DESCENT barY=1.271 pelvisY=0.825 apErr=-0.038 sep=0.005
+[G2 Tick 175] sq=0.53 state=DESCENT barY=1.188 pelvisY=0.754 apErr=-0.037 sep=0.005
+[G2 Tick 200] sq=0.60 state=DESCENT barY=1.101 pelvisY=0.683 apErr=-0.034 sep=0.005
+[G2 Tick 225] sq=0.68 state=DESCENT barY=1.071 pelvisY=0.666 apErr=-0.015 sep=0.004
+[G2 Tick 250] sq=0.75 state=DESCENT barY=1.038 pelvisY=0.639 apErr=-0.007 sep=0.003
+[G2 Tick 275] sq=0.83 state=DESCENT barY=0.959 pelvisY=0.571 apErr=-0.011 sep=0.004
+[G2 Tick 300] sq=0.90 state=DESCENT barY=0.902 pelvisY=0.525 apErr=0.005 sep=0.004
+[G2 Tick 325] sq=0.98 state=DESCENT barY=0.846 pelvisY=0.499 apErr=0.055 sep=0.003
+[G2 Tick 350] sq=1.00 state=BOTTOM barY=0.785 pelvisY=0.482 apErr=0.143 sep=0.004
+[G2 Tick 375] sq=0.96 state=ASCENT barY=0.752 pelvisY=0.530 apErr=0.152 sep=0.003
+[G2 Tick 400] sq=0.89 state=ASCENT barY=0.611 pelvisY=0.578 apErr=0.318 sep=0.002
+[G2 Tick 425] sq=0.81 state=ASCENT barY=0.398 pelvisY=0.482 apErr=0.574 sep=0.006
+[G2 Tick 450] sq=0.74 state=ASCENT barY=0.372 pelvisY=0.460 apErr=0.665 sep=0.006
+[G2 Tick 475] sq=0.66 state=ASCENT barY=0.367 pelvisY=0.453 apErr=0.678 sep=0.005
+[G2 Tick 500] sq=0.59 state=ASCENT barY=0.373 pelvisY=0.449 apErr=0.691 sep=0.005
+[G2 Tick 525] sq=0.51 state=ASCENT barY=0.366 pelvisY=0.435 apErr=0.716 sep=0.006
+[G2 Tick 550] sq=0.44 state=ASCENT barY=0.369 pelvisY=0.430 apErr=0.747 sep=0.005
+[G2 Tick 575] sq=0.36 state=ASCENT barY=0.305 pelvisY=0.328 apErr=0.929 sep=0.009
+[G2 Tick 600] sq=0.29 state=ASCENT barY=0.268 pelvisY=0.256 apErr=0.939 sep=0.005
+[G2 Tick 625] sq=0.21 state=ASCENT barY=0.228 pelvisY=0.183 apErr=0.985 sep=0.005
+[G2 Tick 650] sq=0.14 state=ASCENT barY=0.227 pelvisY=0.156 apErr=0.972 sep=0.003
+[G2 Tick 675] sq=0.06 state=ASCENT barY=0.227 pelvisY=0.146 apErr=0.987 sep=0.004
+[G2 Tick 700] sq=0.00 state=LOCKOUT barY=0.229 pelvisY=0.138 apErr=1.000 sep=0.004
+[G2 Tick 725] sq=0.00 state=LOCKOUT barY=0.234 pelvisY=0.134 apErr=1.012 sep=0.004
+[G2 Tick 750] sq=0.00 state=LOCKOUT barY=0.234 pelvisY=0.133 apErr=1.021 sep=0.004
+[G2 Tick 775] sq=0.00 state=LOCKOUT barY=0.234 pelvisY=0.132 apErr=1.027 sep=0.005
+[G2 Tick 799] sq=0.00 state=LOCKOUT barY=0.235 pelvisY=0.131 apErr=1.041 sep=0.004
+]]></output>
+            </test-case>
+            <test-case id="1076" name="G3_BARBELL_105KG_PHYSICAL_SQUAT_QUALIFICATION" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests.G3_BARBELL_105KG_PHYSICAL_SQUAT_QUALIFICATION" methodname="G3_BARBELL_105KG_PHYSICAL_SQUAT_QUALIFICATION" classname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests" runstate="Runnable" seed="1087924321" result="Failed" start-time="2026-09-09 01:47:12Z" end-time="2026-09-09 01:47:13Z" duration="0.729424" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Bar did not return to standing lockout height.
+  Expected: less than 0.150000006f
+  But was:  1.06419849f
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests+<G3_BARBELL_105KG_PHYSICAL_SQUAT_QUALIFICATION>d__12.MoveNext () [0x0022f] in C:\Users\Educacion\Desktop\Projects\PowerliftingSimulator\Assets\Tests\PlayMode\PhysicalSquatControlPlayModeTests.cs:217
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[[G3 Tick 000] sq=0.00 state=DESCENT barY=1.279 pelvisY=0.961 apErr=-0.048 sep=0.052
+[G3 Tick 025] sq=0.08 state=DESCENT barY=1.094 pelvisY=0.936 apErr=-0.050 sep=0.051
+[G3 Tick 050] sq=0.15 state=DESCENT barY=1.013 pelvisY=0.915 apErr=-0.095 sep=0.051
+[G3 Tick 075] sq=0.23 state=DESCENT barY=1.026 pelvisY=0.910 apErr=-0.229 sep=0.052
+[G3 Tick 100] sq=0.30 state=DESCENT barY=1.002 pelvisY=0.838 apErr=-0.486 sep=0.052
+[G3 Tick 125] sq=0.38 state=DESCENT barY=0.756 pelvisY=0.532 apErr=-0.825 sep=0.052
+[G3 Tick 150] sq=0.45 state=DESCENT barY=0.225 pelvisY=0.115 apErr=0.000 sep=0.051
+[G3 Tick 175] sq=0.53 state=DESCENT barY=0.225 pelvisY=0.204 apErr=0.000 sep=0.052
+[G3 Tick 200] sq=0.60 state=DESCENT barY=0.225 pelvisY=0.125 apErr=0.000 sep=0.052
+[G3 Tick 225] sq=0.68 state=DESCENT barY=0.225 pelvisY=0.126 apErr=0.000 sep=0.052
+[G3 Tick 250] sq=0.75 state=DESCENT barY=0.224 pelvisY=0.124 apErr=0.000 sep=0.052
+[G3 Tick 275] sq=0.83 state=DESCENT barY=0.224 pelvisY=0.124 apErr=0.000 sep=0.052
+[G3 Tick 300] sq=0.90 state=DESCENT barY=0.224 pelvisY=0.123 apErr=0.000 sep=0.051
+[G3 Tick 325] sq=0.98 state=DESCENT barY=0.224 pelvisY=0.123 apErr=0.000 sep=0.051
+[G3 Tick 350] sq=1.00 state=BOTTOM barY=0.224 pelvisY=0.123 apErr=0.000 sep=0.051
+[G3 Tick 375] sq=0.96 state=ASCENT barY=0.224 pelvisY=0.123 apErr=0.000 sep=0.051
+[G3 Tick 400] sq=0.89 state=ASCENT barY=0.224 pelvisY=0.123 apErr=0.000 sep=0.051
+[G3 Tick 425] sq=0.81 state=ASCENT barY=0.224 pelvisY=0.123 apErr=0.000 sep=0.051
+[G3 Tick 450] sq=0.74 state=ASCENT barY=0.224 pelvisY=0.123 apErr=0.000 sep=0.051
+[G3 Tick 475] sq=0.66 state=ASCENT barY=0.224 pelvisY=0.124 apErr=0.000 sep=0.051
+[G3 Tick 500] sq=0.59 state=ASCENT barY=0.224 pelvisY=0.124 apErr=0.000 sep=0.051
+[G3 Tick 525] sq=0.51 state=ASCENT barY=0.224 pelvisY=0.124 apErr=0.000 sep=0.051
+[G3 Tick 550] sq=0.44 state=ASCENT barY=0.224 pelvisY=0.124 apErr=0.000 sep=0.051
+[G3 Tick 575] sq=0.36 state=ASCENT barY=0.224 pelvisY=0.125 apErr=-1.010 sep=0.051
+[G3 Tick 600] sq=0.29 state=ASCENT barY=0.224 pelvisY=0.122 apErr=-1.064 sep=0.051
+[G3 Tick 625] sq=0.21 state=ASCENT barY=0.223 pelvisY=0.120 apErr=-1.083 sep=0.052
+[G3 Tick 650] sq=0.14 state=ASCENT barY=0.223 pelvisY=0.123 apErr=-1.095 sep=0.052
+[G3 Tick 675] sq=0.06 state=ASCENT barY=0.223 pelvisY=0.127 apErr=-1.119 sep=0.052
+[G3 Tick 700] sq=0.00 state=LOCKOUT barY=0.223 pelvisY=0.141 apErr=-1.137 sep=0.051
+[G3 Tick 725] sq=0.00 state=LOCKOUT barY=0.223 pelvisY=0.144 apErr=-1.143 sep=0.051
+[G3 Tick 750] sq=0.00 state=LOCKOUT barY=0.223 pelvisY=0.142 apErr=-1.139 sep=0.051
+[G3 Tick 775] sq=0.00 state=LOCKOUT barY=0.223 pelvisY=0.144 apErr=-1.139 sep=0.052
+[G3 Tick 799] sq=0.00 state=LOCKOUT barY=0.223 pelvisY=0.143 apErr=-1.139 sep=0.052
+]]></output>
+            </test-case>
+            <test-case id="1077" name="G4_MUTATION_GATES_REJECT_FORBIDDEN_AUTHORITY" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests.G4_MUTATION_GATES_REJECT_FORBIDDEN_AUTHORITY" methodname="G4_MUTATION_GATES_REJECT_FORBIDDEN_AUTHORITY" classname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests" runstate="Runnable" seed="1188316644" result="Passed" start-time="2026-09-09 01:47:13Z" end-time="2026-09-09 01:47:14Z" duration="0.512364" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1078" name="PhysicalSquatReconciliationTests" fullname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests" classname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-09-09 01:47:14Z" end-time="2026-09-09 01:47:18Z" duration="4.081422" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1079" name="R1_REFERENCE_SOURCE_IS_GAM10_CANONICAL_V2" fullname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests.R1_REFERENCE_SOURCE_IS_GAM10_CANONICAL_V2" methodname="R1_REFERENCE_SOURCE_IS_GAM10_CANONICAL_V2" classname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests" runstate="Runnable" seed="703473546" result="Passed" start-time="2026-09-09 01:47:14Z" end-time="2026-09-09 01:47:14Z" duration="0.507725" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1080" name="R2_STANDING_LOGICAL_TARGET_IS_SPAWN_NEUTRAL" fullname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests.R2_STANDING_LOGICAL_TARGET_IS_SPAWN_NEUTRAL" methodname="R2_STANDING_LOGICAL_TARGET_IS_SPAWN_NEUTRAL" classname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests" runstate="Runnable" seed="1944653257" result="Passed" start-time="2026-09-09 01:47:14Z" end-time="2026-09-09 01:47:15Z" duration="0.543625" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[R2 STANDING TARGET vs SPAWN NEUTRAL]
+left_foot    standing_logical_target_deg=0.00 euler=(0.00, 0.00, 0.00)
+right_foot   standing_logical_target_deg=0.00 euler=(0.00, 0.00, 0.00)
+left_shank   standing_logical_target_deg=0.00 euler=(0.00, 0.00, 0.00)
+right_shank  standing_logical_target_deg=0.00 euler=(0.00, 0.00, 0.00)
+left_thigh   standing_logical_target_deg=0.00 euler=(0.00, 0.00, 0.00)
+right_thigh  standing_logical_target_deg=0.00 euler=(0.00, 0.00, 0.00)
+abdomen      standing_logical_target_deg=0.00 euler=(0.00, 0.00, 0.00)
+thorax       standing_logical_target_deg=0.00 euler=(0.00, 0.00, 0.00)
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1081" name="R3_PRODUCTION_STANDING_HOLD_UNLOADED" fullname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests.R3_PRODUCTION_STANDING_HOLD_UNLOADED" methodname="R3_PRODUCTION_STANDING_HOLD_UNLOADED" classname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests" runstate="Runnable" seed="1696725924" result="Passed" start-time="2026-09-09 01:47:15Z" end-time="2026-09-09 01:47:15Z" duration="0.668346" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[STANDING HOLD unloaded] standing=0.982 min=0.978 final=0.980 maxApErr=0.022 maxAnkleCorr=0.262
+tick,pelvis_y_m,ap_com_error_m,ml_com_error_m,ankle_balance_rad,max_drive_saturation
+0,0.9815,0.0000,0.0000,0.0000,2.486
+25,0.9791,-0.0182,0.0015,0.0918,0.388
+50,0.9790,-0.0195,0.0022,0.1054,0.278
+75,0.9795,-0.0195,0.0013,0.1660,0.294
+100,0.9795,-0.0191,0.0006,0.1260,0.299
+125,0.9796,-0.0189,0.0008,0.1637,0.300
+150,0.9795,-0.0190,0.0012,0.1034,0.300
+175,0.9795,-0.0192,0.0014,0.1434,0.300
+200,0.9795,-0.0194,0.0012,0.1025,0.301
+225,0.9795,-0.0195,0.0010,0.1425,0.300
+250,0.9795,-0.0197,0.0010,0.1025,0.301
+275,0.9795,-0.0197,0.0011,0.1421,0.300
+300,0.9795,-0.0198,0.0012,0.1021,0.301
+325,0.9795,-0.0198,0.0011,0.1421,0.300
+350,0.9795,-0.0198,0.0011,0.1021,0.301
+375,0.9795,-0.0197,0.0011,0.1421,0.300
+400,0.9795,-0.0196,0.0011,0.1021,0.301
+425,0.9795,-0.0195,0.0011,0.1421,0.300
+450,0.9795,-0.0192,0.0011,0.1075,0.301
+475,0.9795,-0.0189,0.0011,0.1661,0.300
+499,0.9795,-0.0190,0.0011,0.1432,0.300
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1082" name="R4_PRODUCTION_STANDING_HOLD_25KG" fullname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests.R4_PRODUCTION_STANDING_HOLD_25KG" methodname="R4_PRODUCTION_STANDING_HOLD_25KG" classname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests" runstate="Runnable" seed="594984095" result="Passed" start-time="2026-09-09 01:47:15Z" end-time="2026-09-09 01:47:16Z" duration="0.643270" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[STANDING HOLD 25kg] standing=0.982 min=0.973 final=0.974 maxApErr=0.039 maxAnkleCorr=0.262
+tick,pelvis_y_m,ap_com_error_m,ml_com_error_m,ankle_balance_rad,max_drive_saturation
+0,0.9838,0.0000,0.0000,0.0000,1.988
+25,0.9753,-0.0320,0.0016,0.0554,0.753
+50,0.9729,-0.0352,0.0034,0.0254,0.515
+75,0.9733,-0.0373,0.0020,0.0181,0.230
+100,0.9741,-0.0375,0.0004,0.0193,0.238
+125,0.9744,-0.0374,0.0003,0.0586,0.241
+150,0.9744,-0.0374,0.0014,0.0186,0.242
+175,0.9744,-0.0376,0.0023,0.0559,0.242
+200,0.9743,-0.0378,0.0024,0.0141,0.242
+225,0.9743,-0.0379,0.0022,0.0541,0.242
+250,0.9743,-0.0378,0.0021,0.0141,0.242
+275,0.9743,-0.0376,0.0019,0.0589,0.242
+300,0.9743,-0.0373,0.0016,0.0367,0.242
+325,0.9743,-0.0370,0.0014,0.0767,0.242
+350,0.9743,-0.0368,0.0014,0.0379,0.242
+375,0.9743,-0.0367,0.0015,0.0779,0.242
+400,0.9743,-0.0366,0.0018,0.0379,0.242
+425,0.9743,-0.0366,0.0019,0.0779,0.242
+450,0.9743,-0.0365,0.0019,0.0379,0.242
+475,0.9743,-0.0365,0.0019,0.0779,0.242
+499,0.9743,-0.0365,0.0018,0.0779,0.242
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1085" name="R5_BALANCE_CORRECTION_STAYS_WITHIN_ITS_DECLARED_BOUND" fullname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests.R5_BALANCE_CORRECTION_STAYS_WITHIN_ITS_DECLARED_BOUND" methodname="R5_BALANCE_CORRECTION_STAYS_WITHIN_ITS_DECLARED_BOUND" classname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests" runstate="Runnable" seed="1298528282" result="Passed" start-time="2026-09-09 01:47:16Z" end-time="2026-09-09 01:47:17Z" duration="0.570675" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1083" name="R6_JOINT_FRAME_SIGN_CALIBRATION" fullname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests.R6_JOINT_FRAME_SIGN_CALIBRATION" methodname="R6_JOINT_FRAME_SIGN_CALIBRATION" classname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests" runstate="Runnable" seed="1268678289" result="Passed" start-time="2026-09-09 01:47:17Z" end-time="2026-09-09 01:47:17Z" duration="0.490924" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[R6 JOINT FRAME SIGN CALIBRATION @ s_q=0.25]
+left_foot    flexion_x_deg=-10.00 y=+0.00 z=+0.00
+right_foot   flexion_x_deg=-10.00 y=+0.00 z=+0.00
+left_shank   flexion_x_deg=+32.00 y=+0.00 z=+0.00
+right_shank  flexion_x_deg=+32.00 y=+0.00 z=+0.00
+left_thigh   flexion_x_deg=-30.00 y=+0.00 z=+0.00
+right_thigh  flexion_x_deg=-30.00 y=+0.00 z=+0.00
+abdomen      flexion_x_deg=+4.00 y=+0.00 z=+0.00
+thorax       flexion_x_deg=+6.00 y=+0.00 z=+0.00
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1084" name="R7_PHYSICAL_TRUNK_SUMS_TO_CANONICAL_TRUNK_FLEXION" fullname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests.R7_PHYSICAL_TRUNK_SUMS_TO_CANONICAL_TRUNK_FLEXION" methodname="R7_PHYSICAL_TRUNK_SUMS_TO_CANONICAL_TRUNK_FLEXION" classname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests" runstate="Runnable" seed="133228066" result="Passed" start-time="2026-09-09 01:47:17Z" end-time="2026-09-09 01:47:18Z" duration="0.653099" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[R7 TRUNK DISTRIBUTION]
+phase=0.25 canonical=10.00 abdomen=4.00 thorax=6.00 sum=10.00
+phase=0.55 canonical=15.00 abdomen=6.00 thorax=8.99 sum=14.99
+phase=0.75 canonical=15.65 abdomen=6.26 thorax=9.38 sum=15.64
+phase=1.00 canonical=16.00 abdomen=6.40 thorax=9.59 sum=15.99
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1088" name="PhysicalSquatStandingGateTests" fullname="PowerliftingSimulator.Tests.PhysicalSquatStandingGateTests" classname="PowerliftingSimulator.Tests.PhysicalSquatStandingGateTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-09 01:47:18Z" end-time="2026-09-09 01:47:19Z" duration="0.926047" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1089" name="S1_TEN_SECOND_UNLOADED_STANDING_GATE" fullname="PowerliftingSimulator.Tests.PhysicalSquatStandingGateTests.S1_TEN_SECOND_UNLOADED_STANDING_GATE" methodname="S1_TEN_SECOND_UNLOADED_STANDING_GATE" classname="PowerliftingSimulator.Tests.PhysicalSquatStandingGateTests" runstate="Runnable" seed="1407010903" result="Passed" start-time="2026-09-09 01:47:18Z" end-time="2026-09-09 01:47:19Z" duration="0.924552" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[S1 TEN SECOND STANDING GATE unloaded] settlePelvisY=0.9795 finalPelvisY=0.9795 minPelvisY=0.9795 worstCaptureMargin=0.1252 worstCopExcursion=0.0000 maxComVel=0.0020 saturatedFraction=0.000 slippingFraction=0.000 worstFootPitch=0.01 lostContact=False
+tick,com_ap,com_vel_ap,capture_ap,cop_des_ap,cop_meas_ap,support_ap_min,support_ap_max,capture_margin_front,capture_margin_rear,ankle_offset_deg,hip_offset_deg,trunk_offset_deg,hip_blend,max_drive_saturation,foot_pitch_deg,contacts,slip_mps,pelvis_y
+0,-0.0318,0.0000,-0.0318,-0.0318,-0.0570,-0.0318,-0.0318,0.0000,0.0000,0.00,0.00,0.00,1.00,2.486,0.00,0,0.0004,0.9815
+25,-0.0279,0.0029,-0.0270,-0.0160,-0.0148,-0.1547,0.1353,0.1623,0.1277,5.26,0.00,0.00,0.00,0.388,-0.02,8,0.0012,0.9791
+50,-0.0292,-0.0036,-0.0304,-0.0283,-0.0311,-0.1547,0.1353,0.1657,0.1243,6.04,0.00,0.00,0.00,0.278,-0.01,8,0.0009,0.9790
+75,-0.0292,0.0018,-0.0286,-0.0214,-0.0299,-0.1547,0.1353,0.1639,0.1261,9.51,0.00,0.00,0.00,0.294,-0.01,8,0.0006,0.9795
+100,-0.0288,0.0016,-0.0283,-0.0203,-0.0247,-0.1547,0.1353,0.1636,0.1264,7.22,0.00,0.00,0.00,0.299,-0.01,8,0.0009,0.9795
+125,-0.0286,0.0000,-0.0286,-0.0218,-0.0302,-0.1547,0.1353,0.1639,0.1261,9.38,0.00,0.00,0.00,0.300,-0.01,8,0.0005,0.9796
+150,-0.0288,-0.0005,-0.0289,-0.0229,-0.0257,-0.1547,0.1353,0.1642,0.1258,5.92,0.00,0.00,0.00,0.300,-0.01,8,0.0009,0.9795
+175,-0.0289,-0.0007,-0.0292,-0.0237,-0.0314,-0.1547,0.1353,0.1644,0.1256,8.22,0.00,0.00,0.00,0.300,-0.01,8,0.0005,0.9795
+200,-0.0291,-0.0006,-0.0293,-0.0241,-0.0262,-0.1547,0.1353,0.1646,0.1254,5.87,0.00,0.00,0.00,0.301,-0.01,8,0.0009,0.9795
+225,-0.0293,-0.0004,-0.0294,-0.0243,-0.0318,-0.1547,0.1353,0.1647,0.1253,8.16,0.00,0.00,0.00,0.300,-0.01,8,0.0005,0.9795
+250,-0.0294,-0.0003,-0.0295,-0.0245,-0.0263,-0.1547,0.1353,0.1647,0.1253,5.87,0.00,0.00,0.00,0.301,-0.01,8,0.0009,0.9795
+275,-0.0295,-0.0002,-0.0295,-0.0247,-0.0321,-0.1547,0.1353,0.1648,0.1252,8.14,0.00,0.00,0.00,0.300,-0.01,8,0.0005,0.9795
+300,-0.0295,0.0000,-0.0295,-0.0246,-0.0265,-0.1547,0.1353,0.1648,0.1252,5.85,0.00,0.00,0.00,0.301,-0.01,8,0.0009,0.9795
+325,-0.0295,0.0001,-0.0295,-0.0245,-0.0321,-0.1547,0.1353,0.1648,0.1252,8.14,0.00,0.00,0.00,0.300,-0.01,8,0.0005,0.9795
+350,-0.0295,0.0002,-0.0294,-0.0243,-0.0264,-0.1547,0.1353,0.1647,0.1253,5.85,0.00,0.00,0.00,0.301,-0.01,8,0.0009,0.9795
+375,-0.0295,0.0003,-0.0294,-0.0240,-0.0320,-0.1547,0.1353,0.1646,0.1254,8.14,0.00,0.00,0.00,0.300,-0.01,8,0.0005,0.9795
+400,-0.0294,0.0006,-0.0292,-0.0234,-0.0264,-0.1547,0.1353,0.1645,0.1255,5.85,0.00,0.00,0.00,0.301,-0.01,8,0.0009,0.9795
+425,-0.0292,0.0009,-0.0289,-0.0225,-0.0319,-0.1547,0.1353,0.1642,0.1258,8.14,0.00,0.00,0.00,0.300,-0.01,8,0.0005,0.9795
+450,-0.0289,0.0016,-0.0284,-0.0207,-0.0262,-0.1547,0.1353,0.1637,0.1263,6.16,0.00,0.00,0.00,0.301,-0.01,8,0.0009,0.9795
+475,-0.0286,0.0004,-0.0284,-0.0211,-0.0301,-0.1547,0.1353,0.1637,0.1263,9.52,0.00,0.00,0.00,0.300,-0.01,8,0.0005,0.9795
+500,-0.0287,-0.0010,-0.0290,-0.0233,-0.0257,-0.1547,0.1353,0.1643,0.1257,5.91,0.00,0.00,0.00,0.301,-0.01,8,0.0010,0.9795
+525,-0.0289,-0.0006,-0.0291,-0.0234,-0.0314,-0.1547,0.1353,0.1644,0.1256,8.20,0.00,0.00,0.00,0.300,-0.01,8,0.0005,0.9795
+550,-0.0291,-0.0006,-0.0293,-0.0240,-0.0259,-0.1547,0.1353,0.1646,0.1254,5.91,0.00,0.00,0.00,0.301,-0.01,8,0.0009,0.9795
+575,-0.0292,-0.0005,-0.0294,-0.0243,-0.0318,-0.1547,0.1353,0.1647,0.1253,8.17,0.00,0.00,0.00,0.300,-0.01,8,0.0005,0.9795
+600,-0.0294,-0.0004,-0.0295,-0.0246,-0.0263,-0.1547,0.1353,0.1647,0.1253,5.87,0.00,0.00,0.00,0.301,-0.01,8,0.0009,0.9795
+625,-0.0294,-0.0001,-0.0295,-0.0245,-0.0320,-0.1547,0.1353,0.1648,0.1252,8.14,0.00,0.00,0.00,0.300,-0.01,8,0.0005,0.9795
+650,-0.0295,0.0001,-0.0294,-0.0243,-0.0264,-0.1547,0.1353,0.1647,0.1253,5.85,0.00,0.00,0.00,0.301,-0.01,8,0.0009,0.9795
+675,-0.0294,0.0002,-0.0294,-0.0241,-0.0320,-0.1547,0.1353,0.1647,0.1253,8.14,0.00,0.00,0.00,0.300,-0.01,8,0.0005,0.9795
+700,-0.0294,0.0005,-0.0292,-0.0236,-0.0264,-0.1547,0.1353,0.1645,0.1255,5.85,0.00,0.00,0.00,0.301,-0.01,8,0.0009,0.9795
+725,-0.0292,0.0007,-0.0290,-0.0229,-0.0319,-0.1547,0.1353,0.1643,0.1257,8.14,0.00,0.00,0.00,0.300,-0.01,8,0.0005,0.9795
+750,-0.0290,0.0013,-0.0286,-0.0215,-0.0262,-0.1547,0.1353,0.1639,0.1261,5.85,0.00,0.00,0.00,0.301,-0.01,8,0.0009,0.9795
+775,-0.0286,0.0017,-0.0281,-0.0198,-0.0304,-0.1547,0.1353,0.1634,0.1266,9.44,0.00,0.00,0.00,0.300,-0.01,8,0.0005,0.9795
+800,-0.0284,0.0007,-0.0282,-0.0202,-0.0250,-0.1547,0.1353,0.1635,0.1266,7.15,0.00,0.00,0.00,0.301,-0.01,8,0.0009,0.9795
+825,-0.0283,0.0002,-0.0282,-0.0206,-0.0306,-0.1547,0.1353,0.1635,0.1265,9.44,0.00,0.00,0.00,0.300,-0.01,8,0.0005,0.9795
+850,-0.0283,-0.0002,-0.0284,-0.0211,-0.0250,-0.1547,0.1353,0.1637,0.1263,7.15,0.00,0.00,0.00,0.301,-0.01,8,0.0009,0.9795
+875,-0.0285,-0.0007,-0.0287,-0.0222,-0.0307,-0.1547,0.1353,0.1640,0.1260,9.44,0.00,0.00,0.00,0.300,-0.01,8,0.0005,0.9795
+900,-0.0287,-0.0011,-0.0291,-0.0236,-0.0258,-0.1547,0.1353,0.1644,0.1256,5.92,0.00,0.00,0.00,0.301,-0.01,8,0.0009,0.9795
+925,-0.0290,-0.0009,-0.0293,-0.0242,-0.0318,-0.1547,0.1353,0.1646,0.1254,8.17,0.00,0.00,0.00,0.300,-0.01,8,0.0005,0.9795
+950,-0.0292,-0.0006,-0.0294,-0.0244,-0.0262,-0.1547,0.1353,0.1647,0.1253,5.88,0.00,0.00,0.00,0.301,-0.01,8,0.0009,0.9795
+975,-0.0293,-0.0003,-0.0294,-0.0244,-0.0320,-0.1547,0.1353,0.1647,0.1253,8.14,0.00,0.00,0.00,0.300,-0.01,8,0.0005,0.9795
+999,-0.0294,0.0000,-0.0294,-0.0242,-0.0320,-0.1547,0.1353,0.1647,0.1253,8.14,0.00,0.00,0.00,0.300,-0.01,8,0.0005,0.9795
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1099" name="PhysicalStandingEquilibriumTests" fullname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests" classname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests" runstate="Runnable" testcasecount="7" result="Failed" site="Child" start-time="2026-09-09 01:47:19Z" end-time="2026-09-09 01:47:25Z" duration="6.646372" total="7" passed="6" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1100" name="E1_EXPERIMENT_A_NOMINAL_ONLY_BASELINE" fullname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests.E1_EXPERIMENT_A_NOMINAL_ONLY_BASELINE" methodname="E1_EXPERIMENT_A_NOMINAL_ONLY_BASELINE" classname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests" runstate="Runnable" seed="402678260" result="Passed" start-time="2026-09-09 01:47:19Z" end-time="2026-09-09 01:47:19Z" duration="0.649691" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[E1 EXPERIMENT A baseline] 0.9815,0.9759,0.8748,0.8748,0.0056,0.3745,0.9058,0.9058,-0.5191,-0.0621,0.1353,0.300,0.000,24.20,0.73,False
+tick,time_s,pelvis_y,com_ap,com_ap_vel,com_ml,com_ml_vel,cop_measured_ap,cop_desired_ap,cop_excursion_from_initial,cop_error,capture_ap,support_ap_rear,support_ap_front,capture_margin_rear,capture_margin_front,ankle_nominal_deg,ankle_gravity_deg,ankle_balance_deg,ankle_final_deg,ankle_actual_deg,knee_actual_deg,hip_actual_deg,abdomen_actual_deg,thorax_actual_deg,max_demand,foot_pitch_deg,contacts,slip_mps
+0,0.000,0.9815,-0.0318,0.0000,0.0000,0.0000,NaN,-0.0318,0.0000,-0.0252,-0.0318,-0.0318,-0.0318,0.0000,0.0000,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,2.486,0.00,0,0.0004
+5,0.050,0.9781,-0.0316,0.0120,0.0000,0.0018,-0.0848,-0.0318,0.0000,-0.0252,-0.0277,-0.1547,0.1353,0.1270,0.1630,0.00,0.00,0.00,0.00,-0.26,0.01,-0.19,0.30,0.18,1.542,0.00,8,0.0046
+10,0.100,0.9783,-0.0295,0.0633,0.0003,0.0054,-0.0813,-0.0318,0.0035,-0.0252,-0.0088,-0.1547,0.1353,0.1460,0.1440,0.00,0.00,0.00,0.00,-0.74,0.18,-0.21,-0.21,-0.39,1.004,0.00,8,0.0042
+15,0.150,0.9779,-0.0256,0.0831,0.0005,0.0057,-0.0687,-0.0318,0.0160,-0.0252,0.0016,-0.1547,0.1353,0.1563,0.1337,0.00,0.00,0.00,0.00,-1.29,0.49,0.02,-0.92,-0.92,0.669,-0.01,8,0.0008
+20,0.200,0.9771,-0.0211,0.0958,0.0008,0.0069,-0.0684,-0.0318,0.0164,-0.0252,0.0102,-0.1547,0.1353,0.1649,0.1251,0.00,0.00,0.00,0.00,-1.89,0.76,0.27,-1.66,-1.49,0.508,-0.01,8,0.0008
+25,0.250,0.9766,-0.0158,0.1109,0.0012,0.0073,-0.0648,-0.0318,0.0200,-0.0252,0.0203,-0.1547,0.1353,0.1751,0.1149,0.00,0.00,0.00,0.00,-2.41,0.95,0.48,-2.26,-1.97,0.387,-0.01,8,0.0007
+30,0.300,0.9759,-0.0099,0.1249,0.0016,0.0069,-0.0621,-0.0318,0.0226,-0.0252,0.0309,-0.1547,0.1353,0.1856,0.1044,0.00,0.00,0.00,0.00,-2.88,1.06,0.62,-2.67,-2.28,0.279,-0.01,8,0.0010
+35,0.350,0.9753,-0.0032,0.1409,0.0019,0.0061,-0.0601,-0.0318,0.0246,-0.0252,0.0428,-0.1547,0.1353,0.1975,0.0925,0.00,0.00,0.00,0.00,-3.31,1.11,0.71,-2.91,-2.44,0.353,-0.01,8,0.0006
+40,0.400,0.9747,0.0044,0.1603,0.0022,0.0050,-0.0573,-0.0318,0.0275,-0.0252,0.0567,-0.1547,0.1353,0.2114,0.0786,0.00,0.00,0.00,0.00,-3.71,1.07,0.71,-2.93,-2.45,0.299,-0.01,8,0.0005
+45,0.450,0.9740,0.0131,0.1833,0.0024,0.0039,-0.0542,-0.0318,0.0305,-0.0252,0.0729,-0.1547,0.1353,0.2276,0.0624,0.00,0.00,0.00,0.00,-4.14,0.98,0.67,-2.82,-2.37,0.281,0.00,8,0.0006
+50,0.500,0.9731,0.0231,0.2101,0.0025,0.0027,-0.0501,-0.0318,0.0346,-0.0252,0.0915,-0.1547,0.1353,0.2462,0.0438,0.00,0.00,0.00,0.00,-4.61,0.86,0.60,-2.65,-2.23,0.278,0.00,8,0.0006
+55,0.550,0.9720,0.0345,0.2401,0.0026,0.0016,-0.0451,-0.0318,0.0397,-0.0252,0.1126,-0.1547,0.1353,0.2673,0.0227,0.00,0.00,0.00,0.00,-5.16,0.71,0.51,-2.44,-2.08,0.280,0.00,8,0.0007
+60,0.600,0.9705,0.0474,0.2731,0.0027,0.0007,-0.0390,-0.0318,0.0458,-0.0252,0.1363,-0.1547,0.1353,0.2910,-0.0010,0.00,0.00,0.00,0.00,-5.80,0.54,0.42,-2.22,-1.93,0.284,0.00,8,0.0009
+70,0.700,0.9662,0.0788,0.3477,0.0027,-0.0008,-0.0236,-0.0318,0.0612,-0.0252,0.1916,-0.1547,0.1353,0.3463,-0.0563,0.00,0.00,0.00,0.00,-7.41,0.18,0.26,-1.83,-1.66,0.291,0.00,8,0.0012
+80,0.800,0.9593,0.1182,0.4345,0.0025,-0.0016,-0.0033,-0.0318,0.0815,-0.0252,0.2587,-0.1547,0.1353,0.4134,-0.1234,0.00,0.00,0.00,0.00,-9.53,-0.23,0.12,-1.47,-1.44,0.296,0.00,8,0.0017
+90,0.900,0.9485,0.1670,0.5347,0.0024,-0.0019,0.0234,-0.0318,0.1082,-0.0252,0.3390,-0.1547,0.1353,0.4937,-0.2037,0.00,0.00,0.00,0.00,-12.22,-0.72,-0.03,-1.10,-1.23,0.298,0.00,8,0.0023
+100,1.000,0.9318,0.2266,0.6491,0.0022,-0.0017,0.0585,-0.0318,0.1432,-0.0252,0.4336,-0.1547,0.1353,0.5883,-0.2983,0.00,0.00,0.00,0.00,-15.57,-1.32,-0.20,-0.69,-1.00,0.299,0.01,8,0.0034
+110,1.100,0.9068,0.2985,0.7779,0.0019,-0.0054,0.1081,-0.0318,0.1929,-0.0252,0.5432,-0.1547,0.1353,0.6980,-0.4080,0.00,0.00,0.00,0.00,-19.72,-2.03,-0.39,-0.20,-0.71,0.300,0.01,8,0.0039
+120,1.200,0.8748,0.3745,0.9058,0.0009,-0.0143,0.1353,-0.0318,0.2200,-0.0252,0.6544,-0.1547,0.1353,0.8091,-0.5191,0.00,0.00,0.00,0.00,-23.82,-2.71,-0.58,0.30,-0.41,0.300,-0.73,8,0.0071
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1101" name="E2_PRELOAD_SENSITIVITY_IDENTIFICATION" fullname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests.E2_PRELOAD_SENSITIVITY_IDENTIFICATION" methodname="E2_PRELOAD_SENSITIVITY_IDENTIFICATION" classname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests" runstate="Runnable" seed="1241161334" result="Passed" start-time="2026-09-09 01:47:19Z" end-time="2026-09-09 01:47:21Z" duration="1.363896" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[E2 PRELOAD SENSITIVITY]
+family,bias_deg,initial_pelvis_y,settled_pelvis_y,min_pelvis_y,final_pelvis_y,initial_sag,final_com_ap,final_com_ap_vel,max_com_ap_vel,worst_capture_margin,cop_min_ap,cop_max_ap,max_saturation,sustained_saturation,max_posture_error_deg,worst_foot_pitch_deg,lost_contact
+Ankle,-6.0,0.9816,0.9784,0.9784,0.9784,0.0032,-0.0200,0.0313,0.0313,0.1383,-0.0338,-0.0325,0.277,0.000,2.33,0.01,False
+Ankle,-4.0,0.9816,0.9777,0.9770,0.9770,0.0039,-0.0073,0.0866,0.0866,0.1143,-0.0427,-0.0400,0.277,0.000,2.55,0.01,False
+Ankle,-2.0,0.9816,0.9769,0.9753,0.9753,0.0047,0.0069,0.1457,0.1457,0.0809,-0.0523,-0.0455,0.278,0.000,3.61,0.01,False
+Ankle,0.0,0.9815,0.9759,0.9733,0.9733,0.0056,0.0211,0.2047,0.2047,0.0475,-0.0621,-0.0510,0.278,0.000,4.70,0.01,False
+Ankle,2.0,0.9815,0.9749,0.9710,0.9710,0.0066,0.0352,0.2635,0.2635,0.0143,-0.0719,-0.0565,0.278,0.000,5.79,0.01,False
+Ankle,4.0,0.9815,0.9739,0.9684,0.9684,0.0076,0.0499,0.3237,0.3237,-0.0198,-0.0815,-0.0617,0.278,0.000,6.90,0.00,False
+Ankle,6.0,0.9815,0.9729,0.9654,0.9654,0.0087,0.0644,0.3831,0.3831,-0.0535,-0.0911,-0.0672,0.278,0.000,8.00,0.00,False
+Knee,-6.0,0.9816,0.9780,0.9736,0.9736,0.0035,0.0434,0.3156,0.3156,-0.0109,-0.0857,-0.0612,0.277,0.000,5.03,0.00,False
+Knee,-4.0,0.9816,0.9777,0.9741,0.9741,0.0039,0.0348,0.2770,0.2770,0.0103,-0.0785,-0.0616,0.278,0.000,3.68,0.01,False
+Knee,-2.0,0.9816,0.9769,0.9739,0.9739,0.0046,0.0281,0.2414,0.2414,0.0286,-0.0702,-0.0562,0.278,0.000,3.83,0.01,False
+Knee,0.0,0.9815,0.9759,0.9733,0.9733,0.0056,0.0214,0.2057,0.2057,0.0469,-0.0620,-0.0508,0.278,0.000,4.72,0.01,False
+Knee,2.0,0.9815,0.9746,0.9723,0.9723,0.0069,0.0147,0.1696,0.1696,0.0654,-0.0538,-0.0455,0.278,0.000,5.61,0.01,False
+Knee,4.0,0.9815,0.9730,0.9710,0.9710,0.0085,0.0079,0.1335,0.1335,0.0840,-0.0458,-0.0402,0.278,0.000,6.49,0.01,False
+Knee,6.0,0.9815,0.9711,0.9693,0.9693,0.0104,0.0011,0.0971,0.0971,0.1027,-0.0379,-0.0349,0.278,0.000,8.00,0.01,False
+Hip,-6.0,0.9815,0.9727,0.9695,0.9695,0.0088,0.0176,0.1644,0.1644,0.0643,-0.0483,-0.0410,0.279,0.000,7.26,0.01,False
+Hip,-4.0,0.9814,0.9738,0.9708,0.9708,0.0077,0.0194,0.1794,0.1794,0.0575,-0.0526,-0.0440,0.278,0.000,5.78,0.01,False
+Hip,-2.0,0.9815,0.9749,0.9721,0.9721,0.0066,0.0204,0.1923,0.1923,0.0523,-0.0573,-0.0475,0.278,0.000,5.25,0.01,False
+Hip,0.0,0.9815,0.9759,0.9733,0.9733,0.0056,0.0213,0.2052,0.2052,0.0472,-0.0620,-0.0509,0.278,0.000,4.71,0.01,False
+Hip,2.0,0.9815,0.9769,0.9745,0.9745,0.0047,0.0221,0.2181,0.2181,0.0421,-0.0668,-0.0544,0.277,0.000,4.18,0.01,False
+Hip,4.0,0.9816,0.9777,0.9756,0.9756,0.0038,0.0230,0.2310,0.2310,0.0370,-0.0717,-0.0579,0.277,0.000,4.01,0.01,False
+Hip,6.0,0.9816,0.9785,0.9766,0.9766,0.0031,0.0239,0.2440,0.2440,0.0319,-0.0766,-0.0613,0.277,0.000,6.25,0.00,False
+Abdomen,-6.0,0.9816,0.9741,0.9706,0.9706,0.0075,0.0217,0.1829,0.1829,0.0542,-0.0504,-0.0412,0.279,0.000,10.15,0.01,False
+Abdomen,-4.0,0.9815,0.9746,0.9716,0.9716,0.0069,0.0206,0.1868,0.1868,0.0539,-0.0544,-0.0451,0.279,0.000,7.82,0.01,False
+Abdomen,-2.0,0.9815,0.9753,0.9725,0.9725,0.0062,0.0209,0.1960,0.1960,0.0506,-0.0582,-0.0480,0.278,0.000,5.39,0.01,False
+Abdomen,0.0,0.9815,0.9759,0.9733,0.9733,0.0056,0.0213,0.2052,0.2052,0.0472,-0.0620,-0.0509,0.278,0.000,4.71,0.01,False
+Abdomen,2.0,0.9815,0.9765,0.9741,0.9741,0.0050,0.0216,0.2144,0.2144,0.0438,-0.0660,-0.0539,0.277,0.000,4.27,0.01,False
+Abdomen,4.0,0.9815,0.9770,0.9748,0.9748,0.0045,0.0219,0.2237,0.2237,0.0405,-0.0699,-0.0568,0.277,0.000,3.83,0.01,False
+Abdomen,6.0,0.9815,0.9775,0.9755,0.9755,0.0040,0.0222,0.2330,0.2330,0.0371,-0.0739,-0.0598,0.277,0.000,4.81,0.01,False
+Thorax,-6.0,0.9815,0.9748,0.9714,0.9714,0.0067,0.0225,0.1923,0.1923,0.0503,-0.0537,-0.0439,0.279,0.000,9.06,0.01,False
+Thorax,-4.0,0.9816,0.9750,0.9721,0.9721,0.0065,0.0214,0.1937,0.1937,0.0509,-0.0566,-0.0467,0.279,0.000,6.91,0.01,False
+Thorax,-2.0,0.9815,0.9755,0.9727,0.9727,0.0061,0.0213,0.1994,0.1994,0.0490,-0.0593,-0.0488,0.278,0.000,5.03,0.01,False
+Thorax,0.0,0.9815,0.9759,0.9733,0.9733,0.0056,0.0213,0.2052,0.2052,0.0472,-0.0620,-0.0509,0.278,0.000,4.71,0.01,False
+Thorax,2.0,0.9815,0.9763,0.9738,0.9738,0.0052,0.0212,0.2111,0.2111,0.0453,-0.0649,-0.0530,0.277,0.000,4.40,0.01,False
+Thorax,4.0,0.9815,0.9767,0.9744,0.9744,0.0048,0.0212,0.2170,0.2170,0.0434,-0.0677,-0.0552,0.277,0.000,4.08,0.01,False
+Thorax,6.0,0.9815,0.9771,0.9749,0.9749,0.0044,0.0211,0.2229,0.2229,0.0415,-0.0706,-0.0573,0.277,0.000,4.54,0.01,False
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1106" name="E3_EXPERIMENT_B_PRELOAD_ONLY_EQUILIBRIUM" fullname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests.E3_EXPERIMENT_B_PRELOAD_ONLY_EQUILIBRIUM" methodname="E3_EXPERIMENT_B_PRELOAD_ONLY_EQUILIBRIUM" classname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests" runstate="Runnable" seed="1844522039" result="Failed" start-time="2026-09-09 01:47:21Z" end-time="2026-09-09 01:47:22Z" duration="0.756509" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  The athlete lost plantar contact. 0.9815,0.9759,0.1308,0.1397,0.0056,1.2661,0.0000,1.8569,-1.2648,-0.0621,0.2712,0.305,0.002,28.60,89.68,True
+  Expected: False
+  But was:  True
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests+<E3_EXPERIMENT_B_PRELOAD_ONLY_EQUILIBRIUM>d__15.MoveNext () [0x000f1] in C:\Users\Educacion\Desktop\Projects\PowerliftingSimulator\Assets\Tests\PlayMode\PhysicalStandingEquilibriumTests.cs:333
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[[E3 EXPERIMENT B preload only] 0.9815,0.9759,0.1308,0.1397,0.0056,1.2661,0.0000,1.8569,-1.2648,-0.0621,0.2712,0.305,0.002,28.60,89.68,True
+tick,time_s,pelvis_y,com_ap,com_ap_vel,com_ml,com_ml_vel,cop_measured_ap,cop_desired_ap,cop_excursion_from_initial,cop_error,capture_ap,support_ap_rear,support_ap_front,capture_margin_rear,capture_margin_front,ankle_nominal_deg,ankle_gravity_deg,ankle_balance_deg,ankle_final_deg,ankle_actual_deg,knee_actual_deg,hip_actual_deg,abdomen_actual_deg,thorax_actual_deg,max_demand,foot_pitch_deg,contacts,slip_mps
+0,0.000,0.9815,-0.0318,0.0000,0.0000,0.0000,NaN,-0.0318,NaN,-0.0252,-0.0318,-0.0318,-0.0318,0.0000,0.0000,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,2.486,0.00,0,0.0004
+25,0.250,0.9766,-0.0158,0.1109,0.0012,0.0073,-0.0648,-0.0318,0.0200,-0.0252,0.0203,-0.1547,0.1353,0.1751,0.1149,0.00,0.00,0.00,0.00,-2.41,0.95,0.48,-2.26,-1.97,0.387,-0.01,8,0.0007
+50,0.500,0.9731,0.0231,0.2101,0.0025,0.0027,-0.0501,-0.0318,0.0346,-0.0252,0.0915,-0.1547,0.1353,0.2462,0.0438,0.00,0.00,0.00,0.00,-4.61,0.86,0.60,-2.65,-2.23,0.278,0.00,8,0.0006
+75,0.750,0.9632,0.0974,0.3895,0.0026,-0.0013,-0.0141,-0.0318,0.0707,-0.0252,0.2236,-0.1547,0.1353,0.3783,-0.0883,0.00,0.00,0.00,0.00,-8.40,-0.02,0.19,-1.65,-1.55,0.294,0.00,8,0.0014
+100,1.000,0.9318,0.2266,0.6491,0.0022,-0.0017,0.0585,-0.0318,0.1432,-0.0252,0.4336,-0.1547,0.1353,0.5883,-0.2983,0.00,0.00,0.00,0.00,-15.57,-1.32,-0.20,-0.69,-1.00,0.299,0.01,8,0.0034
+125,1.250,0.8494,0.4330,1.0287,-0.0001,-0.0173,0.1351,-0.0318,0.2199,-0.0252,0.7459,-0.1549,0.1352,0.9008,-0.6106,0.00,0.00,0.00,0.00,-26.11,-3.10,-0.68,0.64,-0.23,0.300,-2.43,8,0.0118
+150,1.500,0.6534,0.7779,1.7041,-0.0048,-0.0236,0.1325,-0.0318,0.2173,-0.0252,1.2345,0.0922,0.1335,1.1423,-1.1010,0.00,0.00,0.00,0.00,-26.14,-2.20,-0.36,0.62,-0.16,0.306,-29.31,8,0.0233
+175,1.750,0.1386,1.2318,1.7611,-0.0138,-0.0373,0.2688,-0.0318,0.3536,-0.0252,1.4832,0.1650,0.2731,1.3182,-1.2102,0.00,0.00,0.00,0.00,4.72,2.45,1.71,2.92,1.64,0.306,-80.65,8,0.0103
+200,2.000,0.1392,1.2661,0.0025,-0.0209,0.0055,0.2709,-0.0318,0.3556,-0.0252,1.2664,0.2668,0.2748,0.9997,-0.9917,0.00,0.00,0.00,0.00,9.67,2.28,1.61,-0.93,1.64,0.302,-76.96,4,0.0100
+225,2.250,0.1397,1.2661,-0.0007,-0.0208,0.0001,0.2708,-0.0318,0.3556,-0.0252,1.2660,0.2668,0.2748,0.9992,-0.9912,0.00,0.00,0.00,0.00,9.74,2.05,1.47,-1.05,1.55,0.304,-77.07,4,0.0095
+250,2.500,0.1397,1.2661,0.0000,-0.0208,0.0000,NaN,-0.0318,NaN,-0.0252,1.2661,1.2661,1.2661,0.0000,0.0000,0.00,0.00,0.00,0.00,9.75,2.04,1.46,-1.06,1.55,0.305,-77.03,0,0.0000
+275,2.750,0.1397,1.2661,0.0000,-0.0208,0.0000,NaN,-0.0318,NaN,-0.0252,1.2661,1.2661,1.2661,0.0000,0.0000,0.00,0.00,0.00,0.00,9.75,2.04,1.46,-1.06,1.55,0.305,-77.03,0,0.0000
+300,3.000,0.1397,1.2661,0.0000,-0.0208,0.0000,NaN,-0.0318,NaN,-0.0252,1.2661,1.2661,1.2661,0.0000,0.0000,0.00,0.00,0.00,0.00,9.75,2.04,1.46,-1.06,1.55,0.305,-77.03,0,0.0000
+325,3.250,0.1397,1.2661,0.0000,-0.0208,0.0000,NaN,-0.0318,NaN,-0.0252,1.2661,1.2661,1.2661,0.0000,0.0000,0.00,0.00,0.00,0.00,9.75,2.04,1.46,-1.06,1.55,0.305,-77.03,0,0.0000
+350,3.500,0.1397,1.2661,0.0000,-0.0208,0.0000,NaN,-0.0318,NaN,-0.0252,1.2661,1.2661,1.2661,0.0000,0.0000,0.00,0.00,0.00,0.00,9.75,2.04,1.46,-1.06,1.55,0.305,-77.03,0,0.0000
+375,3.750,0.1397,1.2661,0.0000,-0.0208,0.0000,NaN,-0.0318,NaN,-0.0252,1.2661,1.2661,1.2661,0.0000,0.0000,0.00,0.00,0.00,0.00,9.75,2.04,1.46,-1.06,1.55,0.305,-77.03,0,0.0000
+400,4.000,0.1397,1.2661,0.0000,-0.0208,0.0000,NaN,-0.0318,NaN,-0.0252,1.2661,1.2661,1.2661,0.0000,0.0000,0.00,0.00,0.00,0.00,9.75,2.04,1.46,-1.06,1.55,0.305,-77.03,0,0.0000
+425,4.250,0.1397,1.2661,0.0000,-0.0208,0.0000,NaN,-0.0318,NaN,-0.0252,1.2661,1.2661,1.2661,0.0000,0.0000,0.00,0.00,0.00,0.00,9.75,2.04,1.46,-1.06,1.55,0.305,-77.03,0,0.0000
+450,4.500,0.1397,1.2661,0.0000,-0.0208,0.0000,NaN,-0.0318,NaN,-0.0252,1.2661,1.2661,1.2661,0.0000,0.0000,0.00,0.00,0.00,0.00,9.75,2.04,1.46,-1.06,1.55,0.305,-77.03,0,0.0000
+475,4.750,0.1397,1.2661,0.0000,-0.0208,0.0000,NaN,-0.0318,NaN,-0.0252,1.2661,1.2661,1.2661,0.0000,0.0000,0.00,0.00,0.00,0.00,9.75,2.04,1.46,-1.06,1.55,0.305,-77.03,0,0.0000
+499,4.990,0.1397,1.2661,0.0000,-0.0208,0.0000,NaN,-0.0318,NaN,-0.0252,1.2661,1.2661,1.2661,0.0000,0.0000,0.00,0.00,0.00,0.00,9.75,2.04,1.46,-1.06,1.55,0.305,-77.03,0,0.0000
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1102" name="E4_SPAWN_CONTACT_GEOMETRY" fullname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests.E4_SPAWN_CONTACT_GEOMETRY" methodname="E4_SPAWN_CONTACT_GEOMETRY" classname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests" runstate="Runnable" seed="16257244" result="Passed" start-time="2026-09-09 01:47:22Z" end-time="2026-09-09 01:47:22Z" duration="0.646842" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[E4 SPAWN CONTACT GEOMETRY] supportPlaneY=0.0000 leftFootMinAtSpawn=0.0000 rightFootMinAtSpawn=0.0000 spawnGap=0.0000 m referencePlantarY left=0.0000 right=0.0000 colliderMinusPlantar=0.0000 footColliderSize=(0.1300,0.1000,0.2900) footBoundsZ=[-0.1547,0.1353]
+tick,pelvis_y,left_foot_min_y,right_foot_min_y,left_foot_vel_y,contacts
+0,0.9816,0.0000,0.0000,0.0000,8
+1,0.9815,0.0000,0.0000,-0.0015,0
+2,0.9811,0.0000,0.0000,0.0012,8
+3,0.9804,0.0000,0.0000,0.0005,8
+4,0.9795,0.0000,0.0000,-0.0006,8
+5,0.9787,0.0000,0.0000,-0.0019,8
+6,0.9781,0.0000,0.0000,-0.0041,8
+7,0.9778,0.0000,0.0000,-0.0071,8
+8,0.9778,0.0000,0.0000,-0.0085,8
+9,0.9779,0.0000,0.0000,-0.0072,8
+10,0.9781,0.0000,-0.0001,-0.0044,8
+11,0.9783,-0.0002,-0.0004,-0.0017,8
+12,0.9784,-0.0004,-0.0005,-0.0025,8
+13,0.9784,-0.0005,-0.0005,-0.0023,8
+14,0.9783,-0.0005,-0.0006,-0.0026,8
+15,0.9781,-0.0005,-0.0006,-0.0030,8
+16,0.9779,-0.0005,-0.0006,-0.0032,8
+17,0.9777,-0.0005,-0.0006,-0.0033,8
+18,0.9775,-0.0005,-0.0006,-0.0033,8
+19,0.9773,-0.0005,-0.0006,-0.0032,8
+20,0.9772,-0.0005,-0.0006,-0.0031,8
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1103" name="E5_COMBINED_PRELOAD_CANDIDATES" fullname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests.E5_COMBINED_PRELOAD_CANDIDATES" methodname="E5_COMBINED_PRELOAD_CANDIDATES" classname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests" runstate="Runnable" seed="81747397" result="Passed" start-time="2026-09-09 01:47:22Z" end-time="2026-09-09 01:47:23Z" duration="1.011429" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[E5 COMBINED PRELOAD CANDIDATES]
+ankle_deg,knee_deg,hip_deg,abdomen_deg,thorax_deg,initial_pelvis_y,settled_pelvis_y,min_pelvis_y,final_pelvis_y,initial_sag,final_com_ap,final_com_ap_vel,max_com_ap_vel,worst_capture_margin,cop_min_ap,cop_max_ap,max_saturation,sustained_saturation,max_posture_error_deg,worst_foot_pitch_deg,lost_contact
+0.0,0.0,0.0,0.0,0.0,0.9815,0.9759,0.6667,0.6667,0.0056,0.7609,1.6817,1.6817,-1.0820,-0.0621,0.1353,0.306,0.000,28.60,27.47,False
+-6.0,0.0,6.0,6.0,6.0,0.9815,0.9811,0.8838,0.8838,0.0004,0.4302,1.0078,1.0078,-0.6011,-0.0674,0.1353,0.303,0.000,21.35,3.15,False
+-8.0,0.0,6.0,6.0,6.0,0.9817,0.9815,0.9582,0.9582,0.0003,0.2028,0.5428,0.5428,-0.2408,-0.0584,0.0665,0.303,0.000,9.63,0.01,False
+-10.0,0.0,6.0,6.0,6.0,0.9818,0.9816,0.9816,0.9821,0.0001,-0.0308,0.0390,0.0390,0.1025,-0.0492,-0.0406,0.302,0.000,8.77,0.01,False
+-12.0,0.0,6.0,6.0,6.0,0.9819,0.9818,0.9493,0.9493,0.0001,-0.2689,-0.4886,0.4886,-0.2723,-0.1388,-0.0390,0.302,0.000,17.57,0.02,False
+-12.0,2.0,6.0,6.0,6.0,0.9819,0.9808,0.9045,0.9045,0.0011,-0.4092,-0.8087,0.8087,-0.5115,-0.1547,-0.0308,0.302,0.000,23.48,1.25,False
+-10.0,0.0,4.0,4.0,4.0,0.9818,0.9815,0.9755,0.9755,0.0003,-0.1424,-0.2222,0.2222,-0.0603,-0.0823,-0.0368,0.302,0.000,8.93,0.02,False
+-8.0,0.0,8.0,8.0,8.0,0.9818,0.9813,0.9392,0.9392,0.0004,0.2904,0.7243,0.7243,-0.3819,-0.0706,0.1223,0.305,0.000,13.82,0.01,False
+-12.0,0.0,12.0,12.0,12.0,0.9818,0.9794,0.9783,0.9839,0.0024,0.0372,0.2209,0.2209,0.0271,-0.0736,-0.0184,0.305,0.000,18.64,0.01,False
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1104" name="E6_ANKLE_PRELOAD_RETEST_ON_GROUNDED_PLANT" fullname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests.E6_ANKLE_PRELOAD_RETEST_ON_GROUNDED_PLANT" methodname="E6_ANKLE_PRELOAD_RETEST_ON_GROUNDED_PLANT" classname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests" runstate="Runnable" seed="339278293" result="Passed" start-time="2026-09-09 01:47:23Z" end-time="2026-09-09 01:47:25Z" duration="1.371132" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[E6 ANKLE PRELOAD RETEST]
+ankle_deg,initial_pelvis_y,settled_pelvis_y,min_pelvis_y,final_pelvis_y,initial_sag,final_com_ap,final_com_ap_vel,max_com_ap_vel,worst_capture_margin,cop_min_ap,cop_max_ap,max_saturation,sustained_saturation,max_posture_error_deg,worst_foot_pitch_deg,lost_contact
+0.0,0.9815,0.9759,0.1308,0.1397,0.0056,1.2661,0.0000,1.8569,-1.2648,-0.0621,0.2712,0.305,0.004,28.60,89.68,True
+-1.0,0.9815,0.9764,0.1324,0.1403,0.0052,1.2493,0.0000,1.8530,-1.2661,-0.0572,0.2626,0.304,0.000,27.91,89.69,True
+-2.0,0.9816,0.9768,0.1306,0.1401,0.0047,1.2585,0.0000,1.8498,-1.2680,-0.0523,0.2626,0.304,0.000,27.13,88.98,True
+-2.5,0.9816,0.9771,0.1326,0.1403,0.0045,1.2456,0.0000,1.8473,-1.2687,-0.0498,0.2606,0.305,0.000,26.75,89.86,True
+-3.0,0.9816,0.9773,0.1301,0.1392,0.0043,1.2766,0.0000,1.8455,-1.2696,-0.0474,0.2696,0.305,0.004,26.39,89.74,True
+-4.0,0.9816,0.9777,0.1323,0.1394,0.0039,1.2701,0.0000,1.8409,-1.2710,-0.0427,0.2580,0.304,0.000,25.57,88.95,True
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1105" name="E7_ANKLE_PRELOAD_TO_COP_SENSITIVITY" fullname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests.E7_ANKLE_PRELOAD_TO_COP_SENSITIVITY" methodname="E7_ANKLE_PRELOAD_TO_COP_SENSITIVITY" classname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests" runstate="Runnable" seed="1598553820" result="Passed" start-time="2026-09-09 01:47:25Z" end-time="2026-09-09 01:47:25Z" duration="0.840151" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[E7 ANKLE PRELOAD TO COP SENSITIVITY]
+ankle_deg,cop_ap_t60,com_ap_t60,com_minus_cop_t60,com_vel_t60,ankle_actual_deg_t60,pelvis_y_t60,contacts
+0.0,-0.04030,0.04472,0.08502,0.26623,-5.66,0.9709,8
+-2.0,-0.03786,0.02447,0.06233,0.19255,-4.24,0.9739,8
+-4.0,-0.03565,0.00350,0.03915,0.11686,-2.79,0.9764,8
+-6.0,-0.03332,-0.01748,0.01583,0.04090,-1.33,0.9784,8
+-8.0,-0.03087,-0.03848,-0.00761,-0.03524,0.12,0.9798,8
+-10.0,-0.02828,-0.05946,-0.03118,-0.11140,1.57,0.9807,8
+-12.0,-0.02556,-0.08042,-0.05486,-0.18750,3.02,0.9810,8
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1107" name="PhysicalStandingPostureAuditTests" fullname="PowerliftingSimulator.Tests.PhysicalStandingPostureAuditTests" classname="PowerliftingSimulator.Tests.PhysicalStandingPostureAuditTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-09 01:47:25Z" end-time="2026-09-09 01:47:31Z" duration="5.551542" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1108" name="A1_POSTURE_AUTHORITY_AUDIT" fullname="PowerliftingSimulator.Tests.PhysicalStandingPostureAuditTests.A1_POSTURE_AUTHORITY_AUDIT" methodname="A1_POSTURE_AUTHORITY_AUDIT" classname="PowerliftingSimulator.Tests.PhysicalStandingPostureAuditTests" runstate="Runnable" seed="1835679589" result="Passed" start-time="2026-09-09 01:47:25Z" end-time="2026-09-09 01:47:27Z" duration="1.822845" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[A1 POSTURE AUTHORITY AUDIT]
+configuration,joint,t_s,nominal_deg,preload_deg,balance_offset_deg,final_target_deg,actual_deg,posture_error_deg,drive_space_error_deg,drive_error_x_deg,drive_error_y_deg,drive_error_z_deg,applied_vs_nominal_deg,target_ang_vel_x,actual_ang_vel_x,low_limit,high_limit,limit_proximity,spring,damper,max_force_nm,activation,capacity_scale,modelled_demand,implied_spring_torque_nm,solver_torque_x_nm
+A_NOMINAL_ONLY,left_thigh,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.000,0.000,0.000,0.00,0.000,0.000,-120.0,45.0,0.000,900,90,2052.0,1.00,5.70,0.000,0.0,0.000
+A_NOMINAL_ONLY,right_thigh,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.000,0.000,0.000,0.00,0.000,0.000,-120.0,45.0,0.000,900,90,2052.0,1.00,5.70,0.000,0.0,-0.015
+A_NOMINAL_ONLY,abdomen,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.000,0.000,0.000,0.00,0.000,0.000,-35.0,45.0,0.000,800,85,1482.0,1.00,5.70,0.000,0.0,-0.015
+A_NOMINAL_ONLY,thorax,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.000,0.000,0.000,0.00,0.000,0.000,-35.0,50.0,0.000,800,85,1482.0,1.00,5.70,0.000,0.0,0.000
+A_NOMINAL_ONLY,left_shank,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.000,0.000,0.000,0.00,0.000,0.000,-5.0,145.0,0.000,800,80,2052.0,1.00,6.84,0.000,0.0,0.019
+A_NOMINAL_ONLY,right_shank,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.000,0.000,0.000,0.00,0.000,0.000,-5.0,145.0,0.000,800,80,2052.0,1.00,6.84,0.000,0.0,0.000
+A_NOMINAL_ONLY,left_foot,0.00,0.00,0.00,2.29,2.29,0.00,0.00,2.29,2.292,0.000,0.000,2.29,0.000,0.000,-45.0,55.0,0.000,650,70,1710.0,1.00,9.50,0.015,26.0,0.314
+A_NOMINAL_ONLY,right_foot,0.00,0.00,0.00,2.29,2.29,0.00,0.00,2.29,2.292,0.000,0.000,2.29,0.000,0.000,-45.0,55.0,0.000,650,70,1710.0,1.00,9.50,0.015,26.0,0.292
+A_NOMINAL_ONLY,left_thigh,0.25,0.00,0.00,0.00,0.00,0.44,0.44,0.44,-0.442,-0.004,-0.035,0.00,0.000,0.073,-120.0,45.0,0.010,900,90,2052.0,1.00,5.70,0.007,7.0,0.000
+A_NOMINAL_ONLY,right_thigh,0.25,0.00,0.00,0.00,0.00,0.35,0.35,0.35,-0.349,-0.005,-0.007,0.00,0.000,0.099,-120.0,45.0,0.008,900,90,2052.0,1.00,5.70,0.007,5.5,-0.008
+A_NOMINAL_ONLY,abdomen,0.25,0.00,0.00,0.00,0.00,-2.16,2.21,2.21,2.158,-0.030,-0.481,0.00,0.000,-0.193,-35.0,45.0,0.062,800,85,1482.0,1.00,5.70,0.032,30.9,-0.038
+A_NOMINAL_ONLY,thorax,0.25,0.00,0.00,0.00,0.00,-1.88,1.88,1.88,1.883,-0.030,-0.018,0.00,0.000,-0.132,-35.0,50.0,0.054,800,85,1482.0,1.00,5.70,0.025,26.3,0.000
+A_NOMINAL_ONLY,left_shank,0.25,0.00,0.00,0.00,0.00,0.91,0.91,0.91,-0.913,-0.002,0.007,0.00,0.000,0.047,-5.0,145.0,0.006,800,80,2052.0,1.00,6.84,0.008,12.8,0.009
+A_NOMINAL_ONLY,right_shank,0.25,0.00,0.00,0.00,0.00,1.13,1.13,1.13,-1.132,0.000,0.000,0.00,0.000,0.015,-5.0,145.0,0.008,800,80,2052.0,1.00,6.84,0.008,15.8,0.000
+A_NOMINAL_ONLY,left_foot,0.25,0.00,0.00,0.00,0.00,-2.31,2.31,2.31,2.310,-0.027,0.118,0.00,0.000,-0.166,-45.0,55.0,0.051,650,70,1710.0,1.00,9.50,0.022,26.2,0.459
+A_NOMINAL_ONLY,right_foot,0.25,0.00,0.00,0.00,0.00,-2.44,2.44,2.44,2.436,-0.012,0.115,0.00,0.000,-0.160,-45.0,55.0,0.054,650,70,1710.0,1.00,9.50,0.023,27.7,0.617
+A_NOMINAL_ONLY,left_thigh,0.60,0.00,0.00,0.00,0.00,0.44,0.44,0.44,-0.442,-0.059,0.023,0.00,0.000,-0.031,-120.0,45.0,0.010,900,90,2052.0,1.00,5.70,0.003,7.0,0.000
+A_NOMINAL_ONLY,right_thigh,0.60,0.00,0.00,0.00,0.00,0.27,0.28,0.28,-0.268,-0.073,0.049,0.00,0.000,-0.022,-120.0,45.0,0.006,900,90,2052.0,1.00,5.70,0.002,4.4,-0.033
+A_NOMINAL_ONLY,abdomen,0.60,0.00,0.00,0.00,0.00,-2.27,2.32,2.32,2.266,0.009,-0.514,0.00,0.000,0.070,-35.0,45.0,0.065,800,85,1482.0,1.00,5.70,0.018,32.4,-0.040
+A_NOMINAL_ONLY,thorax,0.60,0.00,0.00,0.00,0.00,-1.95,1.95,1.95,1.955,-0.004,-0.023,0.00,0.000,0.071,-35.0,50.0,0.056,800,85,1482.0,1.00,5.70,0.014,27.3,0.000
+A_NOMINAL_ONLY,left_shank,0.60,0.00,0.00,0.00,0.00,0.58,0.58,0.58,-0.577,-0.002,0.007,0.00,0.000,-0.060,-5.0,145.0,0.004,800,80,2052.0,1.00,6.84,0.002,8.1,0.030
+A_NOMINAL_ONLY,right_shank,0.60,0.00,0.00,0.00,0.00,0.96,0.96,0.96,-0.963,0.000,0.000,0.00,0.000,-0.090,-5.0,145.0,0.007,800,80,2052.0,1.00,6.84,0.003,13.4,0.000
+A_NOMINAL_ONLY,left_foot,0.60,0.00,0.00,0.00,0.00,-5.66,5.66,5.66,5.661,-0.032,-0.013,0.00,0.000,-0.221,-45.0,55.0,0.126,650,70,1710.0,1.00,9.50,0.047,64.2,0.546
+A_NOMINAL_ONLY,right_foot,0.60,0.00,0.00,0.00,0.00,-5.87,5.87,5.87,5.874,-0.004,-0.012,0.00,0.000,-0.199,-45.0,55.0,0.131,650,70,1710.0,1.00,9.50,0.047,66.6,0.748
+A_NOMINAL_ONLY,left_thigh,1.20,0.00,0.00,0.00,0.00,-0.58,0.62,0.62,0.577,-0.167,-0.141,0.00,0.000,-0.048,-120.0,45.0,0.005,900,90,2052.0,1.00,5.70,0.007,9.7,0.000
+A_NOMINAL_ONLY,right_thigh,1.20,0.00,0.00,0.00,0.00,-1.12,1.13,1.13,1.117,-0.017,-0.137,0.00,0.000,-0.059,-120.0,45.0,0.009,900,90,2052.0,1.00,5.70,0.011,17.7,-0.078
+A_NOMINAL_ONLY,abdomen,1.20,0.00,0.00,0.00,0.00,0.30,0.51,0.51,-0.296,-0.148,-0.390,0.00,0.000,0.088,-35.0,45.0,0.007,800,85,1482.0,1.00,5.70,0.009,7.1,-0.046
+A_NOMINAL_ONLY,thorax,1.20,0.00,0.00,0.00,0.00,-0.41,0.41,0.41,0.410,0.058,0.013,0.00,0.000,0.067,-35.0,50.0,0.012,800,85,1482.0,1.00,5.70,0.001,5.8,-0.001
+A_NOMINAL_ONLY,left_shank,1.20,0.00,0.00,0.00,0.00,-2.71,2.71,2.71,2.708,0.032,-0.002,0.00,0.000,-0.104,-5.0,145.0,0.542,800,80,2052.0,1.00,6.84,0.023,37.8,0.082
+A_NOMINAL_ONLY,right_shank,1.20,0.00,0.00,0.00,0.00,-1.93,1.93,1.93,1.931,0.000,0.000,0.00,0.000,-0.168,-5.0,145.0,0.386,800,80,2052.0,1.00,6.84,0.020,27.0,-0.026
+A_NOMINAL_ONLY,left_foot,1.20,0.00,0.00,0.00,0.00,-23.82,23.82,23.82,23.815,0.405,-0.092,0.00,0.000,-1.010,-45.0,55.0,0.529,650,70,1710.0,1.00,9.50,0.200,270.2,0.750
+A_NOMINAL_ONLY,right_foot,1.20,0.00,0.00,0.00,0.00,-24.20,24.20,24.20,24.199,0.298,-0.139,0.00,0.000,-0.949,-45.0,55.0,0.538,650,70,1710.0,1.00,9.50,0.200,274.6,0.725
+A_NOMINAL_ONLY,left_thigh,2.00,0.00,0.00,0.00,0.00,1.63,1.64,1.64,-1.630,0.079,0.103,0.00,0.000,-0.041,-120.0,45.0,0.036,900,90,2052.0,1.00,5.70,0.011,25.7,0.000
+A_NOMINAL_ONLY,right_thigh,2.00,0.00,0.00,0.00,0.00,1.79,1.79,1.79,-1.787,0.125,0.112,0.00,0.000,-0.019,-120.0,45.0,0.040,900,90,2052.0,1.00,5.70,0.013,28.2,0.006
+A_NOMINAL_ONLY,abdomen,2.00,0.00,0.00,0.00,0.00,-0.92,1.00,1.00,0.922,0.087,-0.369,0.00,0.000,-0.051,-35.0,45.0,0.026,800,85,1482.0,1.00,5.70,0.012,13.9,0.034
+A_NOMINAL_ONLY,thorax,2.00,0.00,0.00,0.00,0.00,1.64,1.75,1.75,-1.637,0.011,-0.624,0.00,0.000,0.014,-35.0,50.0,0.033,800,85,1482.0,1.00,5.70,0.017,24.5,0.045
+A_NOMINAL_ONLY,left_shank,2.00,0.00,0.00,0.00,0.00,2.30,2.30,2.30,-2.301,0.006,-0.001,0.00,0.000,-0.046,-5.0,145.0,0.016,800,80,2052.0,1.00,6.84,0.014,32.1,0.003
+A_NOMINAL_ONLY,right_shank,2.00,0.00,0.00,0.00,0.00,2.00,2.00,2.00,-2.001,0.000,0.000,0.00,0.000,-0.043,-5.0,145.0,0.014,800,80,2052.0,1.00,6.84,0.012,27.9,0.000
+A_NOMINAL_ONLY,left_foot,2.00,0.00,0.00,0.00,0.00,9.65,9.65,9.65,-9.651,0.072,-0.258,0.00,0.000,0.038,-45.0,55.0,0.175,650,70,1710.0,1.00,9.50,0.066,109.5,-0.020
+A_NOMINAL_ONLY,right_foot,2.00,0.00,0.00,0.00,0.00,9.33,9.34,9.34,-9.332,0.115,-0.352,0.00,0.000,0.105,-45.0,55.0,0.170,650,70,1710.0,1.00,9.50,0.066,106.0,-0.023
+A_NOMINAL_ONLY,left_thigh,2.99,0.00,0.00,0.00,0.00,1.46,1.48,1.48,-1.459,0.033,0.266,0.00,0.000,0.000,-120.0,45.0,0.032,900,90,2052.0,1.00,5.70,0.011,23.3,0.000
+A_NOMINAL_ONLY,right_thigh,2.99,0.00,0.00,0.00,0.00,1.62,1.64,1.64,-1.620,0.075,0.276,0.00,0.000,0.000,-120.0,45.0,0.036,900,90,2052.0,1.00,5.70,0.013,25.8,0.005
+A_NOMINAL_ONLY,abdomen,2.99,0.00,0.00,0.00,0.00,-1.06,1.09,1.09,1.060,0.033,-0.244,0.00,0.000,0.000,-35.0,45.0,0.030,800,85,1482.0,1.00,5.70,0.010,15.2,0.023
+A_NOMINAL_ONLY,thorax,2.99,0.00,0.00,0.00,0.00,1.55,1.66,1.66,-1.547,0.006,-0.606,0.00,0.000,0.000,-35.0,50.0,0.031,800,85,1482.0,1.00,5.70,0.016,23.2,0.032
+A_NOMINAL_ONLY,left_shank,2.99,0.00,0.00,0.00,0.00,2.04,2.04,2.04,-2.042,0.004,-0.001,0.00,0.000,0.000,-5.0,145.0,0.014,800,80,2052.0,1.00,6.84,0.014,28.5,0.004
+A_NOMINAL_ONLY,right_shank,2.99,0.00,0.00,0.00,0.00,1.75,1.75,1.75,-1.751,0.000,0.000,0.00,0.000,0.000,-5.0,145.0,0.012,800,80,2052.0,1.00,6.84,0.012,24.4,0.004
+A_NOMINAL_ONLY,left_foot,2.99,0.00,0.00,0.00,0.00,9.75,9.75,9.75,-9.745,0.047,-0.233,0.00,0.000,0.000,-45.0,55.0,0.177,650,70,1710.0,1.00,9.50,0.065,110.6,-0.017
+A_NOMINAL_ONLY,right_foot,2.99,0.00,0.00,0.00,0.00,9.52,9.53,9.53,-9.524,0.090,-0.404,0.00,0.000,0.000,-45.0,55.0,0.173,650,70,1710.0,1.00,9.50,0.063,108.1,-0.016
+B_ANKLE_BALANCE_ONLY,left_thigh,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.000,0.000,0.000,0.00,0.000,0.000,-120.0,45.0,0.000,900,90,2052.0,1.00,5.70,0.000,0.0,0.000
+B_ANKLE_BALANCE_ONLY,right_thigh,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.000,0.000,0.000,0.00,0.000,0.000,-120.0,45.0,0.000,900,90,2052.0,1.00,5.70,0.000,0.0,-0.015
+B_ANKLE_BALANCE_ONLY,abdomen,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.000,0.000,0.000,0.00,0.000,0.000,-35.0,45.0,0.000,800,85,1482.0,1.00,5.70,0.000,0.0,-0.015
+B_ANKLE_BALANCE_ONLY,thorax,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.000,0.000,0.000,0.00,0.000,0.000,-35.0,50.0,0.000,800,85,1482.0,1.00,5.70,0.000,0.0,0.000
+B_ANKLE_BALANCE_ONLY,left_shank,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.000,0.000,0.000,0.00,0.000,0.000,-5.0,145.0,0.000,800,80,2052.0,1.00,6.84,0.000,0.0,0.019
+B_ANKLE_BALANCE_ONLY,right_shank,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.000,0.000,0.000,0.00,0.000,0.000,-5.0,145.0,0.000,800,80,2052.0,1.00,6.84,0.000,0.0,0.000
+B_ANKLE_BALANCE_ONLY,left_foot,0.00,0.00,0.00,2.29,2.29,0.00,0.00,2.29,2.292,0.000,0.000,2.29,0.000,0.000,-45.0,55.0,0.000,650,70,1710.0,1.00,9.50,0.015,26.0,0.314
+B_ANKLE_BALANCE_ONLY,right_foot,0.00,0.00,0.00,2.29,2.29,0.00,0.00,2.29,2.292,0.000,0.000,2.29,0.000,0.000,-45.0,55.0,0.000,650,70,1710.0,1.00,9.50,0.015,26.0,0.292
+B_ANKLE_BALANCE_ONLY,left_thigh,0.25,0.00,0.00,0.00,0.00,-0.03,0.00,0.00,0.032,0.009,0.058,0.00,0.000,0.038,-120.0,45.0,0.000,900,90,2052.0,1.00,5.70,0.003,1.0,0.000
+B_ANKLE_BALANCE_ONLY,right_thigh,0.25,0.00,0.00,0.00,0.00,-0.11,0.00,0.00,0.107,0.001,0.092,0.00,0.000,0.051,-120.0,45.0,0.001,900,90,2052.0,1.00,5.70,0.003,2.2,-0.004
+B_ANKLE_BALANCE_ONLY,abdomen,0.25,0.00,0.00,0.00,0.00,-1.48,1.56,1.55,1.476,-0.015,-0.464,0.00,0.000,-0.123,-35.0,45.0,0.042,800,85,1482.0,1.00,5.70,0.021,21.6,-0.034
+B_ANKLE_BALANCE_ONLY,thorax,0.25,0.00,0.00,0.00,0.00,-1.42,1.42,1.41,1.415,-0.020,0.000,0.00,0.000,-0.090,-35.0,50.0,0.040,800,85,1482.0,1.00,5.70,0.018,19.8,0.000
+B_ANKLE_BALANCE_ONLY,left_shank,0.25,0.00,0.00,0.00,0.00,-0.05,0.00,0.00,0.054,-0.003,0.010,0.00,0.000,-0.002,-5.0,145.0,0.008,800,80,2052.0,1.00,6.84,0.001,0.8,0.010
+B_ANKLE_BALANCE_ONLY,right_shank,0.25,0.00,0.00,0.00,0.00,0.14,0.00,0.00,-0.142,0.000,0.000,0.00,0.000,-0.012,-5.0,145.0,0.001,800,80,2052.0,1.00,6.84,0.000,2.0,-0.001
+B_ANKLE_BALANCE_ONLY,left_foot,0.25,0.00,0.00,10.90,10.90,-0.72,0.73,11.14,11.134,-0.075,0.328,10.42,0.000,0.018,-45.0,55.0,0.016,650,70,1710.0,1.00,9.50,0.073,126.4,0.221
+B_ANKLE_BALANCE_ONLY,right_foot,0.25,0.00,0.00,10.90,10.90,-0.84,0.85,11.26,11.255,-0.050,0.338,10.42,0.000,0.016,-45.0,55.0,0.019,650,70,1710.0,1.00,9.50,0.074,127.7,0.390
+B_ANKLE_BALANCE_ONLY,left_thigh,0.60,0.00,0.00,0.00,0.00,0.07,0.00,0.00,-0.069,-0.014,0.040,0.00,0.000,-0.008,-120.0,45.0,0.002,900,90,2052.0,1.00,5.70,0.002,1.3,0.000
+B_ANKLE_BALANCE_ONLY,right_thigh,0.60,0.00,0.00,0.00,0.00,-0.03,0.00,0.00,0.033,-0.034,0.069,0.00,0.000,-0.003,-120.0,45.0,0.000,900,90,2052.0,1.00,5.70,0.001,1.3,-0.001
+B_ANKLE_BALANCE_ONLY,abdomen,0.60,0.00,0.00,0.00,0.00,-1.73,1.82,1.81,1.734,0.035,-0.534,0.00,0.000,0.042,-35.0,45.0,0.050,800,85,1482.0,1.00,5.70,0.014,25.3,-0.022
+B_ANKLE_BALANCE_ONLY,thorax,0.60,0.00,0.00,0.00,0.00,-1.55,1.55,1.55,1.549,-0.005,-0.033,0.00,0.000,0.050,-35.0,50.0,0.044,800,85,1482.0,1.00,5.70,0.012,21.6,0.000
+B_ANKLE_BALANCE_ONLY,left_shank,0.60,0.00,0.00,0.00,0.00,0.16,0.16,0.16,-0.164,-0.003,0.007,0.00,0.000,-0.035,-5.0,145.0,0.001,800,80,2052.0,1.00,6.84,0.000,2.3,0.003
+B_ANKLE_BALANCE_ONLY,right_shank,0.60,0.00,0.00,0.00,0.00,0.41,0.41,0.41,-0.415,0.000,0.000,0.00,0.000,-0.051,-5.0,145.0,0.003,800,80,2052.0,1.00,6.84,0.001,5.8,0.000
+B_ANKLE_BALANCE_ONLY,left_foot,0.60,0.00,0.00,6.48,6.48,-0.53,0.54,7.02,7.018,-0.048,0.119,6.48,0.000,0.037,-45.0,55.0,0.012,650,70,1710.0,1.00,9.50,0.045,79.6,0.142
+B_ANKLE_BALANCE_ONLY,right_foot,0.60,0.00,0.00,6.48,6.48,-0.68,0.68,7.17,7.167,-0.014,0.126,6.48,0.000,0.048,-45.0,55.0,0.015,650,70,1710.0,1.00,9.50,0.046,81.3,0.271
+B_ANKLE_BALANCE_ONLY,left_thigh,1.20,0.00,0.00,0.00,0.00,-0.15,0.00,0.00,0.148,0.000,0.010,0.00,0.000,0.012,-120.0,45.0,0.001,900,90,2052.0,1.00,5.70,0.002,2.3,0.000
+B_ANKLE_BALANCE_ONLY,right_thigh,1.20,0.00,0.00,0.00,0.00,-0.25,0.24,0.24,0.247,-0.005,0.037,0.00,0.000,0.018,-120.0,45.0,0.002,900,90,2052.0,1.00,5.70,0.002,3.9,-0.003
+B_ANKLE_BALANCE_ONLY,abdomen,1.20,0.00,0.00,0.00,0.00,-1.23,1.36,1.35,1.225,0.002,-0.577,0.00,0.000,0.002,-35.0,45.0,0.035,800,85,1482.0,1.00,5.70,0.012,18.9,-0.022
+B_ANKLE_BALANCE_ONLY,thorax,1.20,0.00,0.00,0.00,0.00,-1.18,1.18,1.18,1.178,-0.011,-0.046,0.00,0.000,0.019,-35.0,50.0,0.034,800,85,1482.0,1.00,5.70,0.010,16.5,0.000
+B_ANKLE_BALANCE_ONLY,left_shank,1.20,0.00,0.00,0.00,0.00,-0.05,0.00,0.00,0.045,-0.002,0.006,0.00,0.000,-0.004,-5.0,145.0,0.000,800,80,2052.0,1.00,6.84,0.001,0.6,0.007
+B_ANKLE_BALANCE_ONLY,right_shank,1.20,0.00,0.00,0.00,0.00,0.17,0.17,0.17,-0.173,0.000,0.000,0.00,0.000,-0.017,-5.0,145.0,0.001,800,80,2052.0,1.00,6.84,0.001,2.4,0.000
+B_ANKLE_BALANCE_ONLY,left_foot,1.20,0.00,0.00,9.36,9.36,-0.29,0.31,8.51,8.506,-0.034,0.184,8.21,0.000,-0.008,-45.0,55.0,0.007,650,70,1710.0,1.00,9.50,0.057,96.5,0.122
+B_ANKLE_BALANCE_ONLY,right_foot,1.20,0.00,0.00,9.36,9.36,-0.41,0.43,8.63,8.625,-0.012,0.184,8.21,0.000,0.000,-45.0,55.0,0.009,650,70,1710.0,1.00,9.50,0.057,97.9,0.201
+B_ANKLE_BALANCE_ONLY,left_thigh,2.00,0.00,0.00,0.00,0.00,-0.15,0.00,0.00,0.152,-0.004,0.019,0.00,0.000,0.011,-120.0,45.0,0.001,900,90,2052.0,1.00,5.70,0.002,2.4,0.000
+B_ANKLE_BALANCE_ONLY,right_thigh,2.00,0.00,0.00,0.00,0.00,-0.26,0.26,0.26,0.258,-0.014,0.047,0.00,0.000,0.017,-120.0,45.0,0.002,900,90,2052.0,1.00,5.70,0.002,4.1,-0.003
+B_ANKLE_BALANCE_ONLY,abdomen,2.00,0.00,0.00,0.00,0.00,-1.22,1.35,1.34,1.221,0.011,-0.550,0.00,0.000,0.004,-35.0,45.0,0.035,800,85,1482.0,1.00,5.70,0.012,18.7,-0.022
+B_ANKLE_BALANCE_ONLY,thorax,2.00,0.00,0.00,0.00,0.00,-1.17,1.18,1.18,1.174,-0.008,-0.033,0.00,0.000,0.021,-35.0,50.0,0.034,800,85,1482.0,1.00,5.70,0.010,16.4,0.000
+B_ANKLE_BALANCE_ONLY,left_shank,2.00,0.00,0.00,0.00,0.00,-0.08,0.00,0.00,0.077,-0.002,0.007,0.00,0.000,-0.004,-5.0,145.0,0.014,800,80,2052.0,1.00,6.84,0.001,1.1,0.006
+B_ANKLE_BALANCE_ONLY,right_shank,2.00,0.00,0.00,0.00,0.00,0.16,0.16,0.16,-0.165,0.000,0.000,0.00,0.000,-0.019,-5.0,145.0,0.001,800,80,2052.0,1.00,6.84,0.000,2.3,0.000
+B_ANKLE_BALANCE_ONLY,left_foot,2.00,0.00,0.00,9.49,9.49,-0.31,0.32,8.65,8.653,-0.042,0.156,8.34,0.000,-0.006,-45.0,55.0,0.007,650,70,1710.0,1.00,9.50,0.058,98.2,0.111
+B_ANKLE_BALANCE_ONLY,right_foot,2.00,0.00,0.00,9.49,9.49,-0.44,0.45,8.79,8.788,-0.016,0.159,8.34,0.000,0.004,-45.0,55.0,0.010,650,70,1710.0,1.00,9.50,0.058,99.7,0.201
+B_ANKLE_BALANCE_ONLY,left_thigh,2.99,0.00,0.00,0.00,0.00,-0.14,0.00,0.00,0.137,-0.004,0.022,0.00,0.000,0.008,-120.0,45.0,0.001,900,90,2052.0,1.00,5.70,0.002,2.2,0.000
+B_ANKLE_BALANCE_ONLY,right_thigh,2.99,0.00,0.00,0.00,0.00,-0.24,0.24,0.25,0.242,-0.014,0.050,0.00,0.000,0.013,-120.0,45.0,0.002,900,90,2052.0,1.00,5.70,0.002,3.9,-0.001
+B_ANKLE_BALANCE_ONLY,abdomen,2.99,0.00,0.00,0.00,0.00,-1.25,1.37,1.37,1.250,0.011,-0.554,0.00,0.000,0.003,-35.0,45.0,0.036,800,85,1482.0,1.00,5.70,0.012,19.1,-0.021
+B_ANKLE_BALANCE_ONLY,thorax,2.99,0.00,0.00,0.00,0.00,-1.19,1.19,1.19,1.193,-0.008,-0.034,0.00,0.000,0.018,-35.0,50.0,0.034,800,85,1482.0,1.00,5.70,0.010,16.7,0.000
+B_ANKLE_BALANCE_ONLY,left_shank,2.99,0.00,0.00,0.00,0.00,-0.04,0.00,0.00,0.045,-0.002,0.007,0.00,0.000,-0.023,-5.0,145.0,0.000,800,80,2052.0,1.00,6.84,0.001,0.6,0.005
+B_ANKLE_BALANCE_ONLY,right_shank,2.99,0.00,0.00,0.00,0.00,0.20,0.19,0.19,-0.195,0.000,0.000,0.00,0.000,-0.036,-5.0,145.0,0.001,800,80,2052.0,1.00,6.84,0.000,2.7,0.000
+B_ANKLE_BALANCE_ONLY,left_foot,2.99,0.00,0.00,5.87,5.87,-0.27,0.29,7.28,7.282,-0.043,0.174,7.02,0.000,0.015,-45.0,55.0,0.006,650,70,1710.0,1.00,9.50,0.048,82.6,0.143
+B_ANKLE_BALANCE_ONLY,right_foot,2.99,0.00,0.00,5.87,5.87,-0.40,0.41,7.42,7.417,-0.015,0.177,7.02,0.000,0.024,-45.0,55.0,0.009,650,70,1710.0,1.00,9.50,0.048,84.2,0.243
+C_PRODUCTION_CURRENT,left_thigh,0.00,0.00,0.00,0.05,0.05,-0.11,0.00,0.17,0.169,-0.004,-0.022,0.00,0.000,-0.086,-120.0,45.0,0.001,900,90,2052.0,1.00,5.70,0.005,2.7,0.000
+C_PRODUCTION_CURRENT,right_thigh,0.00,0.00,0.00,0.05,0.05,-0.15,0.00,0.20,0.199,-0.003,-0.018,0.00,0.000,-0.111,-120.0,45.0,0.001,900,90,2052.0,1.00,5.70,0.006,3.1,-0.005
+C_PRODUCTION_CURRENT,abdomen,0.00,0.00,0.00,-0.03,-0.03,0.33,0.33,0.35,-0.355,-0.005,0.003,0.00,0.000,0.103,-35.0,45.0,0.007,800,85,1482.0,1.00,5.70,0.009,5.0,-0.002
+C_PRODUCTION_CURRENT,thorax,0.00,0.00,0.00,-0.03,-0.03,0.28,0.28,0.31,-0.307,-0.005,0.049,0.00,0.000,0.038,-35.0,50.0,0.006,800,85,1482.0,1.00,5.70,0.005,4.3,0.000
+C_PRODUCTION_CURRENT,left_shank,0.00,0.00,0.00,0.00,0.00,-0.04,0.00,0.00,0.043,-0.001,-0.001,0.00,0.000,-0.044,-5.0,145.0,0.000,800,80,2052.0,1.00,6.84,0.002,0.6,0.007
+C_PRODUCTION_CURRENT,right_shank,0.00,0.00,0.00,0.00,0.00,-0.01,0.00,0.00,0.009,0.000,0.000,0.00,0.000,-0.021,-5.0,145.0,0.000,800,80,2052.0,1.00,6.84,0.001,0.1,0.000
+C_PRODUCTION_CURRENT,left_foot,0.00,0.00,0.00,6.88,6.88,-0.05,0.00,3.49,3.486,-0.002,0.125,3.44,0.000,-0.050,-45.0,55.0,0.001,650,70,1710.0,1.00,9.50,0.026,39.6,0.101
+C_PRODUCTION_CURRENT,right_foot,0.00,0.00,0.00,6.88,6.88,-0.05,0.00,3.49,3.489,0.004,0.119,3.44,0.000,-0.048,-45.0,55.0,0.001,650,70,1710.0,1.00,9.50,0.026,39.6,0.090
+C_PRODUCTION_CURRENT,left_thigh,0.25,0.00,0.00,0.00,0.00,0.26,0.25,0.27,-0.257,0.014,0.086,0.00,0.000,0.037,-120.0,45.0,0.006,900,90,2052.0,1.00,5.70,0.004,4.3,0.000
+C_PRODUCTION_CURRENT,right_thigh,0.25,0.00,0.00,0.00,0.00,0.22,0.22,0.25,-0.225,-0.012,0.114,0.00,0.000,0.041,-120.0,45.0,0.005,900,90,2052.0,1.00,5.70,0.004,4.0,0.015
+C_PRODUCTION_CURRENT,abdomen,0.25,0.00,0.00,0.00,0.00,-1.92,2.00,1.98,1.921,0.007,-0.487,0.00,0.000,-0.072,-35.0,45.0,0.055,800,85,1482.0,1.00,5.70,0.022,27.7,-0.012
+C_PRODUCTION_CURRENT,thorax,0.25,0.00,0.00,0.00,0.00,-1.75,1.75,1.75,1.752,-0.021,-0.022,0.00,0.000,-0.040,-35.0,50.0,0.050,800,85,1482.0,1.00,5.70,0.019,24.5,0.000
+C_PRODUCTION_CURRENT,left_shank,0.25,0.00,0.00,0.00,0.00,0.02,0.00,0.00,-0.020,-0.008,0.009,0.00,0.000,0.035,-5.0,145.0,0.000,800,80,2052.0,1.00,6.84,0.002,0.3,-0.018
+C_PRODUCTION_CURRENT,right_shank,0.25,0.00,0.00,0.00,0.00,0.18,0.18,0.18,-0.180,0.000,0.000,0.00,0.000,0.033,-5.0,145.0,0.001,800,80,2052.0,1.00,6.84,0.003,2.5,-0.003
+C_PRODUCTION_CURRENT,left_foot,0.25,0.00,0.00,-0.47,-0.47,-0.83,0.84,6.10,6.095,-0.114,0.249,5.27,0.000,-0.036,-45.0,55.0,0.019,650,70,1710.0,1.00,9.50,0.042,69.2,-0.166
+C_PRODUCTION_CURRENT,right_foot,0.25,0.00,0.00,-0.47,-0.47,-0.96,0.96,6.23,6.223,-0.082,0.266,5.27,0.000,-0.037,-45.0,55.0,0.021,650,70,1710.0,1.00,9.50,0.043,70.7,-0.047
+C_PRODUCTION_CURRENT,left_thigh,0.60,0.00,0.00,0.00,0.00,0.05,0.00,0.00,-0.054,-0.013,0.029,0.00,0.000,-0.010,-120.0,45.0,0.001,900,90,2052.0,1.00,5.70,0.001,1.0,0.000
+C_PRODUCTION_CURRENT,right_thigh,0.60,0.00,0.00,0.00,0.00,-0.05,0.00,0.00,0.051,-0.027,0.058,0.00,0.000,-0.005,-120.0,45.0,0.000,900,90,2052.0,1.00,5.70,0.001,1.3,-0.002
+C_PRODUCTION_CURRENT,abdomen,0.60,0.00,0.00,0.00,0.00,-1.68,1.77,1.76,1.683,0.028,-0.532,0.00,0.000,0.045,-35.0,45.0,0.048,800,85,1482.0,1.00,5.70,0.014,24.6,-0.022
+C_PRODUCTION_CURRENT,thorax,0.60,0.00,0.00,0.00,0.00,-1.50,1.50,1.50,1.503,-0.007,-0.030,0.00,0.000,0.050,-35.0,50.0,0.043,800,85,1482.0,1.00,5.70,0.011,21.0,0.000
+C_PRODUCTION_CURRENT,left_shank,0.60,0.00,0.00,0.00,0.00,0.16,0.00,0.00,-0.157,-0.003,0.007,0.00,0.000,-0.039,-5.0,145.0,0.001,800,80,2052.0,1.00,6.84,0.001,2.2,0.004
+C_PRODUCTION_CURRENT,right_shank,0.60,0.00,0.00,0.00,0.00,0.41,0.40,0.40,-0.406,0.000,0.000,0.00,0.000,-0.054,-5.0,145.0,0.003,800,80,2052.0,1.00,6.84,0.001,5.7,0.000
+C_PRODUCTION_CURRENT,left_foot,0.60,0.00,0.00,5.43,5.43,-0.50,0.50,7.08,7.075,-0.040,0.116,6.58,0.000,0.037,-45.0,55.0,0.011,650,70,1710.0,1.00,9.50,0.046,80.3,0.147
+C_PRODUCTION_CURRENT,right_foot,0.60,0.00,0.00,5.43,5.43,-0.64,0.65,7.22,7.219,-0.010,0.121,6.58,0.000,0.047,-45.0,55.0,0.014,650,70,1710.0,1.00,9.50,0.046,81.9,0.266
+C_PRODUCTION_CURRENT,left_thigh,1.20,0.00,0.00,0.00,0.00,-0.15,0.00,0.00,0.155,0.000,0.013,0.00,0.000,0.008,-120.0,45.0,0.001,900,90,2052.0,1.00,5.70,0.002,2.4,0.000
+C_PRODUCTION_CURRENT,right_thigh,1.20,0.00,0.00,0.00,0.00,-0.25,0.25,0.26,0.254,-0.006,0.041,0.00,0.000,0.012,-120.0,45.0,0.002,900,90,2052.0,1.00,5.70,0.002,4.0,-0.001
+C_PRODUCTION_CURRENT,abdomen,1.20,0.00,0.00,0.00,0.00,-1.22,1.36,1.35,1.219,0.003,-0.576,0.00,0.000,0.004,-35.0,45.0,0.035,800,85,1482.0,1.00,5.70,0.012,18.8,-0.021
+C_PRODUCTION_CURRENT,thorax,1.20,0.00,0.00,0.00,0.00,-1.17,1.18,1.17,1.174,-0.011,-0.045,0.00,0.000,0.019,-35.0,50.0,0.034,800,85,1482.0,1.00,5.70,0.010,16.4,0.000
+C_PRODUCTION_CURRENT,left_shank,1.20,0.00,0.00,0.00,0.00,-0.07,0.00,0.00,0.069,-0.002,0.007,0.00,0.000,-0.024,-5.0,145.0,0.014,800,80,2052.0,1.00,6.84,0.001,1.0,0.006
+C_PRODUCTION_CURRENT,right_shank,1.20,0.00,0.00,0.00,0.00,0.15,0.00,0.00,-0.151,0.000,0.000,0.00,0.000,-0.035,-5.0,145.0,0.001,800,80,2052.0,1.00,6.84,0.000,2.1,0.000
+C_PRODUCTION_CURRENT,left_foot,1.20,0.00,0.00,7.20,7.20,-0.29,0.31,7.50,7.494,-0.036,0.195,7.20,0.000,0.014,-45.0,55.0,0.006,650,70,1710.0,1.00,9.50,0.049,85.0,0.139
+C_PRODUCTION_CURRENT,right_foot,1.20,0.00,0.00,7.20,7.20,-0.41,0.43,7.62,7.615,-0.013,0.195,7.20,0.000,0.022,-45.0,55.0,0.009,650,70,1710.0,1.00,9.50,0.050,86.4,0.225
+C_PRODUCTION_CURRENT,left_thigh,2.00,0.00,0.00,0.00,0.00,-0.14,0.00,0.00,0.144,-0.004,0.016,0.00,0.000,0.009,-120.0,45.0,0.001,900,90,2052.0,1.00,5.70,0.002,2.3,0.000
+C_PRODUCTION_CURRENT,right_thigh,2.00,0.00,0.00,0.00,0.00,-0.25,0.25,0.25,0.250,-0.013,0.045,0.00,0.000,0.014,-120.0,45.0,0.002,900,90,2052.0,1.00,5.70,0.002,4.0,-0.002
+C_PRODUCTION_CURRENT,abdomen,2.00,0.00,0.00,0.00,0.00,-1.23,1.36,1.35,1.234,0.010,-0.553,0.00,0.000,0.002,-35.0,45.0,0.035,800,85,1482.0,1.00,5.70,0.012,18.9,-0.021
+C_PRODUCTION_CURRENT,thorax,2.00,0.00,0.00,0.00,0.00,-1.18,1.18,1.18,1.184,-0.008,-0.034,0.00,0.000,0.017,-35.0,50.0,0.034,800,85,1482.0,1.00,5.70,0.010,16.5,0.000
+C_PRODUCTION_CURRENT,left_shank,2.00,0.00,0.00,0.00,0.00,-0.06,0.00,0.00,0.060,-0.002,0.007,0.00,0.000,-0.022,-5.0,145.0,0.011,800,80,2052.0,1.00,6.84,0.001,0.8,0.006
+C_PRODUCTION_CURRENT,right_shank,2.00,0.00,0.00,0.00,0.00,0.18,0.18,0.18,-0.181,0.000,0.000,0.00,0.000,-0.036,-5.0,145.0,0.001,800,80,2052.0,1.00,6.84,0.000,2.5,0.000
+C_PRODUCTION_CURRENT,left_foot,2.00,0.00,0.00,5.91,5.91,-0.28,0.30,7.34,7.339,-0.040,0.162,7.06,0.000,0.014,-45.0,55.0,0.006,650,70,1710.0,1.00,9.50,0.048,83.3,0.144
+C_PRODUCTION_CURRENT,right_foot,2.00,0.00,0.00,5.91,5.91,-0.42,0.43,7.47,7.473,-0.013,0.164,7.06,0.000,0.024,-45.0,55.0,0.009,650,70,1710.0,1.00,9.50,0.049,84.8,0.239
+C_PRODUCTION_CURRENT,left_thigh,2.99,0.00,0.00,0.00,0.00,-0.14,0.00,0.00,0.136,-0.003,0.023,0.00,0.000,0.011,-120.0,45.0,0.001,900,90,2052.0,1.00,5.70,0.002,2.2,0.000
+C_PRODUCTION_CURRENT,right_thigh,2.99,0.00,0.00,0.00,0.00,-0.24,0.24,0.25,0.240,-0.014,0.051,0.00,0.000,0.018,-120.0,45.0,0.002,900,90,2052.0,1.00,5.70,0.002,3.9,-0.003
+C_PRODUCTION_CURRENT,abdomen,2.99,0.00,0.00,0.00,0.00,-1.25,1.38,1.37,1.251,0.011,-0.553,0.00,0.000,0.004,-35.0,45.0,0.036,800,85,1482.0,1.00,5.70,0.012,19.1,-0.022
+C_PRODUCTION_CURRENT,thorax,2.99,0.00,0.00,0.00,0.00,-1.19,1.19,1.19,1.193,-0.008,-0.034,0.00,0.000,0.020,-35.0,50.0,0.034,800,85,1482.0,1.00,5.70,0.010,16.7,0.000
+C_PRODUCTION_CURRENT,left_shank,2.99,0.00,0.00,0.00,0.00,-0.04,0.00,0.00,0.038,-0.003,0.007,0.00,0.000,-0.004,-5.0,145.0,0.008,800,80,2052.0,1.00,6.84,0.001,0.5,0.006
+C_PRODUCTION_CURRENT,right_shank,2.99,0.00,0.00,0.00,0.00,0.20,0.20,0.20,-0.201,0.000,0.000,0.00,0.000,-0.019,-5.0,145.0,0.001,800,80,2052.0,1.00,6.84,0.001,2.8,0.000
+C_PRODUCTION_CURRENT,left_foot,2.99,0.00,0.00,8.16,8.16,-0.27,0.28,8.43,8.428,-0.044,0.167,8.16,0.000,-0.006,-45.0,55.0,0.006,650,70,1710.0,1.00,9.50,0.056,95.6,0.118
+C_PRODUCTION_CURRENT,right_foot,2.99,0.00,0.00,8.16,8.16,-0.40,0.41,8.56,8.563,-0.017,0.170,8.16,0.000,0.003,-45.0,55.0,0.009,650,70,1710.0,1.00,9.50,0.057,97.2,0.212
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1109" name="A2_ANKLE_COMMAND_TO_POSTURE_COST" fullname="PowerliftingSimulator.Tests.PhysicalStandingPostureAuditTests.A2_ANKLE_COMMAND_TO_POSTURE_COST" methodname="A2_ANKLE_COMMAND_TO_POSTURE_COST" classname="PowerliftingSimulator.Tests.PhysicalStandingPostureAuditTests" runstate="Runnable" seed="2042178986" result="Passed" start-time="2026-09-09 01:47:27Z" end-time="2026-09-09 01:47:31Z" duration="3.707000" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[A2 ANKLE COMMAND TO POSTURE COST]
+ankle_offset_deg,abdomen_deg,thorax_deg,hip_l_deg,abdomen_posture_err,thorax_posture_err,hip_posture_err,max_posture_err,abdomen_limit_proximity,com_ap,cop_ap
+-9.0,-2.973,-2.500,0.986,3.050,2.503,1.016,3.050,0.085,0.12100,-0.05818
+-6.0,-2.737,-2.318,0.798,2.813,2.321,0.809,2.813,0.078,0.09833,-0.05059
+-3.0,-2.503,-2.135,0.615,2.567,2.136,0.619,2.567,0.072,0.07293,-0.04486
+0.0,-2.266,-1.955,0.442,2.323,1.954,0.444,2.323,0.065,0.04472,-0.04030
+3.0,-2.033,-1.777,0.276,2.093,1.776,0.280,2.093,0.058,0.01367,-0.03692
+6.0,-1.782,-1.588,0.105,1.851,1.588,0.000,1.851,0.051,-0.01623,-0.03274
+9.0,-1.507,-1.385,-0.074,1.589,1.384,0.000,1.589,0.043,-0.04332,-0.02699
+# d_abdomen_deg_per_ankle_deg,0.0807
+# d_max_posture_error_deg_per_ankle_deg,-0.0808
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1110" name="PhysicalStandingStartupTransientTests" fullname="PowerliftingSimulator.Tests.PhysicalStandingStartupTransientTests" classname="PowerliftingSimulator.Tests.PhysicalStandingStartupTransientTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-09 01:47:31Z" end-time="2026-09-09 01:47:32Z" duration="0.735354" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1111" name="N0_NOMINAL_ONLY_STARTUP_TRANSIENT" fullname="PowerliftingSimulator.Tests.PhysicalStandingStartupTransientTests.N0_NOMINAL_ONLY_STARTUP_TRANSIENT" methodname="N0_NOMINAL_ONLY_STARTUP_TRANSIENT" classname="PowerliftingSimulator.Tests.PhysicalStandingStartupTransientTests" runstate="Runnable" seed="1763693568" result="Passed" start-time="2026-09-09 01:47:31Z" end-time="2026-09-09 01:47:32Z" duration="0.731505" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[N0 NOMINAL ONLY STARTUP]
+# initial pre-simulation state
+joint,initial_actual_deg,nominal_target_deg,drive_space_error_deg,initial_ang_vel_x,target_ang_vel_x,limit_proximity,max_force_nm
+left_thigh,0.000,0.000,0.000,0.0000,0.0000,0.000,2052.0
+right_thigh,0.000,0.000,0.000,0.0000,0.0000,0.000,2052.0
+abdomen,0.000,0.000,0.000,0.0000,0.0000,0.000,1482.0
+thorax,0.000,0.000,0.000,0.0000,0.0000,0.000,1482.0
+left_shank,0.000,0.000,0.000,0.0000,0.0000,0.000,2052.0
+right_shank,0.000,0.000,0.000,0.0000,0.0000,0.000,2052.0
+left_foot,0.000,0.000,2.292,0.0000,0.0000,0.000,1710.0
+right_foot,0.000,0.000,2.292,0.0000,0.0000,0.000,1710.0
+# transient trace
+tick,t_s,hip_l_err,hip_r_err,abdomen_err,thorax_err,knee_l_err,knee_r_err,protected_max_err,ankle_l_actual,ankle_l_track_err,ankle_l_limit_prox,pelvis_y,pelvis_vy,com_ap,com_ap_vel,com_y_vel,cop_ap,fz_n,left_contacts,right_contacts,foot_pitch_deg,abdomen_ang_vel,abdomen_demand
+0,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,2.292,0.000,0.9816,0.0000,-0.03181,0.00000,0.00000,-0.05697,865.8,1,1,0.000,0.0000,0.000
+1,0.010,0.000,0.000,0.000,0.000,0.000,0.000,0.000,0.000,1.145,0.000,0.9815,-0.0057,-0.03181,0.00000,0.00000,NaN,0.0,1,1,-0.001,0.0000,0.000
+2,0.020,0.000,0.000,0.163,0.177,0.000,0.000,0.177,0.007,0.000,0.000,0.9811,-0.0407,-0.03181,0.00011,-0.07754,-0.04022,205.2,1,1,0.000,0.2823,0.018
+3,0.030,0.000,0.000,0.268,0.265,0.000,0.000,0.268,-0.020,0.000,0.000,0.9804,-0.0721,-0.03181,0.00011,-0.07754,-0.07851,269.1,1,1,0.001,0.1936,0.014
+4,0.040,0.000,0.000,0.326,0.285,0.000,0.000,0.326,-0.078,0.000,0.002,0.9795,-0.0860,-0.03180,0.00167,-0.14866,-0.08179,517.3,1,1,0.002,0.1014,0.009
+5,0.050,0.000,0.198,0.329,0.250,0.000,0.000,0.329,-0.163,0.000,0.004,0.9787,-0.0787,-0.03174,0.00552,-0.19493,-0.08363,825.9,1,1,0.003,0.0174,0.004
+6,0.060,0.194,0.262,0.299,0.181,0.000,0.000,0.299,-0.265,0.262,0.006,0.9781,-0.0560,-0.03163,0.01203,-0.21033,-0.08476,1106.2,1,1,0.005,-0.0544,0.002
+7,0.070,0.231,0.321,0.253,0.000,0.000,0.163,0.321,-0.371,0.371,0.008,0.9778,-0.0276,-0.03142,0.02105,-0.19769,-0.08544,1294.7,1,1,0.005,-0.1117,0.005
+8,0.080,0.256,0.363,0.209,0.000,0.000,0.237,0.363,-0.472,0.475,0.010,0.9778,-0.0022,-0.03110,0.03184,-0.16620,-0.08560,1369.8,1,1,0.005,-0.1541,0.008
+9,0.090,0.265,0.390,0.209,0.000,0.000,0.314,0.390,-0.565,0.566,0.013,0.9779,0.0147,-0.03067,0.04326,-0.12722,-0.08506,1345.7,1,1,0.003,-0.1834,0.011
+10,0.100,0.262,0.390,0.253,0.277,0.000,0.382,0.390,-0.652,0.653,0.014,0.9781,0.0211,-0.03013,0.05409,-0.09066,-0.08366,1256.3,1,1,0.000,-0.2029,0.013
+11,0.110,0.241,0.375,0.345,0.386,0.181,0.451,0.451,-0.737,0.739,0.016,0.9783,0.0184,-0.02950,0.06333,-0.06305,-0.08129,1141.5,1,1,-0.003,-0.2160,0.015
+12,0.120,0.209,0.338,0.453,0.493,0.237,0.510,0.510,-0.828,0.833,0.018,0.9784,0.0103,-0.02879,0.07050,-0.04694,-0.07813,1034.4,1,1,-0.006,-0.2255,0.016
+13,0.130,0.168,0.291,0.576,0.597,0.293,0.569,0.597,-0.928,0.945,0.021,0.9784,0.0003,-0.02803,0.07558,-0.04155,-0.07460,962.4,1,1,-0.008,-0.2331,0.018
+14,0.140,0.000,0.234,0.709,0.701,0.356,0.627,0.709,-1.040,1.056,0.023,0.9783,-0.0087,-0.02724,0.07895,-0.04335,-0.07153,927.4,1,1,-0.009,-0.2403,0.020
+15,0.150,0.000,0.177,0.848,0.808,0.422,0.683,0.848,-1.161,1.175,0.026,0.9781,-0.0152,-0.02643,0.08123,-0.04865,-0.06961,925.6,1,1,-0.009,-0.2461,0.022
+16,0.160,0.000,0.000,0.993,0.919,0.486,0.736,0.993,-1.288,1.299,0.029,0.9779,-0.0187,-0.02559,0.08308,-0.05413,-0.06872,943.4,1,1,-0.009,-0.2498,0.023
+17,0.170,0.000,0.000,1.141,1.033,0.545,0.789,1.141,-1.416,1.426,0.031,0.9777,-0.0195,-0.02475,0.08498,-0.05782,-0.06853,970.3,1,1,-0.009,-0.2515,0.025
+18,0.180,0.000,0.000,1.290,1.148,0.603,0.839,1.290,-1.542,1.551,0.034,0.9775,-0.0181,-0.02387,0.08719,-0.05883,-0.06864,997.6,1,1,-0.009,-0.2508,0.026
+19,0.190,0.190,0.000,1.436,1.264,0.656,0.888,1.436,-1.664,1.672,0.037,0.9773,-0.0157,-0.02298,0.08978,-0.05710,-0.06874,1019.1,1,1,-0.009,-0.2480,0.027
+20,0.200,0.234,0.000,1.579,1.379,0.707,0.935,1.579,-1.782,1.789,0.040,0.9772,-0.0130,-0.02205,0.09271,-0.05323,-0.06868,1032.0,1,1,-0.009,-0.2431,0.028
+21,0.210,0.277,0.168,1.719,1.491,0.755,0.980,1.719,-1.895,1.901,0.042,0.9771,-0.0107,-0.02109,0.09584,-0.04807,-0.06838,1035.8,1,1,-0.009,-0.2362,0.029
+22,0.220,0.324,0.213,1.852,1.597,0.798,1.023,1.852,-2.003,2.008,0.045,0.9770,-0.0092,-0.02010,0.09903,-0.04253,-0.06786,1032.5,1,1,-0.009,-0.2276,0.030
+23,0.230,0.365,0.259,1.979,1.699,0.839,1.062,1.979,-2.108,2.112,0.047,0.9769,-0.0085,-0.01908,0.10219,-0.03732,-0.06716,1024.8,1,1,-0.009,-0.2173,0.031
+24,0.240,0.403,0.306,2.099,1.794,0.878,1.099,2.099,-2.210,2.213,0.049,0.9768,-0.0086,-0.01803,0.10523,-0.03289,-0.06637,1015.5,1,1,-0.009,-0.2059,0.031
+25,0.250,0.442,0.349,2.211,1.883,0.913,1.132,2.211,-2.310,2.313,0.051,0.9767,-0.0091,-0.01695,0.10814,-0.02939,-0.06556,1006.9,1,1,-0.009,-0.1934,0.032
+26,0.260,0.480,0.388,2.317,1.966,0.945,1.162,2.317,-2.408,2.410,0.054,0.9766,-0.0098,-0.01584,0.11093,-0.02675,-0.06480,1000.4,1,1,-0.009,-0.1804,0.032
+27,0.270,0.514,0.428,2.413,2.041,0.973,1.190,2.413,-2.505,2.507,0.056,0.9764,-0.0104,-0.01470,0.11365,-0.02476,-0.06412,996.3,1,1,-0.008,-0.1669,0.032
+28,0.280,0.542,0.461,2.503,2.110,0.999,1.214,2.503,-2.601,2.603,0.058,0.9763,-0.0109,-0.01354,0.11636,-0.02318,-0.06353,994.5,1,1,-0.008,-0.1531,0.032
+29,0.290,0.573,0.496,2.583,2.172,1.021,1.235,2.583,-2.695,2.697,0.060,0.9762,-0.0111,-0.01235,0.11912,-0.02178,-0.06302,994.2,1,1,-0.008,-0.1391,0.032
+30,0.300,0.599,0.523,2.656,2.228,1.040,1.254,2.656,-2.788,2.790,0.062,0.9761,-0.0111,-0.01113,0.12196,-0.02042,-0.06257,994.4,1,1,-0.008,-0.1251,0.032
+31,0.310,0.621,0.548,2.720,2.277,1.054,1.270,2.720,-2.880,2.882,0.064,0.9759,-0.0113,-0.00988,0.12493,-0.01903,-0.06213,994.6,1,1,-0.008,-0.1111,0.032
+32,0.320,0.639,0.577,2.783,2.323,1.069,1.285,2.783,-2.967,2.970,0.066,0.9758,-0.0117,-0.00860,0.12802,-0.01762,-0.06165,994.7,1,1,-0.008,-0.1091,0.032
+33,0.330,0.663,0.601,2.847,2.364,1.083,1.301,2.847,-3.054,3.057,0.068,0.9757,-0.0112,-0.00729,0.13120,-0.01620,-0.06125,997.0,1,1,-0.008,-0.1101,0.033
+34,0.340,0.682,0.623,2.897,2.395,1.096,1.316,2.897,-3.139,3.142,0.070,0.9756,-0.0102,-0.00595,0.13438,-0.01456,-0.06099,1000.1,1,1,-0.008,-0.0868,0.032
+35,0.350,0.697,0.638,2.933,2.419,1.104,1.328,2.933,-3.223,3.226,0.072,0.9754,-0.0094,-0.00457,0.13755,-0.01260,-0.06063,999.0,1,1,-0.007,-0.0637,0.031
+36,0.360,0.708,0.645,2.960,2.437,1.106,1.335,2.960,-3.306,3.309,0.073,0.9753,-0.0091,-0.00316,0.14087,-0.01076,-0.06014,993.6,1,1,-0.007,-0.0460,0.030
+37,0.370,0.714,0.651,2.978,2.451,1.105,1.337,2.978,-3.388,3.390,0.075,0.9752,-0.0093,-0.00172,0.14443,-0.00946,-0.05960,986.9,1,1,-0.006,-0.0317,0.030
+38,0.380,0.718,0.651,2.988,2.458,1.099,1.336,2.988,-3.468,3.470,0.077,0.9751,-0.0098,-0.00024,0.14819,-0.00882,-0.05904,981.3,1,1,-0.006,-0.0188,0.029
+39,0.390,0.719,0.650,2.992,2.460,1.091,1.333,2.992,-3.548,3.550,0.079,0.9750,-0.0104,0.00128,0.15211,-0.00875,-0.05847,977.4,1,1,-0.006,-0.0072,0.028
+40,0.400,0.718,0.644,2.990,2.458,1.081,1.327,2.990,-3.628,3.630,0.081,0.9749,-0.0111,0.00284,0.15615,-0.00907,-0.05789,975.4,1,1,-0.006,0.0032,0.028
+41,0.410,0.714,0.638,2.982,2.450,1.068,1.320,2.982,-3.710,3.711,0.082,0.9747,-0.0117,0.00444,0.16031,-0.00958,-0.05731,974.6,1,1,-0.005,0.0124,0.027
+42,0.420,0.709,0.628,2.969,2.439,1.053,1.312,2.969,-3.792,3.793,0.084,0.9746,-0.0122,0.00609,0.16461,-0.01018,-0.05673,974.6,1,1,-0.005,0.0207,0.027
+43,0.430,0.701,0.617,2.952,2.425,1.038,1.301,2.952,-3.876,3.877,0.086,0.9745,-0.0127,0.00778,0.16905,-0.01077,-0.05615,974.9,1,1,-0.005,0.0282,0.026
+44,0.440,0.693,0.605,2.931,2.408,1.020,1.290,2.931,-3.961,3.961,0.088,0.9743,-0.0131,0.00952,0.17365,-0.01135,-0.05555,975.1,1,1,-0.005,0.0350,0.025
+45,0.450,0.683,0.590,2.906,2.388,1.001,1.277,2.906,-4.047,4.048,0.090,0.9742,-0.0135,0.01130,0.17842,-0.01189,-0.05492,975.1,1,1,-0.004,0.0413,0.025
+46,0.460,0.671,0.575,2.878,2.366,0.979,1.263,2.878,-4.135,4.136,0.092,0.9740,-0.0140,0.01313,0.18335,-0.01244,-0.05424,974.7,1,1,-0.004,0.0468,0.024
+47,0.470,0.657,0.555,2.847,2.341,0.956,1.247,2.847,-4.225,4.226,0.094,0.9738,-0.0146,0.01501,0.18843,-0.01303,-0.05352,974.0,1,1,-0.004,0.0517,0.024
+48,0.480,0.644,0.537,2.814,2.316,0.934,1.231,2.814,-4.317,4.318,0.096,0.9737,-0.0152,0.01695,0.19366,-0.01368,-0.05274,973.0,1,1,-0.004,0.0559,0.023
+49,0.490,0.629,0.517,2.778,2.288,0.907,1.212,2.778,-4.411,4.412,0.098,0.9735,-0.0160,0.01894,0.19902,-0.01444,-0.05192,971.9,1,1,-0.003,0.0596,0.022
+50,0.500,0.614,0.497,2.741,2.259,0.882,1.194,2.741,-4.508,4.509,0.100,0.9733,-0.0169,0.02098,0.20451,-0.01530,-0.05105,970.7,1,1,-0.003,0.0626,0.022
+51,0.510,0.599,0.478,2.701,2.230,0.854,1.174,2.701,-4.608,4.609,0.102,0.9731,-0.0178,0.02308,0.21013,-0.01628,-0.05014,969.7,1,1,-0.003,0.0651,0.021
+52,0.520,0.583,0.455,2.662,2.199,0.827,1.154,2.662,-4.711,4.711,0.105,0.9729,-0.0188,0.02524,0.21588,-0.01737,-0.04920,968.7,1,1,-0.003,0.0672,0.021
+53,0.530,0.566,0.433,2.620,2.169,0.798,1.132,2.620,-4.817,4.817,0.107,0.9727,-0.0198,0.02746,0.22174,-0.01856,-0.04822,967.8,1,1,-0.003,0.0687,0.020
+54,0.540,0.548,0.413,2.578,2.138,0.768,1.109,2.578,-4.926,4.927,0.109,0.9725,-0.0210,0.02974,0.22773,-0.01983,-0.04720,967.0,1,1,-0.002,0.0698,0.020
+55,0.550,0.532,0.392,2.536,2.107,0.737,1.086,2.536,-5.039,5.039,0.112,0.9722,-0.0222,0.03207,0.23384,-0.02118,-0.04615,966.4,1,1,-0.002,0.0706,0.020
+56,0.560,0.514,0.367,2.494,2.076,0.707,1.064,2.494,-5.156,5.156,0.115,0.9720,-0.0234,0.03447,0.24008,-0.02260,-0.04507,965.8,1,1,-0.002,0.0710,0.019
+57,0.570,0.496,0.347,2.451,2.045,0.674,1.039,2.451,-5.276,5.276,0.117,0.9717,-0.0247,0.03694,0.24644,-0.02407,-0.04394,965.1,1,1,-0.002,0.0711,0.019
+58,0.580,0.480,0.321,2.408,2.015,0.643,1.014,2.408,-5.400,5.400,0.120,0.9715,-0.0260,0.03946,0.25292,-0.02561,-0.04277,964.5,1,1,-0.002,0.0710,0.018
+59,0.590,0.461,0.301,2.366,1.984,0.609,0.989,2.366,-5.528,5.528,0.123,0.9712,-0.0275,0.04206,0.25952,-0.02722,-0.04156,963.7,1,1,-0.001,0.0707,0.018
+60,0.600,0.444,0.280,2.323,1.954,0.576,0.963,2.323,-5.661,5.661,0.126,0.9709,-0.0290,0.04472,0.26623,-0.02890,-0.04030,963.0,1,1,-0.001,0.0702,0.018
+61,0.610,0.430,0.262,2.282,1.925,0.541,0.936,2.282,-5.797,5.797,0.129,0.9705,-0.0305,0.04745,0.27307,-0.03065,-0.03900,962.2,1,1,-0.001,0.0695,0.017
+62,0.620,0.413,0.237,2.241,1.896,0.508,0.910,2.241,-5.938,5.938,0.132,0.9702,-0.0322,0.05025,0.28002,-0.03248,-0.03766,961.4,1,1,-0.001,0.0688,0.017
+63,0.630,0.394,0.220,2.199,1.868,0.475,0.881,2.199,-6.083,6.083,0.135,0.9698,-0.0339,0.05312,0.28708,-0.03439,-0.03627,960.5,1,1,-0.001,0.0680,0.017
+64,0.640,0.379,0.198,2.159,1.841,0.439,0.854,2.159,-6.233,6.232,0.138,0.9695,-0.0358,0.05606,0.29425,-0.03638,-0.03484,959.6,1,1,0.000,0.0671,0.016
+65,0.650,0.360,0.181,2.119,1.814,0.403,0.825,2.119,-6.387,6.387,0.142,0.9691,-0.0377,0.05907,0.30154,-0.03847,-0.03336,958.7,1,1,0.000,0.0661,0.016
+66,0.660,0.345,0.163,2.079,1.787,0.365,0.796,2.079,-6.546,6.545,0.145,0.9686,-0.0397,0.06216,0.30894,-0.04064,-0.03184,957.8,1,1,0.000,0.0652,0.016
+67,0.670,0.331,0.000,2.041,1.761,0.331,0.768,2.041,-6.709,6.709,0.149,0.9682,-0.0418,0.06533,0.31646,-0.04291,-0.03028,956.8,1,1,0.000,0.0642,0.015
+68,0.680,0.314,0.000,2.003,1.736,0.293,0.738,2.003,-6.877,6.877,0.153,0.9678,-0.0439,0.06857,0.32410,-0.04527,-0.02867,955.9,1,1,0.000,0.0633,0.015
+69,0.690,0.299,0.000,1.965,1.711,0.256,0.708,1.965,-7.051,7.051,0.157,0.9673,-0.0462,0.07188,0.33185,-0.04772,-0.02702,954.9,1,1,0.000,0.0624,0.015
+70,0.700,0.285,0.000,1.928,1.687,0.217,0.677,1.928,-7.229,7.229,0.161,0.9668,-0.0485,0.07528,0.33972,-0.05027,-0.02533,953.9,1,1,0.001,0.0614,0.014
+71,0.710,0.271,0.000,1.891,1.663,0.181,0.646,1.891,-7.412,7.412,0.165,0.9662,-0.0510,0.07875,0.34770,-0.05292,-0.02358,952.8,1,1,0.001,0.0606,0.014
+72,0.720,0.256,0.000,1.855,1.640,0.000,0.614,1.855,-7.600,7.600,0.169,0.9657,-0.0536,0.08231,0.35581,-0.05568,-0.02179,951.7,1,1,0.001,0.0599,0.014
+73,0.730,0.241,0.000,1.820,1.617,0.000,0.581,1.820,-7.793,7.793,0.173,0.9651,-0.0562,0.08595,0.36405,-0.05854,-0.01994,950.5,1,1,0.001,0.0591,0.014
+74,0.740,0.231,0.000,1.784,1.594,0.000,0.550,1.784,-7.991,7.991,0.178,0.9645,-0.0590,0.08967,0.37240,-0.06153,-0.01805,949.3,1,1,0.001,0.0585,0.013
+75,0.750,0.213,0.000,1.749,1.572,0.000,0.517,1.749,-8.195,8.195,0.182,0.9639,-0.0619,0.09348,0.38088,-0.06463,-0.01610,948.1,1,1,0.001,0.0579,0.013
+76,0.760,0.202,0.000,1.714,1.550,0.000,0.481,1.714,-8.403,8.403,0.187,0.9632,-0.0649,0.09737,0.38949,-0.06786,-0.01410,946.7,1,1,0.002,0.0575,0.013
+77,0.770,0.190,0.000,1.680,1.529,0.000,0.448,1.680,-8.617,8.618,0.191,0.9625,-0.0681,0.10135,0.39823,-0.07122,-0.01205,945.3,1,1,0.002,0.0570,0.012
+78,0.780,0.172,0.000,1.646,1.508,0.000,0.411,1.646,-8.837,8.837,0.196,0.9617,-0.0713,0.10542,0.40709,-0.07472,-0.00994,943.9,1,1,0.002,0.0568,0.012
+79,0.790,0.000,0.000,1.612,1.487,0.000,0.375,1.612,-9.062,9.062,0.201,0.9610,-0.0748,0.10958,0.41609,-0.07836,-0.00777,942.3,1,1,0.002,0.0565,0.012
+80,0.800,0.000,0.000,1.578,1.466,0.181,0.343,1.578,-9.292,9.292,0.206,0.9602,-0.0783,0.11383,0.42521,-0.08216,-0.00555,940.8,1,1,0.002,0.0564,0.011
+81,0.810,0.000,0.000,1.544,1.445,0.234,0.304,1.544,-9.528,9.528,0.212,0.9593,-0.0820,0.11817,0.43448,-0.08611,-0.00326,939.1,1,1,0.003,0.0563,0.011
+82,0.820,0.000,0.172,1.511,1.424,0.274,0.265,1.511,-9.770,9.770,0.217,0.9584,-0.0859,0.12261,0.44387,-0.09022,-0.00091,937.4,1,1,0.003,0.0564,0.011
+83,0.830,0.000,0.190,1.477,1.403,0.324,0.227,1.477,-10.018,10.018,0.223,0.9575,-0.0899,0.12714,0.45341,-0.09451,0.00151,935.6,1,1,0.003,0.0565,0.011
+84,0.840,0.000,0.209,1.442,1.383,0.371,0.186,1.442,-10.271,10.271,0.228,0.9566,-0.0940,0.13177,0.46308,-0.09897,0.00399,933.8,1,1,0.003,0.0567,0.010
+85,0.850,0.000,0.227,1.409,1.362,0.417,0.000,1.409,-10.530,10.530,0.234,0.9556,-0.0984,0.13650,0.47289,-0.10361,0.00654,931.8,1,1,0.003,0.0570,0.010
+86,0.860,0.000,0.244,1.375,1.341,0.465,0.000,1.375,-10.796,10.796,0.240,0.9545,-0.1029,0.14132,0.48284,-0.10845,0.00916,929.8,1,1,0.004,0.0573,0.010
+87,0.870,0.000,0.259,1.340,1.319,0.516,0.000,1.340,-11.067,11.067,0.246,0.9534,-0.1076,0.14625,0.49294,-0.11348,0.01185,927.7,1,1,0.004,0.0578,0.009
+88,0.880,0.000,0.283,1.306,1.298,0.566,0.000,1.306,-11.345,11.345,0.252,0.9522,-0.1125,0.15128,0.50317,-0.11873,0.01462,925.5,1,1,0.004,0.0584,0.009
+89,0.890,0.000,0.299,1.272,1.278,0.618,0.000,1.278,-11.628,11.628,0.258,0.9510,-0.1176,0.15641,0.51355,-0.12419,0.01748,923.2,1,1,0.004,0.0590,0.009
+90,0.900,0.000,0.319,1.236,1.256,0.669,0.000,1.256,-11.919,11.919,0.265,0.9498,-0.1229,0.16165,0.52407,-0.12988,0.02041,920.8,1,1,0.005,0.0596,0.008
+91,0.910,0.000,0.336,1.201,1.234,0.723,0.000,1.234,-12.215,12.215,0.271,0.9485,-0.1284,0.16700,0.53474,-0.13580,0.02343,918.4,1,1,0.005,0.0603,0.008
+92,0.920,0.000,0.356,1.166,1.212,0.778,0.000,1.212,-12.518,12.518,0.278,0.9471,-0.1342,0.17245,0.54554,-0.14197,0.02654,915.8,1,1,0.005,0.0612,0.007
+93,0.930,0.000,0.377,1.130,1.190,0.834,0.198,1.190,-12.828,12.828,0.285,0.9457,-0.1402,0.17801,0.55649,-0.14840,0.02974,913.1,1,1,0.005,0.0621,0.007
+94,0.940,0.000,0.398,1.094,1.167,0.890,0.247,1.167,-13.145,13.145,0.292,0.9442,-0.1464,0.18368,0.56758,-0.15509,0.03304,910.3,1,1,0.005,0.0630,0.007
+95,0.950,0.000,0.419,1.057,1.144,0.948,0.296,1.144,-13.468,13.468,0.299,0.9426,-0.1529,0.18947,0.57881,-0.16205,0.03644,907.5,1,1,0.006,0.0640,0.006
+96,0.960,0.000,0.439,1.020,1.120,1.007,0.349,1.120,-13.799,13.799,0.307,0.9410,-0.1596,0.19537,0.59019,-0.16930,0.03994,904.4,1,1,0.006,0.0651,0.006
+97,0.970,0.163,0.460,0.984,1.096,1.068,0.402,1.096,-14.137,14.136,0.314,0.9393,-0.1667,0.20138,0.60170,-0.17685,0.04355,901.3,1,1,0.006,0.0662,0.006
+98,0.980,0.172,0.480,0.946,1.071,1.128,0.453,1.128,-14.481,14.481,0.322,0.9375,-0.1740,0.20751,0.61334,-0.18471,0.04728,898.1,1,1,0.006,0.0673,0.005
+99,0.990,0.194,0.502,0.909,1.046,1.192,0.505,1.192,-14.834,14.834,0.330,0.9357,-0.1812,0.21376,0.62512,-0.19289,0.05112,894.7,1,1,0.007,0.0685,0.005
+100,1.000,0.209,0.526,0.872,1.021,1.252,0.561,1.252,-15.197,15.197,0.338,0.9338,-0.1887,0.22013,0.63703,-0.20140,0.05465,893.9,1,1,0.007,0.0690,0.005
+101,1.010,0.227,0.548,0.836,0.995,1.316,0.618,1.316,-15.568,15.568,0.346,0.9318,-0.1965,0.22661,0.64910,-0.20999,0.05847,891.4,1,1,0.008,0.0698,0.005
+102,1.020,0.241,0.572,0.800,0.970,1.381,0.675,1.381,-15.946,15.946,0.354,0.9297,-0.2043,0.23322,0.66137,-0.21883,0.06234,889.2,1,1,0.008,0.0708,0.005
+103,1.030,0.259,0.596,0.763,0.944,1.448,0.731,1.448,-16.331,16.331,0.363,0.9276,-0.2125,0.23996,0.67382,-0.22788,0.06611,887.8,1,1,0.009,0.0714,0.004
+104,1.040,0.280,0.621,0.728,0.916,1.517,0.789,1.517,-16.725,16.725,0.372,0.9253,-0.2209,0.24682,0.68648,-0.23706,0.07031,884.7,1,1,0.009,0.0724,0.004
+105,1.050,0.299,0.646,0.690,0.889,1.586,0.849,1.586,-17.127,17.127,0.381,0.9230,-0.2299,0.25381,0.69932,-0.24656,0.07486,880.3,1,1,0.009,0.0738,0.004
+106,1.060,0.319,0.675,0.655,0.860,1.657,0.911,1.657,-17.537,17.537,0.390,0.9206,-0.2392,0.26093,0.71230,-0.25649,0.07973,875.2,1,1,0.009,0.0751,0.004
+107,1.070,0.338,0.702,0.618,0.832,1.729,0.974,1.729,-17.955,17.955,0.399,0.9180,-0.2492,0.26817,0.72535,-0.26693,0.08489,869.6,1,1,0.009,0.0766,0.004
+108,1.080,0.358,0.730,0.586,0.802,1.802,1.039,1.802,-18.383,18.383,0.409,0.9154,-0.2596,0.27555,0.73846,-0.27792,0.09038,863.3,1,1,0.008,0.0782,0.004
+109,1.090,0.379,0.759,0.552,0.771,1.876,1.106,1.876,-18.820,18.821,0.418,0.9127,-0.2706,0.28307,0.75159,-0.28955,0.09605,857.2,1,1,0.008,0.0795,0.004
+110,1.100,0.400,0.787,0.519,0.741,1.950,1.173,1.950,-19.267,19.268,0.428,0.9098,-0.2821,0.29071,0.76473,-0.30177,0.10200,850.7,1,1,0.007,0.0811,0.004
+111,1.110,0.421,0.818,0.489,0.709,2.026,1.243,2.026,-19.724,19.725,0.438,0.9068,-0.2942,0.29848,0.77788,-0.31464,0.10813,844.3,1,1,0.007,0.0828,0.005
+112,1.120,0.442,0.850,0.465,0.675,2.103,1.315,2.103,-20.190,20.192,0.449,0.9037,-0.3068,0.30639,0.79103,-0.32815,0.11445,837.8,1,1,0.006,0.0845,0.005
+113,1.130,0.465,0.882,0.442,0.642,2.180,1.389,2.180,-20.668,20.670,0.459,0.9005,-0.3199,0.31442,0.80416,-0.34230,0.12091,831.6,1,1,-0.056,0.0863,0.005
+114,1.140,0.488,0.915,0.426,0.609,2.258,1.465,2.258,-21.094,21.096,0.469,0.8972,-0.3318,0.32259,0.81729,-0.35706,0.12719,826.1,1,1,-0.118,0.0875,0.006
+115,1.150,0.508,0.951,0.419,0.575,2.334,1.544,2.334,-21.537,21.539,0.479,0.8937,-0.3436,0.33089,0.83044,-0.37237,0.13098,833.5,1,1,-0.177,0.0873,0.006
+116,1.160,0.531,0.988,0.426,0.541,2.408,1.626,2.408,-22.000,22.002,0.489,0.8901,-0.3544,0.33932,0.84395,-0.38692,0.13485,836.2,1,1,-0.248,0.0884,0.007
+117,1.170,0.552,1.022,0.435,0.508,2.483,1.706,2.483,-22.463,22.466,0.499,0.8864,-0.3641,0.34789,0.85794,-0.40121,0.13512,846.5,1,1,-0.335,0.0881,0.007
+118,1.180,0.573,1.055,0.455,0.476,2.558,1.784,2.558,-22.922,22.925,0.509,0.8827,-0.3732,0.35661,0.87281,-0.41446,0.13528,857.5,1,1,-0.443,0.0871,0.008
+119,1.190,0.595,1.089,0.478,0.444,2.634,1.859,2.634,-23.374,23.377,0.519,0.8788,-0.3819,0.36549,0.88875,-0.42661,0.13528,862.5,1,1,-0.574,0.0874,0.008
+120,1.200,0.617,1.125,0.510,0.413,2.708,1.931,2.708,-23.815,23.819,0.529,0.8748,-0.3903,0.37454,0.90577,-0.43824,0.13528,866.7,1,1,-0.732,0.0877,0.009
+121,1.210,0.638,1.162,0.548,0.382,2.782,2.000,2.782,-24.244,24.248,0.539,0.8708,-0.3986,0.38377,0.92384,-0.44946,0.13528,869.8,1,1,-0.921,0.0875,0.009
+122,1.220,0.660,1.197,0.588,0.354,2.852,2.064,2.852,-24.657,24.661,0.548,0.8667,-0.4069,0.39319,0.94292,-0.46036,0.13528,871.7,1,1,-1.143,0.0865,0.010
+123,1.230,0.680,1.233,0.634,0.321,2.921,2.123,2.921,-25.052,25.057,0.557,0.8625,-0.4154,0.40281,0.96297,-0.47107,0.13528,872.0,1,1,-1.403,0.0846,0.010
+124,1.240,0.697,1.267,0.681,0.296,2.985,2.177,2.985,-25.428,25.433,0.565,0.8582,-0.4241,0.41264,0.98394,-0.48174,0.13520,870.9,1,1,-1.703,0.0818,0.011
+125,1.250,0.715,1.300,0.731,0.265,3.046,2.225,3.046,-25.783,25.789,0.573,0.8538,-0.4334,0.42269,1.00585,-0.49252,0.13511,868.2,1,1,-2.046,0.0782,0.011
+126,1.260,0.730,1.331,0.778,0.237,3.102,2.268,3.102,-26.115,26.121,0.580,0.8494,-0.4434,0.43297,1.02865,-0.50356,0.13511,863.7,1,1,-2.432,0.0740,0.011
+127,1.270,0.745,1.359,0.828,0.213,3.154,2.305,3.154,-26.423,26.429,0.587,0.8448,-0.4542,0.44348,1.05232,-0.51505,0.13511,857.5,1,1,-2.867,0.0690,0.012
+128,1.280,0.756,1.384,0.876,0.194,3.200,2.336,3.200,-26.705,26.712,0.593,0.8401,-0.4662,0.45424,1.07682,-0.52715,0.13503,849.7,1,1,-3.321,0.0634,0.012
+129,1.290,0.765,1.405,0.918,0.172,3.239,2.359,3.239,-26.994,26.999,0.600,0.8352,-0.4811,0.46525,1.10209,-0.54004,0.13494,841.2,1,1,-3.880,0.0531,0.011
+130,1.300,0.779,1.420,0.962,0.000,3.262,2.375,3.262,-27.210,27.216,0.605,0.8302,-0.4940,0.47652,1.12792,-0.55376,0.13494,818.6,1,1,-4.456,0.0458,0.012
+131,1.310,0.775,1.428,1.026,0.000,3.294,2.390,3.294,-27.403,27.409,0.609,0.8251,-0.5125,0.48804,1.15409,-0.56973,0.13474,797.1,1,1,-5.106,0.0608,0.014
+132,1.320,0.780,1.435,1.066,0.000,3.319,2.396,3.319,-27.549,27.553,0.612,0.8197,-0.5320,0.49986,1.18227,-0.58785,0.13469,795.6,1,1,-5.805,0.0365,0.012
+133,1.330,0.789,1.437,1.089,0.000,3.318,2.386,3.318,-27.710,27.714,0.616,0.8142,-0.5491,0.51194,1.20964,-0.60612,0.13464,794.9,1,1,-6.513,0.0146,0.011
+134,1.340,0.778,1.439,1.113,0.000,3.321,2.373,3.321,-27.880,27.884,0.620,0.8084,-0.5723,0.52429,1.23646,-0.62445,0.13432,769.3,1,1,-7.311,0.0087,0.011
+135,1.350,0.781,1.436,1.137,0.000,3.318,2.358,3.318,-27.977,27.980,0.622,0.8024,-0.5955,0.53692,1.26530,-0.64532,0.13404,730.2,1,1,-8.112,0.0109,0.012
+136,1.360,0.767,1.419,1.158,0.000,3.316,2.329,3.316,-28.091,28.096,0.624,0.7961,-0.6237,0.54985,1.29409,-0.67011,0.13384,718.4,1,1,-8.990,0.0077,0.011
+137,1.370,0.776,1.409,1.175,0.000,3.304,2.300,3.304,-28.145,28.149,0.625,0.7895,-0.6513,0.56307,1.32357,-0.69606,0.13383,693.4,1,1,-9.938,-0.0032,0.011
+138,1.380,0.763,1.386,1.181,0.000,3.275,2.262,3.275,-28.175,28.180,0.626,0.7827,-0.6835,0.57660,1.35328,-0.72450,0.13372,688.7,1,1,-10.925,-0.0216,0.010
+139,1.390,0.761,1.381,1.185,0.000,3.237,2.217,3.237,-28.198,28.203,0.627,0.7755,-0.7155,0.59040,1.38191,-0.75340,0.13350,643.1,1,1,-11.968,-0.0215,0.010
+140,1.400,0.739,1.371,1.186,0.000,3.191,2.179,3.191,-28.193,28.197,0.627,0.7679,-0.7531,0.60451,1.41209,-0.78686,0.13343,626.2,1,1,-13.094,-0.0298,0.009
+141,1.410,0.726,1.340,1.182,0.000,3.136,2.126,3.136,-28.135,28.140,0.625,0.7599,-0.7914,0.61891,1.44179,-0.82198,0.13339,612.1,1,1,-14.254,-0.0424,0.009
+142,1.420,0.711,1.307,1.169,0.000,3.075,2.061,3.075,-28.074,28.078,0.624,0.7516,-0.8326,0.63360,1.47041,-0.85850,0.13325,583.1,1,1,-15.475,-0.0524,0.008
+143,1.430,0.697,1.270,1.153,0.000,3.008,1.994,3.008,-27.977,27.982,0.622,0.7428,-0.8765,0.64857,1.49903,-0.89791,0.13311,554.9,1,1,-16.741,-0.0620,0.008
+144,1.440,0.677,1.232,1.130,0.000,2.929,1.920,2.929,-27.872,27.878,0.619,0.7335,-0.9232,0.66383,1.52716,-0.94012,0.13306,532.5,1,1,-18.082,-0.0773,0.007
+145,1.450,0.660,1.190,1.100,0.000,2.839,1.842,2.839,-27.727,27.734,0.616,0.7237,-0.9720,0.67936,1.55466,-0.98456,0.13279,501.5,1,1,-19.504,-0.0850,0.007
+146,1.460,0.638,1.143,1.068,0.000,2.745,1.761,2.745,-27.529,27.538,0.612,0.7134,-1.0234,0.69515,1.58155,-1.03207,0.13273,474.8,1,1,-20.958,-0.0930,0.006
+147,1.470,0.613,1.092,1.031,0.000,2.646,1.674,2.646,-27.329,27.337,0.607,0.7026,-1.0778,0.71121,1.60773,-1.08224,0.13254,447.7,1,1,-22.496,-0.0973,0.006
+148,1.480,0.587,1.039,0.990,0.000,2.543,1.587,2.543,-27.073,27.082,0.602,0.6912,-1.1342,0.72753,1.63342,-1.13510,0.13261,423.4,1,1,-24.076,-0.1082,0.005
+149,1.490,0.558,0.983,0.942,0.163,2.433,1.492,2.433,-26.809,26.817,0.596,0.6792,-1.1935,0.74409,1.65793,-1.19037,0.13249,397.4,1,1,-25.753,-0.1122,0.005
+150,1.500,0.526,0.922,0.888,0.177,2.319,1.399,2.319,-26.476,26.485,0.588,0.6667,-1.2548,0.76089,1.68171,-1.24821,0.13261,372.6,1,1,-27.474,-0.1223,0.005
+151,1.510,0.493,0.860,0.829,0.190,2.198,1.301,2.198,-26.136,26.145,0.581,0.6534,-1.3189,0.77791,1.70406,-1.30851,0.13253,348.0,1,1,-29.307,-0.1258,0.005
+152,1.520,0.456,0.794,0.764,0.202,2.075,1.207,2.075,-25.713,25.723,0.571,0.6395,-1.3847,0.79515,1.72552,-1.37125,0.13266,322.1,1,1,-31.182,-0.1338,0.005
+153,1.530,0.421,0.730,0.697,0.220,1.946,1.107,1.946,-25.284,25.293,0.562,0.6250,-1.4533,0.81258,1.74533,-1.43656,0.13258,298.9,1,1,-33.183,-0.1358,0.006
+154,1.540,0.382,0.661,0.627,0.244,1.816,1.013,1.816,-24.755,24.764,0.550,0.6097,-1.5236,0.83020,1.76409,-1.50415,0.13270,272.6,1,1,-35.227,-0.1409,0.006
+155,1.550,0.347,0.595,0.560,0.265,1.681,0.915,1.681,-24.217,24.227,0.538,0.5937,-1.5963,0.84800,1.78100,-1.57435,0.13257,251.6,1,1,-37.412,-0.1411,0.007
+156,1.560,0.312,0.525,0.494,0.291,1.547,0.823,1.547,-23.563,23.572,0.524,0.5770,-1.6706,0.86595,1.79672,-1.64662,0.13266,225.4,1,1,-39.641,-0.1432,0.008
+157,1.570,0.283,0.460,0.433,0.321,1.409,0.730,1.409,-22.896,22.906,0.509,0.5595,-1.7472,0.88404,1.81043,-1.72149,0.13246,206.8,1,1,-42.025,-0.1412,0.008
+158,1.580,0.256,0.398,0.388,0.352,1.275,0.643,1.275,-22.094,22.103,0.491,0.5412,-1.8254,0.90225,1.82283,-1.79818,0.13247,182.8,1,1,-44.456,-0.1400,0.009
+159,1.590,0.241,0.338,0.358,0.377,1.140,0.555,1.140,-21.272,21.281,0.473,0.5221,-1.9055,0.92057,1.83304,-1.87724,0.13212,160.1,1,1,-47.053,-0.1360,0.009
+160,1.600,0.241,0.283,0.345,0.407,1.010,0.476,1.010,-20.299,20.306,0.451,0.5022,-1.9873,0.93898,1.84173,-1.95854,0.13208,139.5,1,1,-49.758,-0.1314,0.009
+161,1.610,0.244,0.237,0.354,0.433,0.879,0.396,0.879,-19.242,19.247,0.428,0.4815,-2.0702,0.95745,1.84822,-2.04187,0.13167,123.5,1,1,-52.581,-0.1267,0.010
+162,1.620,0.259,0.194,0.377,0.458,0.756,0.321,0.756,-18.080,18.084,0.402,0.4599,-2.1546,0.97597,1.85292,-2.12676,0.13135,107.5,1,1,-55.525,-0.1185,0.010
+163,1.630,0.274,0.172,0.409,0.478,0.640,0.253,0.640,-16.807,16.809,0.373,0.4375,-2.2405,0.99453,1.85584,-2.21322,0.13097,88.2,1,1,-58.596,-0.1094,0.010
+164,1.640,0.301,0.177,0.446,0.494,0.532,0.194,0.532,-15.415,15.416,0.343,0.4142,-2.3278,1.01309,1.85686,-2.30158,0.13055,71.1,1,1,-61.799,-0.0988,0.010
+165,1.650,0.324,0.190,0.486,0.507,0.428,0.000,0.507,-13.896,13.896,0.309,0.3900,-2.4164,1.03165,1.85595,-2.39161,0.13011,55.4,1,1,-65.126,-0.0870,0.009
+166,1.660,0.347,0.209,0.522,0.516,0.338,0.000,0.522,-12.254,12.254,0.272,0.3650,-2.5062,1.05019,1.85306,-2.48317,0.12979,42.4,1,1,-68.597,-0.0760,0.009
+167,1.670,0.369,0.237,0.555,0.520,0.250,0.000,0.555,-10.470,10.470,0.233,0.3390,-2.5963,1.06868,1.84815,-2.57600,0.12957,26.4,1,1,-71.473,-0.0623,0.009
+168,1.680,0.390,0.271,0.580,0.519,0.177,0.000,0.580,-9.275,9.275,0.206,0.3121,-2.6868,1.08710,1.84249,-2.67039,0.13016,20.0,1,1,-74.757,-0.0492,0.008
+169,1.690,0.405,0.304,0.609,0.519,0.000,0.000,0.609,-7.684,7.715,0.171,0.2844,-2.7759,1.10548,1.83776,-2.76538,0.13306,31.4,1,1,-77.204,-0.0407,0.008
+170,1.700,0.424,0.336,0.631,0.517,0.000,0.000,0.631,-6.934,6.934,0.154,0.2557,-2.8680,1.12377,1.83076,-2.85920,0.13549,26.7,1,1,-81.232,-0.0243,0.007
+171,1.710,0.444,0.382,0.661,0.519,0.000,0.000,0.661,-4.639,4.673,0.103,0.2261,-2.9543,1.14203,1.82471,-2.95345,0.14184,49.6,1,1,-83.412,-0.0307,0.008
+172,1.720,0.453,0.396,0.666,0.513,0.000,0.000,0.666,-4.146,4.148,0.092,0.1956,-3.0494,1.16015,1.81407,-3.04537,0.14420,21.1,1,1,-87.442,-0.0159,0.007
+173,1.730,0.478,0.426,0.690,0.513,0.000,0.000,0.690,-1.888,2.317,0.042,0.1642,-3.1387,1.17826,1.80914,-3.14011,0.15211,57.0,1,1,-89.682,-0.0122,0.007
+174,1.740,0.478,0.478,0.706,0.508,0.000,0.198,0.706,-1.356,1.411,0.030,0.1319,-3.2328,1.19622,1.79701,-3.23121,0.17213,48.5,1,1,-85.228,-0.0353,0.009
+175,1.750,0.560,0.561,0.814,0.537,0.288,0.293,0.814,1.654,1.713,0.030,0.1308,-0.0736,1.21411,1.78659,-3.32313,0.26774,385.6,1,1,-81.087,-0.1770,0.018
+176,1.760,1.871,1.720,3.102,1.645,2.453,2.475,3.102,4.719,4.746,0.086,0.1386,0.7617,1.23177,1.76111,-3.38130,0.26884,1560.8,1,1,-80.652,7.7830,0.486
+177,1.770,2.613,2.668,2.571,4.052,4.023,3.896,4.052,5.073,5.102,0.092,0.1452,0.5982,1.24184,0.85487,-0.15364,0.26948,1095.3,1,1,-81.115,4.2190,0.263
+178,1.780,2.563,2.611,2.087,3.281,4.292,4.067,4.292,4.756,4.774,0.086,0.1501,0.4902,1.24519,0.29551,0.51907,0.26907,434.3,1,1,-80.790,1.1297,0.080
+179,1.790,2.359,2.401,2.123,3.231,3.944,3.680,3.944,5.516,5.541,0.100,0.1540,0.3867,1.24768,0.27142,0.49675,0.26812,89.3,1,1,-80.412,0.2665,0.032
+180,1.800,2.095,2.134,2.078,3.104,3.550,3.302,3.550,6.359,6.404,0.116,0.1567,0.2736,1.25032,0.26255,0.40742,0.26805,42.7,1,1,-80.007,0.0021,0.017
+181,1.810,1.860,1.892,2.001,2.948,3.209,2.973,3.209,7.121,7.155,0.129,0.1584,0.1634,1.25286,0.25388,0.31347,0.26742,51.0,1,1,-79.492,-0.0783,0.012
+182,1.820,1.657,1.689,1.906,2.784,2.908,2.688,2.908,7.909,7.939,0.144,0.1589,0.0546,1.25532,0.24455,0.22038,0.26867,51.1,1,1,-78.966,-0.1255,0.009
+183,1.830,1.489,1.526,1.781,2.597,2.646,2.436,2.646,8.623,8.648,0.157,0.1584,-0.0543,1.25768,0.23499,0.12734,0.26875,53.5,1,1,-78.432,-0.2009,0.006
+184,1.840,1.358,1.399,1.611,2.366,2.422,2.222,2.422,9.256,9.277,0.168,0.1568,-0.1600,1.25991,0.22172,0.04058,0.26924,60.1,1,1,-77.937,-0.3142,0.007
+185,1.850,1.266,1.312,1.403,2.094,2.239,2.045,2.239,9.762,9.781,0.178,0.1542,-0.2592,1.26195,0.20185,-0.03738,0.26990,73.6,1,1,-77.468,-0.3975,0.013
+186,1.860,1.212,1.266,1.173,1.798,2.098,1.906,2.098,10.158,10.174,0.185,0.1507,-0.3528,1.26378,0.18128,-0.11339,0.27017,88.2,1,1,-77.119,-0.4748,0.020
+187,1.870,1.192,1.257,0.944,1.476,1.998,1.804,1.998,10.352,10.359,0.188,0.1463,-0.4414,1.26539,0.15993,-0.18668,0.27047,102.8,1,1,-76.709,-0.5548,0.027
+188,1.880,1.203,1.280,0.770,1.126,1.931,1.732,1.931,10.531,10.538,0.191,0.1424,-0.3788,1.26678,0.13698,-0.25600,0.27073,118.6,1,1,-76.394,-0.6361,0.035
+189,1.890,1.303,1.431,0.685,1.264,1.992,1.766,1.992,10.608,10.611,0.193,0.1405,-0.1904,1.26790,0.11002,-0.32060,0.27117,182.3,1,1,-76.316,-0.4704,0.028
+190,1.900,1.496,1.649,0.686,1.717,2.209,1.958,2.209,10.484,10.486,0.191,0.1396,-0.0878,1.26844,0.04470,-0.26503,0.27122,287.1,1,1,-76.377,-0.1608,0.013
+191,1.910,1.629,1.787,0.744,2.006,2.391,2.120,2.391,10.270,10.270,0.187,0.1392,-0.0431,1.26838,-0.00801,-0.11712,0.27112,295.0,1,1,-76.486,0.0236,0.010
+192,1.920,1.688,1.848,0.824,2.078,2.476,2.185,2.476,10.078,10.080,0.183,0.1390,-0.0235,1.26796,-0.04233,-0.05207,0.27102,238.1,1,1,-76.656,0.0080,0.011
+193,1.930,1.710,1.865,0.892,2.041,2.493,2.193,2.493,9.868,9.870,0.179,0.1389,-0.0123,1.26739,-0.05568,-0.02421,0.27080,204.9,1,1,-76.826,-0.0613,0.012
+194,1.940,1.715,1.863,0.927,1.978,2.480,2.175,2.480,9.683,9.684,0.176,0.1389,-0.0063,1.26686,-0.05050,-0.00954,0.27060,189.2,1,1,-76.911,-0.1123,0.014
+195,1.950,1.710,1.855,0.954,1.900,2.453,2.145,2.453,9.599,9.599,0.175,0.1388,-0.0024,1.26647,-0.03730,0.00058,0.27043,181.0,1,1,-76.900,-0.1420,0.016
+196,1.960,1.699,1.845,0.973,1.836,2.419,2.112,2.419,9.623,9.624,0.175,0.1388,0.0009,1.26623,-0.02417,0.00658,0.27041,175.2,1,1,-76.968,-0.1398,0.016
+197,1.970,1.684,1.834,0.984,1.793,2.388,2.079,2.388,9.574,9.576,0.174,0.1389,0.0040,1.26610,-0.01443,0.00882,0.27050,172.1,1,1,-76.982,-0.1168,0.015
+198,1.980,1.669,1.822,0.993,1.768,2.359,2.049,2.359,9.578,9.578,0.174,0.1389,0.0065,1.26604,-0.00727,0.00857,0.27055,174.7,1,1,-76.949,-0.0909,0.014
+199,1.990,1.653,1.808,0.996,1.757,2.330,2.025,2.330,9.632,9.636,0.175,0.1390,0.0079,1.26603,-0.00237,0.00768,0.27075,171.8,1,1,-76.953,-0.0674,0.013
+200,2.000,1.636,1.794,0.997,1.752,2.301,2.001,2.301,9.651,9.655,0.175,0.1391,0.0083,1.26605,0.00085,0.00634,0.27082,170.9,1,1,-76.958,-0.0506,0.012
+205,2.050,1.564,1.731,1.023,1.718,2.195,1.897,2.195,9.659,9.665,0.176,0.1394,0.0036,1.26617,-0.00043,0.00320,0.27092,169.6,1,1,-77.032,-0.0344,0.012
+210,2.100,1.529,1.696,1.053,1.684,2.131,1.837,2.131,9.706,9.707,0.176,0.1395,0.0021,1.26611,-0.00163,0.00142,0.27086,170.1,1,1,-77.007,-0.0337,0.012
+215,2.150,1.510,1.671,1.065,1.676,2.091,1.798,2.091,9.699,9.699,0.176,0.1396,0.0012,1.26611,-0.00076,0.00059,0.27078,169.2,1,1,-77.016,-0.0278,0.012
+220,2.200,1.498,1.658,1.073,1.669,2.068,1.775,2.068,9.730,9.734,0.177,0.1396,0.0006,1.26610,-0.00081,-0.00009,0.27082,170.4,1,1,-77.045,-0.0257,0.012
+225,2.250,1.489,1.653,1.080,1.664,2.055,1.764,2.055,9.705,9.706,0.176,0.1397,0.0004,1.26610,-0.00082,-0.00035,0.27085,169.7,1,1,-77.033,-0.0241,0.012
+230,2.300,1.486,1.648,1.086,1.662,2.048,1.756,2.048,9.743,9.745,0.177,0.1397,0.0002,1.26610,-0.00069,-0.00065,0.27081,171.1,1,1,-77.077,-0.0232,0.012
+235,2.350,1.482,1.645,1.088,1.662,2.042,1.751,2.042,9.708,9.708,0.177,0.1397,0.0000,1.26610,-0.00085,-0.00066,0.27082,169.5,1,1,-77.033,-0.0227,0.012
+240,2.400,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+245,2.450,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+250,2.500,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+255,2.550,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+260,2.600,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+265,2.650,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+270,2.700,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+275,2.750,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+280,2.800,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+285,2.850,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+290,2.900,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+295,2.950,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+300,3.000,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+305,3.050,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+310,3.100,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+315,3.150,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+320,3.200,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+325,3.250,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+330,3.300,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+335,3.350,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+340,3.400,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+345,3.450,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+350,3.500,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+355,3.550,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+360,3.600,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+365,3.650,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+370,3.700,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+375,3.750,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+380,3.800,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+385,3.850,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+390,3.900,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+395,3.950,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+400,4.000,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+405,4.050,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+410,4.100,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+415,4.150,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+420,4.200,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+425,4.250,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+430,4.300,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+435,4.350,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+440,4.400,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+445,4.450,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+450,4.500,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+455,4.550,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+460,4.600,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+465,4.650,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+470,4.700,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+475,4.750,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+480,4.800,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+485,4.850,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+490,4.900,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+495,4.950,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+500,5.000,1.483,1.644,1.088,1.662,2.042,1.750,2.042,9.745,9.748,0.177,0.1397,0.0000,1.26610,0.00000,0.00000,NaN,0.0,1,1,-77.033,0.0000,0.010
+# mode identification
+joint,peak_deg,time_to_peak_s,first_trough_s,second_peak_deg,second_peak_s,apparent_period_s,decay_ratio,err_0p25,err_0p5,err_1,err_2,err_3,err_5
+abdomen,3.102,1.760,1.780,2.123,1.790,0.030,0.6842,2.211,2.741,0.872,0.997,1.088,1.088
+hip,2.668,1.770,1.870,1.865,1.930,0.160,0.6993,0.442,0.614,0.526,1.794,1.644,1.644
+thorax,4.052,1.770,1.880,2.078,1.920,0.150,0.5128,1.883,2.259,1.021,1.752,1.662,1.662
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1156" name="UpperLimbPerformanceTests" fullname="PowerliftingSimulator.Tests.UpperLimbPerformanceTests" classname="PowerliftingSimulator.Tests.UpperLimbPerformanceTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-09 01:47:32Z" end-time="2026-09-09 01:47:33Z" duration="1.302072" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1157" name="UPPER_LIMB_PERFORMANCE_AND_STABILITY_BUDGET" fullname="PowerliftingSimulator.Tests.UpperLimbPerformanceTests.UPPER_LIMB_PERFORMANCE_AND_STABILITY_BUDGET" methodname="UPPER_LIMB_PERFORMANCE_AND_STABILITY_BUDGET" classname="PowerliftingSimulator.Tests.UpperLimbPerformanceTests" runstate="Runnable" seed="1144297561" result="Passed" start-time="2026-09-09 01:47:32Z" end-time="2026-09-09 01:47:33Z" duration="1.300607" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+[PERF BUDGET] physics_step p95: 0.342 ms (budget <= 2.0 ms)
+[PERF BUDGET] catch_up_frame p95: 1.296 ms (budget <= 8.0 ms)
+[PERF BUDGET] foundation_frame p95: 0.340 ms (budget <= 10.0 ms)
+[PERF BUDGET] controller_execution p95: 0.052 ms (budget <= 0.25 ms)
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+Saving results to: C:/Users/Educacion/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

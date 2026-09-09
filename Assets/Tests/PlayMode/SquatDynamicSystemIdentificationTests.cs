@@ -317,8 +317,8 @@ namespace PowerliftingSimulator.Tests
         public IEnumerator S3_THIGH_ABDOMEN_SUPPRESSION_COUNTERFACTUAL()
         {
             var runs = new List<IdentificationRun>();
-            yield return RunIdentification(0f, "0kg-baseline", runs, false);
-            yield return RunIdentification(0f, "0kg-thigh-abdomen-suppressed", runs, true);
+            yield return RunIdentification(0f, "0kg-baseline", runs, ThighAbdomenCollision.ForceEnabled);
+            yield return RunIdentification(0f, "0kg-thigh-abdomen-suppressed", runs, ThighAbdomenCollision.ForceSuppressed);
 
             var report = new StringBuilder();
             report.AppendLine("GAM-11 PHASE 5H10 THIGH-ABDOMEN SUPPRESSION COUNTERFACTUAL");
@@ -347,17 +347,33 @@ namespace PowerliftingSimulator.Tests
             yield return null;
         }
 
-        private void SetThighAbdomenCollision(bool enabled)
+        /// <summary>
+        /// Only the counterfactual is allowed to touch this pair. Everything
+        /// else runs whatever the production self-collision policy says, so a
+        /// diagnostic switch left over from one experiment cannot quietly
+        /// override a shipped repair in every other measurement.
+        /// </summary>
+        private enum ThighAbdomenCollision
         {
+            ProductionPolicy,
+            ForceEnabled,
+            ForceSuppressed
+        }
+
+        private void SetThighAbdomenCollision(ThighAbdomenCollision mode)
+        {
+            if (mode == ThighAbdomenCollision.ProductionPolicy)
+                return;
             if (!_rig.Segments.TryGetValue("abdomen", out PhysicalAthleteRig.SegmentRuntime abdomen) ||
                 abdomen.Collider == null)
                 return;
+            bool ignore = mode == ThighAbdomenCollision.ForceSuppressed;
             foreach (string thighId in new[] { "left_thigh", "right_thigh" })
             {
                 if (_rig.Segments.TryGetValue(thighId, out PhysicalAthleteRig.SegmentRuntime thigh) &&
                     thigh.Collider != null)
                 {
-                    Physics.IgnoreCollision(thigh.Collider, abdomen.Collider, !enabled);
+                    Physics.IgnoreCollision(thigh.Collider, abdomen.Collider, ignore);
                 }
             }
         }
@@ -366,10 +382,10 @@ namespace PowerliftingSimulator.Tests
             float loadKg,
             string label,
             List<IdentificationRun> runs,
-            bool suppressThighAbdomen = false)
+            ThighAbdomenCollision collision = ThighAbdomenCollision.ProductionPolicy)
         {
             _controller.SetLoad(loadKg);
-            SetThighAbdomenCollision(!suppressThighAbdomen);
+            SetThighAbdomenCollision(collision);
             SquatPhysicalAdapter adapter = _controller.Adapter;
             adapter.BalanceCorrectionsEnabled = true;
             SquatBalanceObserver balance = adapter.Balance;

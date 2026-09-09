@@ -1,0 +1,2 @@
+GAM-11 PHASE 5H11 T4 OLD FIRST CAUSE REMOVED
+thighAbdomenContactTicks=0 worstTrackingErrorInH10Window=7.55 deg deepestHipTarget=-111.00 deg deepestHipActual=-116.84 deg deficit=-5.84 deg
