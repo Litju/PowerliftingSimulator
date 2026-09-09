@@ -49,10 +49,16 @@ namespace PowerliftingSimulator.Tests
             Collider headCol = rig.Segments["head_neck"].Collider;
             Collider pelvisCol = rig.Segments["pelvis"].Collider;
             Collider leftThighCol = rig.Segments["left_thigh"].Collider;
+            Collider rightThighCol = rig.Segments["right_thigh"].Collider;
+            Collider abdomenCol = rig.Segments["abdomen"].Collider;
+            Collider leftShankCol = rig.Segments["left_shank"].Collider;
+            Collider leftFootCol = rig.Segments["left_foot"].Collider;
 
             // 1. Qualified non-adjacent exceptions MUST be ignored
             Assert.That(Physics.GetIgnoreCollision(leftForearmCol, thoraxCol), Is.True, "left_forearm <-> thorax must be ignored");
             Assert.That(Physics.GetIgnoreCollision(rightForearmCol, thoraxCol), Is.True, "right_forearm <-> thorax must be ignored");
+            Assert.That(Physics.GetIgnoreCollision(leftThighCol, abdomenCol), Is.True, "left_thigh <-> abdomen must be ignored");
+            Assert.That(Physics.GetIgnoreCollision(rightThighCol, abdomenCol), Is.True, "right_thigh <-> abdomen must be ignored");
 
             // 2. Structural adjacent pairs across joints MUST be ignored
             foreach (PhysicalAthleteRig.JointRuntime joint in rig.Joints)
@@ -71,6 +77,14 @@ namespace PowerliftingSimulator.Tests
             Assert.That(Physics.GetIgnoreCollision(leftUpperArmCol, pelvisCol), Is.False, "left_upper_arm <-> pelvis must NOT be ignored");
             Assert.That(Physics.GetIgnoreCollision(leftThighCol, thoraxCol), Is.False, "left_thigh <-> thorax must NOT be ignored");
             Assert.That(Physics.GetIgnoreCollision(leftHandCol, headCol), Is.False, "left_hand <-> head_neck must NOT be ignored");
+
+            // 4. The Phase 5H11 exemption is the thigh against the abdomen and
+            // nothing else. The lower limb keeps every other self-collision it
+            // had, so a leg cannot pass through the trunk or through itself.
+            Assert.That(Physics.GetIgnoreCollision(leftThighCol, headCol), Is.False, "left_thigh <-> head_neck must NOT be ignored");
+            Assert.That(Physics.GetIgnoreCollision(leftShankCol, abdomenCol), Is.False, "left_shank <-> abdomen must NOT be ignored");
+            Assert.That(Physics.GetIgnoreCollision(leftFootCol, abdomenCol), Is.False, "left_foot <-> abdomen must NOT be ignored");
+            Assert.That(Physics.GetIgnoreCollision(leftThighCol, rightThighCol), Is.False, "left_thigh <-> right_thigh must NOT be ignored");
         }
     }
 }

@@ -7,12 +7,13 @@ namespace PowerliftingSimulator.Tests
     public sealed class PhysicalAthleteSelfCollisionPolicyTests
     {
         private const string ExpectedReason = "COARSE_PROXY_FALSE_POSITIVE_IN_ACCEPTED_SQUAT_SETUP";
+        private const string ExpectedDeepSquatReason = "COARSE_RIGID_PROXY_FALSE_POSITIVE_IN_DEEP_SQUAT";
 
         [Test]
         public void COLLISION_POLICY_IGNORES_BILATERAL_FOREARM_THORAX_WITH_EXACT_METADATA()
         {
             Assert.That(PhysicalAthleteSelfCollisionPolicy.CoarseProxyFalsePositiveReason, Is.EqualTo(ExpectedReason));
-            Assert.That(PhysicalAthleteSelfCollisionPolicy.QualifiedIgnoredPairs.Count, Is.EqualTo(2));
+            Assert.That(PhysicalAthleteSelfCollisionPolicy.QualifiedIgnoredPairs.Count, Is.EqualTo(4));
 
             QualifiedIgnoredPair left = PhysicalAthleteSelfCollisionPolicy.QualifiedIgnoredPairs[0];
             Assert.That(left.SegmentA, Is.EqualTo("left_forearm"));
@@ -37,6 +38,41 @@ namespace PowerliftingSimulator.Tests
             Assert.That(reasonRRev, Is.EqualTo(ExpectedReason));
         }
 
+        /// <summary>
+        /// GAM-11 Phase 5H11. The thigh capsule and the abdomen box are each
+        /// within the visible envelope they stand for and both register within
+        /// 3 mm of their reference landmarks, but as a capsule against a box
+        /// they interpenetrate by 83 mm on a reference path where the visible
+        /// surfaces stay 13 mm apart. The exception is the shape combination,
+        /// not either primitive, and the reason string has to keep saying so.
+        /// </summary>
+        [Test]
+        public void COLLISION_POLICY_IGNORES_BILATERAL_THIGH_ABDOMEN_WITH_EXACT_METADATA()
+        {
+            Assert.That(
+                PhysicalAthleteSelfCollisionPolicy.DeepSquatCoarseProxyFalsePositiveReason,
+                Is.EqualTo(ExpectedDeepSquatReason));
+
+            QualifiedIgnoredPair left = PhysicalAthleteSelfCollisionPolicy.QualifiedIgnoredPairs[2];
+            Assert.That(left.SegmentA, Is.EqualTo("left_thigh"));
+            Assert.That(left.SegmentB, Is.EqualTo("abdomen"));
+            Assert.That(left.Reason, Is.EqualTo(ExpectedDeepSquatReason));
+
+            QualifiedIgnoredPair right = PhysicalAthleteSelfCollisionPolicy.QualifiedIgnoredPairs[3];
+            Assert.That(right.SegmentA, Is.EqualTo("right_thigh"));
+            Assert.That(right.SegmentB, Is.EqualTo("abdomen"));
+            Assert.That(right.Reason, Is.EqualTo(ExpectedDeepSquatReason));
+
+            Assert.That(PhysicalAthleteSelfCollisionPolicy.IsPairIgnoredByPolicy("left_thigh", "abdomen", out string reasonL), Is.True);
+            Assert.That(reasonL, Is.EqualTo(ExpectedDeepSquatReason));
+            Assert.That(PhysicalAthleteSelfCollisionPolicy.IsPairIgnoredByPolicy("abdomen", "left_thigh", out string reasonLRev), Is.True);
+            Assert.That(reasonLRev, Is.EqualTo(ExpectedDeepSquatReason));
+            Assert.That(PhysicalAthleteSelfCollisionPolicy.IsPairIgnoredByPolicy("right_thigh", "abdomen", out string reasonR), Is.True);
+            Assert.That(reasonR, Is.EqualTo(ExpectedDeepSquatReason));
+            Assert.That(PhysicalAthleteSelfCollisionPolicy.IsPairIgnoredByPolicy("abdomen", "right_thigh", out string reasonRRev2), Is.True);
+            Assert.That(reasonRRev2, Is.EqualTo(ExpectedDeepSquatReason));
+        }
+
         [Test]
         public void COLLISION_POLICY_DOES_NOT_IGNORE_NON_WHITELISTED_PAIRS()
         {
@@ -47,6 +83,10 @@ namespace PowerliftingSimulator.Tests
             Assert.That(PhysicalAthleteSelfCollisionPolicy.IsPairIgnoredByPolicy("left_upper_arm", "pelvis", out _), Is.False);
             Assert.That(PhysicalAthleteSelfCollisionPolicy.IsPairIgnoredByPolicy("left_thigh", "thorax", out _), Is.False);
             Assert.That(PhysicalAthleteSelfCollisionPolicy.IsPairIgnoredByPolicy("left_hand", "head_neck", out _), Is.False);
+            Assert.That(PhysicalAthleteSelfCollisionPolicy.IsPairIgnoredByPolicy("left_thigh", "head_neck", out _), Is.False);
+            Assert.That(PhysicalAthleteSelfCollisionPolicy.IsPairIgnoredByPolicy("left_shank", "abdomen", out _), Is.False);
+            Assert.That(PhysicalAthleteSelfCollisionPolicy.IsPairIgnoredByPolicy("left_foot", "abdomen", out _), Is.False);
+            Assert.That(PhysicalAthleteSelfCollisionPolicy.IsPairIgnoredByPolicy("left_thigh", "right_thigh", out _), Is.False);
         }
 
         [Test]
