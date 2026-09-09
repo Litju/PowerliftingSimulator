@@ -1,0 +1,21 @@
+GAM-11 PHASE 5H15 V1 DYNAMIC SPINAL REFERENCE TRACKING
+Driven descent at the production phase rate, the same trace H14 measured,
+so the before and after are like for like. abdErr and thoErr are actual
+minus GAM-10 nominal; trunkErr is world pitch minus the reference pitch.
+
+--- load 0 kg ---
+  s_q   abdNom  abdBias  abdAct  abdErr |  thoNom  thoBias  thoAct  thoErr |  trunk   refTrunk  trunkErr |  hipErr  support  contacts
+  0.00    0.00     0.00   -1.79   -1.79 |    0.00     0.00   -1.58   -1.58 |    2.26      3.91     -1.65 |    0.10   0.2900         8
+  0.25    4.02    -2.58    1.74   -2.27 |    6.03    -1.05    3.87   -2.16 |   13.59     16.65     -3.07 |    6.67   0.2900         8
+  0.55    6.00    -6.11    5.01   -0.99 |    9.00    -3.03    8.14   -0.87 |   31.79     31.37      0.42 |    5.01   0.2900         8
+  0.80    6.37    -6.73    5.64   -0.73 |    9.55    -3.38    8.98   -0.57 |   36.98     34.73      2.25 |    2.14   0.2900         8
+  1.00    6.40    -7.74    5.63   -0.77 |    9.59    -3.59    9.45   -0.14 |   38.22     35.97      2.25 |   -0.14   0.2900         8
+
+--- load 25 kg ---
+  s_q   abdNom  abdBias  abdAct  abdErr |  thoNom  thoBias  thoAct  thoErr |  trunk   refTrunk  trunkErr |  hipErr  support  contacts
+  0.00    0.00     0.00   -8.06   -8.06 |    0.00     0.00   -6.57   -6.57 |   -5.53      3.91     -9.44 |    2.52   0.2900         8
+  0.25    4.02    -1.55   -1.17   -5.19 |    6.03     0.34    1.88   -4.14 |    9.40     16.65     -7.26 |    7.93   0.2900         8
+  0.55    6.00    -7.20    4.13   -1.87 |    9.00    -3.06    7.55   -1.45 |   29.52     31.37     -1.85 |    4.59   0.2900         8
+  0.80    6.37    -8.17    5.08   -1.29 |    9.55    -3.66    8.64   -0.91 |   34.71     34.73     -0.02 |    1.40   0.2900         8
+  1.00    6.40    -8.17    6.28   -0.11 |    9.59    -3.66    9.52   -0.07 |   36.16     35.97      0.19 |   -1.07   0.2900         8
+
