@@ -1,3 +1,3 @@
 body_a,body_b,first_tick,last_tick,tick_count,max_normal_impulse,total_normal_impulse,point_x,point_y,point_z,normal_x,normal_y,normal_z
-left_thigh,abdomen,148,399,504,29.794,8163.866,-0.5077,0.1687,-0.4663,-0.646,0.092,-0.758
-right_thigh,abdomen,146,399,508,32.739,7257.176,-0.3648,0.2890,-0.6423,-0.662,-0.076,-0.745
+right_thigh,thorax,334,399,66,2.188,23.849,0.1183,0.5032,0.1135,-0.004,-0.972,-0.234
+left_thigh,thorax,343,399,57,1.652,13.332,-0.1100,0.5045,0.1114,-0.004,-0.973,-0.229

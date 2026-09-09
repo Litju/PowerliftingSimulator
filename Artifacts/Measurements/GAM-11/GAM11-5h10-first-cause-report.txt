@@ -2,23 +2,23 @@ GAM-11 PHASE 5H10 DYNAMIC SQUAT FIRST-CAUSE IDENTIFICATION
 settle_ticks=60 squat_ticks=400 tick_seconds=0.0100 athlete_mass_kg=100.00
 
 --- LOAD 0kg ---
-load=0kg settlePelvisY=0.9792 finalPelvisY=0.1585 finalSq=0.89 settleTrunk=2.2deg maxDemand=3.17 maxSaddleF=0N maxSaddleT=0Nm maxSaddleSep=0.0000m settleSaddleSep=0.0000m
+load=0kg settlePelvisY=0.9792 finalPelvisY=0.5296 finalSq=0.89 settleTrunk=2.2deg maxDemand=0.29 maxSaddleF=0N maxSaddleT=0Nm maxSaddleSep=0.0000m settleSaddleSep=0.0000m
 ordered event timeline (tick after StartSquat, never = threshold not crossed):
-     250  LOAD_CHAIN_TRACKING_DIVERGENCE       track_err=20.2 deg at right_thigh
-     250  POSTURE_TRACKING_BREAKDOWN           err=0.350 rad at right_thigh
-     293  LOAD_CHAIN_AT_ANGULAR_LIMIT          proximity=0.981 at left_foot
-     307  FOOT_SLIP                            slip=0.058 m/s
-     323  CAPTURE_OUTSIDE_SUPPORT              capture_ap=-0.1565 outside [-0.1558,0.1358]
-     342  COM_OUTSIDE_SUPPORT                  com_ap=-0.1545 outside [-0.1544,0.1365]
-     375  TRUNK_PITCH_DIVERGENCE               trunk=-42.9 deg, settle 2.2 deg
-     380  ADAPTER_DECLARED_FAILURE             COM_OUTSIDE_SUPPORT
-     388  DRIVE_SATURATED                      demand=1.58 at left_hand
-     394  PLANTAR_CONTACT_LOST                 no plantar contact this tick
+     309  TRUNK_PITCH_DIVERGENCE               trunk=47.3 deg, settle 2.2 deg
+     365  LOAD_CHAIN_AT_ANGULAR_LIMIT          proximity=0.987 at left_foot
+     366  CAPTURE_OUTSIDE_SUPPORT              capture_ap=0.1368 outside [-0.1547,0.1353]
+     391  LOAD_CHAIN_TRACKING_DIVERGENCE       track_err=20.0 deg at left_foot
+     396  COM_OUTSIDE_SUPPORT                  com_ap=0.1357 outside [-0.1545,0.1353]
+   never  ADAPTER_DECLARED_FAILURE             
    never  ANGULAR_VELOCITY_BLOWUP              
    never  CONTROL_LAW_LEFT_REFERENCE           
    never  COP_OUTSIDE_SUPPORT                  
+   never  DRIVE_SATURATED                      
+   never  FOOT_SLIP                            
    never  LOAD_CHAIN_DRIVE_SATURATED           
    never  NON_FINITE_STATE                     
+   never  PLANTAR_CONTACT_LOST                 
+   never  POSTURE_TRACKING_BREAKDOWN           
    never  SADDLE_ANGULAR_X_BEYOND_LIMIT        
    never  SADDLE_ANGULAR_Y_BEYOND_LIMIT        
    never  SADDLE_ANGULAR_Z_BEYOND_LIMIT        
@@ -29,24 +29,24 @@ ordered event timeline (tick after StartSquat, never = threshold not crossed):
    never  SADDLE_TORQUE_HALF_OF_BREAK          
 
 --- LOAD 25kg ---
-load=25kg settlePelvisY=0.9728 finalPelvisY=0.1084 finalSq=0.89 settleTrunk=-5.4deg maxDemand=1.18 maxSaddleF=0N maxSaddleT=336Nm maxSaddleSep=0.0303m settleSaddleSep=0.0092m
+load=25kg settlePelvisY=0.9728 finalPelvisY=0.5773 finalSq=0.89 settleTrunk=-5.5deg maxDemand=0.28 maxSaddleF=0N maxSaddleT=0Nm maxSaddleSep=0.0076m settleSaddleSep=0.0078m
 ordered event timeline (tick after StartSquat, never = threshold not crossed):
-     250  LOAD_CHAIN_TRACKING_DIVERGENCE       track_err=20.0 deg at right_thigh
-     251  POSTURE_TRACKING_BREAKDOWN           err=0.351 rad at right_thigh
-     282  CAPTURE_OUTSIDE_SUPPORT              capture_ap=-0.1601 outside [-0.1562,0.1353]
-     301  COM_OUTSIDE_SUPPORT                  com_ap=-0.1576 outside [-0.1564,0.1350]
-     328  ADAPTER_DECLARED_FAILURE             COM_OUTSIDE_SUPPORT
-     344  FOOT_SLIP                            slip=0.108 m/s
-     351  TRUNK_PITCH_DIVERGENCE               trunk=-50.7 deg, settle -5.4 deg
-     365  PLANTAR_CONTACT_LOST                 no plantar contact this tick
-     368  DRIVE_SATURATED                      demand=1.18 at right_hand
-     370  SADDLE_ANGULAR_X_BEYOND_LIMIT        x=-23.9 deg > 20 deg
+     194  TRUNK_PITCH_DIVERGENCE               trunk=39.6 deg, settle -5.5 deg
+     331  CAPTURE_OUTSIDE_SUPPORT              capture_ap=0.1367 outside [-0.1547,0.1353]
+     341  LOAD_CHAIN_AT_ANGULAR_LIMIT          proximity=0.984 at right_foot
+     348  LOAD_CHAIN_TRACKING_DIVERGENCE       track_err=20.0 deg at left_foot
+     351  COM_OUTSIDE_SUPPORT                  com_ap=0.1379 outside [-0.1556,0.1354]
+     398  ADAPTER_DECLARED_FAILURE             COM_OUTSIDE_SUPPORT
    never  ANGULAR_VELOCITY_BLOWUP              
    never  CONTROL_LAW_LEFT_REFERENCE           
    never  COP_OUTSIDE_SUPPORT                  
-   never  LOAD_CHAIN_AT_ANGULAR_LIMIT          
+   never  DRIVE_SATURATED                      
+   never  FOOT_SLIP                            
    never  LOAD_CHAIN_DRIVE_SATURATED           
    never  NON_FINITE_STATE                     
+   never  PLANTAR_CONTACT_LOST                 
+   never  POSTURE_TRACKING_BREAKDOWN           
+   never  SADDLE_ANGULAR_X_BEYOND_LIMIT        
    never  SADDLE_ANGULAR_Y_BEYOND_LIMIT        
    never  SADDLE_ANGULAR_Z_BEYOND_LIMIT        
    never  SADDLE_FORCE_HALF_OF_BREAK           
@@ -56,24 +56,24 @@ ordered event timeline (tick after StartSquat, never = threshold not crossed):
    never  SADDLE_TORQUE_HALF_OF_BREAK          
 
 --- LOAD 105kg ---
-load=105kg settlePelvisY=0.9361 finalPelvisY=0.1300 finalSq=0.89 settleTrunk=-35.3deg maxDemand=2.92 maxSaddleF=3500N maxSaddleT=0Nm maxSaddleSep=0.0519m settleSaddleSep=0.0513m
+load=105kg settlePelvisY=0.9354 finalPelvisY=0.1305 finalSq=0.89 settleTrunk=-44.8deg maxDemand=3.07 maxSaddleF=3609N maxSaddleT=0Nm maxSaddleSep=0.0535m settleSaddleSep=0.0517m
 ordered event timeline (tick after StartSquat, never = threshold not crossed):
-       0  LOAD_CHAIN_TRACKING_DIVERGENCE       track_err=34.7 deg at abdomen
-       0  POSTURE_TRACKING_BREAKDOWN           err=0.604 rad at abdomen
-       0  SADDLE_SEPARATION_BEYOND_LINEAR_LIMIT sep=0.0513 m > 0.050 m
-       6  DRIVE_SATURATED                      demand=1.05 at right_hand
-      16  ANGULAR_VELOCITY_BLOWUP              omega=20.1 rad/s
-      19  CAPTURE_OUTSIDE_SUPPORT              capture_ap=-0.1689 outside [-0.1627,0.1317]
-      38  COM_OUTSIDE_SUPPORT                  com_ap=-0.1663 outside [-0.1627,0.1317]
-      59  ADAPTER_DECLARED_FAILURE             COM_OUTSIDE_SUPPORT
-      77  FOOT_SLIP                            slip=0.059 m/s
-     124  SADDLE_ANGULAR_X_BEYOND_LIMIT        x=-20.1 deg > 20 deg
-     184  PLANTAR_CONTACT_LOST                 no plantar contact this tick
-     290  COP_OUTSIDE_SUPPORT                  cop_ap=-0.4259 outside [-0.6016,-0.4259]
-     332  LOAD_CHAIN_AT_ANGULAR_LIMIT          proximity=0.984 at right_foot
+       0  CAPTURE_OUTSIDE_SUPPORT              capture_ap=-0.1890 outside [-0.1653,0.1299]
+       0  DRIVE_SATURATED                      demand=1.18 at left_hand
+       0  LOAD_CHAIN_TRACKING_DIVERGENCE       track_err=28.8 deg at right_thigh
+       0  POSTURE_TRACKING_BREAKDOWN           err=0.464 rad at abdomen
+       0  SADDLE_SEPARATION_BEYOND_LINEAR_LIMIT sep=0.0517 m > 0.050 m
+      18  COM_OUTSIDE_SUPPORT                  com_ap=-0.1682 outside [-0.1653,0.1303]
+      42  ADAPTER_DECLARED_FAILURE             COM_OUTSIDE_SUPPORT
+      57  FOOT_SLIP                            slip=0.054 m/s
+     101  PLANTAR_CONTACT_LOST                 no plantar contact this tick
+     163  ANGULAR_VELOCITY_BLOWUP              omega=23.0 rad/s
    never  CONTROL_LAW_LEFT_REFERENCE           
+   never  COP_OUTSIDE_SUPPORT                  
+   never  LOAD_CHAIN_AT_ANGULAR_LIMIT          
    never  LOAD_CHAIN_DRIVE_SATURATED           
    never  NON_FINITE_STATE                     
+   never  SADDLE_ANGULAR_X_BEYOND_LIMIT        
    never  SADDLE_ANGULAR_Y_BEYOND_LIMIT        
    never  SADDLE_ANGULAR_Z_BEYOND_LIMIT        
    never  SADDLE_FORCE_HALF_OF_BREAK           

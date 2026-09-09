@@ -12,12 +12,12 @@ thorax        recipe[-35,50] secondary=30 | asBuilt angX=Limited low=-50.0 high=
 
 --- self-collision state for the hip's neighbours ---
 left_thigh    <-> pelvis     colliders=(CapsuleCollider,BoxCollider) policyIgnored=False reason=NONE
-left_thigh    <-> abdomen    colliders=(CapsuleCollider,BoxCollider) policyIgnored=False reason=NONE
+left_thigh    <-> abdomen    colliders=(CapsuleCollider,BoxCollider) policyIgnored=True reason=COARSE_RIGID_PROXY_FALSE_POSITIVE_IN_DEEP_SQUAT
 right_thigh   <-> pelvis     colliders=(CapsuleCollider,BoxCollider) policyIgnored=False reason=NONE
-right_thigh   <-> abdomen    colliders=(CapsuleCollider,BoxCollider) policyIgnored=False reason=NONE
+right_thigh   <-> abdomen    colliders=(CapsuleCollider,BoxCollider) policyIgnored=True reason=COARSE_RIGID_PROXY_FALSE_POSITIVE_IN_DEEP_SQUAT
 left_thigh    <-> right_thigh colliders=(CapsuleCollider,CapsuleCollider) policyIgnored=False reason=NONE
 left_thigh    <-> left_shank colliders=(CapsuleCollider,CapsuleCollider) policyIgnored=False reason=NONE
 
 --- contact census over the descent, ranked by total normal impulse ---
-  left_thigh <-> abdomen: ticks=504 maxImpulse=29.79 totalImpulse=8163.9 first=148 last=399 normal=(-0.65, 0.09, -0.76)
-  right_thigh <-> abdomen: ticks=508 maxImpulse=32.74 totalImpulse=7257.2 first=146 last=399 normal=(-0.66, -0.08, -0.75)
+  right_thigh <-> thorax: ticks=66 maxImpulse=2.19 totalImpulse=23.8 first=334 last=399 normal=(0.00, -0.97, -0.23)
+  left_thigh <-> thorax: ticks=57 maxImpulse=1.65 totalImpulse=13.3 first=343 last=399 normal=(0.00, -0.97, -0.23)
