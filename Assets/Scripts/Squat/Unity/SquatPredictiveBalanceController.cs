@@ -154,11 +154,57 @@ namespace PowerliftingSimulator.Squat.Unity
         /// </summary>
         public const float PostureGuardRateFullRadPerS = 0.17453f;   // 10 deg/s
 
+        /// <summary>
+        /// How the limit half of the posture guard decides a joint is at risk.
+        /// </summary>
+        public enum LimitGuardSemantics
+        {
+            /// <summary>
+            /// Absolute occupancy of the authored range, the original rule.
+            /// Retained so the rejected behaviour stays reproducible.
+            /// </summary>
+            AbsoluteOccupancy,
+
+            /// <summary>Limit term off. Diagnostic isolation only.</summary>
+            Disabled,
+
+            /// <summary>
+            /// Occupancy the reference did not ask for, measured against the
+            /// margin the reference left. See ComputeLimitScale.
+            /// </summary>
+            UnexpectedMarginConsumption
+        }
+
+        /// <summary>
+        /// Which ankle demand the proximal strategy is allowed to see. The
+        /// hip strategy exists for an ankle that has run out of authority, so
+        /// reading it from the post-guard command means a guard that removes
+        /// the ankle also removes the evidence that it needed removing.
+        /// </summary>
+        public enum ProximalTrigger
+        {
+            GuardedAnkleCommand,
+            RawAnkleDemand
+        }
+
+        public LimitGuardSemantics LimitSemantics { get; set; } = LimitGuardSemantics.AbsoluteOccupancy;
+        public ProximalTrigger ProximalTriggerSource { get; set; } = ProximalTrigger.GuardedAnkleCommand;
+
         // Posture state, supplied by the adapter from the previous
         // post-physics observation.
         public float PostureErrorRad { get; private set; }
         public float PostureErrorRateRadPerS { get; private set; }
         public float PostureLimitProximity { get; private set; }
+
+        /// <summary>
+        /// The largest fraction, over the guarded joints, of the limit margin
+        /// the reference left unused that something other than the reference
+        /// has consumed. Zero when every joint sits exactly where the accepted
+        /// reference put it, however deep that is; one when a joint has eaten
+        /// all the room the reference left it.
+        /// </summary>
+        public float UnexpectedMarginConsumedFraction { get; private set; }
+
         public float PostureGuardScale { get; private set; } = 1f;
         public float RawAnkleSagittalOffsetRad { get; private set; }
 
@@ -194,6 +240,14 @@ namespace PowerliftingSimulator.Squat.Unity
         /// </summary>
         public float AnkleAuthorityFraction { get; private set; }
 
+        /// <summary>
+        /// The same fraction taken on the demand before any safety filtering.
+        /// Kept separate so a suppressed ankle can never read as an idle one:
+        /// AnkleAuthorityFraction says what the ankle was allowed to use,
+        /// this says what the balance law actually asked for.
+        /// </summary>
+        public float RawAnkleAuthorityFraction { get; private set; }
+
         public void Reset()
         {
             AnkleSagittalOffsetRad = 0f;
@@ -209,6 +263,8 @@ namespace PowerliftingSimulator.Squat.Unity
             PostureLimitProximity = 0f;
             IsAnkleOffsetSaturated = false;
             AnkleAuthorityFraction = 0f;
+            RawAnkleAuthorityFraction = 0f;
+            UnexpectedMarginConsumedFraction = 0f;
             IsActive = false;
             HasCopMeasurement = false;
         }
@@ -301,6 +357,7 @@ namespace PowerliftingSimulator.Squat.Unity
             // limit, where the limit rather than the drive would be holding
             // the pose.
             RawAnkleSagittalOffsetRad = ankleTargetOffset;
+            RawAnkleAuthorityFraction = Mathf.Abs(ankleTargetOffset) / AnkleSagittalBoundRad;
             PostureGuardScale = ComputePostureGuardScale();
             ankleTargetOffset *= PostureGuardScale;
 
@@ -316,8 +373,15 @@ namespace PowerliftingSimulator.Squat.Unity
             // capture margin stays a diagnostic; driving the blend from it
             // turned the hip on hardest exactly when the stance was most
             // fragile, and the hip offset then accelerated the collapse.
+            //
+            // Which fraction the gate reads is a separate question from how
+            // hard the gate bites. Reading the guarded command makes a
+            // withdrawn ankle indistinguishable from an unused one.
+            float triggerFraction = ProximalTriggerSource == ProximalTrigger.RawAnkleDemand
+                ? RawAnkleAuthorityFraction
+                : saturationFraction;
             HipStrategyBlend = HipTrunkStrategyEnabled
-                ? Mathf.Clamp01(Mathf.InverseLerp(HipBlendOnsetFraction, 1f, saturationFraction))
+                ? Mathf.Clamp01(Mathf.InverseLerp(HipBlendOnsetFraction, 1f, triggerFraction))
                 : 0f;
 
             // Hip strategy. This controller can only hold a bounded target
@@ -356,8 +420,42 @@ namespace PowerliftingSimulator.Squat.Unity
                 Mathf.Max(0f, PostureErrorRateRadPerS) / PostureGuardRateFullRadPerS);
             float postureScale = 1f - excess * growth;
 
-            float limitScale = 1f - Mathf.InverseLerp(LimitGuardOnset, LimitGuardFull, PostureLimitProximity);
-            return Mathf.Clamp01(Mathf.Min(postureScale, limitScale));
+            return Mathf.Clamp01(Mathf.Min(postureScale, ComputeLimitScale()));
+        }
+
+        /// <summary>
+        /// The limit half of the guard.
+        ///
+        /// AbsoluteOccupancy asks how much of its authored range a joint is
+        /// using. That question has a wrong answer for this movement: the
+        /// accepted GAM-10 reference commands 111 deg of hip flexion against
+        /// a 120 deg range, so a correctly executed deep squat reads 0.93 and
+        /// trips a guard whose thresholds were set standing. Measured at
+        /// s_q 0.55, 0.80 and 1.00 under both loads, the hip's composed target
+        /// equals its nominal target exactly, so the quantity this rule keys
+        /// on carries no information about the balance correction it is
+        /// withdrawing (GAM11-5h13-d2-limit-margins.csv).
+        ///
+        /// UnexpectedMarginConsumption asks the question the guard was for:
+        /// how much of the room the reference left has been taken by
+        /// something the reference did not ask for. A pose that tracks its
+        /// reference scores zero however deep the reference goes, and a joint
+        /// driven onto a stop the reference did not command scores one. The
+        /// denominator is the reference's own remaining margin, so there is
+        /// no onset or saturation constant to calibrate and nothing to retune
+        /// per phase: the scale comes from the reference at that phase.
+        /// </summary>
+        private float ComputeLimitScale()
+        {
+            switch (LimitSemantics)
+            {
+                case LimitGuardSemantics.Disabled:
+                    return 1f;
+                case LimitGuardSemantics.UnexpectedMarginConsumption:
+                    return 1f - Mathf.Clamp01(UnexpectedMarginConsumedFraction);
+                default:
+                    return 1f - Mathf.InverseLerp(LimitGuardOnset, LimitGuardFull, PostureLimitProximity);
+            }
         }
 
         /// <summary>
@@ -365,11 +463,18 @@ namespace PowerliftingSimulator.Squat.Unity
         /// controller never reads the physical rig itself; the adapter owns
         /// that and hands the summary in.
         /// </summary>
-        public void ObservePosture(float postureErrorRad, float postureErrorRateRadPerS, float limitProximity)
+        public void ObservePosture(
+            float postureErrorRad,
+            float postureErrorRateRadPerS,
+            float limitProximity,
+            float unexpectedMarginConsumedFraction)
         {
             PostureErrorRad = float.IsFinite(postureErrorRad) ? Mathf.Max(0f, postureErrorRad) : 0f;
             PostureErrorRateRadPerS = float.IsFinite(postureErrorRateRadPerS) ? postureErrorRateRadPerS : 0f;
             PostureLimitProximity = float.IsFinite(limitProximity) ? Mathf.Clamp01(limitProximity) : 0f;
+            UnexpectedMarginConsumedFraction = float.IsFinite(unexpectedMarginConsumedFraction)
+                ? Mathf.Clamp01(unexpectedMarginConsumedFraction)
+                : 0f;
         }
 
         private void SolveFrontal(SquatBalanceObserver balance, float comRefMl, float maxStep)

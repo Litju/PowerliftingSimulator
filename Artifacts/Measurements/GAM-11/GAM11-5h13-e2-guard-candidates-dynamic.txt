@@ -1,0 +1,15 @@
+GAM-11 PHASE 5H13 E2 LIMIT GUARD CANDIDATES ON THE DYNAMIC DESCENT
+Identical descent at the production phase rate. Only the guard semantics,
+the proximal trigger and the target-to-COP gain differ between rows.
+
+load  config        deepestSq  finalPelvisY  minGuardScale  maxRawAuth  maxHipBlend  firstFrontCross  firstComOut  lostContact
+   0  G0                 1.00        0.4628         0.0000       9.627        0.199              367          392  True
+   0  G1                 1.00        0.4252         0.0268       1.101        0.000            never        never  False
+   0  G2                 1.00        0.4615         0.0313       3.469        1.000            never        never  False
+   0  G2+raw             1.00        0.4615         0.0198       3.306        1.000            never        never  False
+   0  G2+raw+gain        1.00        0.4635         0.0210       2.268        1.000            never        never  False
+  25  G0                 1.00        0.4629         0.0000      12.040        1.000              332          351  False
+  25  G1                 1.00        0.0900         0.0000       2.539        1.000              183           40  True
+  25  G2                 1.00        0.4408         0.0000      11.282        1.000            never        never  False
+  25  G2+raw             1.00        0.4409         0.0000       8.914        1.000            never        never  False
+  25  G2+raw+gain        1.00        0.4435         0.0000       5.079        1.000            never        never  False

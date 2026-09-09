@@ -525,6 +525,27 @@ namespace PowerliftingSimulator.Athlete
             return new Vector3(quaternion.x, quaternion.y, quaternion.z) * (angle / vectorMagnitude);
         }
 
+        /// <summary>
+        /// Limit occupancy of an arbitrary joint-space rotation against an
+        /// authored range: the same swing-twist decomposition and the same
+        /// directional denominator BuildDiagnostic uses for LimitProximity.
+        ///
+        /// Exposed so a caller that holds a target rotation, rather than the
+        /// measured one, can ask what occupancy that target would represent.
+        /// A guard that wants to separate the occupancy a reference commands
+        /// from the occupancy something else produced needs both on the same
+        /// scale, and deriving the second one anywhere else would let the two
+        /// definitions drift apart.
+        /// </summary>
+        public static float LimitProximityOf(Quaternion jointSpaceRotation, float lowDegrees, float highDegrees)
+        {
+            float xDegrees = SignedTwistDegrees(NormalizeCanonical(jointSpaceRotation), Vector3.right);
+            float limit = xDegrees >= 0f
+                ? Mathf.Max(0.001f, highDegrees)
+                : Mathf.Max(0.001f, -lowDegrees);
+            return Mathf.Clamp01(Mathf.Abs(xDegrees) / limit);
+        }
+
         private static float SignedTwistDegrees(Quaternion rotation, Vector3 axis)
         {
             Vector3 vector = new Vector3(rotation.x, rotation.y, rotation.z);

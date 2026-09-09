@@ -239,6 +239,7 @@ namespace PowerliftingSimulator.Squat.Unity
             _postureErrorRad = 0f;
             _postureErrorRateRadPerS = 0f;
             _postureLimitProximity = 0f;
+            _postureUnexpectedMarginConsumed = 0f;
             _postureWorstJoint = "NONE";
             _hasPostureHistory = false;
             _balanceController.Reset();
@@ -1109,11 +1110,13 @@ namespace PowerliftingSimulator.Squat.Unity
         public float CanonicalPostureErrorRad => _postureErrorRad;
         public float CanonicalPostureErrorRateRadPerS => _postureErrorRateRadPerS;
         public float CanonicalPostureLimitProximity => _postureLimitProximity;
+        public float CanonicalPostureUnexpectedMarginConsumed => _postureUnexpectedMarginConsumed;
         public string CanonicalPostureWorstJoint => _postureWorstJoint;
 
         private float _postureErrorRad;
         private float _postureErrorRateRadPerS;
         private float _postureLimitProximity;
+        private float _postureUnexpectedMarginConsumed;
         private string _postureWorstJoint = "NONE";
         private bool _hasPostureHistory;
 
@@ -1121,6 +1124,7 @@ namespace PowerliftingSimulator.Squat.Unity
         {
             float worstError = 0f;
             float worstLimit = 0f;
+            float worstConsumed = 0f;
             string worstJoint = "NONE";
 
             for (int index = 0; index < CanonicalPostureJoints.Length; index++)
@@ -1139,6 +1143,7 @@ namespace PowerliftingSimulator.Squat.Unity
                     worstJoint = jointId;
                 }
                 worstLimit = Mathf.Max(worstLimit, joint.Diagnostic.LimitProximity);
+                worstConsumed = Mathf.Max(worstConsumed, ConsumedMarginFraction(joint, composition));
             }
 
             _postureErrorRateRadPerS = _hasPostureHistory && dt > 0f
@@ -1146,10 +1151,43 @@ namespace PowerliftingSimulator.Squat.Unity
                 : 0f;
             _postureErrorRad = worstError;
             _postureLimitProximity = worstLimit;
+            _postureUnexpectedMarginConsumed = worstConsumed;
             _postureWorstJoint = worstJoint;
             _hasPostureHistory = true;
 
-            _balanceController.ObservePosture(_postureErrorRad, _postureErrorRateRadPerS, _postureLimitProximity);
+            _balanceController.ObservePosture(
+                _postureErrorRad,
+                _postureErrorRateRadPerS,
+                _postureLimitProximity,
+                _postureUnexpectedMarginConsumed);
+        }
+
+        /// <summary>
+        /// The share of the limit margin the accepted reference left unused
+        /// that this joint has since given away.
+        ///
+        /// Nominal occupancy is what the reference itself commands; the other
+        /// two are what the composed target asks for and what the joint
+        /// actually reached. Both are measured against the same denominator,
+        /// the margin the reference left, so a reference that deliberately
+        /// sits deep tightens the scale rather than tripping the guard on its
+        /// own. A joint tracking its reference returns zero at any depth.
+        /// </summary>
+        private static float ConsumedMarginFraction(
+            PoweredJointController.PoweredJointRuntime joint,
+            JointTargetComposition composition)
+        {
+            float low = joint.Recipe.LowDegrees;
+            float high = joint.Recipe.HighDegrees;
+
+            float nominal = PoweredJointController.LimitProximityOf(composition.Nominal, low, high);
+            float headroom = Mathf.Max(1f - nominal, 0.001f);
+
+            float commanded = PoweredJointController.LimitProximityOf(composition.Final, low, high);
+            float actual = joint.Diagnostic.LimitProximity;
+
+            float consumed = Mathf.Max(commanded, actual) - nominal;
+            return Mathf.Clamp01(consumed / headroom);
         }
 
         private void CheckDriveSaturation(PoweredJointController controller)
