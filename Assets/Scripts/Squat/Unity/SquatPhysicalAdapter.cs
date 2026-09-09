@@ -655,8 +655,21 @@ namespace PowerliftingSimulator.Squat.Unity
             _familyFlexionSign[(int)family] = sign;
         }
 
+        /// <summary>
+        /// The equilibrium bias term of
+        /// FINAL = NOMINAL_GAM10 + GRAVITY_EQUILIBRIUM_BIAS + DYNAMIC_BALANCE,
+        /// in logical joint space.
+        ///
+        /// The flat per-family bias stays as it was. The spine additionally
+        /// carries the 5H15 phase and load calibration, because the moment it
+        /// holds changes by a factor of five between standing and the bottom
+        /// and by half again with the bar, so a single constant cannot be
+        /// right at both ends.
+        /// </summary>
         private float PreloadLogicalRad(SquatJointFamily family) =>
-            _preload.AnatomicalFlexionBiasRad(family) * _familyFlexionSign[(int)family];
+            (_preload.AnatomicalFlexionBiasRad(family) +
+             UnitContract.DegreesToRadians(_preload.SpineBiasDegrees(family, _sq, EquilibriumLoadKg))) *
+            _familyFlexionSign[(int)family];
 
         private Quaternion Compose(string jointId, Quaternion nominal, Quaternion gravityBias, Quaternion balanceOffset)
         {
@@ -1111,6 +1124,13 @@ namespace PowerliftingSimulator.Squat.Unity
         public float CanonicalPostureErrorRateRadPerS => _postureErrorRateRadPerS;
         public float CanonicalPostureLimitProximity => _postureLimitProximity;
         public float CanonicalPostureUnexpectedMarginConsumed => _postureUnexpectedMarginConsumed;
+
+        /// <summary>
+        /// Bar load the spine equilibrium calibration is evaluated at. The
+        /// prototype controller is the single writer; nothing else sets it,
+        /// so there is one authority for the load the bias assumes.
+        /// </summary>
+        public float EquilibriumLoadKg { get; set; }
         public string CanonicalPostureWorstJoint => _postureWorstJoint;
 
         private float _postureErrorRad;

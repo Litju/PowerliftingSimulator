@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-09 22:09:36Z" end-time="2026-09-09 22:09:45Z" duration="8.7548947">
+  <test-suite type="TestSuite" id="1202" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="152" result="Passed" start-time="2026-09-09 22:09:36Z" end-time="2026-09-09 22:09:45Z" duration="8.754895" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1196" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="C:/Users/Educacion/Desktop/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="152" result="Passed" start-time="2026-09-09 22:09:37Z" end-time="2026-09-09 22:09:45Z" duration="8.713131" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="18572" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1197" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="152" result="Passed" start-time="2026-09-09 22:09:37Z" end-time="2026-09-09 22:09:45Z" duration="8.697889" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1198" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="152" result="Passed" start-time="2026-09-09 22:09:37Z" end-time="2026-09-09 22:09:45Z" duration="8.684018" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1163" name="SpinalEquilibriumBiasTests" fullname="PowerliftingSimulator.Tests.SpinalEquilibriumBiasTests" classname="PowerliftingSimulator.Tests.SpinalEquilibriumBiasTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-09 22:09:37Z" end-time="2026-09-09 22:09:45Z" duration="8.650704" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1166" name="E3_SPINE_BIAS_STATIC_VALIDATION" fullname="PowerliftingSimulator.Tests.SpinalEquilibriumBiasTests.E3_SPINE_BIAS_STATIC_VALIDATION" methodname="E3_SPINE_BIAS_STATIC_VALIDATION" classname="PowerliftingSimulator.Tests.SpinalEquilibriumBiasTests" runstate="Runnable" seed="1003085467" result="Passed" start-time="2026-09-09 22:09:37Z" end-time="2026-09-09 22:09:45Z" duration="8.603074" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[GAM-11 PHASE 5H15 E3 STATIC VALIDATION OF THE SHIPPED SPINE CALIBRATION
+Same harness, same holds. off is the uncompensated plant, on is production.
+error is actual minus GAM-10 nominal.
+
+load  s_q  |  abdErr off    on   delta |  thoErr off    on   delta |  trunk off     on |  hipErr on  support  settled
+   0  0.00 |    -1.23  -1.25   -0.02 |    -1.18  -1.20   -0.01 |     3.01    2.95 |    -0.13   0.2900  True
+   0  0.25 |     3.40   0.00   -3.40 |     1.54   0.00   -1.55 |    20.78   17.99 |    -1.99   0.2900  True
+   0  0.55 |     7.63  -0.12   -7.75 |     3.97  -0.08   -4.05 |    40.85   34.36 |    -3.89   0.2900  True
+   0  0.80 |     8.33  -0.07   -8.41 |     4.36  -0.06   -4.42 |    44.73   37.79 |    -4.22   0.2900  True
+   0  1.00 |     8.50  -1.19   -9.69 |     4.43  -0.35   -4.78 |    45.56   37.46 |    -4.16   0.2900  True
+  25  0.00 |    -6.95  -6.96    0.00 |    -5.60  -5.60    0.00 |    -3.95   -3.95 |     1.95   0.2900  True
+  25  0.25 |     2.26   0.05   -2.21 |     0.06   0.04   -0.02 |    18.51   17.04 |    -1.88   0.2900  True
+  25  0.55 |    10.84  -0.41  -11.25 |     5.46  -0.26   -5.72 |    41.96   32.51 |    -4.65   0.2900  True
+  25  0.80 |    11.97  -0.44  -12.41 |     6.14  -0.29   -6.43 |    45.43   35.45 |    -5.11   0.2900  True
+  25  1.00 |     9.29  -0.43   -9.72 |     5.59  -0.28   -5.87 |    42.72   35.47 |    -5.07   0.2900  True
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+Saving results to: C:/Users/Educacion/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

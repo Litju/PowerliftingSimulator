@@ -101,6 +101,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 EnsureSaddle();
 
             _adapter.Reset();
+            _adapter.EquilibriumLoadKg = _selectedLoadKg;
             _adapter.SetSaddle(_saddle);
             athleteRig.SetGameplayPerformanceProfile(true);
             athleteRig.PrimeCommandSource();
@@ -197,6 +198,9 @@ namespace PowerliftingSimulator.Squat.Unity
                 return;
 
             _selectedLoadKg = Mathf.Max(0f, loadKg);
+            // Single writer for the load the spine equilibrium calibration
+            // is evaluated at, so the bias and the bar can never disagree.
+            _adapter.EquilibriumLoadKg = _selectedLoadKg;
             if (_saddle != null)
             {
                 _saddle.BreakSaddle();
@@ -218,6 +222,7 @@ namespace PowerliftingSimulator.Squat.Unity
             }
 
             _adapter.Reset();
+            _adapter.EquilibriumLoadKg = _selectedLoadKg;
             _adapter.SetSaddle(_saddle);
             athleteRig.SetCommandSource(_adapter);
             athleteRig.PrimeCommandSource();

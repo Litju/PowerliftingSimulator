@@ -106,6 +106,7 @@ namespace PowerliftingSimulator.Tests
                     // Never leave a diagnostic bias on the shared preload.
                     adapter.Preload.SetAnatomicalFlexionBiasDegrees(SquatJointFamily.Abdomen, 0f);
                     adapter.Preload.SetAnatomicalFlexionBiasDegrees(SquatJointFamily.Thorax, 0f);
+                    adapter.Preload.SpineCalibrationEnabled = true;
                 }
                 _controller.enabled = false;
             }
@@ -188,7 +189,8 @@ namespace PowerliftingSimulator.Tests
         /// than from a single tick.
         /// </summary>
         private IEnumerator HoldAndMeasure(
-            float loadKg, float phase, float abdomenBiasDeg, float thoraxBiasDeg, Hold[] result)
+            float loadKg, float phase, float abdomenBiasDeg, float thoraxBiasDeg, Hold[] result,
+            bool useProductionCalibration = false)
         {
             _controller.SetLoad(loadKg);
             SquatPhysicalAdapter adapter = _controller.Adapter;
@@ -198,6 +200,10 @@ namespace PowerliftingSimulator.Tests
             float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
 
             adapter.Preload.Enabled = true;
+            // Identification measures the uncompensated plant, so the shipped
+            // calibration is off there and the only spine bias is the probe.
+            // Validation turns it back on and adds no probe.
+            adapter.Preload.SpineCalibrationEnabled = useProductionCalibration;
             adapter.Preload.SetAnatomicalFlexionBiasDegrees(SquatJointFamily.Abdomen, abdomenBiasDeg);
             adapter.Preload.SetAnatomicalFlexionBiasDegrees(SquatJointFamily.Thorax, thoraxBiasDeg);
             adapter.BalanceCorrectionsEnabled = true;
@@ -624,6 +630,74 @@ namespace PowerliftingSimulator.Tests
             float sigmaMax = Mathf.Sqrt(Mathf.Max(0f, 0.5f * (m + discriminant)));
             float sigmaMin = Mathf.Sqrt(Mathf.Max(0f, 0.5f * (m - discriminant)));
             return sigmaMin < 1e-6f ? float.PositiveInfinity : sigmaMax / sigmaMin;
+        }
+
+        // ------------------------------------------------------------------
+        // E3. Fresh-reset validation of the shipped calibration, section 13.
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// Runs the same held matrix with the production calibration on and
+        /// compares it against the uncompensated baseline from the same
+        /// harness. The bias has to reduce the spine's reference miss without
+        /// pulling the hip off GAM-10, shrinking the support, unseating the
+        /// bar or leaving the joint unsettled.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator E3_SPINE_BIAS_STATIC_VALIDATION()
+        {
+            var report = new StringBuilder();
+            report.AppendLine("GAM-11 PHASE 5H15 E3 STATIC VALIDATION OF THE SHIPPED SPINE CALIBRATION");
+            report.AppendLine("Same harness, same holds. off is the uncompensated plant, on is production.");
+            report.AppendLine("error is actual minus GAM-10 nominal.");
+            report.AppendLine();
+            report.AppendLine("load  s_q  |  abdErr off    on   delta |  thoErr off    on   delta |" +
+                              "  trunk off     on |  hipErr on  support  settled");
+
+            var csv = new StringBuilder();
+            csv.AppendLine("load_kg,phase,abd_err_off,abd_err_on,tho_err_off,tho_err_on," +
+                           "trunk_off,trunk_on,hip_err_on,abd_bias_applied,tho_bias_applied," +
+                           "support_length_on,contacts_on,saddle_sep_on,settled_on");
+
+            foreach (float load in new[] { 0f, 25f })
+            {
+                foreach (float phase in Phases)
+                {
+                    var off = new Hold[1];
+                    var on = new Hold[1];
+                    yield return HoldAndMeasure(load, phase, 0f, 0f, off);
+                    yield return HoldWithProductionCalibration(load, phase, on);
+
+                    float hipError = on[0].HipActual - on[0].HipNominal;
+                    report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                        "{0,4:F0}  {1,4:F2} |  {2,7:F2} {3,6:F2}  {4,6:F2} |  {5,7:F2} {6,6:F2}  {7,6:F2} |" +
+                        "  {8,7:F2} {9,7:F2} |  {10,7:F2}  {11,7:F4}  {12}",
+                        load, phase,
+                        off[0].AbdomenError, on[0].AbdomenError, on[0].AbdomenError - off[0].AbdomenError,
+                        off[0].ThoraxError, on[0].ThoraxError, on[0].ThoraxError - off[0].ThoraxError,
+                        off[0].WorldTrunkPitch, on[0].WorldTrunkPitch,
+                        hipError, on[0].SupportLength, on[0].Settled));
+
+                    csv.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                        "{0:F0},{1:F2},{2:F4},{3:F4},{4:F4},{5:F4},{6:F4},{7:F4},{8:F4},{9:F4},{10:F4},{11:F5},{12},{13:F5},{14}",
+                        load, phase, off[0].AbdomenError, on[0].AbdomenError,
+                        off[0].ThoraxError, on[0].ThoraxError,
+                        off[0].WorldTrunkPitch, on[0].WorldTrunkPitch, hipError,
+                        on[0].AbdomenBias, on[0].ThoraxBias,
+                        on[0].SupportLength, on[0].Contacts, on[0].SaddleSeparation,
+                        on[0].Settled ? 1 : 0));
+                }
+            }
+
+            WriteMeasurement("spine-bias-static-validation.txt", report.ToString());
+            WriteMeasurement("spine-bias-static-validation.csv", csv.ToString());
+            Debug.Log(report.ToString());
+            yield return null;
+        }
+
+        private IEnumerator HoldWithProductionCalibration(float loadKg, float phase, Hold[] result)
+        {
+            yield return HoldAndMeasure(loadKg, phase, 0f, 0f, result, useProductionCalibration: true);
         }
 
         // ------------------------------------------------------------------
