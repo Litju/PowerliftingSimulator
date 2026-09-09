@@ -414,8 +414,14 @@ namespace PowerliftingSimulator.Squat.Unity
             poweredController.ApplyCommand("right_shank", new JointCommand(rightKneeTarget, rate.RightShank * phaseVelocity, 1f, capacityScale * 1.8f), tick);
             poweredController.ApplyCommand("left_thigh", new JointCommand(leftHipTarget, rate.LeftThigh * phaseVelocity, 1f, capacityScale * 1.5f), tick);
             poweredController.ApplyCommand("right_thigh", new JointCommand(rightHipTarget, rate.RightThigh * phaseVelocity, 1f, capacityScale * 1.5f), tick);
-            poweredController.ApplyCommand("abdomen", new JointCommand(abdomenTarget, rate.Abdomen * phaseVelocity, 1f, capacityScale * 1.5f), tick);
-            poweredController.ApplyCommand("thorax", new JointCommand(thoraxTarget, rate.Thorax * phaseVelocity, 1f, capacityScale * 1.5f), tick);
+            poweredController.ApplyCommand("abdomen", new JointCommand(
+                abdomenTarget,
+                SpineTargetRate(rate.Abdomen, phaseVelocity, referenceTarget.Abdomen, SquatJointFamily.Abdomen),
+                1f, capacityScale * 1.5f), tick);
+            poweredController.ApplyCommand("thorax", new JointCommand(
+                thoraxTarget,
+                SpineTargetRate(rate.Thorax, phaseVelocity, referenceTarget.Thorax, SquatJointFamily.Thorax),
+                1f, capacityScale * 1.5f), tick);
 
             // The head holds its canonical neutral relative to the thorax and
             // nothing else. It is a postural actuator, not part of the balance
@@ -687,6 +693,50 @@ namespace PowerliftingSimulator.Squat.Unity
                 lowest = Mathf.Min(lowest, right.Body.position.y);
             return float.IsPositiveInfinity(lowest) ? 0f : lowest;
         }
+
+        /// <summary>
+        /// Angular velocity of the composed spine target, in the same
+        /// parent-frame convention EvaluateReferenceRatePerPhase produces.
+        ///
+        /// The final target is NOMINAL * GRAVITY_BIAS, and for a left-composed
+        /// rate convention the product rule is
+        /// omega(A*B) = omega(A) + Rot(A) * omega(B), so the bias rate has to
+        /// be rotated by the nominal before it is added. The nominal spine
+        /// target is very nearly a pure rotation about the sagittal axis, so
+        /// Rot(nominal) leaves that axis almost unchanged and naive addition
+        /// would be close; it is done exactly anyway because it costs one
+        /// quaternion-vector product and does not depend on that being true.
+        ///
+        /// Balance is deliberately absent. It is feedback state, not a
+        /// deterministic trajectory, and differentiating it would feed loop
+        /// noise into the drive.
+        ///
+        /// Allocation-free and O(1): the bias slope is read from the
+        /// calibrated table rather than differenced at runtime.
+        /// </summary>
+        private Vector3 SpineTargetRate(
+            Vector3 nominalRatePerPhase,
+            float phaseVelocity,
+            Quaternion nominalTarget,
+            SquatJointFamily family)
+        {
+            Vector3 nominalRate = nominalRatePerPhase * phaseVelocity;
+            if (!SpineBiasRateFeedforwardEnabled || Mathf.Abs(phaseVelocity) <= 1e-5f)
+                return nominalRate;
+
+            float biasRateRadPerPhase = UnitContract.DegreesToRadians(
+                _preload.SpineBiasRateDegreesPerPhase(family, _sq, EquilibriumLoadKg)) *
+                _familyFlexionSign[(int)family];
+            Vector3 biasRate = nominalTarget * (Vector3.right * (biasRateRadPerPhase * phaseVelocity));
+            return nominalRate + biasRate;
+        }
+
+        /// <summary>
+        /// Off reproduces the 5H15 command, whose target angular velocity
+        /// carries the nominal reference derivative only while its target
+        /// position also carries the gravity bias.
+        /// </summary>
+        public bool SpineBiasRateFeedforwardEnabled { get; set; }
 
         private static Quaternion SagittalAndFrontal(float sagittalRad, float frontalRad)
         {

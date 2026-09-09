@@ -176,6 +176,19 @@ namespace PowerliftingSimulator.Squat.Unity
         /// Allocation-free and branch-light; the whole evaluation is two table
         /// walks and a lerp.
         /// </summary>
+        /// <summary>
+        /// Standing knot, held separately from the rest of the table so it can
+        /// be qualified on its own. 5H15 measured +0.83 deg unloaded and
+        /// +3.93 at 25 kg for the abdomen, and +0.92 / +3.67 for the thorax,
+        /// but withheld them: standing is an already qualified state and
+        /// moving its setpoint is a plant change that needs its own evidence.
+        /// Zero reproduces the 5H15 shipped behaviour.
+        /// </summary>
+        public float StandingAbdomenBiasDegrees0Kg { get; set; }
+        public float StandingThoraxBiasDegrees0Kg { get; set; }
+        public float StandingAbdomenBiasDegrees25Kg { get; set; }
+        public float StandingThoraxBiasDegrees25Kg { get; set; }
+
         public float SpineBiasDegrees(SquatJointFamily family, float phase, float loadKg)
         {
             if (!SpineCalibrationEnabled)
@@ -184,13 +197,38 @@ namespace PowerliftingSimulator.Squat.Unity
                 return 0f;
 
             bool abdomen = family == SquatJointFamily.Abdomen;
-            float unloaded = Interpolate(abdomen ? AbdomenBias0Kg : ThoraxBias0Kg, phase);
-            float loaded = Interpolate(abdomen ? AbdomenBias25Kg : ThoraxBias25Kg, phase);
+            float standing0 = abdomen ? StandingAbdomenBiasDegrees0Kg : StandingThoraxBiasDegrees0Kg;
+            float standing25 = abdomen ? StandingAbdomenBiasDegrees25Kg : StandingThoraxBiasDegrees25Kg;
+            float unloaded = Interpolate(abdomen ? AbdomenBias0Kg : ThoraxBias0Kg, standing0, phase);
+            float loaded = Interpolate(abdomen ? AbdomenBias25Kg : ThoraxBias25Kg, standing25, phase);
             float blend = Mathf.Clamp01(loadKg / CalibratedLoadKg);
             return Mathf.Lerp(unloaded, loaded, blend);
         }
 
-        private static float Interpolate(float[] values, float phase)
+        /// <summary>
+        /// Derivative of the same table with respect to phase, in degrees per
+        /// unit phase. The table is piecewise linear, so this is the slope of
+        /// the active segment and is exact rather than differenced. It is
+        /// piecewise constant and steps at the knots, which is a property of
+        /// the calibrated path and is inspected rather than smoothed away.
+        /// </summary>
+        public float SpineBiasRateDegreesPerPhase(SquatJointFamily family, float phase, float loadKg)
+        {
+            if (!SpineCalibrationEnabled)
+                return 0f;
+            if (family != SquatJointFamily.Abdomen && family != SquatJointFamily.Thorax)
+                return 0f;
+
+            bool abdomen = family == SquatJointFamily.Abdomen;
+            float standing0 = abdomen ? StandingAbdomenBiasDegrees0Kg : StandingThoraxBiasDegrees0Kg;
+            float standing25 = abdomen ? StandingAbdomenBiasDegrees25Kg : StandingThoraxBiasDegrees25Kg;
+            float unloaded = Slope(abdomen ? AbdomenBias0Kg : ThoraxBias0Kg, standing0, phase);
+            float loaded = Slope(abdomen ? AbdomenBias25Kg : ThoraxBias25Kg, standing25, phase);
+            float blend = Mathf.Clamp01(loadKg / CalibratedLoadKg);
+            return Mathf.Lerp(unloaded, loaded, blend);
+        }
+
+        private static float Interpolate(float[] values, float standingValue, float phase)
         {
             float clamped = Mathf.Clamp01(phase);
             for (int index = 1; index < SpinePhaseKnots.Length; index++)
@@ -198,10 +236,28 @@ namespace PowerliftingSimulator.Squat.Unity
                 if (clamped > SpinePhaseKnots[index])
                     continue;
                 float t = Mathf.InverseLerp(SpinePhaseKnots[index - 1], SpinePhaseKnots[index], clamped);
-                return Mathf.Lerp(values[index - 1], values[index], t);
+                return Mathf.Lerp(ValueAt(values, standingValue, index - 1), values[index], t);
             }
             return values[values.Length - 1];
         }
+
+        private static float Slope(float[] values, float standingValue, float phase)
+        {
+            float clamped = Mathf.Clamp01(phase);
+            for (int index = 1; index < SpinePhaseKnots.Length; index++)
+            {
+                if (clamped > SpinePhaseKnots[index])
+                    continue;
+                float span = SpinePhaseKnots[index] - SpinePhaseKnots[index - 1];
+                return span <= 1e-6f
+                    ? 0f
+                    : (values[index] - ValueAt(values, standingValue, index - 1)) / span;
+            }
+            return 0f;
+        }
+
+        private static float ValueAt(float[] values, float standingValue, int index) =>
+            index == 0 ? standingValue : values[index];
 
         public static SquatEquilibriumPreload QualifiedStanding()
         {
