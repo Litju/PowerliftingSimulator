@@ -1,0 +1,465 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="67" result="Passed" total="67" passed="67" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-09 03:26:27Z" end-time="2026-09-09 03:26:28Z" duration="0.5446711">
+  <test-suite type="TestSuite" id="1000" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="67" result="Passed" start-time="2026-09-09 03:26:27Z" end-time="2026-09-09 03:26:28Z" duration="0.544671" total="67" passed="67" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1081" name="PowerliftingSimulator.Foundation.Tests.EditMode.dll" fullname="C:/Users/Educacion/Desktop/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.EditMode.dll" runstate="Runnable" testcasecount="67" result="Passed" start-time="2026-09-09 03:26:27Z" end-time="2026-09-09 03:26:28Z" duration="0.524518" total="67" passed="67" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="18860" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1082" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="67" result="Passed" start-time="2026-09-09 03:26:27Z" end-time="2026-09-09 03:26:28Z" duration="0.521877" total="67" passed="67" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1083" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="67" result="Passed" start-time="2026-09-09 03:26:27Z" end-time="2026-09-09 03:26:28Z" duration="0.519341" total="67" passed="67" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1001" name="BarbellAndTraceContractTests" fullname="PowerliftingSimulator.Tests.BarbellAndTraceContractTests" classname="PowerliftingSimulator.Tests.BarbellAndTraceContractTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-09-09 03:26:27Z" end-time="2026-09-09 03:26:27Z" duration="0.125557" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1006" name="BAR_CORRECTED_COMPOUND_INERTIA_USES_LOAD_DEPENDENT_COLLAR_POSITIONS" fullname="PowerliftingSimulator.Tests.BarbellAndTraceContractTests.BAR_CORRECTED_COMPOUND_INERTIA_USES_LOAD_DEPENDENT_COLLAR_POSITIONS" methodname="BAR_CORRECTED_COMPOUND_INERTIA_USES_LOAD_DEPENDENT_COLLAR_POSITIONS" classname="PowerliftingSimulator.Tests.BarbellAndTraceContractTests" runstate="Runnable" seed="2017518203" result="Passed" start-time="2026-09-09 03:26:27Z" end-time="2026-09-09 03:26:27Z" duration="0.061306" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1004" name="BAR_LOADED_LAYOUT_PRESERVES_ORDER_SYMMETRY_AND_SLEEVE_CLEARANCE" fullname="PowerliftingSimulator.Tests.BarbellAndTraceContractTests.BAR_LOADED_LAYOUT_PRESERVES_ORDER_SYMMETRY_AND_SLEEVE_CLEARANCE" methodname="BAR_LOADED_LAYOUT_PRESERVES_ORDER_SYMMETRY_AND_SLEEVE_CLEARANCE" classname="PowerliftingSimulator.Tests.BarbellAndTraceContractTests" runstate="Runnable" seed="79606439" result="Passed" start-time="2026-09-09 03:26:27Z" end-time="2026-09-09 03:26:27Z" duration="0.004576" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1002" name="BAR_LOADING_IS_EXACT_AND_SYMMETRIC" fullname="PowerliftingSimulator.Tests.BarbellAndTraceContractTests.BAR_LOADING_IS_EXACT_AND_SYMMETRIC" methodname="BAR_LOADING_IS_EXACT_AND_SYMMETRIC" classname="PowerliftingSimulator.Tests.BarbellAndTraceContractTests" runstate="Runnable" seed="1274670046" result="Passed" start-time="2026-09-09 03:26:27Z" end-time="2026-09-09 03:26:27Z" duration="0.004613" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1005" name="BAR_LOADING_REJECTS_FINITE_INVENTORY_SLEEVE_OVERFLOW" fullname="PowerliftingSimulator.Tests.BarbellAndTraceContractTests.BAR_LOADING_REJECTS_FINITE_INVENTORY_SLEEVE_OVERFLOW" methodname="BAR_LOADING_REJECTS_FINITE_INVENTORY_SLEEVE_OVERFLOW" classname="PowerliftingSimulator.Tests.BarbellAndTraceContractTests" runstate="Runnable" seed="1767588510" result="Passed" start-time="2026-09-09 03:26:27Z" end-time="2026-09-09 03:26:27Z" duration="0.002397" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1003" name="BAR_MASS_AND_INERTIA_CHANGE_WITH_LOAD" fullname="PowerliftingSimulator.Tests.BarbellAndTraceContractTests.BAR_MASS_AND_INERTIA_CHANGE_WITH_LOAD" methodname="BAR_MASS_AND_INERTIA_CHANGE_WITH_LOAD" classname="PowerliftingSimulator.Tests.BarbellAndTraceContractTests" runstate="Runnable" seed="1077324406" result="Passed" start-time="2026-09-09 03:26:27Z" end-time="2026-09-09 03:26:27Z" duration="0.001948" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1007" name="PHYSICAL_OBSERVATION_AND_TRACE_ARE_IMMUTABLE_BOUNDED_AND_MONOTONIC" fullname="PowerliftingSimulator.Tests.BarbellAndTraceContractTests.PHYSICAL_OBSERVATION_AND_TRACE_ARE_IMMUTABLE_BOUNDED_AND_MONOTONIC" methodname="PHYSICAL_OBSERVATION_AND_TRACE_ARE_IMMUTABLE_BOUNDED_AND_MONOTONIC" classname="PowerliftingSimulator.Tests.BarbellAndTraceContractTests" runstate="Runnable" seed="1288233135" result="Passed" start-time="2026-09-09 03:26:27Z" end-time="2026-09-09 03:26:27Z" duration="0.011188" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1008" name="CanonicalHumanoidAssetTests" fullname="PowerliftingSimulator.Tests.CanonicalHumanoidAssetTests" classname="PowerliftingSimulator.Tests.CanonicalHumanoidAssetTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-09 03:26:27Z" end-time="2026-09-09 03:26:28Z" duration="0.080695" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1009" name="CANONICAL_HUMANOID_REQUIRED_BONES_RESOLVE" fullname="PowerliftingSimulator.Tests.CanonicalHumanoidAssetTests.CANONICAL_HUMANOID_REQUIRED_BONES_RESOLVE" methodname="CANONICAL_HUMANOID_REQUIRED_BONES_RESOLVE" classname="PowerliftingSimulator.Tests.CanonicalHumanoidAssetTests" runstate="Runnable" seed="1528759162" result="Passed" start-time="2026-09-09 03:26:27Z" end-time="2026-09-09 03:26:28Z" duration="0.063237" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1010" name="FoundationContractTests" fullname="PowerliftingSimulator.Tests.FoundationContractTests" classname="PowerliftingSimulator.Tests.FoundationContractTests" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.033182" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1011" name="CanonicalBasisIsOrthogonalAndRightHanded" fullname="PowerliftingSimulator.Tests.FoundationContractTests.CanonicalBasisIsOrthogonalAndRightHanded" methodname="CanonicalBasisIsOrthogonalAndRightHanded" classname="PowerliftingSimulator.Tests.FoundationContractTests" runstate="Runnable" seed="529685566" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.003601" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1018" name="ClockResetReturnsToTheZeroTick" fullname="PowerliftingSimulator.Tests.FoundationContractTests.ClockResetReturnsToTheZeroTick" methodname="ClockResetReturnsToTheZeroTick" classname="PowerliftingSimulator.Tests.FoundationContractTests" runstate="Runnable" seed="923304801" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.002665" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1016" name="DegreeAndRadianConversionsRoundTrip" fullname="PowerliftingSimulator.Tests.FoundationContractTests.DegreeAndRadianConversionsRoundTrip" methodname="DegreeAndRadianConversionsRoundTrip" classname="PowerliftingSimulator.Tests.FoundationContractTests" runstate="Runnable" seed="1902602461" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.000623" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1017" name="FixedClockMapsOneHundredTicksToOneSecond" fullname="PowerliftingSimulator.Tests.FoundationContractTests.FixedClockMapsOneHundredTicksToOneSecond" methodname="FixedClockMapsOneHundredTicksToOneSecond" classname="PowerliftingSimulator.Tests.FoundationContractTests" runstate="Runnable" seed="1861011916" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.000763" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1021" name="IDENTICAL_ROTATION_DIFFERENT_SIGN_HAS_ZERO_ERROR" fullname="PowerliftingSimulator.Tests.FoundationContractTests.IDENTICAL_ROTATION_DIFFERENT_SIGN_HAS_ZERO_ERROR" methodname="IDENTICAL_ROTATION_DIFFERENT_SIGN_HAS_ZERO_ERROR" classname="PowerliftingSimulator.Tests.FoundationContractTests" runstate="Runnable" seed="147120779" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.001871" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1013" name="IdentityQuaternionPreservesDirections" fullname="PowerliftingSimulator.Tests.FoundationContractTests.IdentityQuaternionPreservesDirections" methodname="IdentityQuaternionPreservesDirections" classname="PowerliftingSimulator.Tests.FoundationContractTests" runstate="Runnable" seed="1176055988" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.001515" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1012" name="LocalAndWorldPointConversionsUseWorldFromLocalRotation" fullname="PowerliftingSimulator.Tests.FoundationContractTests.LocalAndWorldPointConversionsUseWorldFromLocalRotation" methodname="LocalAndWorldPointConversionsUseWorldFromLocalRotation" classname="PowerliftingSimulator.Tests.FoundationContractTests" runstate="Runnable" seed="909155285" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.001629" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1015" name="NONFINITE_QUATERNION_COMPONENTS_ARE_REJECTED" fullname="PowerliftingSimulator.Tests.FoundationContractTests.NONFINITE_QUATERNION_COMPONENTS_ARE_REJECTED" methodname="NONFINITE_QUATERNION_COMPONENTS_ARE_REJECTED" classname="PowerliftingSimulator.Tests.FoundationContractTests" runstate="Runnable" seed="619767598" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.001087" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1020" name="QUATERNION_PI_BOUNDARY_HAS_A_DETERMINISTIC_CANONICAL_SIGN" fullname="PowerliftingSimulator.Tests.FoundationContractTests.QUATERNION_PI_BOUNDARY_HAS_A_DETERMINISTIC_CANONICAL_SIGN" methodname="QUATERNION_PI_BOUNDARY_HAS_A_DETERMINISTIC_CANONICAL_SIGN" classname="PowerliftingSimulator.Tests.FoundationContractTests" runstate="Runnable" seed="2103978304" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.002268" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1019" name="QUATERNION_Q_AND_NEGATIVE_Q_CANONICALIZE_IDENTICALLY" fullname="PowerliftingSimulator.Tests.FoundationContractTests.QUATERNION_Q_AND_NEGATIVE_Q_CANONICALIZE_IDENTICALLY" methodname="QUATERNION_Q_AND_NEGATIVE_Q_CANONICALIZE_IDENTICALLY" classname="PowerliftingSimulator.Tests.FoundationContractTests" runstate="Runnable" seed="196185847" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.000792" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1014" name="QuaternionNormalizationProducesUnitLength" fullname="PowerliftingSimulator.Tests.FoundationContractTests.QuaternionNormalizationProducesUnitLength" methodname="QuaternionNormalizationProducesUnitLength" classname="PowerliftingSimulator.Tests.FoundationContractTests" runstate="Runnable" seed="2039819537" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.000617" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1022" name="QuaternionSmallRotationIsNotRoundedToZero" fullname="PowerliftingSimulator.Tests.FoundationContractTests.QuaternionSmallRotationIsNotRoundedToZero" methodname="QuaternionSmallRotationIsNotRoundedToZero" classname="PowerliftingSimulator.Tests.FoundationContractTests" runstate="Runnable" seed="1849311897" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.002340" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1023" name="SHORTEST_ARC_ACROSS_PLUS_MINUS_PI" fullname="PowerliftingSimulator.Tests.FoundationContractTests.SHORTEST_ARC_ACROSS_PLUS_MINUS_PI" methodname="SHORTEST_ARC_ACROSS_PLUS_MINUS_PI" classname="PowerliftingSimulator.Tests.FoundationContractTests" runstate="Runnable" seed="168291888" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.000717" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1024" name="IntentBufferTests" fullname="PowerliftingSimulator.Tests.IntentBufferTests" classname="PowerliftingSimulator.Tests.IntentBufferTests" runstate="Runnable" testcasecount="21" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.049520" total="21" passed="21" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1029" name="BATCH_REJECTION_DOES_NOT_PARTIALLY_COMMIT_INPUT" fullname="PowerliftingSimulator.Tests.IntentBufferTests.BATCH_REJECTION_DOES_NOT_PARTIALLY_COMMIT_INPUT" methodname="BATCH_REJECTION_DOES_NOT_PARTIALLY_COMMIT_INPUT" classname="PowerliftingSimulator.Tests.IntentBufferTests" runstate="Runnable" seed="494290411" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.006467" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1038" name="BUFFER_STABILITY" fullname="PowerliftingSimulator.Tests.IntentBufferTests.BUFFER_STABILITY" methodname="BUFFER_STABILITY" classname="PowerliftingSimulator.Tests.IntentBufferTests" runstate="Runnable" seed="1668055569" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.004829" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1045" name="CONTINUOUS_BUFFER_REMAINS_BOUNDED_WITHOUT_PHYSICS_PROGRESS" fullname="PowerliftingSimulator.Tests.IntentBufferTests.CONTINUOUS_BUFFER_REMAINS_BOUNDED_WITHOUT_PHYSICS_PROGRESS" methodname="CONTINUOUS_BUFFER_REMAINS_BOUNDED_WITHOUT_PHYSICS_PROGRESS" classname="PowerliftingSimulator.Tests.IntentBufferTests" runstate="Runnable" seed="910087647" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.001214" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1044" name="CONTINUOUS_CATCHUP_4_TICKS_RECONSTRUCTS_CORRECT_VALUES" fullname="PowerliftingSimulator.Tests.IntentBufferTests.CONTINUOUS_CATCHUP_4_TICKS_RECONSTRUCTS_CORRECT_VALUES" methodname="CONTINUOUS_CATCHUP_4_TICKS_RECONSTRUCTS_CORRECT_VALUES" classname="PowerliftingSimulator.Tests.IntentBufferTests" runstate="Runnable" seed="1195587779" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.000699" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1042" name="CONTINUOUS_LATEST_AT_TICK_END_PRESERVES_HISTORY" fullname="PowerliftingSimulator.Tests.IntentBufferTests.CONTINUOUS_LATEST_AT_TICK_END_PRESERVES_HISTORY" methodname="CONTINUOUS_LATEST_AT_TICK_END_PRESERVES_HISTORY" classname="PowerliftingSimulator.Tests.IntentBufferTests" runstate="Runnable" seed="869585510" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.000621" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1043" name="CONTINUOUS_MULTIPLE_CHANNELS_PRESERVE_TIMESTAMP_ORDER" fullname="PowerliftingSimulator.Tests.IntentBufferTests.CONTINUOUS_MULTIPLE_CHANNELS_PRESERVE_TIMESTAMP_ORDER" methodname="CONTINUOUS_MULTIPLE_CHANNELS_PRESERVE_TIMESTAMP_ORDER" classname="PowerliftingSimulator.Tests.IntentBufferTests" runstate="Runnable" seed="534347342" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.001472" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1030" name="ContinuousValuesAreClampedBySemanticRangeAndPersist" fullname="PowerliftingSimulator.Tests.IntentBufferTests.ContinuousValuesAreClampedBySemanticRangeAndPersist" methodname="ContinuousValuesAreClampedBySemanticRangeAndPersist" classname="PowerliftingSimulator.Tests.IntentBufferTests" runstate="Runnable" seed="1717517789" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.000850" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1028" name="EDGE_SEQUENCE_IS_EXPOSED_IN_CONSUMPTION_ORDER" fullname="PowerliftingSimulator.Tests.IntentBufferTests.EDGE_SEQUENCE_IS_EXPOSED_IN_CONSUMPTION_ORDER" methodname="EDGE_SEQUENCE_IS_EXPOSED_IN_CONSUMPTION_ORDER" classname="PowerliftingSimulator.Tests.IntentBufferTests" runstate="Runnable" seed="877583067" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.001640" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1025" name="EdgesAreConsumedOnceAndHeldStatePersists" fullname="PowerliftingSimulator.Tests.IntentBufferTests.EdgesAreConsumedOnceAndHeldStatePersists" methodname="EdgesAreConsumedOnceAndHeldStatePersists" classname="PowerliftingSimulator.Tests.IntentBufferTests" runstate="Runnable" seed="1908520338" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.001661" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1031" name="FutureSamplesWaitForTheirTick" fullname="PowerliftingSimulator.Tests.IntentBufferTests.FutureSamplesWaitForTheirTick" methodname="FutureSamplesWaitForTheirTick" classname="PowerliftingSimulator.Tests.IntentBufferTests" runstate="Runnable" seed="51920987" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.000754" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1037" name="INPUT_TIME_MAPPING_CAN_RETRY_AFTER_CAPTURE_REJECTION" fullname="PowerliftingSimulator.Tests.IntentBufferTests.INPUT_TIME_MAPPING_CAN_RETRY_AFTER_CAPTURE_REJECTION" methodname="INPUT_TIME_MAPPING_CAN_RETRY_AFTER_CAPTURE_REJECTION" classname="PowerliftingSimulator.Tests.IntentBufferTests" runstate="Runnable" seed="1748721036" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.002836" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1041" name="LATE_EDGE_CANNOT_BE_REASSIGNED_TO_A_LATER_TICK" fullname="PowerliftingSimulator.Tests.IntentBufferTests.LATE_EDGE_CANNOT_BE_REASSIGNED_TO_A_LATER_TICK" methodname="LATE_EDGE_CANNOT_BE_REASSIGNED_TO_A_LATER_TICK" classname="PowerliftingSimulator.Tests.IntentBufferTests" runstate="Runnable" seed="1383303438" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.001179" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1040" name="MULTI_EDGE_STALL_PRESERVES_ORDER_AND_EXACTLY_ONCE" fullname="PowerliftingSimulator.Tests.IntentBufferTests.MULTI_EDGE_STALL_PRESERVES_ORDER_AND_EXACTLY_ONCE" methodname="MULTI_EDGE_STALL_PRESERVES_ORDER_AND_EXACTLY_ONCE" classname="PowerliftingSimulator.Tests.IntentBufferTests" runstate="Runnable" seed="468874124" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.002125" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1039" name="MULTI_EVENT_STALL_DOES_NOT_CREATE_PERSISTENT_INPUT_LEAD" fullname="PowerliftingSimulator.Tests.IntentBufferTests.MULTI_EVENT_STALL_DOES_NOT_CREATE_PERSISTENT_INPUT_LEAD" methodname="MULTI_EVENT_STALL_DOES_NOT_CREATE_PERSISTENT_INPUT_LEAD" classname="PowerliftingSimulator.Tests.IntentBufferTests" runstate="Runnable" seed="1174958631" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.004283" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1026" name="ReleaseEdgeIsAppliedToTheTickContainingIt" fullname="PowerliftingSimulator.Tests.IntentBufferTests.ReleaseEdgeIsAppliedToTheTickContainingIt" methodname="ReleaseEdgeIsAppliedToTheTickContainingIt" classname="PowerliftingSimulator.Tests.IntentBufferTests" runstate="Runnable" seed="1320817444" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.000967" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1032" name="ResetClearsQueuedSamplesAndHeldState" fullname="PowerliftingSimulator.Tests.IntentBufferTests.ResetClearsQueuedSamplesAndHeldState" methodname="ResetClearsQueuedSamplesAndHeldState" classname="PowerliftingSimulator.Tests.IntentBufferTests" runstate="Runnable" seed="2144614297" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.000773" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1027" name="SAMPLE_FOR_TICK_REQUIRES_CONTIGUOUS_FIXED_INTERVALS" fullname="PowerliftingSimulator.Tests.IntentBufferTests.SAMPLE_FOR_TICK_REQUIRES_CONTIGUOUS_FIXED_INTERVALS" methodname="SAMPLE_FOR_TICK_REQUIRES_CONTIGUOUS_FIXED_INTERVALS" classname="PowerliftingSimulator.Tests.IntentBufferTests" runstate="Runnable" seed="56590786" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.000997" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1033" name="SLOW_FRAME_TIME_DOMAIN" fullname="PowerliftingSimulator.Tests.IntentBufferTests.SLOW_FRAME_TIME_DOMAIN" methodname="SLOW_FRAME_TIME_DOMAIN" classname="PowerliftingSimulator.Tests.IntentBufferTests" runstate="Runnable" seed="523148075" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.002046" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1036" name="TIME_MAPPING_CLAMPS_WITHIN_TOLERATED_EVENT_ORDER" fullname="PowerliftingSimulator.Tests.IntentBufferTests.TIME_MAPPING_CLAMPS_WITHIN_TOLERATED_EVENT_ORDER" methodname="TIME_MAPPING_CLAMPS_WITHIN_TOLERATED_EVENT_ORDER" classname="PowerliftingSimulator.Tests.IntentBufferTests" runstate="Runnable" seed="607218633" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.000743" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1035" name="TIME_MAPPING_REJECTS_UNBOUNDED_AUTHORITATIVE_HORIZONS" fullname="PowerliftingSimulator.Tests.IntentBufferTests.TIME_MAPPING_REJECTS_UNBOUNDED_AUTHORITATIVE_HORIZONS" methodname="TIME_MAPPING_REJECTS_UNBOUNDED_AUTHORITATIVE_HORIZONS" classname="PowerliftingSimulator.Tests.IntentBufferTests" runstate="Runnable" seed="529061463" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.001298" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1034" name="TIME_MAPPING_USES_THE_AUTHORITATIVE_RENDER_HORIZON" fullname="PowerliftingSimulator.Tests.IntentBufferTests.TIME_MAPPING_USES_THE_AUTHORITATIVE_RENDER_HORIZON" methodname="TIME_MAPPING_USES_THE_AUTHORITATIVE_RENDER_HORIZON" classname="PowerliftingSimulator.Tests.IntentBufferTests" runstate="Runnable" seed="713682934" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.001137" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1046" name="ObservationContractTests" fullname="PowerliftingSimulator.Tests.ObservationContractTests" classname="PowerliftingSimulator.Tests.ObservationContractTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.012855" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1048" name="EmptyObservationHasNoPhysicalBodyButRetainsTimeMetadata" fullname="PowerliftingSimulator.Tests.ObservationContractTests.EmptyObservationHasNoPhysicalBodyButRetainsTimeMetadata" methodname="EmptyObservationHasNoPhysicalBodyButRetainsTimeMetadata" classname="PowerliftingSimulator.Tests.ObservationContractTests" runstate="Runnable" seed="2050960139" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.001126" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1047" name="PhysicalObservationCarriesPostStepTimeFrameAndUnits" fullname="PowerliftingSimulator.Tests.ObservationContractTests.PhysicalObservationCarriesPostStepTimeFrameAndUnits" methodname="PhysicalObservationCarriesPostStepTimeFrameAndUnits" classname="PowerliftingSimulator.Tests.ObservationContractTests" runstate="Runnable" seed="1644351908" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.002000" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1049" name="PhysicalAthleteDefinitionTests" fullname="PowerliftingSimulator.Tests.PhysicalAthleteDefinitionTests" classname="PowerliftingSimulator.Tests.PhysicalAthleteDefinitionTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.011795" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1050" name="PHYSICAL_ATHLETE_TOTAL_MASS_MATCHES_PROFILE" fullname="PowerliftingSimulator.Tests.PhysicalAthleteDefinitionTests.PHYSICAL_ATHLETE_TOTAL_MASS_MATCHES_PROFILE" methodname="PHYSICAL_ATHLETE_TOTAL_MASS_MATCHES_PROFILE" classname="PowerliftingSimulator.Tests.PhysicalAthleteDefinitionTests" runstate="Runnable" seed="203487201" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.010154" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1051" name="PhysicalAthleteSelfCollisionPolicyTests" fullname="PowerliftingSimulator.Tests.PhysicalAthleteSelfCollisionPolicyTests" classname="PowerliftingSimulator.Tests.PhysicalAthleteSelfCollisionPolicyTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.012349" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1054" name="COLLISION_POLICY_DOES_NOT_IGNORE_NON_WHITELISTED_PAIRS" fullname="PowerliftingSimulator.Tests.PhysicalAthleteSelfCollisionPolicyTests.COLLISION_POLICY_DOES_NOT_IGNORE_NON_WHITELISTED_PAIRS" methodname="COLLISION_POLICY_DOES_NOT_IGNORE_NON_WHITELISTED_PAIRS" classname="PowerliftingSimulator.Tests.PhysicalAthleteSelfCollisionPolicyTests" runstate="Runnable" seed="1447309488" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.003230" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1052" name="COLLISION_POLICY_IGNORES_BILATERAL_FOREARM_THORAX_WITH_EXACT_METADATA" fullname="PowerliftingSimulator.Tests.PhysicalAthleteSelfCollisionPolicyTests.COLLISION_POLICY_IGNORES_BILATERAL_FOREARM_THORAX_WITH_EXACT_METADATA" methodname="COLLISION_POLICY_IGNORES_BILATERAL_FOREARM_THORAX_WITH_EXACT_METADATA" classname="PowerliftingSimulator.Tests.PhysicalAthleteSelfCollisionPolicyTests" runstate="Runnable" seed="1487122721" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.001892" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1053" name="COLLISION_POLICY_IGNORES_BILATERAL_THIGH_ABDOMEN_WITH_EXACT_METADATA" fullname="PowerliftingSimulator.Tests.PhysicalAthleteSelfCollisionPolicyTests.COLLISION_POLICY_IGNORES_BILATERAL_THIGH_ABDOMEN_WITH_EXACT_METADATA" methodname="COLLISION_POLICY_IGNORES_BILATERAL_THIGH_ABDOMEN_WITH_EXACT_METADATA" classname="PowerliftingSimulator.Tests.PhysicalAthleteSelfCollisionPolicyTests" runstate="Runnable" seed="1979801189" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.001389" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1055" name="FOREARM_MASS_PROPERTIES_ARE_UNCHANGED" fullname="PowerliftingSimulator.Tests.PhysicalAthleteSelfCollisionPolicyTests.FOREARM_MASS_PROPERTIES_ARE_UNCHANGED" methodname="FOREARM_MASS_PROPERTIES_ARE_UNCHANGED" classname="PowerliftingSimulator.Tests.PhysicalAthleteSelfCollisionPolicyTests" runstate="Runnable" seed="893586405" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.002665" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1056" name="PhysicalSquatControlTests" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlTests" classname="PowerliftingSimulator.Tests.PhysicalSquatControlTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.062498" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1060" name="BOUNDED_BALANCE_CORRECTION_SATURATES_AND_PRESERVES_FINITE_BOUNDS" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlTests.BOUNDED_BALANCE_CORRECTION_SATURATES_AND_PRESERVES_FINITE_BOUNDS" methodname="BOUNDED_BALANCE_CORRECTION_SATURATES_AND_PRESERVES_FINITE_BOUNDS" classname="PowerliftingSimulator.Tests.PhysicalSquatControlTests" runstate="Runnable" seed="260825614" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.002321" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1061" name="CANONICAL_SQUAT_PROFILE_COVERS_LEGAL_DEPTH_AND_LOCKOUT" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlTests.CANONICAL_SQUAT_PROFILE_COVERS_LEGAL_DEPTH_AND_LOCKOUT" methodname="CANONICAL_SQUAT_PROFILE_COVERS_LEGAL_DEPTH_AND_LOCKOUT" classname="PowerliftingSimulator.Tests.PhysicalSquatControlTests" runstate="Runnable" seed="1132843825" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.006996" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1058" name="JOINT_COMMAND_NORMALIZES_AND_VALIDATES_FINITE_INPUTS" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlTests.JOINT_COMMAND_NORMALIZES_AND_VALIDATES_FINITE_INPUTS" methodname="JOINT_COMMAND_NORMALIZES_AND_VALIDATES_FINITE_INPUTS" classname="PowerliftingSimulator.Tests.PhysicalSquatControlTests" runstate="Runnable" seed="352116631" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.005206" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1057" name="SINGLE_WRITER_ENFORCES_EXACTLY_ONE_COMMAND_PER_JOINT_PER_TICK" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlTests.SINGLE_WRITER_ENFORCES_EXACTLY_ONE_COMMAND_PER_JOINT_PER_TICK" methodname="SINGLE_WRITER_ENFORCES_EXACTLY_ONE_COMMAND_PER_JOINT_PER_TICK" classname="PowerliftingSimulator.Tests.PhysicalSquatControlTests" runstate="Runnable" seed="1981752952" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.042473" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1059" name="SQUAT_BAR_SADDLE_HAS_FINITE_PHYSICS_CONSTRAINTS_AND_NO_PROJECTION" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlTests.SQUAT_BAR_SADDLE_HAS_FINITE_PHYSICS_CONSTRAINTS_AND_NO_PROJECTION" methodname="SQUAT_BAR_SADDLE_HAS_FINITE_PHYSICS_CONSTRAINTS_AND_NO_PROJECTION" classname="PowerliftingSimulator.Tests.PhysicalSquatControlTests" runstate="Runnable" seed="545788606" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.001507" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1062" name="PhysicsOwnershipContractTests" fullname="PowerliftingSimulator.Tests.PhysicsOwnershipContractTests" classname="PowerliftingSimulator.Tests.PhysicsOwnershipContractTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.073633" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1063" name="SOLE_PRODUCTION_SIMULATE_CALL" fullname="PowerliftingSimulator.Tests.PhysicsOwnershipContractTests.SOLE_PRODUCTION_SIMULATE_CALL" methodname="SOLE_PRODUCTION_SIMULATE_CALL" classname="PowerliftingSimulator.Tests.PhysicsOwnershipContractTests" runstate="Runnable" seed="1769452687" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.070139" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1064" name="PoweredJointActuatorContractTests" fullname="PowerliftingSimulator.Tests.PoweredJointActuatorContractTests" classname="PowerliftingSimulator.Tests.PoweredJointActuatorContractTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.007425" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1066" name="CAPACITY_SCALE_DOES_NOT_MOVE_SPRING_OR_DAMPER" fullname="PowerliftingSimulator.Tests.PoweredJointActuatorContractTests.CAPACITY_SCALE_DOES_NOT_MOVE_SPRING_OR_DAMPER" methodname="CAPACITY_SCALE_DOES_NOT_MOVE_SPRING_OR_DAMPER" classname="PowerliftingSimulator.Tests.PoweredJointActuatorContractTests" runstate="Runnable" seed="733199078" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.002656" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1065" name="CAPACITY_SCALE_MOVES_THE_TORQUE_CEILING" fullname="PowerliftingSimulator.Tests.PoweredJointActuatorContractTests.CAPACITY_SCALE_MOVES_THE_TORQUE_CEILING" methodname="CAPACITY_SCALE_MOVES_THE_TORQUE_CEILING" classname="PowerliftingSimulator.Tests.PoweredJointActuatorContractTests" runstate="Runnable" seed="2005175214" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.000960" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1067" name="DRIVE_DEMAND_IS_REPORTED_AGAINST_THE_ACTUAL_GAINS" fullname="PowerliftingSimulator.Tests.PoweredJointActuatorContractTests.DRIVE_DEMAND_IS_REPORTED_AGAINST_THE_ACTUAL_GAINS" methodname="DRIVE_DEMAND_IS_REPORTED_AGAINST_THE_ACTUAL_GAINS" classname="PowerliftingSimulator.Tests.PoweredJointActuatorContractTests" runstate="Runnable" seed="456614464" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.001040" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1068" name="PoweredJointControllerTests" fullname="PowerliftingSimulator.Tests.PoweredJointControllerTests" classname="PowerliftingSimulator.Tests.PoweredJointControllerTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.005979" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1070" name="POWERED_DRIVE_VALIDATOR_REJECTS_ACCELERATION_NONFINITE_AND_NEGATIVE_AUTHORITY" fullname="PowerliftingSimulator.Tests.PoweredJointControllerTests.POWERED_DRIVE_VALIDATOR_REJECTS_ACCELERATION_NONFINITE_AND_NEGATIVE_AUTHORITY" methodname="POWERED_DRIVE_VALIDATOR_REJECTS_ACCELERATION_NONFINITE_AND_NEGATIVE_AUTHORITY" classname="PowerliftingSimulator.Tests.PoweredJointControllerTests" runstate="Runnable" seed="424490821" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.001141" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1069" name="TARGET_ROTATION_NEUTRAL_IS_STABLE_AND_QUATERNION_SIGN_IS_EQUIVALENT" fullname="PowerliftingSimulator.Tests.PoweredJointControllerTests.TARGET_ROTATION_NEUTRAL_IS_STABLE_AND_QUATERNION_SIGN_IS_EQUIVALENT" methodname="TARGET_ROTATION_NEUTRAL_IS_STABLE_AND_QUATERNION_SIGN_IS_EQUIVALENT" classname="PowerliftingSimulator.Tests.PoweredJointControllerTests" runstate="Runnable" seed="417715528" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.002831" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1071" name="SquatDomainTests" fullname="PowerliftingSimulator.Tests.SquatDomainTests" classname="PowerliftingSimulator.Tests.SquatDomainTests" runstate="Runnable" testcasecount="7" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.027319" total="7" passed="7" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1077" name="BILATERAL_DEPTH_GEOMETRY_REQUIRES_BOTH_SIDES_AND_THE_NAMED_MARGIN" fullname="PowerliftingSimulator.Tests.SquatDomainTests.BILATERAL_DEPTH_GEOMETRY_REQUIRES_BOTH_SIDES_AND_THE_NAMED_MARGIN" methodname="BILATERAL_DEPTH_GEOMETRY_REQUIRES_BOTH_SIDES_AND_THE_NAMED_MARGIN" classname="PowerliftingSimulator.Tests.SquatDomainTests" runstate="Runnable" seed="725394379" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.001995" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1076" name="BRANCH_REVERSAL_IS_POSE_CONTINUOUS_AND_PHASE_ADVANCEMENT_IS_DETERMINISTIC" fullname="PowerliftingSimulator.Tests.SquatDomainTests.BRANCH_REVERSAL_IS_POSE_CONTINUOUS_AND_PHASE_ADVANCEMENT_IS_DETERMINISTIC" methodname="BRANCH_REVERSAL_IS_POSE_CONTINUOUS_AND_PHASE_ADVANCEMENT_IS_DETERMINISTIC" classname="PowerliftingSimulator.Tests.SquatDomainTests" runstate="Runnable" seed="1337904424" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.004725" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1074" name="REFERENCE_PROFILE_HAS_EXACT_ENDPOINTS_AND_BOUNDED_DERIVATIVES" fullname="PowerliftingSimulator.Tests.SquatDomainTests.REFERENCE_PROFILE_HAS_EXACT_ENDPOINTS_AND_BOUNDED_DERIVATIVES" methodname="REFERENCE_PROFILE_HAS_EXACT_ENDPOINTS_AND_BOUNDED_DERIVATIVES" classname="PowerliftingSimulator.Tests.SquatDomainTests" runstate="Runnable" seed="167105789" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.005831" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1075" name="REFERENCE_WAYPOINTS_ARE_CONTINUOUS_ACROSS_CURVE_KEYS" fullname="PowerliftingSimulator.Tests.SquatDomainTests.REFERENCE_WAYPOINTS_ARE_CONTINUOUS_ACROSS_CURVE_KEYS" methodname="REFERENCE_WAYPOINTS_ARE_CONTINUOUS_ACROSS_CURVE_KEYS" classname="PowerliftingSimulator.Tests.SquatDomainTests" runstate="Runnable" seed="1994791618" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.000886" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1078" name="SQUAT_DOMAIN_HAS_NO_PHYSICAL_OR_ANIMATION_AUTHORITY_DEPENDENCY" fullname="PowerliftingSimulator.Tests.SquatDomainTests.SQUAT_DOMAIN_HAS_NO_PHYSICAL_OR_ANIMATION_AUTHORITY_DEPENDENCY" methodname="SQUAT_DOMAIN_HAS_NO_PHYSICAL_OR_ANIMATION_AUTHORITY_DEPENDENCY" classname="PowerliftingSimulator.Tests.SquatDomainTests" runstate="Runnable" seed="777710769" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.004650" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1072" name="SQUAT_STATE_MACHINE_HAPPY_PATH_REQUIRES_DOMAIN_GATES" fullname="PowerliftingSimulator.Tests.SquatDomainTests.SQUAT_STATE_MACHINE_HAPPY_PATH_REQUIRES_DOMAIN_GATES" methodname="SQUAT_STATE_MACHINE_HAPPY_PATH_REQUIRES_DOMAIN_GATES" classname="PowerliftingSimulator.Tests.SquatDomainTests" runstate="Runnable" seed="1275407768" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.003677" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1073" name="SQUAT_STATE_MACHINE_REJECTS_EARLY_SHALLOW_AND_ABORT_PATHS" fullname="PowerliftingSimulator.Tests.SquatDomainTests.SQUAT_STATE_MACHINE_REJECTS_EARLY_SHALLOW_AND_ABORT_PATHS" methodname="SQUAT_STATE_MACHINE_REJECTS_EARLY_SHALLOW_AND_ABORT_PATHS" classname="PowerliftingSimulator.Tests.SquatDomainTests" runstate="Runnable" seed="49944250" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.001567" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1079" name="UnityIntentInputAdapterTests" fullname="PowerliftingSimulator.Tests.UnityIntentInputAdapterTests" classname="PowerliftingSimulator.Tests.UnityIntentInputAdapterTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.008099" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1080" name="RESET_REJECTS_CALLBACKS_FROM_PREVIOUS_REAL_TIME_EPOCH" fullname="PowerliftingSimulator.Tests.UnityIntentInputAdapterTests.RESET_REJECTS_CALLBACKS_FROM_PREVIOUS_REAL_TIME_EPOCH" methodname="RESET_REJECTS_CALLBACKS_FROM_PREVIOUS_REAL_TIME_EPOCH" classname="PowerliftingSimulator.Tests.UnityIntentInputAdapterTests" runstate="Runnable" seed="2137820610" result="Passed" start-time="2026-09-09 03:26:28Z" end-time="2026-09-09 03:26:28Z" duration="0.006398" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: C:/Users/Educacion/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -462,6 +462,93 @@ namespace PowerliftingSimulator.Tests
             yield return null;
         }
 
+        /// <summary>
+        /// Section 16. Renders the guard on and guard off descents at the same
+        /// ticks so the mechanism is visible rather than only tabulated: the
+        /// last state that is still tracking, the onset of the forward
+        /// divergence, the front-support crossing, and the bottom.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator F5_FORWARD_DIVERGENCE_VISUAL_EVIDENCE()
+        {
+            foreach (bool guardOn in new[] { true, false })
+                yield return CaptureDescent(guardOn);
+            yield return null;
+        }
+
+        private IEnumerator CaptureDescent(bool guardEnabled)
+        {
+            _controller.SetLoad(0f);
+            SquatPhysicalAdapter adapter = _controller.Adapter;
+            FoundationRuntime runtime = _bootstrap.Runtime;
+            float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
+            adapter.Preload.Enabled = true;
+            adapter.BalanceCorrectionsEnabled = true;
+            adapter.BalanceController.PostureGuardEnabled = guardEnabled;
+
+            for (int i = 0; i < 60; i++)
+            {
+                runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds);
+                TickFeet(dt);
+            }
+
+            Camera camera = Camera.main ?? UnityEngine.Object.FindFirstObjectByType<Camera>();
+            adapter.StartSquat();
+            int[] captureTicks = { 250, 300, 366, 396 };
+            int next = 0;
+            string tag = guardEnabled ? "guardON" : "guardOFF";
+
+            for (int tick = 0; tick < 400; tick++)
+            {
+                runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds);
+                TickFeet(dt);
+                if (next < captureTicks.Length && tick == captureTicks[next])
+                {
+                    yield return null;
+                    Capture(camera, string.Format(CultureInfo.InvariantCulture,
+                        "{0}_t{1:D3}_sq{2:F2}_side.png", tag, tick, adapter.Sq),
+                        new Vector3(2.6f, 1.0f, 0f), new Vector3(0f, 0.85f, 0f));
+                    next++;
+                }
+            }
+            adapter.BalanceController.PostureGuardEnabled = true;
+            yield return null;
+        }
+
+        private static void Capture(Camera camera, string filename, Vector3 eye, Vector3 focus)
+        {
+            if (camera == null || SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+                return;
+            Vector3 savedPos = camera.transform.position;
+            Quaternion savedRot = camera.transform.rotation;
+            camera.transform.position = eye;
+            camera.transform.rotation = Quaternion.LookRotation((focus - eye).normalized);
+            RenderTexture target = RenderTexture.GetTemporary(1280, 720, 24, RenderTextureFormat.ARGB32);
+            var image = new Texture2D(1280, 720, TextureFormat.RGB24, false);
+            RenderTexture previousTarget = camera.targetTexture;
+            RenderTexture previousActive = RenderTexture.active;
+            try
+            {
+                camera.targetTexture = target;
+                camera.Render();
+                RenderTexture.active = target;
+                image.ReadPixels(new Rect(0, 0, 1280, 720), 0, 0);
+                image.Apply();
+                string dir = Path.GetFullPath("Artifacts/Evidence/GAM-11/h12-forward-divergence");
+                Directory.CreateDirectory(dir);
+                File.WriteAllBytes(Path.Combine(dir, filename), image.EncodeToPNG());
+            }
+            finally
+            {
+                camera.targetTexture = previousTarget;
+                RenderTexture.active = previousActive;
+                RenderTexture.ReleaseTemporary(target);
+                UnityEngine.Object.DestroyImmediate(image);
+                camera.transform.position = savedPos;
+                camera.transform.rotation = savedRot;
+            }
+        }
+
         private Vector3 JointAnchorWorld(string childId)
         {
             foreach (PhysicalAthleteRig.JointRuntime joint in _rig.Joints)

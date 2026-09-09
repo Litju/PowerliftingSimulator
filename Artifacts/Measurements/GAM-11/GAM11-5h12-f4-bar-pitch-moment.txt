@@ -1,0 +1,9 @@
+GAM-11 PHASE 5H12 F4 BAR GRAVITATIONAL PITCH MOMENT AT 25 KG
++Z is anterior. A bar centre of mass anterior to the ankle line gives a
+positive, forward-toppling moment about that line.
+
+s_q   barAP     ankleAP   leverArm   supportCtr  copAP     tau_Nm   direction
+0.00   -0.1633   -0.0874   -0.0759     -0.0097   -0.0470    -18.6  REARWARD
+0.55   -0.0020   -0.0880    0.0860     -0.0097    0.0150     21.1  FORWARD
+0.80    0.0701   -0.0881    0.1582     -0.0097   -0.0359     38.8  FORWARD
+1.00    0.3865   -0.0630    0.4495      0.0870    0.1339    110.2  FORWARD
