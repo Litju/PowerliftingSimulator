@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="2" result="Passed" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-09 19:19:28Z" end-time="2026-09-09 19:19:32Z" duration="3.407291">
+  <test-suite type="TestSuite" id="1196" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="147" result="Passed" start-time="2026-09-09 19:19:28Z" end-time="2026-09-09 19:19:32Z" duration="3.407291" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1190" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="C:/Users/Educacion/Desktop/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="147" result="Passed" start-time="2026-09-09 19:19:28Z" end-time="2026-09-09 19:19:32Z" duration="3.372097" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="19228" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1191" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="147" result="Passed" start-time="2026-09-09 19:19:28Z" end-time="2026-09-09 19:19:32Z" duration="3.360089" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1192" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="147" result="Passed" start-time="2026-09-09 19:19:28Z" end-time="2026-09-09 19:19:32Z" duration="3.350958" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1146" name="PlantarSupportAndTrunkFoldTests" fullname="PowerliftingSimulator.Tests.PlantarSupportAndTrunkFoldTests" classname="PowerliftingSimulator.Tests.PlantarSupportAndTrunkFoldTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-09 19:19:29Z" end-time="2026-09-09 19:19:32Z" duration="3.335516" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1147" name="T1_PLANTAR_SUPPORT_AND_CAUSAL_ORDERING" fullname="PowerliftingSimulator.Tests.PlantarSupportAndTrunkFoldTests.T1_PLANTAR_SUPPORT_AND_CAUSAL_ORDERING" methodname="T1_PLANTAR_SUPPORT_AND_CAUSAL_ORDERING" classname="PowerliftingSimulator.Tests.PlantarSupportAndTrunkFoldTests" runstate="Runnable" seed="143517436" result="Passed" start-time="2026-09-09 19:19:29Z" end-time="2026-09-09 19:19:31Z" duration="2.050878" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[GAM-11 PHASE 5H14 T1 PLANTAR SUPPORT THROUGH THE DESCENT
+
+Foot witness points derived from the runtime box collider, not placed by eye.
+  collider size (0.13, 0.10, 0.29)  center (0.00, 0.05, 0.00)  contactOffset 0.0100 m
+  LEFT_HEEL_WITNESS  local AP -0.1450   RIGHT_HEEL_WITNESS  local AP -0.1450
+  LEFT_TOE_WITNESS   local AP 0.1450   RIGHT_TOE_WITNESS   local AP 0.1450
+  plantar plane local Y -0.0025   plantar AP length 0.2900 m   platform top Y 0.0000
+
+Clearance verdicts are stated against the collider's own contactOffset:
+beyond that separation the solver cannot generate a contact there at all.
+
+--- load 0 kg ---
+
+  s_q   supportLen  heelClrL  heelClrR  footPitchL  postImp  antImp  postFrac  contacts  copFrac  trunkErr
+  0.00      0.2900   -0.0002   -0.0002       -0.01    5.676   4.425     0.562         8    0.438     -1.82
+  0.20      0.2900   -0.0002   -0.0002       -0.01    5.468   4.005     0.577         8    0.423     -2.24
+  0.40      0.2900   -0.0001   -0.0002       -0.01    5.299   4.395     0.547         8    0.453      2.30
+  0.55      0.2900   -0.0001   -0.0001       -0.01    5.625   4.116     0.577         8    0.423      6.41
+  0.65      0.2900   -0.0001   -0.0001       -0.01    5.239   5.469     0.489         8    0.511      9.73
+  0.70      0.2900   -0.0001   -0.0001       -0.01    4.736   4.543     0.510         8    0.490      9.56
+  0.75      0.2900   -0.0001   -0.0001       -0.01    5.160   4.399     0.540         8    0.460      9.17
+  0.80      0.2900   -0.0001   -0.0001       -0.01    5.587   4.033     0.581         8    0.419      9.39
+  0.90      0.2900   -0.0001   -0.0001       -0.01    5.490   4.587     0.545         8    0.455     10.26
+  1.00      0.2900   -0.0001   -0.0001       -0.01    5.546   4.484     0.553         8    0.447      9.71
+
+  standing support span 0.2900 m
+  FIRST_REARFOOT_UNLOAD_TICK        = never   (posterior half carries no normal impulse while the foot still does)
+  FIRST_GEOMETRIC_HEEL_LIFT_TICK    = never   (both heel witnesses clear the platform by more than contactOffset)
+  FIRST_SUPPORT_SPAN_COLLAPSE_TICK  = never   (span below half the measured standing span; diagnostic bisection)
+  FIRST_TRUNK_DIVERGENCE_TICK       = never   (world trunk pitch exceeds reference by 15 deg, the H12 criterion)
+  FIRST_BAR_FORWARD_MIGRATION_TICK  = tick 1 (s_q 0.003)   (bar centre of mass anterior of the support centre)
+  FIRST_COP_FOREFOOT_EDGE_TICK      = never   (COP within the controller's own 30 mm interior margin of the front edge)
+
+  PLANTAR_SUPPORT_CLASS = FULL_FOOT_SUPPORT (the span never halved)
+
+
+--- load 25 kg ---
+
+  s_q   supportLen  heelClrL  heelClrR  footPitchL  postImp  antImp  postFrac  contacts  copFrac  trunkErr
+  0.00      0.2900   -0.0002   -0.0003       -0.02    8.290   3.926     0.679         8    0.321     -9.65
+  0.20      0.2900   -0.0003   -0.0003       -0.01    7.702   4.166     0.649         8    0.351     -8.64
+  0.40      0.2900   -0.0002   -0.0002       -0.01    7.418   4.203     0.638         8    0.362     -0.37
+  0.55      0.2900   -0.0002   -0.0002        0.00    8.027   4.400     0.646         8    0.354      5.79
+  0.65      0.2900   -0.0002   -0.0002        0.00    8.126   5.641     0.590         8    0.410      9.61
+  0.70      0.2900   -0.0001   -0.0001       -0.01    4.626   5.806     0.443         8    0.557     10.43
+  0.75      0.2900   -0.0001   -0.0001        0.00    6.399   5.400     0.542         8    0.458     11.13
+  0.80      0.2900   -0.0001   -0.0001        0.00    7.239   4.921     0.595         8    0.405     11.53
+  0.90      0.2900   -0.0001   -0.0001        0.00    7.339   4.943     0.598         8    0.402     11.98
+  1.00      0.2900   -0.0001   -0.0002       -0.01    7.609   5.288     0.590         8    0.410     10.13
+
+  standing support span 0.2900 m
+  FIRST_REARFOOT_UNLOAD_TICK        = never   (posterior half carries no normal impulse while the foot still does)
+  FIRST_GEOMETRIC_HEEL_LIFT_TICK    = never   (both heel witnesses clear the platform by more than contactOffset)
+  FIRST_SUPPORT_SPAN_COLLAPSE_TICK  = never   (span below half the measured standing span; diagnostic bisection)
+  FIRST_TRUNK_DIVERGENCE_TICK       = never   (world trunk pitch exceeds reference by 15 deg, the H12 criterion)
+  FIRST_BAR_FORWARD_MIGRATION_TICK  = tick 221 (s_q 0.663)   (bar centre of mass anterior of the support centre)
+  FIRST_COP_FOREFOOT_EDGE_TICK      = never   (COP within the controller's own 30 mm interior margin of the front edge)
+
+  PLANTAR_SUPPORT_CLASS = FULL_FOOT_SUPPORT (the span never halved)
+
+
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1148" name="T2_TRUNK_AND_BAR_PATH_DECOMPOSITION" fullname="PowerliftingSimulator.Tests.PlantarSupportAndTrunkFoldTests.T2_TRUNK_AND_BAR_PATH_DECOMPOSITION" methodname="T2_TRUNK_AND_BAR_PATH_DECOMPOSITION" classname="PowerliftingSimulator.Tests.PlantarSupportAndTrunkFoldTests" runstate="Runnable" seed="1610421441" result="Passed" start-time="2026-09-09 19:19:31Z" end-time="2026-09-09 19:19:32Z" duration="1.231231" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[GAM-11 PHASE 5H14 T2 TRUNK DECOMPOSITION AND BAR PATH
+Joint angles are the calibrated flexion axis in joint space. World pitches
+are measured on the physical bodies. The reference world trunk pitch is the
+accepted GAM-10 pose sampled in the reference scene, same pelvis-to-thorax
+definition. A forward lean matching the reference is not a defect; only the
+excess over it is.
+
+--- load 0 kg ---
+
+  s_q   trunkAct  trunkRef  excess |  hipNom  hipAct  hipExc | abdNom  abdAct  abdExc | thoNom  thoAct  thoExc |  barRelSup  barRelCop  saddleSep
+  0.00      2.23      4.05   -1.82 |  -0.32    0.08    0.40 |   0.00   -1.76   -1.76 |   0.06   -1.56   -1.62 |     0.0097     0.0277     0.0000
+  0.40     26.52     24.22    2.30 | -53.63  -45.36    8.27 |   5.18    8.53    3.35 |   7.77    8.84    1.07 |     0.0097     0.0232     0.0000
+  0.55     37.71     31.30    6.41 | -76.88  -72.26    4.62 |   5.99   12.18    6.18 |   8.99   11.83    2.85 |     0.0097     0.0322     0.0000
+  0.70     42.80     33.24    9.56 | -86.16  -85.35    0.81 |   6.12   13.92    7.80 |   9.18   13.15    3.98 |     0.0097     0.0127     0.0000
+  0.80     44.12     34.73    9.39 | -96.48  -94.96    1.52 |   6.37   13.96    7.59 |   9.55   13.35    3.80 |     0.0097     0.0331     0.0000
+  0.90     45.73     35.47   10.26 | -103.98  -104.23   -0.25 |   6.42   15.10    8.68 |   9.63   14.17    4.54 |     0.0097     0.0227     0.0000
+  1.00     45.68     35.97    9.71 | -111.00  -111.79   -0.79 |   6.40   14.99    8.59 |   9.59   14.10    4.51 |     0.0097     0.0251     0.0000
+
+  At the bottom the world trunk pitch exceeds the reference by 9.71 deg.
+  Hip flexes 0.79 deg beyond its reference, abdomen 8.59, thorax 4.51, spine total 13.10.
+  TRUNK_EXCESS_SOURCE = SPINAL_TRUNK_FLEXION
+
+--- load 25 kg ---
+
+  s_q   trunkAct  trunkRef  excess |  hipNom  hipAct  hipExc | abdNom  abdAct  abdExc | thoNom  thoAct  thoExc |  barRelSup  barRelCop  saddleSep
+  0.00     -5.60      4.05   -9.65 |  -0.32    2.52    2.84 |   0.00   -8.08   -8.08 |   0.06   -6.56   -6.62 |    -0.1571    -0.1053     0.0077
+  0.40     23.85     24.22   -0.37 | -53.63  -45.28    8.35 |   5.18    7.42    2.24 |   7.77    7.42   -0.35 |    -0.0815    -0.0414     0.0055
+  0.55     37.09     31.30    5.79 | -76.88  -73.23    3.65 |   5.99   13.66    7.67 |   8.99   12.14    3.15 |    -0.0371     0.0052     0.0045
+  0.70     43.66     33.24   10.43 | -86.16  -85.99    0.17 |   6.12   16.34   10.21 |   9.18   14.08    4.91 |     0.0087    -0.0077     0.0033
+  0.80     46.26     34.73   11.53 | -96.48  -96.80   -0.32 |   6.37   17.68   11.31 |   9.55   15.20    5.65 |     0.0105     0.0381     0.0035
+  0.90     47.45     35.47   11.98 | -103.98  -106.24   -2.27 |   6.42   19.23   12.81 |   9.63   16.27    6.64 |     0.0107     0.0390     0.0034
+  1.00     46.10     35.97   10.13 | -111.00  -113.55   -2.55 |   6.40   18.51   12.12 |   9.59   16.28    6.69 |     0.0032     0.0293     0.0034
+
+  At the bottom the world trunk pitch exceeds the reference by 10.13 deg.
+  Hip flexes 2.55 deg beyond its reference, abdomen 12.12, thorax 6.69, spine total 18.81.
+  TRUNK_EXCESS_SOURCE = SPINAL_TRUNK_FLEXION
+
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+Saving results to: C:/Users/Educacion/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -1,0 +1,61 @@
+GAM-11 PHASE 5H14 T1 PLANTAR SUPPORT THROUGH THE DESCENT
+
+Foot witness points derived from the runtime box collider, not placed by eye.
+  collider size (0.13, 0.10, 0.29)  center (0.00, 0.05, 0.00)  contactOffset 0.0100 m
+  LEFT_HEEL_WITNESS  local AP -0.1450   RIGHT_HEEL_WITNESS  local AP -0.1450
+  LEFT_TOE_WITNESS   local AP 0.1450   RIGHT_TOE_WITNESS   local AP 0.1450
+  plantar plane local Y -0.0025   plantar AP length 0.2900 m   platform top Y 0.0000
+
+Clearance verdicts are stated against the collider's own contactOffset:
+beyond that separation the solver cannot generate a contact there at all.
+
+--- load 0 kg ---
+
+  s_q   supportLen  heelClrL  heelClrR  footPitchL  postImp  antImp  postFrac  contacts  copFrac  trunkErr
+  0.00      0.2900   -0.0002   -0.0002       -0.01    5.676   4.425     0.562         8    0.438     -1.82
+  0.20      0.2900   -0.0002   -0.0002       -0.01    5.468   4.005     0.577         8    0.423     -2.24
+  0.40      0.2900   -0.0001   -0.0002       -0.01    5.299   4.395     0.547         8    0.453      2.30
+  0.55      0.2900   -0.0001   -0.0001       -0.01    5.625   4.116     0.577         8    0.423      6.41
+  0.65      0.2900   -0.0001   -0.0001       -0.01    5.239   5.469     0.489         8    0.511      9.73
+  0.70      0.2900   -0.0001   -0.0001       -0.01    4.736   4.543     0.510         8    0.490      9.56
+  0.75      0.2900   -0.0001   -0.0001       -0.01    5.160   4.399     0.540         8    0.460      9.17
+  0.80      0.2900   -0.0001   -0.0001       -0.01    5.587   4.033     0.581         8    0.419      9.39
+  0.90      0.2900   -0.0001   -0.0001       -0.01    5.490   4.587     0.545         8    0.455     10.26
+  1.00      0.2900   -0.0001   -0.0001       -0.01    5.546   4.484     0.553         8    0.447      9.71
+
+  standing support span 0.2900 m
+  FIRST_REARFOOT_UNLOAD_TICK        = never   (posterior half carries no normal impulse while the foot still does)
+  FIRST_GEOMETRIC_HEEL_LIFT_TICK    = never   (both heel witnesses clear the platform by more than contactOffset)
+  FIRST_SUPPORT_SPAN_COLLAPSE_TICK  = never   (span below half the measured standing span; diagnostic bisection)
+  FIRST_TRUNK_DIVERGENCE_TICK       = never   (world trunk pitch exceeds reference by 15 deg, the H12 criterion)
+  FIRST_BAR_FORWARD_MIGRATION_TICK  = tick 1 (s_q 0.003)   (bar centre of mass anterior of the support centre)
+  FIRST_COP_FOREFOOT_EDGE_TICK      = never   (COP within the controller's own 30 mm interior margin of the front edge)
+
+  PLANTAR_SUPPORT_CLASS = FULL_FOOT_SUPPORT (the span never halved)
+
+
+--- load 25 kg ---
+
+  s_q   supportLen  heelClrL  heelClrR  footPitchL  postImp  antImp  postFrac  contacts  copFrac  trunkErr
+  0.00      0.2900   -0.0002   -0.0003       -0.02    8.290   3.926     0.679         8    0.321     -9.65
+  0.20      0.2900   -0.0003   -0.0003       -0.01    7.702   4.166     0.649         8    0.351     -8.64
+  0.40      0.2900   -0.0002   -0.0002       -0.01    7.418   4.203     0.638         8    0.362     -0.37
+  0.55      0.2900   -0.0002   -0.0002        0.00    8.027   4.400     0.646         8    0.354      5.79
+  0.65      0.2900   -0.0002   -0.0002        0.00    8.126   5.641     0.590         8    0.410      9.61
+  0.70      0.2900   -0.0001   -0.0001       -0.01    4.626   5.806     0.443         8    0.557     10.43
+  0.75      0.2900   -0.0001   -0.0001        0.00    6.399   5.400     0.542         8    0.458     11.13
+  0.80      0.2900   -0.0001   -0.0001        0.00    7.239   4.921     0.595         8    0.405     11.53
+  0.90      0.2900   -0.0001   -0.0001        0.00    7.339   4.943     0.598         8    0.402     11.98
+  1.00      0.2900   -0.0001   -0.0002       -0.01    7.609   5.288     0.590         8    0.410     10.13
+
+  standing support span 0.2900 m
+  FIRST_REARFOOT_UNLOAD_TICK        = never   (posterior half carries no normal impulse while the foot still does)
+  FIRST_GEOMETRIC_HEEL_LIFT_TICK    = never   (both heel witnesses clear the platform by more than contactOffset)
+  FIRST_SUPPORT_SPAN_COLLAPSE_TICK  = never   (span below half the measured standing span; diagnostic bisection)
+  FIRST_TRUNK_DIVERGENCE_TICK       = never   (world trunk pitch exceeds reference by 15 deg, the H12 criterion)
+  FIRST_BAR_FORWARD_MIGRATION_TICK  = tick 221 (s_q 0.663)   (bar centre of mass anterior of the support centre)
+  FIRST_COP_FOREFOOT_EDGE_TICK      = never   (COP within the controller's own 30 mm interior margin of the front edge)
+
+  PLANTAR_SUPPORT_CLASS = FULL_FOOT_SUPPORT (the span never halved)
+
+
