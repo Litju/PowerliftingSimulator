@@ -149,8 +149,11 @@ namespace PowerliftingSimulator.Squat.Unity
         /// Qualified spine bias for a phase and bar load, in degrees of
         /// anatomical flexion. Deterministic piecewise-linear interpolation
         /// over the measured knots, with load interpolated between the two
-        /// identified columns and clamped beyond the calibrated load: 105 kg
-        /// is out of scope and must not be reached by extrapolation.
+        /// identified columns (0 kg and CalibratedLoadKg = 25 kg).
+        ///
+        /// Loads exceeding CalibratedLoadKg are outside the qualified calibration
+        /// domain and return 0f to prevent unqualified extrapolation or high-load
+        /// numerical instability.
         ///
         /// Allocation-free and branch-light; the whole evaluation is two table
         /// walks and a lerp.
@@ -182,6 +185,8 @@ namespace PowerliftingSimulator.Squat.Unity
                 return 0f;
             if (family != SquatJointFamily.Abdomen && family != SquatJointFamily.Thorax)
                 return 0f;
+            if (loadKg > CalibratedLoadKg + 1e-4f)
+                return 0f;
 
             bool abdomen = family == SquatJointFamily.Abdomen;
             float standing0 = abdomen ? StandingAbdomenBiasDegrees0Kg : StandingThoraxBiasDegrees0Kg;
@@ -204,6 +209,8 @@ namespace PowerliftingSimulator.Squat.Unity
             if (!SpineCalibrationEnabled)
                 return 0f;
             if (family != SquatJointFamily.Abdomen && family != SquatJointFamily.Thorax)
+                return 0f;
+            if (loadKg > CalibratedLoadKg + 1e-4f)
                 return 0f;
 
             bool abdomen = family == SquatJointFamily.Abdomen;
