@@ -488,5 +488,236 @@ namespace PowerliftingSimulator.Tests
             Debug.Log("[H17_FACTORIAL_BISECTION_COMPLETE]");
             yield return null;
         }
+
+        public struct SettleAndDescentTick
+        {
+            public int Step; // -30 to 120
+            public float Time;
+            public float BarY;
+            public float BarZ;
+            public float BarVy;
+            public float BarVz;
+            public float PelvisY;
+            public float PelvisZ;
+            public float PelvisVy;
+            public float PelvisVz;
+            public float ThoraxY;
+            public float ThoraxZ;
+            public float ThoraxVy;
+            public float ThoraxVz;
+            public float TrunkPitchDeg;
+            public float SaddleSep;
+            public bool SaddleAttached;
+            public float KE;
+            public int Contacts;
+            public float ComAp;
+            public float CopAp;
+            public float AbdBiasDeg;
+            public float ThoBiasDeg;
+            public float AbdTargetRate;
+            public float ThoTargetRate;
+            public float AbdActualDeg;
+            public float ThoActualDeg;
+            public float AbdDemand;
+            public float ThoDemand;
+            public float AnkleBalanceDeg;
+        }
+
+        [UnityTest]
+        public IEnumerator H17_03_TRACE_FIRST_DIVERGENCE()
+        {
+            LogAssert.ignoreFailingMessages = true;
+
+            var r00Steps = new List<SettleAndDescentTick>(160);
+            var r10Steps = new List<SettleAndDescentTick>(160);
+
+            // Run R00
+            yield return LoadQualificationScene();
+            PrepareManualRuntime(105f);
+            ClearStanding(_controller.Adapter);
+            _controller.Adapter.SpineBiasRateFeedforwardEnabled = false;
+            yield return RunTraceFromSettle(r00Steps);
+
+            // Run R10
+            yield return LoadQualificationScene();
+            PrepareManualRuntime(105f);
+            ApplyStanding(_controller.Adapter, true);
+            _controller.Adapter.SpineBiasRateFeedforwardEnabled = false;
+            yield return RunTraceFromSettle(r10Steps);
+
+            // Analysis: Compare R00 vs R10 step by step
+            int firstCommandDiffStep = int.MaxValue;
+            string firstCommandDiffDesc = "";
+            int firstPhysicalDiffStep = int.MaxValue;
+            string firstPhysicalDiffDesc = "";
+            int firstKEDiffStep = int.MaxValue;
+            int firstContactLossStep = int.MaxValue;
+            int firstDivergentStep = int.MaxValue;
+
+            for (int i = 0; i < r00Steps.Count && i < r10Steps.Count; i++)
+            {
+                var a = r00Steps[i];
+                var b = r10Steps[i];
+
+                if (firstCommandDiffStep == int.MaxValue && (Mathf.Abs(a.AbdBiasDeg - b.AbdBiasDeg) > 0.01f || Mathf.Abs(a.ThoBiasDeg - b.ThoBiasDeg) > 0.01f))
+                {
+                    firstCommandDiffStep = a.Step;
+                    firstCommandDiffDesc = $"SpineBiasCmd (R00=[{a.AbdBiasDeg:F2},{a.ThoBiasDeg:F2}] vs R10=[{b.AbdBiasDeg:F2},{b.ThoBiasDeg:F2}])";
+                }
+
+                if (firstPhysicalDiffStep == int.MaxValue && (Mathf.Abs(a.BarY - b.BarY) > 0.005f || Mathf.Abs(a.PelvisY - b.PelvisY) > 0.005f || Mathf.Abs(a.TrunkPitchDeg - b.TrunkPitchDeg) > 0.2f))
+                {
+                    firstPhysicalDiffStep = a.Step;
+                    firstPhysicalDiffDesc = $"BarY/Trunk (R00=[barY={a.BarY:F3},trunk={a.TrunkPitchDeg:F2}] vs R10=[barY={b.BarY:F3},trunk={b.TrunkPitchDeg:F2}])";
+                }
+
+                if (firstKEDiffStep == int.MaxValue && Mathf.Abs(a.KE - b.KE) > 10f)
+                {
+                    firstKEDiffStep = a.Step;
+                }
+
+                if (firstContactLossStep == int.MaxValue && b.Contacts == 0)
+                {
+                    firstContactLossStep = b.Step;
+                }
+
+                if (firstDivergentStep == int.MaxValue && (Mathf.Abs(a.TrunkPitchDeg - b.TrunkPitchDeg) > 20f || Mathf.Abs(a.BarY - b.BarY) > 0.10f))
+                {
+                    firstDivergentStep = a.Step;
+                }
+            }
+
+            Debug.Log($"[FIRST_CAUSE_ANALYSIS] firstCommandDiffStep={firstCommandDiffStep} ({firstCommandDiffDesc})");
+            Debug.Log($"[FIRST_CAUSE_ANALYSIS] firstPhysicalDiffStep={firstPhysicalDiffStep} ({firstPhysicalDiffDesc})");
+            Debug.Log($"[FIRST_CAUSE_ANALYSIS] firstKEDiffStep={firstKEDiffStep} (R00_KE={r00Steps[firstKEDiffStep + 30].KE:F1} vs R10_KE={r10Steps[firstKEDiffStep + 30].KE:F1})");
+            Debug.Log($"[FIRST_CAUSE_ANALYSIS] firstContactLossStep={firstContactLossStep}");
+            Debug.Log($"[FIRST_CAUSE_ANALYSIS] firstDivergentStep={firstDivergentStep}");
+
+            // Write detailed window CSV around first divergence (from step -30 to step 120)
+            string dir = Path.Combine(Directory.GetCurrentDirectory(), ArtifactDirectory);
+            Directory.CreateDirectory(dir);
+            var sb = new StringBuilder();
+            sb.AppendLine("case,step,time_s,bar_y,bar_z,bar_vy,bar_vz,pelvis_y,pelvis_z,pelvis_vy,pelvis_vz,thorax_y,thorax_z,trunk_pitch_deg,ke,saddle_sep,saddle_att,contacts,com_ap,cop_ap,abd_bias_deg,tho_bias_deg,abd_tgt_rate,tho_tgt_rate,abd_act_deg,tho_act_deg,abd_demand,tho_demand,ankle_bal_deg");
+
+            foreach (var s in r00Steps)
+            {
+                sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                    "R00,{0},{1:F3},{2:F4},{3:F4},{4:F4},{5:F4},{6:F4},{7:F4},{8:F4},{9:F4},{10:F4},{11:F4},{12:F2},{13:F1},{14:F4},{15},{16},{17:F4},{18:F4},{19:F2},{20:F2},{21:F4},{22:F4},{23:F2},{24:F2},{25:F4},{26:F4},{27:F2}",
+                    s.Step, s.Time, s.BarY, s.BarZ, s.BarVy, s.BarVz, s.PelvisY, s.PelvisZ, s.PelvisVy, s.PelvisVz,
+                    s.ThoraxY, s.ThoraxZ, s.TrunkPitchDeg, s.KE, s.SaddleSep, s.SaddleAttached ? 1 : 0, s.Contacts,
+                    s.ComAp, s.CopAp, s.AbdBiasDeg, s.ThoBiasDeg, s.AbdTargetRate, s.ThoTargetRate,
+                    s.AbdActualDeg, s.ThoActualDeg, s.AbdDemand, s.ThoDemand, s.AnkleBalanceDeg));
+            }
+            foreach (var s in r10Steps)
+            {
+                sb.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                    "R10,{0},{1:F3},{2:F4},{3:F4},{4:F4},{5:F4},{6:F4},{7:F4},{8:F4},{9:F4},{10:F4},{11:F4},{12:F2},{13:F1},{14:F4},{15},{16},{17:F4},{18:F4},{19:F2},{20:F2},{21:F4},{22:F4},{23:F2},{24:F2},{25:F4},{26:F4},{27:F2}",
+                    s.Step, s.Time, s.BarY, s.BarZ, s.BarVy, s.BarVz, s.PelvisY, s.PelvisZ, s.PelvisVy, s.PelvisVz,
+                    s.ThoraxY, s.ThoraxZ, s.TrunkPitchDeg, s.KE, s.SaddleSep, s.SaddleAttached ? 1 : 0, s.Contacts,
+                    s.ComAp, s.CopAp, s.AbdBiasDeg, s.ThoBiasDeg, s.AbdTargetRate, s.ThoTargetRate,
+                    s.AbdActualDeg, s.ThoActualDeg, s.AbdDemand, s.ThoDemand, s.AnkleBalanceDeg));
+            }
+            File.WriteAllText(Path.Combine(dir, "H17-first-divergence-causal-case.csv"), sb.ToString());
+
+            yield return null;
+        }
+
+        private IEnumerator RunTraceFromSettle(List<SettleAndDescentTick> trace)
+        {
+            FoundationRuntime runtime = _bootstrap.Runtime;
+            SquatBarSaddle saddle = _controller.Saddle;
+            SquatPhysicalAdapter adapter = _controller.Adapter;
+            PoweredJointController powered = _rig.PoweredController;
+            Rigidbody pelvis = _rig.Segments["pelvis"].Body;
+            Rigidbody thorax = _rig.Segments["thorax"].Body;
+
+            // Settle 30 ticks (step -30 to -1)
+            for (int i = 0; i < 30; i++)
+            {
+                int step = -30 + i;
+                RecordStep(step, trace, saddle, adapter, powered, pelvis, thorax);
+                AdvanceTicks(runtime, 1);
+            }
+
+            // Start squat at step 0
+            adapter.StartSquat();
+
+            // Run 120 ticks of descent (step 0 to 120)
+            for (int step = 0; step <= 120; step++)
+            {
+                AdvanceTicks(runtime, 1);
+                RecordStep(step, trace, saddle, adapter, powered, pelvis, thorax);
+            }
+            yield return null;
+        }
+
+        private void RecordStep(
+            int step, List<SettleAndDescentTick> trace,
+            SquatBarSaddle saddle, SquatPhysicalAdapter adapter,
+            PoweredJointController powered, Rigidbody pelvis, Rigidbody thorax)
+        {
+            float barY = _bar.Body.position.y;
+            float barZ = _bar.Body.position.z;
+            float barVy = _bar.Body.linearVelocity.y;
+            float barVz = _bar.Body.linearVelocity.z;
+            float pelY = pelvis.position.y;
+            float pelZ = pelvis.position.z;
+            float pelVy = pelvis.linearVelocity.y;
+            float pelVz = pelvis.linearVelocity.z;
+            float thoY = thorax.position.y;
+            float thoZ = thorax.position.z;
+            float thoVy = thorax.linearVelocity.y;
+            float thoVz = thorax.linearVelocity.z;
+
+            Vector3 axis = thorax.position - pelvis.position;
+            float trunkPitch = Mathf.Atan2(axis.z, axis.y) * Mathf.Rad2Deg;
+
+            float ke = 0.5f * _bar.Body.mass * _bar.Body.linearVelocity.sqrMagnitude;
+            foreach (var seg in _rig.Segments.Values)
+            {
+                if (seg.Body != null)
+                    ke += 0.5f * seg.Body.mass * seg.Body.linearVelocity.sqrMagnitude;
+            }
+
+            float abdAct = TwistX(powered.GetJoint("abdomen").Diagnostic.ActualRelative);
+            float thoAct = TwistX(powered.GetJoint("thorax").Diagnostic.ActualRelative);
+
+            float abdBias = adapter.Preload.SpineBiasDegrees(SquatJointFamily.Abdomen, adapter.Sq, adapter.EquilibriumLoadKg);
+            float thoBias = adapter.Preload.SpineBiasDegrees(SquatJointFamily.Thorax, adapter.Sq, adapter.EquilibriumLoadKg);
+
+            trace.Add(new SettleAndDescentTick
+            {
+                Step = step,
+                Time = step * 0.01f,
+                BarY = barY,
+                BarZ = barZ,
+                BarVy = barVy,
+                BarVz = barVz,
+                PelvisY = pelY,
+                PelvisZ = pelZ,
+                PelvisVy = pelVy,
+                PelvisVz = pelVz,
+                ThoraxY = thoY,
+                ThoraxZ = thoZ,
+                ThoraxVy = thoVy,
+                ThoraxVz = thoVz,
+                TrunkPitchDeg = trunkPitch,
+                SaddleSep = saddle != null ? saddle.SaddleSeparationMeters : 0f,
+                SaddleAttached = saddle != null && saddle.IsAttached,
+                KE = ke,
+                Contacts = adapter.Balance.SupportContactCount,
+                ComAp = adapter.Balance.SystemCom.z,
+                CopAp = adapter.Balance.HasCopEstimate ? adapter.Balance.CopEstimate.z : adapter.Balance.SupportApCenter,
+                AbdBiasDeg = abdBias,
+                ThoBiasDeg = thoBias,
+                AbdTargetRate = powered.GetJoint("abdomen").Diagnostic.TargetAngularVelocityRadS.x,
+                ThoTargetRate = powered.GetJoint("thorax").Diagnostic.TargetAngularVelocityRadS.x,
+                AbdActualDeg = abdAct,
+                ThoActualDeg = thoAct,
+                AbdDemand = powered.GetJoint("abdomen").Diagnostic.ModeledDemand,
+                ThoDemand = powered.GetJoint("thorax").Diagnostic.ModeledDemand,
+                AnkleBalanceDeg = adapter.BalanceCorrectionRad * Mathf.Rad2Deg
+            });
+        }
     }
 }
