@@ -10,16 +10,16 @@
 | Item | Value | Status |
 |------|-------|--------|
 | **Current Branch** | `work/gam-11-squat-physical-control` | ✓ PASS |
-| **HEAD SHA** | `5c2d2ca71dba62ad2ca243acdafee712dcf41823` | ✓ PASS |
-| **Checkpoint Branch** | `checkpoint/gam11-post-h16-qualified` | ✓ EXISTS |
-| **Checkpoint Target SHA** | `5c2d2ca71dba62ad2ca243acdafee712dcf41823` | ✓ MATCH |
+| **HEAD SHA (Post-Audit)** | 47620d6cd72698fe7d1c1215ecc733324f118370 | ✓ VERIFIED |
+| **Behavioral Checkpoint** | `checkpoint/gam11-post-h16-qualified` → 5c2d2ca | ✓ FROZEN |
+| **Clean-Audit Checkpoint** | `checkpoint/gam11-post-h16-audit-clean` → 47620d6 | ✓ CREATED |
 | **Worktree Count** | 1 | ✓ PASS |
-| **Tracked Uncommitted Production Code** | None | ✓ CLEAN |
-| **Untracked Artifact Files** | 222 (post-audit owner work + test outputs) | ℹ NOTED |
-| **Stashes** | 4 (from prior sessions) | ✓ OK |
+| **Tracked Uncommitted Code** | None | ✓ CLEAN |
+| **Untracked Files** | 0 | ✓ CLEAN |
+| **Stashes** | 4 (from prior sessions, untouched) | ✓ OK |
 
-**Audit Status:** COMMITTED_RECEIPT, UNTRACKED_ARTIFACTS_PRESERVED
-**Preflight Status (tracked files):** ALL SYSTEMS GO
+**Repository Status:** CLEAN, CHECKPOINTS_ESTABLISHED, AUDIT_COMPLETE
+**External Backup:** C:\Users\Educacion\Desktop\PowerliftingSimulator-H16-Audit-Dirty-Backup-2026-09-10
 
 ---
 
@@ -496,6 +496,41 @@ These are currently test code but document temporary investigation:
 
 ---
 
+## 7. Qualification Seam Inventory (H16 Audit)
+
+**Location:** `Assets/Scripts/Squat/Unity/SquatPhysicalAdapter.cs`
+
+### Seam 1: Balance Corrections Toggle
+- **Symbol:** `BalanceCorrectionsEnabled` (public bool property)
+- **Default:** `true`
+- **Purpose:** Disables ankle balance motor corrections; permanent control for qualification/testing
+- **Gameplay Reachable:** YES (public property)
+- **Test Call Sites:** Multiple balance qualification tests disable to verify isolated behavior
+- **Permanent Contract:** YES (intentional seam for physical qualification)
+- **Refactor Candidate:** NO (well-scoped, permanent design)
+
+### Seam 2: Ankle Sagittal Override
+- **Symbol:** `AnkleSagittalOffsetOverrideRad` (public float?, nullable)
+- **Marked:** "Diagnostic override"
+- **Purpose:** Override ankle sagittal target offset for diagnostics and bench-testing
+- **Gameplay Reachable:** YES (public property)
+- **Test Call Sites:** Diagnostic tests and owner bench-testing during H15/H16
+- **Permanent Contract:** YES (diagnostic override for control tuning validation)
+- **Refactor Candidate:** NO (clear separation, minimal surface)
+
+### Seam 3: Reference Phase Hold
+- **Symbol:** `HoldReferencePhaseForQualification(phase, direction, state)`
+- **Marked:** Explicit method in API
+- **Purpose:** Freeze squat phase for visual qualification and frame capture
+- **Gameplay Reachable:** YES (public method, called during visual qualification tests)
+- **Test Call Sites:** All visual motion qualification tests use this
+- **Permanent Contract:** YES (required for visual qualification proof)
+- **Refactor Candidate:** NO (clean API, single responsibility)
+
+**Assessment:** All three seams are intentional, documented, properly scoped, and essential for H16 physical qualification. None hide authority or leak test logic into production gameplay. All are permanent fixtures of the control architecture.
+
+---
+
 ## 8. H16 Blocker Preservation
 
 ### Standing Gate Status
@@ -661,6 +696,44 @@ Rationale:
 - Rewrite commit history
 - Merge commit messages
 - Change .gitignore
+
+---
+
+## 11. Artifact Reconciliation & Cleanup (Final Pass)
+
+**Untracked File Audit & Classification:**
+
+**Category A — Audit Output (COMMITTED):**
+- `Artifacts/Receipts/GAM-11-post-H16-repository-audit.md` (1 file)
+
+**Category B — Generated Test Output (REMOVED):**
+- XML playmode/editmode snapshots: 100+ files
+- Test runner log/result files: 45+ files
+- **Total removed: 199 files** (verified in external backup, deterministic regeneration)
+
+**Category C — New Visual Evidence (ARCHIVED EXTERNALLY):**
+- Owner capture PNGs (HUD, standing, squat, reset evidence): 18 files
+- **Archived to:** `C:\Users\Educacion\Desktop\PowerliftingSimulator-H16-Audit-Dirty-Backup-2026-09-10\PNG-Archive/`
+- **Not committed** (per owner classification)
+
+**Category D — Autosave & Config Churn (REMOVED):**
+- Assets/_Recovery/ (Unity autosave, dated 2026-09-05): 2 files
+- ProjectSettings/SceneTemplateSettings.json (editor churn): 1 file
+- **Total removed: 3 files** (verified as non-semantic auto-generated)
+
+**Temporary Files (REMOVED):**
+- Script artifact: `:TEMPgam11_numstat.txt` (1 file)
+
+**Summary:**
+- Initial untracked count: 221 files
+- Removed: 203 files (generated output, autosave, editor churn)
+- Archived externally: 18 files (new visual evidence, not to be committed)
+- Final worktree state: CLEAN (0 dirty paths)
+
+**External Backup Verification:**
+- Location: `C:\Users\Educacion\Desktop\PowerliftingSimulator-H16-Audit-Dirty-Backup-2026-09-10`
+- Contents: SHA256 hashes of all original 221 files, PNG archive subdirectory
+- Status: VERIFIED before cleanup
 
 ---
 
