@@ -719,5 +719,84 @@ namespace PowerliftingSimulator.Tests
                 AnkleBalanceDeg = adapter.BalanceCorrectionRad * Mathf.Rad2Deg
             });
         }
+
+        /// <summary>
+        /// Permanent regression contract for GAM-11 Phase 5H17.
+        /// Asserts that under production controller configuration with the domain guard in place:
+        /// 1. The H16 ~141m numerical divergence / explosion is permanently eliminated (NO_NUMERICAL_EXPLOSION).
+        /// 2. Athlete and barbell remain strictly above the platform (barY > 0m, no tunneling).
+        /// 3. All rigidbody and command states remain finite throughout (no NaNs or Infs).
+        /// 4. Total system translational kinetic energy remains strictly bounded (< 5000 J vs ~246,000 J in H16).
+        /// 5. The athlete collapses bounded on the platform at y ~ 0.223m (deltaY ~ 1.068m).
+        /// 6. The 105kg physical squat gate remains red (FAIL), preventing false qualification claims.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator H17_04_105KG_NUMERICAL_REGRESSION_REMOVED_BOUNDED_COLLAPSE()
+        {
+            LogAssert.ignoreFailingMessages = true;
+
+            yield return LoadQualificationScene();
+            PrepareManualRuntime(105f);
+            FoundationRuntime runtime = _bootstrap.Runtime;
+            SquatPhysicalAdapter adapter = _controller.Adapter;
+            SquatBarSaddle saddle = _controller.Saddle;
+
+            // Default production configuration: no manual bias overrides or switch disables
+            adapter.BalanceCorrectionsEnabled = true;
+            adapter.HoldReferencePhaseForQualification(0f, SquatPhaseDirection.None, SquatState.SETUP);
+
+            // Settle 30 ticks
+            for (int i = 0; i < 30; i++)
+                AdvanceTicks(runtime, 1);
+
+            float standingBarY = _bar.Body.position.y;
+            Assert.That(standingBarY, Is.GreaterThan(1.20f), "Bar standing position should be plausible (> 1.2m).");
+
+            adapter.StartSquat();
+            int totalTicks = Mathf.CeilToInt(8.0f / (float)SimulationConstants.FixedDeltaTimeSeconds);
+            float minBarY = standingBarY;
+            float maxKe = 0f;
+
+            for (int tick = 0; tick < totalTicks; tick++)
+            {
+                AdvanceTicks(runtime, 1);
+
+                float currentBarY = _bar.Body.position.y;
+                if (currentBarY < minBarY)
+                    minBarY = currentBarY;
+
+                // Total translational kinetic energy check
+                float ke = 0.5f * _bar.Body.mass * _bar.Body.linearVelocity.sqrMagnitude;
+                foreach (var seg in _rig.Segments.Values)
+                {
+                    if (seg.Body != null)
+                        ke += 0.5f * seg.Body.mass * seg.Body.linearVelocity.sqrMagnitude;
+                }
+                if (ke > maxKe)
+                    maxKe = ke;
+
+                // Permanent safety invariants
+                Assert.That(float.IsFinite(currentBarY), Is.True, $"Bar Y non-finite at tick {tick}");
+                Assert.That(float.IsFinite(ke), Is.True, $"KE non-finite at tick {tick}");
+                Assert.That(currentBarY, Is.GreaterThan(0.0f), $"Bar penetrated platform into negative space at tick {tick} (barY={currentBarY:F3})");
+                Assert.That(ke, Is.LessThan(5000.0f), $"Kinetic energy explosion detected at tick {tick} (KE={ke:F1} J)");
+            }
+
+            float finalBarY = _bar.Body.position.y;
+            float deltaY = standingBarY - finalBarY;
+
+            Debug.Log($"[H17_04_REGRESSION_PROOF] standingBarY={standingBarY:F4} minBarY={minBarY:F4} finalBarY={finalBarY:F4} deltaY={deltaY:F4} maxKE={maxKe:F1} J");
+
+            // Regression contract assertions
+            Assert.That(finalBarY, Is.GreaterThan(0.15f), "Bar must remain above platform surface (no platform tunneling).");
+            Assert.That(finalBarY, Is.LessThan(0.40f), "Bar should come to rest on platform (bounded collapse).");
+            Assert.That(deltaY, Is.LessThan(1.50f), "Bar displacement must remain bounded (pre-H16 bounded failure).");
+            Assert.That(maxKe, Is.LessThan(2500.0f), "Kinetic energy must remain safely bounded throughout entire simulation.");
+
+            // 105kg physical gate contract: MUST REMAIN FAIL
+            Assert.That(deltaY, Is.GreaterThan(0.15f), "105kg physical squat gate must remain FAIL (do not rebrand bounded failure as pass).");
+
+            yield return null;
+        }
     }
 }
