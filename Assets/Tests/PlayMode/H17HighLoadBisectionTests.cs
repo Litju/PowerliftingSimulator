@@ -589,7 +589,10 @@ namespace PowerliftingSimulator.Tests
 
             Debug.Log($"[FIRST_CAUSE_ANALYSIS] firstCommandDiffStep={firstCommandDiffStep} ({firstCommandDiffDesc})");
             Debug.Log($"[FIRST_CAUSE_ANALYSIS] firstPhysicalDiffStep={firstPhysicalDiffStep} ({firstPhysicalDiffDesc})");
-            Debug.Log($"[FIRST_CAUSE_ANALYSIS] firstKEDiffStep={firstKEDiffStep} (R00_KE={r00Steps[firstKEDiffStep + 30].KE:F1} vs R10_KE={r10Steps[firstKEDiffStep + 30].KE:F1})");
+            string keDiffInfo = (firstKEDiffStep != int.MaxValue && firstKEDiffStep + 30 >= 0 && firstKEDiffStep + 30 < r00Steps.Count && firstKEDiffStep + 30 < r10Steps.Count)
+                ? $" (R00_KE={r00Steps[firstKEDiffStep + 30].KE:F1} vs R10_KE={r10Steps[firstKEDiffStep + 30].KE:F1})"
+                : "";
+            Debug.Log($"[FIRST_CAUSE_ANALYSIS] firstKEDiffStep={firstKEDiffStep}{keDiffInfo}");
             Debug.Log($"[FIRST_CAUSE_ANALYSIS] firstContactLossStep={firstContactLossStep}");
             Debug.Log($"[FIRST_CAUSE_ANALYSIS] firstDivergentStep={firstDivergentStep}");
 
