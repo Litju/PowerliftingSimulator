@@ -1,0 +1,10 @@
+GAM-11 PHASE 5H12 C2 PHASE-LOCAL ANKLE TARGET TO COP SENSITIVITY
+Production constant: MeasuredTargetToCopMPerRad = 0.20446
+The ankle balance offset is overridden directly, so the perturbation is a
+known target change rather than a controller output. All other targets fixed.
+
+s_q    n   gain_m_per_rad   R^2      copRange_m   status
+0.00    7          0.26530   0.6409      0.03425   OK
+0.55    7          0.38516   0.9998      0.04073   OK
+0.80    0                -        -            -   GAIN_NOT_IDENTIFIABLE_QUASISTATICALLY
+1.00    0                -        -            -   GAIN_NOT_IDENTIFIABLE_QUASISTATICALLY

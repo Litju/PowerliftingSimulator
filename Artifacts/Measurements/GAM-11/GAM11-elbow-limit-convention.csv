@@ -1,0 +1,4 @@
+case,low_limit,high_limit,target_deg,settled_deg
+authored_order,-5.0,145.0,118.795,5.000
+inverted_order,-145.0,5.0,118.795,118.795
+symmetric_wide,-160.0,160.0,118.795,118.795

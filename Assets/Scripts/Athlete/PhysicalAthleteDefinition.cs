@@ -16,6 +16,24 @@ namespace PowerliftingSimulator.Athlete
         Hinge
     }
 
+    /// <summary>
+    /// Where a joint's primary rotation axis comes from.
+    /// </summary>
+    public enum PhysicalJointAxisSource : byte
+    {
+        /// <summary>The authored world direction, used as given.</summary>
+        World,
+
+        /// <summary>
+        /// The anatomical flexion axis, perpendicular to both the parent
+        /// segment's long axis and the body's forward direction, measured from
+        /// the reference rig's bind pose. It mirrors between left and right on
+        /// its own because the parent segment points the opposite way, so the
+        /// two sides cannot silently share one world direction.
+        /// </summary>
+        BindFlexionTransverse
+    }
+
     public readonly struct PhysicalSegmentRecipe
     {
         public PhysicalSegmentRecipe(
@@ -64,8 +82,10 @@ namespace PowerliftingSimulator.Athlete
             float lowDegrees,
             float highDegrees,
             float secondaryLimitDegrees,
-            string family)
+            string family,
+            PhysicalJointAxisSource axisSource = PhysicalJointAxisSource.World)
         {
+            AxisSource = axisSource;
             ChildId = childId;
             AnchorBone = anchorBone;
             Kind = kind;
@@ -84,11 +104,19 @@ namespace PowerliftingSimulator.Athlete
         public float HighDegrees { get; }
         public float SecondaryLimitDegrees { get; }
         public string Family { get; }
+        public PhysicalJointAxisSource AxisSource { get; }
     }
 
     public static class PhysicalAthleteDefinition
     {
         public const float PrototypeBodyMassKg = 100f;
+
+        // The authoritative support surface. It is derived from the platform
+        // collider that CreatePlatformCollider actually builds, so nothing
+        // downstream has to assume a magic world zero.
+        public static readonly Vector3 PlatformCenterMeters = new Vector3(0f, -0.05f, 0f);
+        public static readonly Vector3 PlatformSizeMeters = new Vector3(5f, 0.10f, 5f);
+        public static float PlatformSupportPlaneY => PlatformCenterMeters.y + PlatformSizeMeters.y * 0.5f;
         public const float AnchorToleranceMeters = 0.0001f;
         public const string ProfileId = "GAM6_QUATERNIUS_100KG_GAME_CALIBRATION_V1";
 
@@ -119,8 +147,8 @@ namespace PowerliftingSimulator.Athlete
             new PhysicalJointRecipe("head_neck", HumanBodyBones.Neck, PhysicalJointKind.Ball, Vector3.right, -45f, 55f, 45f, "neck"),
             new PhysicalJointRecipe("left_upper_arm", HumanBodyBones.LeftUpperArm, PhysicalJointKind.Ball, Vector3.forward, -100f, 100f, 105f, "shoulder"),
             new PhysicalJointRecipe("right_upper_arm", HumanBodyBones.RightUpperArm, PhysicalJointKind.Ball, Vector3.forward, -100f, 100f, 105f, "shoulder"),
-            new PhysicalJointRecipe("left_forearm", HumanBodyBones.LeftLowerArm, PhysicalJointKind.Hinge, Vector3.forward, -5f, 145f, 0f, "elbow"),
-            new PhysicalJointRecipe("right_forearm", HumanBodyBones.RightLowerArm, PhysicalJointKind.Hinge, Vector3.forward, -5f, 145f, 0f, "elbow"),
+            new PhysicalJointRecipe("left_forearm", HumanBodyBones.LeftLowerArm, PhysicalJointKind.Hinge, Vector3.forward, -5f, 145f, 0f, "elbow", PhysicalJointAxisSource.BindFlexionTransverse),
+            new PhysicalJointRecipe("right_forearm", HumanBodyBones.RightLowerArm, PhysicalJointKind.Hinge, Vector3.forward, -5f, 145f, 0f, "elbow", PhysicalJointAxisSource.BindFlexionTransverse),
             new PhysicalJointRecipe("left_hand", HumanBodyBones.LeftHand, PhysicalJointKind.Ball, Vector3.forward, -70f, 70f, 30f, "wrist"),
             new PhysicalJointRecipe("right_hand", HumanBodyBones.RightHand, PhysicalJointKind.Ball, Vector3.forward, -70f, 70f, 30f, "wrist"),
             new PhysicalJointRecipe("left_thigh", HumanBodyBones.LeftUpperLeg, PhysicalJointKind.Ball, Vector3.right, -120f, 45f, 50f, "hip"),

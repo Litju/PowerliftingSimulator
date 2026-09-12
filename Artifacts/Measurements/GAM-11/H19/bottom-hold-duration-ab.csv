@@ -1,0 +1,5 @@
+case,extra_hold_s,total_bottom_s,ascent_entry_knee_err,ascent_entry_hip_err,ascent_entry_ankle_err,peak_ascent_knee_err,peak_ascent_knee_sq,peak_ascent_hip_err,peak_ascent_hip_sq
+B0_PRODUCTION,0.00,0.20,13.25,-5.23,-7.85,21.17,0.46,-14.73,0.42
+B1_EXTRA_0.25S,0.25,0.45,12.55,-5.14,-7.57,21.16,0.46,-14.73,0.42
+B2_EXTRA_0.50S,0.50,0.70,12.56,-5.11,-5.10,21.17,0.45,-14.73,0.43
+B3_EXTRA_1.00S,1.00,1.20,12.64,-5.07,-4.90,21.16,0.46,-14.75,0.42

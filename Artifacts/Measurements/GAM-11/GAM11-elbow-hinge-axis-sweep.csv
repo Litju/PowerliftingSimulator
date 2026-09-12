@@ -1,0 +1,13 @@
+candidate,side,axis_x,axis_y,axis_z,anterior_swing_per_deg,lateral_swing_per_deg,flexion_fraction
+production_forward,left,0.000,0.000,1.000,0.00131,-0.01634,0.074
+production_forward,right,0.000,0.000,1.000,-0.00038,-0.01645,0.023
+world_up,left,0.000,1.000,0.000,0.01674,-0.00089,0.950
+world_up,right,0.000,1.000,0.000,-0.01696,-0.00021,0.988
+world_up_mirrored,left,0.000,1.000,0.000,0.01674,-0.00089,0.950
+world_up_mirrored,right,0.000,-1.000,0.000,0.01679,0.00089,0.950
+world_right,left,1.000,0.000,0.000,-0.00458,-0.00545,0.457
+world_right,right,1.000,0.000,0.000,-0.00439,0.00529,0.453
+bind_derived,left,0.000,-1.000,0.000,-0.01691,0.00018,0.990
+bind_derived,right,0.000,1.000,0.000,-0.01696,-0.00021,0.988
+bind_derived_negated,left,0.000,1.000,0.000,0.01674,-0.00089,0.950
+bind_derived_negated,right,0.000,-1.000,0.000,0.01679,0.00089,0.950

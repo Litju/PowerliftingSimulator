@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="4" result="Passed" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-09 01:51:09Z" end-time="2026-09-09 01:51:11Z" duration="2.5394847">
+  <test-suite type="TestSuite" id="1173" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="130" result="Passed" start-time="2026-09-09 01:51:09Z" end-time="2026-09-09 01:51:11Z" duration="2.539485" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1167" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="C:/Users/Educacion/Desktop/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="130" result="Passed" start-time="2026-09-09 01:51:09Z" end-time="2026-09-09 01:51:11Z" duration="2.521356" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="9380" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1168" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="130" result="Passed" start-time="2026-09-09 01:51:09Z" end-time="2026-09-09 01:51:11Z" duration="2.516398" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1169" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="130" result="Passed" start-time="2026-09-09 01:51:09Z" end-time="2026-09-09 01:51:11Z" duration="2.512805" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1146" name="ThighAbdomenContactModelTests" fullname="PowerliftingSimulator.Tests.ThighAbdomenContactModelTests" classname="PowerliftingSimulator.Tests.ThighAbdomenContactModelTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-09-09 01:51:09Z" end-time="2026-09-09 01:51:11Z" duration="2.507901" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1147" name="T1_THIGH_ABDOMEN_RUNTIME_COLLIDER_SEMANTICS" fullname="PowerliftingSimulator.Tests.ThighAbdomenContactModelTests.T1_THIGH_ABDOMEN_RUNTIME_COLLIDER_SEMANTICS" methodname="T1_THIGH_ABDOMEN_RUNTIME_COLLIDER_SEMANTICS" classname="PowerliftingSimulator.Tests.ThighAbdomenContactModelTests" runstate="Runnable" seed="1413930899" result="Passed" start-time="2026-09-09 01:51:09Z" end-time="2026-09-09 01:51:10Z" duration="0.783157" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[GAM-11 PHASE 5H11 T1 RUNTIME COLLIDER SEMANTICS
+Values read from the running production objects, not from recipe names.
+
+left_thigh   Capsule radius=0.0900 height=0.3602 direction=1 center=(0.0000,0.0000,0.0000) lossyScale=(1.0000,1.0000,1.0000) worldRadius=0.0900 worldHeight=0.3602 worldCylinderHalf=0.0901 contactOffset=0.0100 recipeDims=(0.1800,0.3602,0.1800)
+right_thigh  Capsule radius=0.0900 height=0.3602 direction=1 center=(0.0000,0.0000,0.0000) lossyScale=(1.0000,1.0000,1.0000) worldRadius=0.0900 worldHeight=0.3602 worldCylinderHalf=0.0901 contactOffset=0.0100 recipeDims=(0.1800,0.3602,0.1800)
+abdomen      Box size=(0.2500,0.1600,0.1700) center=(0.0000,0.0000,0.0000) lossyScale=(1.0000,1.0000,1.0000) worldHalfExtents=(0.1250,0.0800,0.0850) contactOffset=0.0100 recipeDims=(0.2500,0.1600,0.1700)
+pelvis       Box size=(0.3000,0.2000,0.1800) center=(0.0000,0.0000,0.0000) lossyScale=(1.0000,1.0000,1.0000) worldHalfExtents=(0.1500,0.1000,0.0900) contactOffset=0.0100 recipeDims=(0.3000,0.2000,0.1800)
+
+--- collider geometry to mass property coupling ---
+left_thigh   mass=10.000 kg com=(0.0000,0.0000,0.0000) dimensions=(0.1800,0.3602,0.1800) BoxInertia(dimensions)=(0.1351,0.0540,0.1351) inertiaTensor=(0.1351,0.0540,0.1351) coupled=True
+right_thigh  mass=10.000 kg com=(0.0000,0.0000,0.0000) dimensions=(0.1800,0.3602,0.1800) BoxInertia(dimensions)=(0.1351,0.0540,0.1351) inertiaTensor=(0.1351,0.0540,0.1351) coupled=True
+abdomen      mass=13.900 kg com=(0.0000,0.0000,0.0000) dimensions=(0.2500,0.1600,0.1700) BoxInertia(dimensions)=(0.0631,0.1059,0.1020) inertiaTensor=(0.0631,0.1059,0.1020) coupled=True
+
+COLLIDER_GEOMETRY_COUPLED_TO_MASS_PROPERTIES = YES for inertiaTensor (same dimensions vector feeds AddCollider and BoxInertia); NO for mass (MassFraction) and NO for centre of mass (authored zero).
+
+--- hip anchor and thigh capsule registration ---
+left_thigh   hipAnchor=(-0.1144,0.9768,-0.0353) referenceHipBone=(-0.1143,0.9787,-0.0360) anchorError=0.00199 m | femurLength=0.4288 capsuleWorldHeight=0.3602 radius=0.0900 | bodyOrigin=(-0.1144,0.8012,-0.0359) bodyToAnchor=0.1756 m | proximalCapAboveAnchor=0.3557 m proximalCylinderAboveAnchor=0.2657 m | axisDotFemur=-1.0000
+right_thigh  hipAnchor=(0.1142,0.9769,-0.0355) referenceHipBone=(0.1143,0.9787,-0.0360) anchorError=0.00190 m | femurLength=0.4288 capsuleWorldHeight=0.3602 radius=0.0900 | bodyOrigin=(0.1142,0.8013,-0.0359) bodyToAnchor=0.1756 m | proximalCapAboveAnchor=0.3557 m proximalCylinderAboveAnchor=0.2657 m | axisDotFemur=-1.0000
+
+--- abdomen registration ---
+abdomen      anchor=(-0.0001,1.0772,-0.0056) referenceSpine=(0.0000,1.0795,-0.0069) anchorError=0.00260 m | boxCentre=(-0.0001,1.1301,0.0004) halfExtents=(0.1250,0.0800,0.0850) | lowestFaceCentre=(-0.0001,1.0506,-0.0087) lowestFaceY=1.0506 | referenceHipsY=0.9566 referenceSpineY=1.0795 referenceChestY=1.1853 | spineToChest=0.1064 m boxHeight=0.1600 m
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1148" name="T2_CONTACT_VERSUS_GEOMETRIC_PENETRATION_TIMING" fullname="PowerliftingSimulator.Tests.ThighAbdomenContactModelTests.T2_CONTACT_VERSUS_GEOMETRIC_PENETRATION_TIMING" methodname="T2_CONTACT_VERSUS_GEOMETRIC_PENETRATION_TIMING" classname="PowerliftingSimulator.Tests.ThighAbdomenContactModelTests" runstate="Runnable" seed="1702654022" result="Passed" start-time="2026-09-09 01:51:10Z" end-time="2026-09-09 01:51:10Z" duration="0.600593" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[GAM-11 PHASE 5H11 T2 CONTACT VERSUS GEOMETRIC PENETRATION
+thigh contactOffset=0.0100 m  abdomen contactOffset=0.0100 m  sum=0.0200 m
+
+FIRST_CONTACT_TICK              = 146   hip 53.2 deg
+FIRST_GEOMETRIC_OVERLAP_TICK    = 167   hip 64.7 deg
+FIRST_POSITIVE_PENETRATION_TICK = 168
+FIRST_LOAD_BEARING_CONTACT_TICK = 167   hip 64.7 deg
+
+CONTACT_OFFSET_CONTRIBUTION: the contact leads real overlap by 21 ticks.
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1149" name="T3_REFERENCE_PATH_PROXY_FEASIBILITY_SWEEP" fullname="PowerliftingSimulator.Tests.ThighAbdomenContactModelTests.T3_REFERENCE_PATH_PROXY_FEASIBILITY_SWEEP" methodname="T3_REFERENCE_PATH_PROXY_FEASIBILITY_SWEEP" classname="PowerliftingSimulator.Tests.ThighAbdomenContactModelTests" runstate="Runnable" seed="1278895753" result="Passed" start-time="2026-09-09 01:51:10Z" end-time="2026-09-09 01:51:11Z" duration="0.490350" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[GAM-11 PHASE 5H11 T3 REFERENCE PATH PROXY FEASIBILITY
+Thighs rotated about the as-built hip anchors, abdomen about its own,
+both by the angles the accepted GAM-10 reference commands. No body moved.
+
+MAX_HIP_FLEXION_COMMANDED       = 111.0 deg
+PROXY_CONTACT_ONSET_HIP_DEG     = 51.2 deg (surfaces within contactOffset 0.0200 m)
+PROXY_PENETRATION_ONSET_HIP_DEG = 64.1 deg (surfaces actually intersect)
+PROXY_PENETRATION_AT_111_DEG    = 0.0826 m
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1150" name="T4_OLD_H10_FIRST_CAUSE_REMOVED" fullname="PowerliftingSimulator.Tests.ThighAbdomenContactModelTests.T4_OLD_H10_FIRST_CAUSE_REMOVED" methodname="T4_OLD_H10_FIRST_CAUSE_REMOVED" classname="PowerliftingSimulator.Tests.ThighAbdomenContactModelTests" runstate="Runnable" seed="100002026" result="Passed" start-time="2026-09-09 01:51:11Z" end-time="2026-09-09 01:51:11Z" duration="0.608591" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[T4 OLD H10 FIRST CAUSE REMOVED] thighAbdomenContactTicks=0 worstTrackingErrorInH10Window=7.55 deg deepestHipTarget=-111.00 deg deepestHipActual=-116.84 deg deficit=-5.84 deg
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+Saving results to: C:/Users/Educacion/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

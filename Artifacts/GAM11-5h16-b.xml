@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="2" result="Passed" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-09 23:00:56Z" end-time="2026-09-09 23:01:09Z" duration="12.9259569">
+  <test-suite type="TestSuite" id="1209" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="156" result="Passed" start-time="2026-09-09 23:00:56Z" end-time="2026-09-09 23:01:09Z" duration="12.925957" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1203" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="C:/Users/Educacion/Desktop/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="156" result="Passed" start-time="2026-09-09 23:00:56Z" end-time="2026-09-09 23:01:09Z" duration="12.896729" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="20952" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1204" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="156" result="Passed" start-time="2026-09-09 23:00:56Z" end-time="2026-09-09 23:01:09Z" duration="12.889635" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1205" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="156" result="Passed" start-time="2026-09-09 23:00:56Z" end-time="2026-09-09 23:01:09Z" duration="12.884481" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1169" name="SpineStandingAndFactorialTests" fullname="PowerliftingSimulator.Tests.SpineStandingAndFactorialTests" classname="PowerliftingSimulator.Tests.SpineStandingAndFactorialTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-09 23:00:56Z" end-time="2026-09-09 23:01:09Z" duration="12.873904" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1170" name="B1_STANDING_SPINE_BIAS_AUTHORIZATION" fullname="PowerliftingSimulator.Tests.SpineStandingAndFactorialTests.B1_STANDING_SPINE_BIAS_AUTHORIZATION" methodname="B1_STANDING_SPINE_BIAS_AUTHORIZATION" classname="PowerliftingSimulator.Tests.SpineStandingAndFactorialTests" runstate="Runnable" seed="901146478" result="Passed" start-time="2026-09-09 23:00:56Z" end-time="2026-09-09 23:01:06Z" duration="9.546696" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[GAM-11 PHASE 5H16 B1 STANDING SPINE BIAS AUTHORIZATION
+Ten second standing hold, three independent fresh resets per case,
+production balance on. The only variable is the standing spine knot.
+Values are the mean of the three resets over the last 100 ticks.
+
+load  bias      abdErr  thoErr  trunkErr  hipErr  comAP    copAP    support  contacts  drift
+   0  zero       -1.24   -1.19     -0.87   -0.13  -0.0277  -0.0273   0.2900         8   0.011
+   0  measured    0.00    0.00      0.36   -0.28  -0.0286  -0.0283   0.2900         8   0.000
+  25  zero       -6.92   -5.58     -7.75    1.93  -0.0463  -0.0458   0.2900         8   0.017
+  25  measured    0.25    0.19     -0.47    0.67  -0.0459  -0.0453   0.2900         8   0.026
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1171" name="B2_FACTORIAL_STANDING_AND_RATE" fullname="PowerliftingSimulator.Tests.SpineStandingAndFactorialTests.B2_FACTORIAL_STANDING_AND_RATE" methodname="B2_FACTORIAL_STANDING_AND_RATE" classname="PowerliftingSimulator.Tests.SpineStandingAndFactorialTests" runstate="Runnable" seed="1462174954" result="Passed" start-time="2026-09-09 23:01:06Z" end-time="2026-09-09 23:01:09Z" duration="3.272090" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[GAM-11 PHASE 5H16 B2 FACTORIAL: STANDING BIAS x GRAVITY-BIAS RATE
+Fresh reset per run, identical driven descent, production balance on.
+  F00 H15 as shipped   F10 standing bias   F01 rate   F11 both
+trunkErr is world pitch minus the GAM-10 reference pitch at that phase.
+
+--- load 0 kg ---
+  case  s_q    abdErr  thoErr  trunkErr |  hipErr  support  contacts
+  F00   0.00    -1.79   -1.58     -1.65 |    0.10   0.2900         8
+  F00   0.10    -3.39   -3.42     -4.84 |    7.16   0.2900         8
+  F00   0.25    -2.27   -2.16     -3.07 |    6.67   0.2900         8
+  F00   0.55    -0.99   -0.87      0.42 |    5.01   0.2900         8
+  F00   0.80    -0.73   -0.57      2.25 |    2.14   0.2900         8
+  F00   1.00    -0.77   -0.14      2.25 |   -0.14   0.2900         8
+  F10   0.00    -0.53   -0.38     -0.31 |   -0.07   0.2900         8
+  F10   0.10    -2.42   -2.53     -3.82 |    7.04   0.2900         8
+  F10   0.25    -2.02   -1.94     -2.77 |    6.61   0.2900         8
+  F10   0.55    -0.99   -0.87      0.43 |    5.01   0.2900         8
+  F10   0.80    -0.74   -0.59      2.22 |    2.15   0.2900         8
+  F10   1.00    -0.76   -0.14      2.27 |   -0.15   0.2900         8
+  F01   0.00    -1.75   -1.56     -1.57 |    0.07   0.2900         8
+  F01   0.10    -3.00   -3.25     -4.50 |    7.13   0.2900         8
+  F01   0.25    -1.82   -1.95     -2.65 |    6.62   0.2900         8
+  F01   0.55    -0.49   -0.57      0.85 |    4.96   0.2900         8
+  F01   0.80    -0.64   -0.53      2.32 |    2.14   0.2900         8
+  F01   1.00    -0.57   -0.09      2.37 |   -0.16   0.2900         8
+  F11   0.00    -0.50   -0.36     -0.26 |   -0.08   0.2900         8
+  F11   0.10    -1.92   -2.23     -3.39 |    7.03   0.2900         8
+  F11   0.25    -1.41   -1.58     -2.21 |    6.54   0.2900         8
+  F11   0.55    -0.49   -0.58      0.84 |    4.97   0.2900         8
+  F11   0.80    -0.63   -0.52      2.34 |    2.14   0.2900         8
+  F11   1.00    -0.57   -0.09      2.34 |   -0.16   0.2900         8
+
+--- load 25 kg ---
+  case  s_q    abdErr  thoErr  trunkErr |  hipErr  support  contacts
+  F00   0.00    -8.03   -6.56     -9.51 |    2.52   0.2900         8
+  F00   0.10    -9.33   -7.79    -12.27 |    9.40   0.2900         8
+  F00   0.25    -5.24   -4.17     -7.41 |    7.95   0.2900         8
+  F00   0.55    -1.92   -1.48     -2.01 |    4.60   0.2900         8
+  F00   0.80    -1.35   -0.95     -0.23 |    1.42   0.2900         8
+  F00   1.00    -0.17   -0.11     -0.01 |   -1.05   0.2900         8
+  F10   0.00    -0.74   -0.65     -1.75 |    1.15   0.2900         8
+  F10   0.10    -3.07   -2.94     -5.55 |    8.15   0.2900         8
+  F10   0.25    -3.15   -2.67     -5.02 |    7.31   0.2900         8
+  F10   0.55    -1.95   -1.50     -2.03 |    4.61   0.2900         8
+  F10   0.80    -1.32   -0.93     -0.18 |    1.39   0.2900         8
+  F10   1.00    -0.17   -0.10      0.02 |   -1.07   0.2900         8
+  F01   0.00    -7.98   -6.52     -9.33 |    2.48   0.2900         8
+  F01   0.10    -9.03   -7.77    -11.99 |    9.34   0.2900         8
+  F01   0.25    -4.94   -4.16     -7.18 |    7.90   0.2900         8
+  F01   0.55    -0.88   -0.83     -1.08 |    4.42   0.2900         8
+  F01   0.80    -1.13   -0.81     -0.02 |    1.37   0.2900         8
+  F01   1.00    -0.18   -0.12     -0.02 |   -1.05   0.2900         8
+  F11   0.00    -0.73   -0.64     -1.75 |    1.15   0.2900         8
+  F11   0.10    -2.14   -2.35     -4.70 |    8.01   0.2900         8
+  F11   0.25    -1.91   -1.90     -3.87 |    7.09   0.2900         8
+  F11   0.55    -0.92   -0.85     -1.11 |    4.45   0.2900         8
+  F11   0.80    -1.14   -0.82     -0.02 |    1.38   0.2900         8
+  F11   1.00    -0.16   -0.10      0.03 |   -1.07   0.2900         8
+
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+Saving results to: C:/Users/Educacion/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-09 19:22:55Z" end-time="2026-09-09 19:22:57Z" duration="2.3604027">
+  <test-suite type="TestSuite" id="1197" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="148" result="Passed" start-time="2026-09-09 19:22:55Z" end-time="2026-09-09 19:22:57Z" duration="2.360403" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1191" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="C:/Users/Educacion/Desktop/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="148" result="Passed" start-time="2026-09-09 19:22:55Z" end-time="2026-09-09 19:22:57Z" duration="2.323255" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="13968" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1192" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="148" result="Passed" start-time="2026-09-09 19:22:55Z" end-time="2026-09-09 19:22:57Z" duration="2.315457" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1193" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="148" result="Passed" start-time="2026-09-09 19:22:55Z" end-time="2026-09-09 19:22:57Z" duration="2.307712" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1146" name="PlantarSupportAndTrunkFoldTests" fullname="PowerliftingSimulator.Tests.PlantarSupportAndTrunkFoldTests" classname="PowerliftingSimulator.Tests.PlantarSupportAndTrunkFoldTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-09 19:22:55Z" end-time="2026-09-09 19:22:57Z" duration="2.280709" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1149" name="T3_SPINAL_DRIVE_AUTHORITY" fullname="PowerliftingSimulator.Tests.PlantarSupportAndTrunkFoldTests.T3_SPINAL_DRIVE_AUTHORITY" methodname="T3_SPINAL_DRIVE_AUTHORITY" classname="PowerliftingSimulator.Tests.PlantarSupportAndTrunkFoldTests" runstate="Runnable" seed="823838519" result="Passed" start-time="2026-09-09 19:22:55Z" end-time="2026-09-09 19:22:57Z" duration="2.225197" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[GAM-11 PHASE 5H14 T3 SPINAL DRIVE AUTHORITY THROUGH THE DESCENT
+demand is PoweredJointDiagnostic.ModeledDemand: conceptual drive torque over
+the authored maximumForce ceiling. At or above 1.0 the ceiling is binding.
+errX is the joint-space flexion tracking error in degrees.
+
+--- load 0 kg ---
+
+  s_q   joint         demand   maxForceNm  capacity  errXdeg
+  0.00  abdomen         0.019      1482.0     5.700     1.80
+  0.00  thorax          0.019      1482.0     5.700     1.63
+  0.00  left_thigh      0.027      2052.0     5.700    -0.41
+  0.00  left_foot       0.040      1710.0     9.500     7.43
+  0.40  abdomen         0.037      1482.0     5.700    -3.40
+  0.40  thorax          0.015      1482.0     5.700    -1.10
+  0.40  left_thigh      0.064      2052.0     5.700    -8.26
+  0.40  left_foot       0.041      1710.0     9.500     5.93
+  0.55  abdomen         0.065      1482.0     5.700    -6.25
+  0.55  thorax          0.032      1482.0     5.700    -2.89
+  0.55  left_thigh      0.020      2052.0     5.700    -4.45
+  0.55  left_foot       0.041      1710.0     9.500     5.98
+  0.70  abdomen         0.067      1482.0     5.700    -7.74
+  0.70  thorax          0.034      1482.0     5.700    -3.94
+  0.70  left_thigh      0.017      2052.0     5.700    -0.92
+  0.70  left_foot       0.057      1710.0     9.500     8.87
+  0.80  abdomen         0.075      1482.0     5.700    -7.59
+  0.80  thorax          0.038      1482.0     5.700    -3.80
+  0.80  left_thigh      0.007      2052.0     5.700    -1.52
+  0.80  left_foot       0.051      1710.0     9.500     7.82
+  0.90  abdomen         0.083      1482.0     5.700    -8.68
+  0.90  thorax          0.044      1482.0     5.700    -4.54
+  0.90  left_thigh      0.003      2052.0     5.700     0.25
+  0.90  left_foot       0.049      1710.0     9.500     7.94
+  1.00  abdomen         0.082      1482.0     5.700    -8.59
+  1.00  thorax          0.043      1482.0     5.700    -4.51
+  1.00  left_thigh      0.007      2052.0     5.700     0.79
+  1.00  left_foot       0.047      1710.0     9.500     7.72
+
+  peak abdomen demand 0.083   peak thorax demand 0.044   ceiling binding = NO
+
+--- load 25 kg ---
+
+  s_q   joint         demand   maxForceNm  capacity  errXdeg
+  0.00  abdomen         0.063      1852.5     7.125     8.12
+  0.00  thorax          0.055      1852.5     7.125     6.63
+  0.00  left_thigh      0.038      2565.0     7.125    -2.84
+  0.00  left_foot       0.022      2137.5    11.875     5.48
+  0.40  abdomen         0.025      1852.5     7.125    -2.35
+  0.40  thorax          0.004      1852.5     7.125     0.28
+  0.40  left_thigh      0.050      2565.0     7.125    -8.32
+  0.40  left_foot       0.015      2137.5    11.875     3.31
+  0.55  abdomen         0.065      1852.5     7.125    -7.89
+  0.55  thorax          0.032      1852.5     7.125    -3.33
+  0.55  left_thigh      0.008      2565.0     7.125    -3.25
+  0.55  left_foot       0.016      2137.5    11.875     3.42
+  0.70  abdomen         0.074      1852.5     7.125   -10.55
+  0.70  thorax          0.041      1852.5     7.125    -5.29
+  0.70  left_thigh      0.003      2565.0     7.125     0.56
+  0.70  left_foot       0.055      2137.5    11.875    11.79
+  0.80  abdomen         0.088      1852.5     7.125   -11.40
+  0.80  thorax          0.048      1852.5     7.125    -5.74
+  0.80  left_thigh      0.009      2565.0     7.125     0.51
+  0.80  left_foot       0.041      2137.5    11.875     8.61
+  0.90  abdomen         0.095      1852.5     7.125   -12.84
+  0.90  thorax          0.054      1852.5     7.125    -6.67
+  0.90  left_thigh      0.015      2565.0     7.125     2.32
+  0.90  left_foot       0.042      2137.5    11.875     9.05
+  1.00  abdomen         0.083      1852.5     7.125   -12.27
+  1.00  thorax          0.052      1852.5     7.125    -6.85
+  1.00  left_thigh      0.016      2565.0     7.125     2.86
+  1.00  left_foot       0.045      2137.5    11.875     9.28
+
+  peak abdomen demand 0.095   peak thorax demand 0.055   ceiling binding = NO
+
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+Saving results to: C:/Users/Educacion/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

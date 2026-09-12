@@ -1,0 +1,18 @@
+GAM-11 PHASE 5H12 C1 CENTROIDAL VERSUS REDUCED-ORDER COP PREDICTION
+Residual is predicted minus engine-measured centre of pressure, in metres.
+Contributions are the metres of COP offset attributable to each term.
+
+--- load 0 kg ---
+window          n    |lipm|   |vhip|   |full|   vertTerm   angTerm
+mid_descent     149   0.0030   0.0031   0.0049     0.0000    0.0031
+near_parallel   110   0.0032   0.0030   0.0050     0.0004    0.0037
+bottom           80   0.0043   0.0043   0.0024     0.0002    0.0033
+reversal         60   0.0080   0.0077   0.0061     0.0014    0.0066
+
+--- load 25 kg ---
+window          n    |lipm|   |vhip|   |full|   vertTerm   angTerm
+mid_descent     149   0.0035   0.0035   0.0055     0.0000    0.0030
+near_parallel   110   0.0035   0.0031   0.0047     0.0020    0.0040
+bottom           80   0.0080   0.0079   0.0039     0.0009    0.0063
+reversal         60   0.0485   0.0324   0.0113     0.0166    0.0224
+

@@ -1,0 +1,3 @@
+body_a,body_b,first_tick,last_tick,tick_count,max_normal_impulse,total_normal_impulse,point_x,point_y,point_z,normal_x,normal_y,normal_z
+left_forearm,thorax,0,0,584,5.187,3017.010,-0.1783,1.2530,0.0841,-0.521,0.106,0.847
+right_forearm,thorax,0,0,584,4.749,1891.396,0.1751,1.2542,0.0910,0.683,0.116,0.722

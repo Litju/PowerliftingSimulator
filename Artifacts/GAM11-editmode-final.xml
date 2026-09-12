@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="5" result="Passed" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-05 10:16:48Z" end-time="2026-09-05 10:16:48Z" duration="0.2090563">
+  <test-suite type="TestSuite" id="1000" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="60" result="Passed" start-time="2026-09-05 10:16:48Z" end-time="2026-09-05 10:16:48Z" duration="0.209056" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1072" name="PowerliftingSimulator.Foundation.Tests.EditMode.dll" fullname="C:/Users/Educacion/Desktop/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.EditMode.dll" runstate="Runnable" testcasecount="60" result="Passed" start-time="2026-09-05 10:16:48Z" end-time="2026-09-05 10:16:48Z" duration="0.179366" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="21856" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1073" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="60" result="Passed" start-time="2026-09-05 10:16:48Z" end-time="2026-09-05 10:16:48Z" duration="0.173825" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1074" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="60" result="Passed" start-time="2026-09-05 10:16:48Z" end-time="2026-09-05 10:16:48Z" duration="0.170413" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1051" name="PhysicalSquatControlTests" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlTests" classname="PowerliftingSimulator.Tests.PhysicalSquatControlTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-09-05 10:16:48Z" end-time="2026-09-05 10:16:48Z" duration="0.162374" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1055" name="BOUNDED_BALANCE_CORRECTION_SATURATES_AND_PRESERVES_FINITE_BOUNDS" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlTests.BOUNDED_BALANCE_CORRECTION_SATURATES_AND_PRESERVES_FINITE_BOUNDS" methodname="BOUNDED_BALANCE_CORRECTION_SATURATES_AND_PRESERVES_FINITE_BOUNDS" classname="PowerliftingSimulator.Tests.PhysicalSquatControlTests" runstate="Runnable" seed="772059358" result="Passed" start-time="2026-09-05 10:16:48Z" end-time="2026-09-05 10:16:48Z" duration="0.043337" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1056" name="CANONICAL_SQUAT_PROFILE_COVERS_LEGAL_DEPTH_AND_LOCKOUT" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlTests.CANONICAL_SQUAT_PROFILE_COVERS_LEGAL_DEPTH_AND_LOCKOUT" methodname="CANONICAL_SQUAT_PROFILE_COVERS_LEGAL_DEPTH_AND_LOCKOUT" classname="PowerliftingSimulator.Tests.PhysicalSquatControlTests" runstate="Runnable" seed="1755780162" result="Passed" start-time="2026-09-05 10:16:48Z" end-time="2026-09-05 10:16:48Z" duration="0.008056" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1053" name="JOINT_COMMAND_NORMALIZES_AND_VALIDATES_FINITE_INPUTS" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlTests.JOINT_COMMAND_NORMALIZES_AND_VALIDATES_FINITE_INPUTS" methodname="JOINT_COMMAND_NORMALIZES_AND_VALIDATES_FINITE_INPUTS" classname="PowerliftingSimulator.Tests.PhysicalSquatControlTests" runstate="Runnable" seed="1555972158" result="Passed" start-time="2026-09-05 10:16:48Z" end-time="2026-09-05 10:16:48Z" duration="0.011675" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1052" name="SINGLE_WRITER_ENFORCES_EXACTLY_ONE_COMMAND_PER_JOINT_PER_TICK" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlTests.SINGLE_WRITER_ENFORCES_EXACTLY_ONE_COMMAND_PER_JOINT_PER_TICK" methodname="SINGLE_WRITER_ENFORCES_EXACTLY_ONE_COMMAND_PER_JOINT_PER_TICK" classname="PowerliftingSimulator.Tests.PhysicalSquatControlTests" runstate="Runnable" seed="2063911458" result="Passed" start-time="2026-09-05 10:16:48Z" end-time="2026-09-05 10:16:48Z" duration="0.053464" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1054" name="SQUAT_BAR_SADDLE_HAS_FINITE_PHYSICS_CONSTRAINTS_AND_NO_PROJECTION" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlTests.SQUAT_BAR_SADDLE_HAS_FINITE_PHYSICS_CONSTRAINTS_AND_NO_PROJECTION" methodname="SQUAT_BAR_SADDLE_HAS_FINITE_PHYSICS_CONSTRAINTS_AND_NO_PROJECTION" classname="PowerliftingSimulator.Tests.PhysicalSquatControlTests" runstate="Runnable" seed="889133614" result="Passed" start-time="2026-09-05 10:16:48Z" end-time="2026-09-05 10:16:48Z" duration="0.002656" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: C:/Users/Educacion/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

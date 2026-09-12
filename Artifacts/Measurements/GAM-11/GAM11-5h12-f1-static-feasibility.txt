@@ -1,0 +1,64 @@
+GAM-11 PHASE 5H12 F1 STATIC DEEP-PHASE FEASIBILITY
+Fresh reset per sample. Phase ramped at the production rate then held with
+zero phase velocity. Verdict taken over the last 60 ticks of a 250 tick hold.
+
+load  case  s_q   held  comAP   supp[min,max]      |vCOM|  pelvisDrift  contacts  divTick  reason
+   0  S0  0.00  False  1.2661  [ 1.2661, 1.2661]  0.0000       0.8312         0       0  LOST_PLANTAR_CONTACT
+   0  S0  0.55  False  1.1391  [ 1.1391, 1.1391]  0.0000       0.0542         0       3  LOST_PLANTAR_CONTACT
+   0  S0  0.80  False  1.1279  [ 1.1279, 1.1279]  0.0000       0.0129         0       4  LOST_PLANTAR_CONTACT
+   0  S0  1.00  False  1.1370  [ 1.1370, 1.1370]  0.0000       0.0204         0      -1  LOST_PLANTAR_CONTACT
+   0  S1  0.00  False  1.2419  [ 1.2419, 1.2419]  0.0000       0.8302         0       0  LOST_PLANTAR_CONTACT
+   0  S1  0.55  False  1.1391  [ 1.1391, 1.1391]  0.0000       0.0542         0       3  LOST_PLANTAR_CONTACT
+   0  S1  0.80  False  1.1279  [ 1.1279, 1.1279]  0.0000       0.0129         0       4  LOST_PLANTAR_CONTACT
+   0  S1  1.00  False  1.1370  [ 1.1370, 1.1370]  0.0000       0.0204         0      -1  LOST_PLANTAR_CONTACT
+   0  S2  0.00  True   -0.0293  [-0.1547, 0.1353]  0.0007       0.0003         8      -1  HELD
+   0  S2  0.55  False  -0.0296  [-0.1547, 0.1353]  0.0010       0.0490         8      -1  PELVIS_DRIFTING
+   0  S2  0.80  False  0.7702  [ 0.0565, 0.0949]  1.4651       0.1653         5      46  COM_PAST_FRONT
+   0  S2  1.00  False  -0.2092  [-0.1546, 0.0446]  0.2009       0.0609         6     144  COM_PAST_REAR
+  25  S0  0.00  False  1.3205  [ 1.3205, 1.3205]  0.0006       0.8243         0       0  COM_PAST_FRONT
+  25  S0  0.55  False  1.2076  [ 1.2076, 1.2076]  0.0000       0.0219         0      -1  LOST_PLANTAR_CONTACT
+  25  S0  0.80  False  1.2209  [ 1.2209, 1.2209]  0.0000       0.0412         0      -1  LOST_PLANTAR_CONTACT
+  25  S0  1.00  False  1.2016  [ 1.2016, 1.2016]  0.0000       0.0182         0      20  LOST_PLANTAR_CONTACT
+  25  S1  0.00  False  1.3201  [ 1.3201, 1.3201]  0.0006       0.8243         0       0  COM_PAST_FRONT
+  25  S1  0.55  False  1.2071  [ 1.2071, 1.2071]  0.0000       0.0207         0      -1  LOST_PLANTAR_CONTACT
+  25  S1  0.80  False  1.2249  [ 1.2249, 1.2249]  0.0030       0.0380         0      -1  LOST_PLANTAR_CONTACT
+  25  S1  1.00  False  1.1957  [ 1.1957, 1.1957]  0.0000       0.0175         0      -1  LOST_PLANTAR_CONTACT
+  25  S2  0.00  True   -0.0475  [-0.1547, 0.1353]  0.0010       0.0015         8      -1  HELD
+  25  S2  0.55  False  -0.0441  [-0.1547, 0.1353]  0.0064       0.0500         8      42  PELVIS_DRIFTING
+  25  S2  0.80  False  0.8202  [ 0.0415, 0.1443]  0.0149       0.1349         8      25  COM_PAST_FRONT
+  25  S2  1.00  False  -1.2437  [-1.2437,-1.2437]  0.0000       0.0000         0      -1  LOST_PLANTAR_CONTACT
+
+--- ankle anatomical decomposition at each held sample ---
+load case s_q | nominal  bias  balance   final | actual  dorsiflex | limits(dorsi,plantar) prox | trackErr
+   0 S0 0.00 |    0.00  0.00    0.00    0.00 |   9.75      -9.75 | (45,55)  0.177 |   9.75
+   0 S0 0.55 |  -21.00  0.00    0.00  -21.00 | -24.33      24.33 | (45,55)  0.541 |   3.33
+   0 S0 0.80 |  -24.73  0.00    0.00  -24.73 | -26.08      26.08 | (45,55)  0.580 |   1.35
+   0 S0 1.00 |  -27.00  0.00    0.00  -27.00 | -27.55      27.55 | (45,55)  0.612 |   0.55
+   0 S1 0.00 |    0.00  0.00    0.00    0.00 |   4.96      -4.96 | (45,55)  0.090 |   5.07
+   0 S1 0.55 |  -21.00  0.00    0.00  -21.00 | -24.33      24.33 | (45,55)  0.541 |   3.33
+   0 S1 0.80 |  -24.73  0.00    0.00  -24.73 | -26.08      26.08 | (45,55)  0.580 |   1.35
+   0 S1 1.00 |  -27.00  0.00    0.00  -27.00 | -27.55      27.55 | (45,55)  0.612 |   0.55
+   0 S2 0.00 |    0.00  0.00    5.87    5.87 |  -0.26       0.26 | (45,55)  0.006 |   7.28
+   0 S2 0.55 |  -21.00  0.00    4.24  -16.76 | -25.80      25.80 | (45,55)  0.573 |   9.03
+   0 S2 0.80 |  -24.73  0.00   -2.90  -27.63 | -26.20      26.20 | (45,55)  0.582 |   1.62
+   0 S2 1.00 |  -27.00  0.00    0.00  -27.00 | -18.25      18.25 | (45,55)  0.406 |   8.75
+  25 S0 0.00 |    0.00  0.00    0.00    0.00 |   0.80      -0.80 | (45,55)  0.014 |   0.81
+  25 S0 0.55 |  -21.00  0.00    0.00  -21.00 | -27.73      27.73 | (45,55)  0.616 |   6.73
+  25 S0 0.80 |  -24.73  0.00    0.00  -24.73 | -29.18      29.18 | (45,55)  0.648 |   4.45
+  25 S0 1.00 |  -27.00  0.00    0.00  -27.00 | -31.04      31.04 | (45,55)  0.690 |   4.04
+  25 S1 0.00 |    0.00  0.00    0.00    0.00 |   0.74      -0.74 | (45,55)  0.013 |   0.75
+  25 S1 0.55 |  -21.00  0.00    0.00  -21.00 | -27.84      27.84 | (45,55)  0.619 |   6.84
+  25 S1 0.80 |  -24.73  0.00    0.00  -24.73 | -29.26      29.26 | (45,55)  0.650 |   4.53
+  25 S1 1.00 |  -27.00  0.00    0.00  -27.00 | -31.01      31.01 | (45,55)  0.689 |   4.01
+  25 S2 0.00 |    0.00  0.00    3.22    3.22 |  -3.85       3.85 | (45,55)  0.086 |   7.07
+  25 S2 0.55 |  -21.00  0.00    4.93  -16.07 | -23.96      23.96 | (45,55)  0.532 |   7.89
+  25 S2 0.80 |  -24.73  0.00    8.31  -16.42 | -18.04      18.04 | (45,55)  0.401 |   2.04
+  25 S2 1.00 |  -27.00  0.00    0.00  -27.00 | -26.97      26.97 | (45,55)  0.599 |   0.00
+
+STATIC_0KG_S0    = NOT_FEASIBLE   (bottom: LOST_PLANTAR_CONTACT, comAP 1.1370 vs support [1.1370,1.1370], ankle dorsiflexion 27.6 of 45 deg)
+STATIC_0KG_S1    = NOT_FEASIBLE   (bottom: LOST_PLANTAR_CONTACT, comAP 1.1370 vs support [1.1370,1.1370], ankle dorsiflexion 27.6 of 45 deg)
+STATIC_0KG_S2    = NOT_FEASIBLE   (bottom: COM_PAST_REAR, comAP -0.2092 vs support [-0.1546,0.0446], ankle dorsiflexion 18.3 of 45 deg)
+STATIC_25KG_S0   = NOT_FEASIBLE   (bottom: LOST_PLANTAR_CONTACT, comAP 1.2016 vs support [1.2016,1.2016], ankle dorsiflexion 31.0 of 45 deg)
+STATIC_25KG_S1   = NOT_FEASIBLE   (bottom: LOST_PLANTAR_CONTACT, comAP 1.1957 vs support [1.1957,1.1957], ankle dorsiflexion 31.0 of 45 deg)
+STATIC_25KG_S2   = NOT_FEASIBLE   (bottom: LOST_PLANTAR_CONTACT, comAP -1.2437 vs support [-1.2437,-1.2437], ankle dorsiflexion 27.0 of 45 deg)
+

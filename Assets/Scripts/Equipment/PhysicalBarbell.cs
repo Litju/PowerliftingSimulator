@@ -121,6 +121,10 @@ namespace PowerliftingSimulator.Equipment
 
         private void Start()
         {
+            // A scene controller that runs earlier may already have built the
+            // bar as part of its own startup ordering.
+            if (IsBuilt)
+                return;
             Build();
         }
 

@@ -960,8 +960,13 @@ namespace PowerliftingSimulator.Tests
         {
             Assert.That(_rig.Segments.Count, Is.EqualTo(16));
             Assert.That(_rig.Joints.Count, Is.EqualTo(15));
-            Assert.That(_rig.PoweredController.PoweredJointCount, Is.EqualTo(14));
-            Assert.That(_rig.PoweredController.PassiveJointCount, Is.EqualTo(1));
+            // Fifteen powered, none passive. GAM-7 left head_neck without a
+            // family profile, so it had no drive and no activation, and the
+            // rendered standing evidence showed the head falling into hard
+            // extension over ten seconds while the rest of the body held. The
+            // neck now carries a finite postural drive like every other joint.
+            Assert.That(_rig.PoweredController.PoweredJointCount, Is.EqualTo(15));
+            Assert.That(_rig.PoweredController.PassiveJointCount, Is.EqualTo(0));
             Assert.That(_bar.Body.GetComponentsInChildren<Rigidbody>(true), Has.Length.EqualTo(1));
             Assert.That(_bar.Body.isKinematic, Is.False);
             Assert.That(_bar.Body.useGravity, Is.True);

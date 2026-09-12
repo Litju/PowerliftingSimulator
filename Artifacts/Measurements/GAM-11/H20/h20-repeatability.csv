@@ -1,0 +1,3 @@
+load_kg,trial_count,bar_signal,repeatability,status_1,status_2,status_3,vmax1_time_range_s,vmin_time_range_s,vmax2_time_range_s
+0,3,NO_BAR_SIGNAL,STABLE,NO_BAR_SIGNAL,NO_BAR_SIGNAL,NO_BAR_SIGNAL,NA,NA,NA
+25,3,BAR_RIGIDBODY,STABLE,NO_RESOLVABLE_STICKING_REGION,NO_RESOLVABLE_STICKING_REGION,NO_RESOLVABLE_STICKING_REGION,NA,NA,NA

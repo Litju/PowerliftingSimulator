@@ -10,7 +10,8 @@ namespace PowerliftingSimulator.Athlete
         Passive,
         PoweredNeutral,
         ZeroActivation,
-        SelectedJointPulse
+        SelectedJointPulse,
+        Controlled
     }
 
     public readonly struct JointFamilyProfile
@@ -76,7 +77,8 @@ namespace PowerliftingSimulator.Athlete
             float activation,
             float capacityScale,
             float modeledDemand,
-            float limitProximity)
+            float limitProximity,
+            Vector3 solverTorqueJointSpaceNm)
         {
             RequestedTarget = requestedTarget;
             AppliedTarget = appliedTarget;
@@ -89,6 +91,7 @@ namespace PowerliftingSimulator.Athlete
             CapacityScale = capacityScale;
             ModeledDemand = modeledDemand;
             LimitProximity = limitProximity;
+            SolverTorqueJointSpaceNm = solverTorqueJointSpaceNm;
         }
 
         public Quaternion RequestedTarget { get; }
@@ -102,6 +105,22 @@ namespace PowerliftingSimulator.Athlete
         public float CapacityScale { get; }
         public float ModeledDemand { get; }
         public float LimitProximity { get; }
+
+        /// <summary>
+        /// ENGINE_SOLVER_DIAGNOSTIC. The constraint torque PhysX actually
+        /// resolved for this joint, in joint space, so X is the calibrated
+        /// flexion axis.
+        ///
+        /// This is not the drive torque. The solver reports what it took to
+        /// satisfy every constraint on the joint at once, so it carries the
+        /// limits, the connected inertia and the contacts along with the
+        /// drive. Read it to cross-check contact mechanics, never as a
+        /// substitute for measuring what a target offset is worth.
+        /// </summary>
+        public Vector3 SolverTorqueJointSpaceNm { get; }
+
+        /// <summary>Solver torque about the calibrated flexion axis.</summary>
+        public float SolverFlexionTorqueNm => SolverTorqueJointSpaceNm.x;
     }
 
     public sealed class PoweredJointController
@@ -119,7 +138,20 @@ namespace PowerliftingSimulator.Athlete
             new JointFamilyProfile("trunk", 800f, 85f, 260f, 1.8f),
             new JointFamilyProfile("shoulder", 500f, 55f, 130f, 2.5f),
             new JointFamilyProfile("elbow", 450f, 45f, 100f, 3.0f),
-            new JointFamilyProfile("wrist", 250f, 30f, 45f, 2.5f)
+            new JointFamilyProfile("wrist", 250f, 30f, 45f, 2.5f),
+            // GAME_PHYSICS_NECK_POSTURE_CALIBRATION. GAM-7 left head_neck
+            // passive, which was fine while the athlete was a collapse
+            // fixture and is not now: the rendered standing evidence has the
+            // head neutral at spawn and thrown into hard extension by ten
+            // seconds, on a body that is otherwise stable.
+            //
+            // 300 Nm/rad holds the head to 2.35 deg on a worst-case
+            // horizontal lever, and the damper is the critically damped value
+            // for the head's own inertia rather than a trunk number: 8.1 kg at
+            // 0.095 kg m^2 is a different regime, and copying a trunk damper
+            // here would make the joint sluggish rather than stable
+            // (Artifacts/Measurements/GAM-11/GAM11-h9b-neck-characterization.csv).
+            new JointFamilyProfile("neck", 300f, 11f, 40f, 2.0f)
         };
 
         private static readonly string[] PulseJointIds =
@@ -211,6 +243,34 @@ namespace PowerliftingSimulator.Athlete
                 throw new InvalidOperationException($"Joint '{childId}' is passive in GAM-7.");
             Mode = PoweredAthleteMode.SelectedJointPulse;
             joint.RequestedCommand = command;
+        }
+
+        public void ApplyCommand(string childId, JointCommand command, ulong tick = 0)
+        {
+            PoweredJointRuntime joint = GetJoint(childId);
+            if (!joint.Profile.HasValue)
+                throw new InvalidOperationException($"Joint '{childId}' is passive.");
+            if (tick != 0 && joint.LastCommandTick == tick)
+                throw new InvalidOperationException($"Joint '{childId}' already received a target command for tick {tick}. Simultaneous target authorities on the same joint are forbidden.");
+            joint.LastCommandTick = tick;
+            Mode = PoweredAthleteMode.Controlled;
+            joint.RequestedCommand = command;
+        }
+
+        /// <summary>
+        /// Initialization only. The per-tick path rate limits the applied
+        /// target, which is correct while the simulation runs but would let
+        /// the athlete spend its first tens of milliseconds slewing toward a
+        /// standing target it should already be holding. Snapping once before
+        /// the first Simulate is not a physics step and writes no drive.
+        /// </summary>
+        public void SnapAppliedTargets()
+        {
+            foreach (PoweredJointRuntime joint in _joints)
+            {
+                if (joint.Profile.HasValue)
+                    joint.AppliedTarget = joint.RequestedCommand.TargetRelativeRotation;
+            }
         }
 
         public PoweredJointRuntime GetJoint(string childId) =>
@@ -342,22 +402,30 @@ namespace PowerliftingSimulator.Athlete
             configurable.targetRotation = ToUnityTargetRotation(joint.AppliedTarget);
             configurable.targetAngularVelocity = -targetVelocity;
 
-            if (joint.Recipe.Kind == PhysicalJointKind.Hinge)
-            {
-                configurable.rotationDriveMode = RotationDriveMode.XYAndZ;
-                configurable.angularXDrive = Drive(profile, maximumForce);
-                configurable.angularYZDrive = ZeroDrive();
-                configurable.slerpDrive = ZeroDrive();
-            }
-            else
-            {
-                configurable.rotationDriveMode = RotationDriveMode.Slerp;
-                configurable.angularXDrive = ZeroDrive();
-                configurable.angularYZDrive = ZeroDrive();
-                configurable.slerpDrive = Drive(profile, maximumForce);
-            }
+            // Every powered joint drives through the per-axis drives. Slerp
+            // realises only a quarter of the authored positionSpring: once the
+            // solver is given enough iterations to converge, the abdomen,
+            // thorax, hip and ankle fixtures all settle at 0.249 to 0.250 of
+            // it, while the same fixtures on XYAndZ settle at 1.000
+            // (Artifacts/Measurements/GAM-11/GAM11-h8-drivemode-by-iteration.csv).
+            // Four families, four different masses and inertias, one ratio.
+            //
+            // A hinge locks its swing axes, so only the twist drive can act.
+            // A ball joint has to power the swing drive too: leaving
+            // angularYZDrive at zero deletes two anatomical degrees of freedom
+            // outright, and the parity fixture measured exactly 0.000 response
+            // on both secondary axes before this was corrected.
+            configurable.rotationDriveMode = RotationDriveMode.XYAndZ;
+            configurable.angularXDrive = Drive(profile, maximumForce);
+            configurable.angularYZDrive = joint.Recipe.Kind == PhysicalJointKind.Hinge
+                ? ZeroDrive()
+                : Drive(profile, maximumForce);
+            configurable.slerpDrive = ZeroDrive();
         }
 
+        // Capacity is an actuator ceiling, not a gain. The GAM-7 family
+        // spring and damper are invariant; capacityScale reaches the joint
+        // only through maximumForce.
         private static JointDrive Drive(JointFamilyProfile profile, float maximumForce) => new JointDrive
         {
             positionSpring = profile.Spring,
@@ -373,6 +441,25 @@ namespace PowerliftingSimulator.Athlete
             maximumForce = 0f,
             useAcceleration = false
         };
+
+        /// <summary>
+        /// Test seams over the drive contract, so the actuator semantics can
+        /// be asserted without standing up a scene and a ConfigurableJoint.
+        /// </summary>
+        public static JointFamilyProfile? FindFamilyProfile(string family) => ResolveProfile(family);
+
+        public static JointDrive BuildDriveForTest(JointFamilyProfile profile, float maximumForce) =>
+            Drive(profile, maximumForce);
+
+        public static float ModelDemandForTest(
+            JointFamilyProfile profile,
+            Vector3 errorRad,
+            Vector3 velocityErrorRadS,
+            float maximumForce)
+        {
+            Vector3 conceptualTorque = profile.Spring * errorRad + profile.Damper * velocityErrorRadS;
+            return conceptualTorque.magnitude / Mathf.Max(maximumForce, 0.001f);
+        }
 
         private static JointFamilyProfile? ResolveProfile(string family)
         {
@@ -402,11 +489,17 @@ namespace PowerliftingSimulator.Athlete
             Vector3 relativeChild = Quaternion.Inverse(joint.Joint.transform.rotation) * relativeWorld;
             Vector3 actualVelocity = Quaternion.Inverse(joint.JointSpace) * relativeChild;
             JointFamilyProfile profile = joint.Profile.Value;
+            // Demand models the gains actually written to the drive, against
+            // the finite maximumForce ceiling that capacity scales.
             Vector3 conceptualTorque = profile.Spring * errorRad + profile.Damper * (targetVelocity - actualVelocity);
             float demand = conceptualTorque.magnitude / Mathf.Max(maximumForce, 0.001f);
             float xDegrees = SignedTwistDegrees(actual, Vector3.right);
             float limit = xDegrees >= 0f ? Mathf.Max(0.001f, joint.Recipe.HighDegrees) : Mathf.Max(0.001f, -joint.Recipe.LowDegrees);
             float proximity = Mathf.Clamp01(Mathf.Abs(xDegrees) / limit);
+            // currentTorque is reported in the joint's own local frame, so it
+            // needs the same rotation into joint space the error uses before
+            // its X component means flexion.
+            Vector3 solverTorque = Quaternion.Inverse(joint.JointSpace) * joint.Joint.currentTorque;
             return new PoweredJointDiagnostic(
                 joint.RequestedCommand.TargetRelativeRotation,
                 joint.AppliedTarget,
@@ -418,7 +511,8 @@ namespace PowerliftingSimulator.Athlete
                 activation,
                 capacityScale,
                 demand,
-                proximity);
+                proximity,
+                solverTorque);
         }
 
         private static Vector3 QuaternionLog(Quaternion quaternion)
@@ -429,6 +523,27 @@ namespace PowerliftingSimulator.Athlete
                 return Vector3.zero;
             float angle = 2f * Mathf.Atan2(vectorMagnitude, Mathf.Clamp(quaternion.w, -1f, 1f));
             return new Vector3(quaternion.x, quaternion.y, quaternion.z) * (angle / vectorMagnitude);
+        }
+
+        /// <summary>
+        /// Limit occupancy of an arbitrary joint-space rotation against an
+        /// authored range: the same swing-twist decomposition and the same
+        /// directional denominator BuildDiagnostic uses for LimitProximity.
+        ///
+        /// Exposed so a caller that holds a target rotation, rather than the
+        /// measured one, can ask what occupancy that target would represent.
+        /// A guard that wants to separate the occupancy a reference commands
+        /// from the occupancy something else produced needs both on the same
+        /// scale, and deriving the second one anywhere else would let the two
+        /// definitions drift apart.
+        /// </summary>
+        public static float LimitProximityOf(Quaternion jointSpaceRotation, float lowDegrees, float highDegrees)
+        {
+            float xDegrees = SignedTwistDegrees(NormalizeCanonical(jointSpaceRotation), Vector3.right);
+            float limit = xDegrees >= 0f
+                ? Mathf.Max(0.001f, highDegrees)
+                : Mathf.Max(0.001f, -lowDegrees);
+            return Mathf.Clamp01(Mathf.Abs(xDegrees) / limit);
         }
 
         private static float SignedTwistDegrees(Quaternion rotation, Vector3 axis)
@@ -474,6 +589,7 @@ namespace PowerliftingSimulator.Athlete
             public JointCommand RequestedCommand { get; internal set; }
             public Quaternion AppliedTarget { get; internal set; }
             public PoweredJointDiagnostic Diagnostic { get; internal set; }
+            public ulong LastCommandTick { get; internal set; }
 
             internal PhysicalAthleteRig.JointRuntime Runtime { get; }
 
@@ -482,6 +598,7 @@ namespace PowerliftingSimulator.Athlete
                 RequestedCommand = JointCommand.Neutral(0f);
                 AppliedTarget = Quaternion.identity;
                 Diagnostic = default;
+                LastCommandTick = ulong.MaxValue;
             }
         }
     }

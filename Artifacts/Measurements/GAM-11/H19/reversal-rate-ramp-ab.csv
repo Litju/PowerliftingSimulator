@@ -1,0 +1,3 @@
+case,ascent_entry_knee_err,ascent_entry_hip_err,ascent_peak_knee_err,ascent_peak_knee_sq,ascent_peak_hip_err,ascent_peak_hip_sq,ascent_tick6_knee_vel,ascent_tick6_hip_vel
+R0_PRODUCTION_STEP,13.25,-5.23,21.17,0.46,-14.73,0.42,-5.85,-6.13
+R1_RAMPED_VELOCITY_ONSET,13.25,-5.23,21.17,0.45,-14.73,0.43,-6.94,-8.62

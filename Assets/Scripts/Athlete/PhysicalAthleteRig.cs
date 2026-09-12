@@ -38,6 +38,7 @@ namespace PowerliftingSimulator.Athlete
         private GameObject _physicalRoot;
         private DebugMarker _wholeBodyComMarker;
         private PoweredJointController _poweredController;
+        private float _totalMassKg;
         private bool _inspectionFrozen;
         private bool _gameplayPerformanceProfile;
         private bool _savedShowVisibleMesh;
@@ -54,10 +55,109 @@ namespace PowerliftingSimulator.Athlete
         public IReadOnlyDictionary<string, SegmentRuntime> Segments => _segments;
         public IReadOnlyList<JointRuntime> Joints => _joints;
         public bool IsInspectionFrozen => _inspectionFrozen;
-        public float TotalMassKg => _segments.Values.Sum(segment => segment.Body.mass);
+        public float TotalMassKg => _totalMassKg;
         public float MaxInitialNonAdjacentPenetrationMeters { get; private set; }
         public PoweredJointController PoweredController => _poweredController;
         public bool IsGameplayPerformanceProfileActive => _gameplayPerformanceProfile;
+        public IPhysicalAthleteCommandSource CommandSource => _commandSource;
+        public Animator ReferenceAnimator => referenceAnimator;
+        public Animator VisibleAnimator => visibleAnimator;
+
+        /// <summary>
+        /// Where the canonical sole sits once ground registration has run.
+        /// Null until <see cref="RegisterCanonicalGround"/> is called, in which
+        /// case the rig builds exactly as GAM-6 authored it.
+        /// </summary>
+        public float? CanonicalPlantarPlaneY => _canonicalPlantarPlaneY;
+
+        public float GroundRegistrationOffsetMeters { get; private set; }
+
+        private float? _canonicalPlantarPlaneY;
+
+        /// <summary>
+        /// Initial construction registration, discovered by GAM-11. The rig was
+        /// authored in a frame where the canonical sole sits well above the
+        /// platform, so the athlete began every run in free fall. This moves the
+        /// authored rig once, before any body exists and long before the first
+        /// simulated tick, so that the accepted standing pose actually rests on
+        /// the support surface.
+        ///
+        /// It is not a per-tick correction and it does not change any GAM-10
+        /// geometry: the pose is identical, it is only placed on the ground.
+        /// Call before <see cref="Build"/>.
+        /// </summary>
+        /// <param name="measuredPlantarPlaneY">
+        /// The canonical plantar plane measured from the GAM-10 reference
+        /// calibration, which owns that definition.
+        /// </param>
+        public void RegisterCanonicalGround(float measuredPlantarPlaneY)
+        {
+            if (_physicalRoot != null)
+                throw new InvalidOperationException("Ground registration must happen before the physical rig is built.");
+            if (!float.IsFinite(measuredPlantarPlaneY))
+                throw new ArgumentOutOfRangeException(nameof(measuredPlantarPlaneY));
+
+            float offset = PhysicalAthleteDefinition.PlatformSupportPlaneY - measuredPlantarPlaneY;
+            foreach (Transform root in DistinctAnimatorRoots())
+                root.position += new Vector3(0f, offset, 0f);
+
+            GroundRegistrationOffsetMeters = offset;
+            _canonicalPlantarPlaneY = PhysicalAthleteDefinition.PlatformSupportPlaneY;
+        }
+
+        private Transform[] DistinctAnimatorRoots()
+        {
+            Transform referenceRoot = referenceAnimator.transform.root;
+            Transform visibleRoot = visibleAnimator.transform.root;
+            return referenceRoot == visibleRoot
+                ? new[] { referenceRoot }
+                : new[] { referenceRoot, visibleRoot };
+        }
+
+        private IPhysicalAthleteCommandSource _commandSource;
+
+        public void SetCommandSource(IPhysicalAthleteCommandSource commandSource)
+        {
+            _commandSource = commandSource;
+        }
+
+        /// <summary>
+        /// Primes the standing command before the first local PhysicsScene
+        /// tick. This is initialization, not a second physics callback or
+        /// simulation step; the registered PrePhysicsStep remains the only
+        /// per-tick command/drive path.
+        /// </summary>
+        public void PrimeCommandSource()
+        {
+            if (_commandSource == null || _poweredController == null)
+                return;
+
+            SimulationTime time = new SimulationTime(0ul, 0d);
+            _commandSource.PrepareCommands(
+                PhysicalObservation.Empty(time),
+                time,
+                PlayerIntentFrame.Empty,
+                _poweredController);
+            // The standing target, including its gravity preload, has to be
+            // fully applied on the first simulated tick. Without this the
+            // drives slew toward it while gravity is already acting, which is
+            // the sag transient the preload exists to remove.
+            _poweredController.SnapAppliedTargets();
+            _poweredController.Step(time, PlayerIntentFrame.Empty);
+        }
+
+        public void PrePhysicsStep(SimulationTime time, PlayerIntentFrame intent)
+        {
+            if (_commandSource != null)
+            {
+                PhysicalObservation previousObservation = (foundation != null && foundation.Runtime != null && foundation.Runtime.IsInitialized)
+                    ? foundation.Runtime.PreviousObservation
+                    : default;
+                _commandSource.PrepareCommands(previousObservation, time, intent, _poweredController);
+            }
+
+            _poweredController.Step(time, intent);
+        }
 
         public void SetGameplayPerformanceProfile(bool enabled)
         {
@@ -109,6 +209,11 @@ namespace PowerliftingSimulator.Athlete
 
         private void Start()
         {
+            // A scene that needs ground registration builds the rig itself,
+            // earlier, so the authored placement is corrected before any body
+            // exists. Scenes without one keep the GAM-6 behaviour.
+            if (_physicalRoot != null)
+                return;
             Build();
         }
 
@@ -139,9 +244,9 @@ namespace PowerliftingSimulator.Athlete
                 CreateJoint(recipe);
 
             _poweredController = new PoweredJointController(_joints);
-            foundation.Runtime.RegisterPrePhysicsStep(_poweredController.Step);
+            foundation.Runtime.RegisterPrePhysicsStep(PrePhysicsStep);
 
-            DisableAdjacentSelfCollision();
+            ApplySelfCollisionPolicy();
             MaxInitialNonAdjacentPenetrationMeters = MeasureInitialNonAdjacentPenetration();
             CreatePlatformCollider();
             BuildVisibleFollower();
@@ -174,18 +279,25 @@ namespace PowerliftingSimulator.Athlete
 
         public void StartPoweredNeutral()
         {
+            // Authoring/qualification mode owns the command path until the
+            // gameplay adapter is explicitly restored. This keeps the single
+            // registered pre-physics callback while preventing a gameplay
+            // source from overwriting the requested mutation mode.
+            _commandSource = null;
             ResetToMode(PoweredAthleteMode.PoweredNeutral);
             _status = "POWERED NEUTRAL: finite open-loop joint authority";
         }
 
         public void StartZeroActivation()
         {
+            _commandSource = null;
             ResetToMode(PoweredAthleteMode.ZeroActivation);
             _status = "ZERO ACTIVATION: powered architecture, maximumForce = 0";
         }
 
         public void StartSelectedJointPulse(bool positive)
         {
+            _commandSource = null;
             ResetToMode(PoweredAthleteMode.SelectedJointPulse);
             _poweredController.SetPulse(positive);
             _status = $"JOINT PULSE: {_poweredController.SelectedJointId} {(positive ? "+" : "-")}20 deg";
@@ -258,6 +370,7 @@ namespace PowerliftingSimulator.Athlete
             bodyObject.transform.SetPositionAndRotation(center, rotation);
             Rigidbody body = bodyObject.AddComponent<Rigidbody>();
             body.mass = PhysicalAthleteDefinition.PrototypeBodyMassKg * recipe.MassFraction;
+            _totalMassKg += body.mass;
             body.useGravity = true;
             body.isKinematic = false;
             body.linearDamping = 0.04f;
@@ -271,13 +384,40 @@ namespace PowerliftingSimulator.Athlete
 
             Vector3 dimensions = ResolveDimensions(recipe, measuredLength);
             Collider collider = AddCollider(bodyObject, recipe.Collider, dimensions);
+            if (recipe.Id.EndsWith("_foot", StringComparison.Ordinal))
+            {
+                RegisterFootColliderToPlantarSurface(collider, bodyObject.transform, dimensions);
+                // Foot contact remains ordinary dynamic collision; the grip
+                // material only makes the authored plantar contact less
+                // susceptible to solver jitter during the squat.
+                collider.material = new PhysicsMaterial("GAM11_FootGrip")
+                {
+                    dynamicFriction = 1.00f,
+                    staticFriction = 1.00f,
+                    bounciness = 0f,
+                    frictionCombine = PhysicsMaterialCombine.Maximum,
+                    bounceCombine = PhysicsMaterialCombine.Minimum
+                };
+            }
             body.inertiaTensor = PhysicalAthleteDefinition.BoxInertia(body.mass, dimensions);
             body.inertiaTensorRotation = Quaternion.identity;
+            // The athlete pays for its own drive convergence; the platform and
+            // barbell keep the project default.
+            PhysicalAthleteSolverProfile.Apply(body);
 
             Renderer proxyRenderer = CreateProxyVisual(bodyObject.transform, recipe.Collider, dimensions);
             Transform visibleBone = RequireBone(visibleAnimator, recipe.VisibleBone);
+            Transform referenceBone = RequireBone(referenceAnimator, recipe.VisibleBone);
             Vector3 bodyToVisiblePosition = Quaternion.Inverse(body.rotation) * (visibleBone.position - body.position);
-            var runtime = new SegmentRuntime(recipe, body, collider, proxyRenderer, dimensions, bodyToVisiblePosition);
+            Quaternion bodyToReferenceBoneRotation = Quaternion.Inverse(body.rotation) * referenceBone.rotation;
+            var runtime = new SegmentRuntime(
+                recipe,
+                body,
+                collider,
+                proxyRenderer,
+                dimensions,
+                bodyToVisiblePosition,
+                bodyToReferenceBoneRotation);
             _segments.Add(recipe.Id, runtime);
 
             if (recipe.ParentId == null)
@@ -296,8 +436,9 @@ namespace PowerliftingSimulator.Athlete
             joint.autoConfigureConnectedAnchor = false;
             joint.anchor = child.Body.transform.InverseTransformPoint(anchorWorld);
             joint.connectedAnchor = parent.Body.transform.InverseTransformPoint(anchorWorld);
-            joint.axis = child.Body.transform.InverseTransformDirection(recipe.PrimaryAxisWorld.normalized);
-            Vector3 secondaryWorld = Mathf.Abs(Vector3.Dot(recipe.PrimaryAxisWorld.normalized, Vector3.up)) < 0.9f
+            Vector3 primaryAxisWorld = ResolvePrimaryAxisWorld(recipe, child);
+            joint.axis = child.Body.transform.InverseTransformDirection(primaryAxisWorld);
+            Vector3 secondaryWorld = Mathf.Abs(Vector3.Dot(primaryAxisWorld, Vector3.up)) < 0.9f
                 ? Vector3.up
                 : Vector3.forward;
             joint.secondaryAxis = child.Body.transform.InverseTransformDirection(secondaryWorld);
@@ -307,8 +448,23 @@ namespace PowerliftingSimulator.Athlete
             joint.angularXMotion = ConfigurableJointMotion.Limited;
             joint.angularYMotion = recipe.Kind == PhysicalJointKind.Hinge ? ConfigurableJointMotion.Locked : ConfigurableJointMotion.Limited;
             joint.angularZMotion = recipe.Kind == PhysicalJointKind.Hinge ? ConfigurableJointMotion.Locked : ConfigurableJointMotion.Limited;
-            joint.lowAngularXLimit = Limit(recipe.LowDegrees);
-            joint.highAngularXLimit = Limit(recipe.HighDegrees);
+            // Unity measures its angular X limits in the opposite sense to the
+            // targetRotation a drive is given, and PoweredJointController
+            // already inverts the target on the way in
+            // (ToUnityTargetRotation). Writing the authored range un-inverted
+            // therefore mirrored every asymmetric joint: an elbow authored to
+            // flex 145 deg and hyperextend 5 could only flex 5.
+            //
+            // Measured on an isolated production-parity hinge with no gravity
+            // and no contact, commanded to 118.795 deg: the authored order
+            // settles at 5.000 deg, the inverted order at 118.795 deg, which is
+            // exactly what a fully widened joint reaches
+            // (Artifacts/Measurements/GAM-11/GAM11-elbow-limit-convention.csv).
+            //
+            // The authored anatomical range is unchanged. Only the direction it
+            // is applied in is corrected.
+            joint.lowAngularXLimit = Limit(-recipe.HighDegrees);
+            joint.highAngularXLimit = Limit(-recipe.LowDegrees);
             joint.angularYLimit = Limit(recipe.SecondaryLimitDegrees);
             joint.angularZLimit = Limit(recipe.SecondaryLimitDegrees);
             joint.projectionMode = JointProjectionMode.None;
@@ -317,23 +473,56 @@ namespace PowerliftingSimulator.Athlete
             _joints.Add(new JointRuntime(recipe, joint, anchorWorld));
         }
 
-        private void DisableAdjacentSelfCollision()
+        /// <summary>
+        /// A hinge that declares BindFlexionTransverse gets the anatomical
+        /// flexion axis measured from the reference bind pose instead of an
+        /// authored world direction.
+        ///
+        /// The elbows used world forward, which is a flexion axis for an arm
+        /// held out sideways and a lateral swing axis for the arm hanging at
+        /// the setup pose. Measured at that pose it bought 0.066 of its travel
+        /// as flexion; the bind-derived axis buys 0.91 to 0.95, and it mirrors
+        /// between sides on its own rather than sharing one world direction.
+        /// </summary>
+        private Vector3 ResolvePrimaryAxisWorld(PhysicalJointRecipe recipe, SegmentRuntime child)
         {
-            foreach (JointRuntime joint in _joints)
-            {
-                SegmentRuntime child = _segments[joint.Recipe.ChildId];
-                SegmentRuntime parent = _segments[child.Recipe.ParentId];
-                Physics.IgnoreCollision(parent.Collider, child.Collider, true);
-            }
+            if (recipe.AxisSource == PhysicalJointAxisSource.World)
+                return recipe.PrimaryAxisWorld.normalized;
+
+            Transform proximal = RequireBone(referenceAnimator, child.Recipe.ProximalBone);
+            Transform distal = RequireBone(referenceAnimator, child.Recipe.DistalBone);
+            Transform parentProximal = RequireBone(
+                referenceAnimator, _segments[child.Recipe.ParentId].Recipe.ProximalBone);
+
+            Vector3 parentLongAxis = (proximal.position - parentProximal.position).normalized;
+            Vector3 forward = referenceAnimator.transform.root.forward;
+            Vector3 axis = Vector3.Cross(parentLongAxis, forward);
+            if (axis.sqrMagnitude < 1e-6f)
+                throw new InvalidOperationException(
+                    $"Cannot derive a flexion axis for '{recipe.ChildId}': the parent segment is " +
+                    "parallel to the body forward direction at bind.");
+
+            // Positive command must flex, so the authored low/high limits mean
+            // hyperextension and flexion in that order.
+            Vector3 segmentLongAxis = (distal.position - proximal.position).normalized;
+            Vector3 flexionTravel = Vector3.Cross(axis.normalized, segmentLongAxis);
+            if (Vector3.Dot(flexionTravel, forward) < 0f)
+                axis = -axis;
+            return axis.normalized;
+        }
+
+        private void ApplySelfCollisionPolicy()
+        {
+            PhysicalAthleteSelfCollisionPolicy.Apply(_joints, _segments);
         }
 
         private void CreatePlatformCollider()
         {
             GameObject platform = new GameObject("PhysicalPlatform_GAM6");
             SceneManager.MoveGameObjectToScene(platform, foundation.Runtime.AuthoritativeScene);
-            platform.transform.SetPositionAndRotation(new Vector3(0f, -0.05f, 0f), Quaternion.identity);
+            platform.transform.SetPositionAndRotation(PhysicalAthleteDefinition.PlatformCenterMeters, Quaternion.identity);
             BoxCollider collider = platform.AddComponent<BoxCollider>();
-            collider.size = new Vector3(5f, 0.10f, 5f);
+            collider.size = PhysicalAthleteDefinition.PlatformSizeMeters;
             PhysicsMaterial material = new PhysicsMaterial("GAM6_PlatformContact")
             {
                 dynamicFriction = 0.75f,
@@ -388,6 +577,9 @@ namespace PowerliftingSimulator.Athlete
                         string.Equals(second.Recipe.ParentId, first.Recipe.Id, StringComparison.Ordinal))
                         continue;
 
+                    if (Physics.GetIgnoreCollision(first.Collider, second.Collider))
+                        continue;
+
                     if (Physics.ComputePenetration(
                         first.Collider, first.Collider.transform.position, first.Collider.transform.rotation,
                         second.Collider, second.Collider.transform.position, second.Collider.transform.rotation,
@@ -396,6 +588,33 @@ namespace PowerliftingSimulator.Athlete
                 }
             }
             return maximum;
+        }
+
+        /// <summary>
+        /// Seats the foot box on the canonical sole. GAM-6 centred the box on
+        /// the foot body origin, which left its underside about 4.7 cm below
+        /// the plantar anchor the accepted reference defines, so plantar
+        /// contact happened somewhere other than where the model says the sole
+        /// is. Only the collider centre moves; size, mass, centre of mass and
+        /// inertia tensor are all authored explicitly elsewhere and are
+        /// untouched.
+        /// </summary>
+        private void RegisterFootColliderToPlantarSurface(Collider collider, Transform bodyTransform, Vector3 dimensions)
+        {
+            if (!_canonicalPlantarPlaneY.HasValue || !(collider is BoxCollider box))
+                return;
+
+            // ResolveBodyRotation gives feet an identity rotation, so the box's
+            // local Y is world Y and a scalar centre offset is well defined.
+            if (Quaternion.Angle(bodyTransform.rotation, Quaternion.identity) > 0.01f)
+            {
+                throw new InvalidOperationException(
+                    "Foot plantar registration assumes an axis-aligned neutral foot; the foot body is rotated.");
+            }
+
+            float soleWithoutOffset = bodyTransform.position.y - dimensions.y * 0.5f;
+            float correction = _canonicalPlantarPlaneY.Value - soleWithoutOffset;
+            box.center = new Vector3(box.center.x, box.center.y + correction, box.center.z);
         }
 
         private static Collider AddCollider(GameObject owner, PhysicalColliderKind kind, Vector3 dimensions)
@@ -823,7 +1042,14 @@ namespace PowerliftingSimulator.Athlete
 
         public sealed class SegmentRuntime
         {
-            public SegmentRuntime(PhysicalSegmentRecipe recipe, Rigidbody body, Collider collider, Renderer proxyRenderer, Vector3 dimensionsMeters, Vector3 bodyToVisiblePosition)
+            public SegmentRuntime(
+                PhysicalSegmentRecipe recipe,
+                Rigidbody body,
+                Collider collider,
+                Renderer proxyRenderer,
+                Vector3 dimensionsMeters,
+                Vector3 bodyToVisiblePosition,
+                Quaternion bodyToReferenceBoneRotation)
             {
                 Recipe = recipe;
                 Body = body;
@@ -831,6 +1057,7 @@ namespace PowerliftingSimulator.Athlete
                 ProxyRenderer = proxyRenderer;
                 DimensionsMeters = dimensionsMeters;
                 BodyToVisiblePosition = bodyToVisiblePosition;
+                BodyToReferenceBoneRotation = bodyToReferenceBoneRotation;
             }
             public PhysicalSegmentRecipe Recipe { get; }
             public Rigidbody Body { get; }
@@ -838,6 +1065,7 @@ namespace PowerliftingSimulator.Athlete
             public Renderer ProxyRenderer { get; }
             public Vector3 DimensionsMeters { get; }
             public Vector3 BodyToVisiblePosition { get; }
+            public Quaternion BodyToReferenceBoneRotation { get; }
         }
 
         public sealed class JointRuntime

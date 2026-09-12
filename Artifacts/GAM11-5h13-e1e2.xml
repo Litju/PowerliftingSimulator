@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="2" result="Passed" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-09 07:32:49Z" end-time="2026-09-09 07:33:02Z" duration="13.0481486">
+  <test-suite type="TestSuite" id="1193" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="145" result="Passed" start-time="2026-09-09 07:32:49Z" end-time="2026-09-09 07:33:02Z" duration="13.048149" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1187" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="C:/Users/Educacion/Desktop/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="145" result="Passed" start-time="2026-09-09 07:32:49Z" end-time="2026-09-09 07:33:02Z" duration="13.011648" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="5644" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1188" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="145" result="Passed" start-time="2026-09-09 07:32:49Z" end-time="2026-09-09 07:33:02Z" duration="13.004391" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1189" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="145" result="Passed" start-time="2026-09-09 07:32:49Z" end-time="2026-09-09 07:33:02Z" duration="12.989919" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1146" name="PostureGuardCandidateTests" fullname="PowerliftingSimulator.Tests.PostureGuardCandidateTests" classname="PowerliftingSimulator.Tests.PostureGuardCandidateTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-09 07:32:49Z" end-time="2026-09-09 07:33:02Z" duration="12.974987" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1147" name="E1_GUARD_CANDIDATE_STATIC_DEEP_PHASE" fullname="PowerliftingSimulator.Tests.PostureGuardCandidateTests.E1_GUARD_CANDIDATE_STATIC_DEEP_PHASE" methodname="E1_GUARD_CANDIDATE_STATIC_DEEP_PHASE" classname="PowerliftingSimulator.Tests.PostureGuardCandidateTests" runstate="Runnable" seed="1322353301" result="Passed" start-time="2026-09-09 07:32:49Z" end-time="2026-09-09 07:32:59Z" duration="9.560915" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[GAM-11 PHASE 5H13 E1 LIMIT GUARD CANDIDATES AT STATIC DEEP PHASE
+Fresh reset per sample, phase ramped at the production rate then held.
+Verdict over the last 60 ticks of a 250 tick hold.
+
+  G0  absolute occupancy of the authored range (current production)
+  G1  limit term disabled
+  G2  unexpected occupancy over the reference's remaining margin
+  +raw   proximal strategy triggered from the pre-guard ankle demand
+  +gain  phase-local target-to-COP gain, held below s_q 0.55
+
+load  config        s_q   guardScale  rawAnkDeg  appliedDeg  hipBlend  comAP     |vCOM|   contacts  held   reason
+   0  G0            0.55      0.5582       7.59        4.24     0.000   -0.0296   0.0005         8  True   HELD
+   0  G0            0.80      0.1662     -17.46       -2.90     0.000    0.7702   0.0084         5  False  COM_PAST_FRONT
+   0  G0            1.00      0.0000      33.54        0.00     0.000   -0.2092   0.2009         6  False  COM_PAST_REAR
+   0  G1            0.55      0.0000     -11.68        0.00     0.000    1.0905   0.0000         0  False  LOST_PLANTAR_CONTACT
+   0  G1            0.80      0.9588       3.67        3.52     0.000   -0.0313   0.0012         8  True   HELD
+   0  G1            1.00      0.9621       9.70        5.64     0.000   -0.0273   0.0005         8  True   HELD
+   0  G2            0.55      0.8043       5.26        4.15     0.000   -0.0308   0.0005         8  True   HELD
+   0  G2            0.80      0.7779      -2.20        1.25     0.000   -0.0310   0.0006         8  True   HELD
+   0  G2            1.00      0.4081      11.10        4.53     0.000   -0.0261   0.0002         8  True   HELD
+   0  G2+raw        0.55      0.8044      -1.54        1.85     0.000   -0.0309   0.0005         8  True   HELD
+   0  G2+raw        0.80      0.7778       4.61        3.53     0.000   -0.0312   0.0002         8  True   HELD
+   0  G2+raw        1.00      0.4081      11.11        4.53     0.000   -0.0261   0.0002         8  True   HELD
+   0  G2+raw+gain   0.55      0.8030       5.41        4.34     0.000   -0.0281   0.0004         8  True   HELD
+   0  G2+raw+gain   0.80      0.7765       1.22        1.39     0.000   -0.0282   0.0004         8  True   HELD
+   0  G2+raw+gain   1.00      0.3946       9.27        3.66     0.000   -0.0166   0.0009         8  True   HELD
+  25  G0            0.55      0.5039       3.07        2.64     0.000   -0.0441   0.0020         8  True   HELD
+  25  G0            0.80      0.1230      81.37        4.10     0.000    0.8219   0.0065         8  False  COM_PAST_FRONT
+  25  G0            1.00      0.0000      15.78        0.00     0.000   -1.2546   0.0000         0  False  LOST_PLANTAR_CONTACT
+  25  G1            0.55      1.0000      -1.81        2.44     0.000   -0.0465   0.0020         8  True   HELD
+  25  G1            0.80      0.9591       8.51        6.64     0.000   -0.0437   0.0028         8  True   HELD
+  25  G1            1.00      1.0000       0.33        3.30     0.000   -0.0455   0.0006         8  True   HELD
+  25  G2            0.55      0.7213       6.71        4.79     0.000   -0.0457   0.0020         8  True   HELD
+  25  G2            0.80      0.6868       1.14        3.05     0.000   -0.0443   0.0030         8  True   HELD
+  25  G2            1.00      0.3966       8.85        3.63     0.000   -0.0396   0.0007         8  True   HELD
+  25  G2+raw        0.55      0.7213      -0.10        2.50     0.000   -0.0455   0.0023         8  True   HELD
+  25  G2+raw        0.80      0.6869       1.16        3.03     0.000   -0.0448   0.0021         8  True   HELD
+  25  G2+raw        1.00      0.3982      14.92        5.88     0.964   -0.0398   0.0004         8  True   HELD
+  25  G2+raw+gain   0.55      0.7183       3.64        2.85     0.000   -0.0420   0.0023         8  True   HELD
+  25  G2+raw+gain   0.80      0.6826       5.00        3.48     0.000   -0.0396   0.0022         8  True   HELD
+  25  G2+raw+gain   1.00      0.4024      13.09        5.27     0.152   -0.0286   0.0007         8  True   HELD
+
+G0           samples  6   minimum guard scale 0.0000   samples with the ankle fully withdrawn 2
+G1           samples  6   minimum guard scale 0.0000   samples with the ankle fully withdrawn 1
+G2           samples  6   minimum guard scale 0.3966   samples with the ankle fully withdrawn 0
+G2+raw       samples  6   minimum guard scale 0.3982   samples with the ankle fully withdrawn 0
+G2+raw+gain  samples  6   minimum guard scale 0.3946   samples with the ankle fully withdrawn 0
+
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1148" name="E2_GUARD_CANDIDATE_DYNAMIC_DESCENT" fullname="PowerliftingSimulator.Tests.PostureGuardCandidateTests.E2_GUARD_CANDIDATE_DYNAMIC_DESCENT" methodname="E2_GUARD_CANDIDATE_DYNAMIC_DESCENT" classname="PowerliftingSimulator.Tests.PostureGuardCandidateTests" runstate="Runnable" seed="1503706710" result="Passed" start-time="2026-09-09 07:32:59Z" end-time="2026-09-09 07:33:02Z" duration="3.352550" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[GAM-11 PHASE 5H13 E2 LIMIT GUARD CANDIDATES ON THE DYNAMIC DESCENT
+Identical descent at the production phase rate. Only the guard semantics,
+the proximal trigger and the target-to-COP gain differ between rows.
+
+load  config        deepestSq  finalPelvisY  minGuardScale  maxRawAuth  maxHipBlend  firstFrontCross  firstComOut  lostContact
+   0  G0                 1.00        0.4628         0.0000       9.627        0.199              367          392  True
+   0  G1                 1.00        0.4252         0.0268       1.101        0.000            never        never  False
+   0  G2                 1.00        0.4615         0.0313       3.469        1.000            never        never  False
+   0  G2+raw             1.00        0.4615         0.0198       3.306        1.000            never        never  False
+   0  G2+raw+gain        1.00        0.4635         0.0210       2.268        1.000            never        never  False
+  25  G0                 1.00        0.4629         0.0000      12.040        1.000              332          351  False
+  25  G1                 1.00        0.0900         0.0000       2.539        1.000              183           40  True
+  25  G2                 1.00        0.4408         0.0000      11.282        1.000            never        never  False
+  25  G2+raw             1.00        0.4409         0.0000       8.914        1.000            never        never  False
+  25  G2+raw+gain        1.00        0.4435         0.0000       5.079        1.000            never        never  False
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+Saving results to: C:/Users/Educacion/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

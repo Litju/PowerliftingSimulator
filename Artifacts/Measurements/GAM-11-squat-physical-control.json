@@ -1,0 +1,186 @@
+{
+  "mission": "POWERLIFTING_SIMULATOR_GAM11_FINISH_PHYSICAL_SQUAT",
+  "linearIssue": "GAM-11",
+  "implementationBase": "9cef01d078b64f03f820fae3ef50f61a1f9726da",
+  "implementationCommit": "99cb3ef",
+  "unityVersion": "6000.3.22f1",
+  "runtimeScene": "Assets/Scenes/Prototype/SquatPhysicalPrototype.unity",
+  "runtimeSceneSaved": true,
+  "runtimeWired": true,
+  "physics": {
+    "fixedDeltaSeconds": 0.01,
+    "tickRateHz": 100,
+    "isolatedPhysicsScene": true,
+    "prePhysicsCallbackCount": 1,
+    "prePhysicsWriter": "PhysicalAthleteRig.PrePhysicsStep",
+    "commandSource": "SquatPhysicalAdapter",
+    "driveWriter": "PoweredJointController",
+    "observationFlow": "previous PhysicalObservation -> PlayerIntentFrame -> adapter target commands -> finite ConfigurableJoint drives -> PhysicsScene.Simulate -> new PhysicalObservation",
+    "physicalAuthority": "dynamic Rigidbody and finite joint-drive state; no transform pose authority"
+  },
+  "dynamicBodies": {
+    "athleteSegments": 16,
+    "athleteJoints": 15,
+    "barbellRigidbodies": 1,
+    "activeDynamicBodiesAt0Kg": 16,
+    "activeDynamicBodiesAt25Kg": 17,
+    "activeDynamicBodiesAt105Kg": 17,
+    "pelvisKinematic": false,
+    "feetPinned": false,
+    "barKinematic": false,
+    "barGravity": true
+  },
+  "loadsKg": [
+    0,
+    25,
+    105
+  ],
+  "controlCalibration": {
+    "phaseRatePerSecond": 0.3,
+    "referenceTargetSamples": 101,
+    "maxApBalanceCorrectionDegrees": 10.0,
+    "maxMlBalanceCorrectionDegrees": 2.0,
+    "maxPlayerBalanceBiasMeters": 0.025,
+    "apKp": 0.8,
+    "apKd": 0.08,
+    "mlKp": 0.65,
+    "mlKd": 0.05,
+    "trunkKp": 1.5,
+    "ankleTargetBalanceGain": 3.0,
+    "capacitySource": "GAM-7 family profiles with finite command-side load scaling",
+    "physicalPoseAuthority": "finite ConfigurableJoint drives only"
+  },
+  "jointTargetRateAndCapacity": {
+    "families": {
+      "ankle": { "baseCapacityNm": 180, "maxTargetRateRadS": 2.0 },
+      "knee": { "baseCapacityNm": 300, "maxTargetRateRadS": 2.5 },
+      "hip": { "baseCapacityNm": 360, "maxTargetRateRadS": 2.2 },
+      "trunk": { "baseCapacityNm": 260, "maxTargetRateRadS": 1.8 }
+    },
+    "commandCapacityMultipliers": {
+      "ankle": 2.5,
+      "knee": 1.8,
+      "hip": 1.5,
+      "trunk": 1.5,
+      "presentationArmChain": 1.0
+    },
+    "loadScaleFormula": "max(3.8, (athleteMassKg + activeBarMassKg) / athleteMassKg * 3.8) * (1 + 0.35 * brace01)",
+    "targetAngularVelocity": "zero finite target velocity; drive damping resists measured joint motion"
+  },
+  "saddle": {
+    "type": "ConfigurableJoint_UpperBack_Thorax_V1",
+    "projectionMode": "None",
+    "linearMotion": "Limited XYZ",
+    "linearLimitMeters": 0.05,
+    "linearSpring": 50000,
+    "linearDamper": 3000,
+    "linearMaxForce": 60000,
+    "angularMotion": "Limited X/Y/Z",
+    "angularSpring": 1200,
+    "angularDamper": 100,
+    "angularMaxForce": 1200,
+    "breakForce": 60000,
+    "breakTorque": 15000,
+    "thoraxLocalAnchor": { "x": 0.0, "y": 0.08, "z": -0.115 },
+    "barLocalAnchor": { "x": 0.0, "y": 0.0, "z": 0.0 },
+    "maxPlausibleSeparationMeters": 0.12,
+    "barCoupling": "one finite joint to thorax; no parenting; no hand constraints"
+  },
+  "barDynamics": {
+    "singleAuthoritativeRigidbody": true,
+    "gravityEnabled": true,
+    "isKinematic": false,
+    "spawnPositionMeters": { "x": 0.0, "y": 1.48, "z": -0.115 },
+    "barbellSolverIterations": 12,
+    "barbellSolverVelocityIterations": 6,
+    "loadSwitches": [
+      { "key": "1", "totalMassKg": 0, "barActive": false },
+      { "key": "2", "totalMassKg": 25, "barActive": true },
+      { "key": "3", "totalMassKg": 105, "barActive": true }
+    ]
+  },
+  "supportAndTelemetry": {
+    "supportObject": "PhysicalPlatform_GAM6",
+    "supportDimensionsMeters": { "x": 5.0, "y": 0.1, "z": 5.0 },
+    "supportTopY": 0.0,
+    "footContactMaterial": "GAM11_FootGrip dynamic/static friction 1.0, maximum combine",
+    "slipMeasurement": "tangential velocity at actual platform contact point, not foot-body center displacement",
+    "contactSolverNoiseFloorMps": 0.01,
+    "comSource": "previous post-physics observation, including active bar mass",
+    "supportModel": "bilateral physical foot support center plus bounded AP/ML target offsets"
+  },
+  "productionPlayModeQualification": {
+    "resultFile": "Artifacts/GAM11-playmode-final.xml",
+    "overall": "3 passed, 1 honest physical failure",
+    "g1Unloaded": {
+      "result": "passed",
+      "path": "DESCENT -> BOTTOM -> ASCENT -> LOCKOUT",
+      "standingPelvisY": 1.020,
+      "bottomPelvisY": 0.529,
+      "finalPelvisY": 1.020,
+      "supportSlipGate": "passed below 0.08 m accumulated per foot"
+    },
+    "g2Bar25Kg": {
+      "result": "passed",
+      "path": "DESCENT -> BOTTOM -> ASCENT -> LOCKOUT",
+      "standingBarY": 1.443,
+      "bottomBarY": 0.970,
+      "finalBarY": 1.422,
+      "finalBarHeightDifferenceMeters": 0.021,
+      "maximumLoggedSaddleSeparationMeters": 0.012
+    },
+    "g3Bar105Kg": {
+      "result": "failed_by_finite_physics",
+      "path": "DESCENT -> BOTTOM -> ASCENT -> LOCKOUT state while the coupled body remains collapsed",
+      "standingBarY": 1.421,
+      "finalBarY": 0.223,
+      "barHeightLossMeters": 1.198,
+      "bottomPelvisY": 0.147,
+      "finalPelvisY": 0.367,
+      "maximumObservedHudDriveSaturation": 1.39,
+      "failureReason": "COM_OUTSIDE_SUPPORT",
+      "interpretation": "real dynamic athlete/bar deviation under finite authority; no capacity inflation or scripted recovery"
+    },
+    "g4MutationGates": "passed"
+  },
+  "visualEvidence": {
+    "directory": "Artifacts/Evidence/GAM-11",
+    "files": [
+      "GAM-11-unloaded-standing.png",
+      "GAM-11-unloaded-bottom.png",
+      "GAM-11-unloaded-ascent.png",
+      "GAM-11-25kg-standing.png",
+      "GAM-11-25kg-bottom.png",
+      "GAM-11-25kg-ascent.png",
+      "GAM-11-105kg-standing.png",
+      "GAM-11-105kg-bottom.png",
+      "GAM-11-105kg-ascent.png"
+    ],
+    "observations": "Editor captures show the visible physical follower, planted unloaded/25 kg standing and bottom states, finite saddle error and bar micro-motion, plus the actual 105 kg collapse/deviation."
+  },
+  "forbiddenAuthorityAudit": {
+    "balanceAddForce": false,
+    "balanceAddTorque": false,
+    "stabilizationVelocityWrite": false,
+    "transformDrivenSquat": false,
+    "kinematicPelvis": false,
+    "footPins": false,
+    "barParenting": false,
+    "handMechanicalConstraints": false,
+    "infiniteSaddle": false,
+    "secondPrePhysicsWriter": false
+  },
+  "masterSpec": [
+    "PSMS-03",
+    "PSMS-04",
+    "PSMS-05",
+    "PSMS-SQ-10",
+    "PSMS-SQ-11",
+    "PSMS-SQ-12",
+    "PSMS-SQ-13",
+    "PSMS-SQ-14",
+    "PSMS-SQ-18"
+  ],
+  "outcome": "OWNER_VISUAL_REVIEW",
+  "sourceClass": "ENGINE_RUNTIME_OBSERVATION_AND_GAME_CALIBRATION"
+}

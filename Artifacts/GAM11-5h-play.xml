@@ -1,0 +1,1179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="55" result="Failed(Child)" total="55" passed="46" failed="9" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-06 05:02:44Z" end-time="2026-09-06 05:03:25Z" duration="40.6326651">
+  <test-suite type="TestSuite" id="1075" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="55" result="Failed" site="Child" start-time="2026-09-06 05:02:44Z" end-time="2026-09-06 05:03:25Z" duration="40.632665" total="55" passed="46" failed="9" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1069" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="C:/Users/Educacion/Desktop/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="55" result="Failed" site="Child" start-time="2026-09-06 05:02:44Z" end-time="2026-09-06 05:03:25Z" duration="40.615331" total="55" passed="46" failed="9" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="17668" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1070" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="55" result="Failed" site="Child" start-time="2026-09-06 05:02:44Z" end-time="2026-09-06 05:03:25Z" duration="40.612619" total="55" passed="46" failed="9" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1071" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="55" result="Failed" site="Child" start-time="2026-09-06 05:02:44Z" end-time="2026-09-06 05:03:25Z" duration="40.610630" total="55" passed="46" failed="9" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestFixture" id="1001" name="GAM10SquatReferencePreviewQualificationTests" fullname="PowerliftingSimulator.Tests.GAM10SquatReferencePreviewQualificationTests" classname="PowerliftingSimulator.Tests.GAM10SquatReferencePreviewQualificationTests" runstate="Runnable" testcasecount="4" result="Failed" site="Child" start-time="2026-09-06 05:02:44Z" end-time="2026-09-06 05:02:48Z" duration="3.746758" total="4" passed="3" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1002" name="GAM10_CLOSED_CHAIN_REFERENCE_VISUAL_QUALIFICATION" fullname="PowerliftingSimulator.Tests.GAM10SquatReferencePreviewQualificationTests.GAM10_CLOSED_CHAIN_REFERENCE_VISUAL_QUALIFICATION" methodname="GAM10_CLOSED_CHAIN_REFERENCE_VISUAL_QUALIFICATION" classname="PowerliftingSimulator.Tests.GAM10SquatReferencePreviewQualificationTests" runstate="Runnable" seed="176688409" result="Failed" start-time="2026-09-06 05:02:44Z" end-time="2026-09-06 05:02:45Z" duration="1.212544" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  GAM-10 visual evidence requires a graphics device.
+  Expected: not equal to Null
+  But was:  Null
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.Tests.GAM10SquatReferencePreviewQualificationTests+<GAM10_CLOSED_CHAIN_REFERENCE_VISUAL_QUALIFICATION>d__4.MoveNext () [0x0006c] in C:\Users\Educacion\Desktop\Projects\PowerliftingSimulator\Assets\Tests\PlayMode\GAM10SquatReferencePreviewQualificationTests.cs:27
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+            </test-case>
+            <test-case id="1003" name="GAM10_REFERENCE_TICK_IS_FIXED_AND_REFERENCE_STATE_IS_SAFE" fullname="PowerliftingSimulator.Tests.GAM10SquatReferencePreviewQualificationTests.GAM10_REFERENCE_TICK_IS_FIXED_AND_REFERENCE_STATE_IS_SAFE" methodname="GAM10_REFERENCE_TICK_IS_FIXED_AND_REFERENCE_STATE_IS_SAFE" classname="PowerliftingSimulator.Tests.GAM10SquatReferencePreviewQualificationTests" runstate="Runnable" seed="930174840" result="Passed" start-time="2026-09-06 05:02:45Z" end-time="2026-09-06 05:02:46Z" duration="0.984555" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1004" name="GAM10_RENDER_RATE_INDEPENDENCE_AND_ROOT_AUTHORITY_GATES_PASS" fullname="PowerliftingSimulator.Tests.GAM10SquatReferencePreviewQualificationTests.GAM10_RENDER_RATE_INDEPENDENCE_AND_ROOT_AUTHORITY_GATES_PASS" methodname="GAM10_RENDER_RATE_INDEPENDENCE_AND_ROOT_AUTHORITY_GATES_PASS" classname="PowerliftingSimulator.Tests.GAM10SquatReferencePreviewQualificationTests" runstate="Runnable" seed="321588548" result="Passed" start-time="2026-09-06 05:02:46Z" end-time="2026-09-06 05:02:47Z" duration="0.787123" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1005" name="GAM10_SOURCE_GATES_REJECT_PHYSICAL_AND_BOUNDS_AUTHORITY" fullname="PowerliftingSimulator.Tests.GAM10SquatReferencePreviewQualificationTests.GAM10_SOURCE_GATES_REJECT_PHYSICAL_AND_BOUNDS_AUTHORITY" methodname="GAM10_SOURCE_GATES_REJECT_PHYSICAL_AND_BOUNDS_AUTHORITY" classname="PowerliftingSimulator.Tests.GAM10SquatReferencePreviewQualificationTests" runstate="Runnable" seed="2117982455" result="Passed" start-time="2026-09-06 05:02:47Z" end-time="2026-09-06 05:02:48Z" duration="0.717929" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1006" name="GAM9SharedPhysicalSubstrateQualificationTests" fullname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests" classname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests" runstate="Runnable" testcasecount="5" result="Failed" site="Child" start-time="2026-09-06 05:02:48Z" end-time="2026-09-06 05:02:53Z" duration="5.516098" total="5" passed="4" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1008" name="G1_FIXED_TICK_RESET_REPEATABILITY" fullname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests.G1_FIXED_TICK_RESET_REPEATABILITY" methodname="G1_FIXED_TICK_RESET_REPEATABILITY" classname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests" runstate="Runnable" seed="898346740" result="Passed" start-time="2026-09-06 05:02:48Z" end-time="2026-09-06 05:02:49Z" duration="1.096027" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1009" name="G1_MUTATION_GATES_REJECT_FORBIDDEN_AUTHORITY" fullname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests.G1_MUTATION_GATES_REJECT_FORBIDDEN_AUTHORITY" methodname="G1_MUTATION_GATES_REJECT_FORBIDDEN_AUTHORITY" classname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests" runstate="Runnable" seed="29576940" result="Passed" start-time="2026-09-06 05:02:49Z" end-time="2026-09-06 05:02:50Z" duration="0.948932" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1011" name="G1_OBSERVATION_TRACE_STORAGE_IMMUTABILITY_AND_STATIC_AUDIT" fullname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests.G1_OBSERVATION_TRACE_STORAGE_IMMUTABILITY_AND_STATIC_AUDIT" methodname="G1_OBSERVATION_TRACE_STORAGE_IMMUTABILITY_AND_STATIC_AUDIT" classname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests" runstate="Runnable" seed="1021344814" result="Passed" start-time="2026-09-06 05:02:50Z" end-time="2026-09-06 05:02:51Z" duration="0.922097" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1010" name="G1_PERFORMANCE_BOUNDED_SOAK_AND_CATCH_UP" fullname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests.G1_PERFORMANCE_BOUNDED_SOAK_AND_CATCH_UP" methodname="G1_PERFORMANCE_BOUNDED_SOAK_AND_CATCH_UP" classname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests" runstate="Runnable" seed="1146349475" result="Passed" start-time="2026-09-06 05:02:51Z" end-time="2026-09-06 05:02:53Z" duration="1.828363" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[GAM9_PERFORMANCE hardBudgetsPass=True failures= editorAllocationClean=False editorWithinBudget=physics:True,foundationStep:True,catchUp:True,controller:True physicsP95=0.449ms foundationStepP95=0.461ms catchUpP95=1.603ms controllerP95=0.065ms gcOffMax=1800B gcTraceMax=1800B runtimeMemory=253197662 traceReserved=6336000
+]]></output>
+            </test-case>
+            <test-case id="1007" name="G1_PHYSICAL_SUBSTRATE_QUALIFICATION_EVIDENCE" fullname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests.G1_PHYSICAL_SUBSTRATE_QUALIFICATION_EVIDENCE" methodname="G1_PHYSICAL_SUBSTRATE_QUALIFICATION_EVIDENCE" classname="PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests" runstate="Runnable" seed="1741818832" result="Failed" start-time="2026-09-06 05:02:53Z" end-time="2026-09-06 05:02:53Z" duration="0.715476" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  G1 visual evidence requires a graphics device.
+  Expected: not equal to Null
+  But was:  Null
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.Tests.GAM9SharedPhysicalSubstrateQualificationTests+<G1_PHYSICAL_SUBSTRATE_QUALIFICATION_EVIDENCE>d__6.MoveNext () [0x0005f] in C:\Users\Educacion\Desktop\Projects\PowerliftingSimulator\Assets\Tests\PlayMode\GAM9SharedPhysicalSubstrateQualificationTests.cs:37
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1012" name="PhysicalAnkleCopAuthorityTests" fullname="PowerliftingSimulator.Tests.PhysicalAnkleCopAuthorityTests" classname="PowerliftingSimulator.Tests.PhysicalAnkleCopAuthorityTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-06 05:02:53Z" end-time="2026-09-06 05:02:54Z" duration="1.226224" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1013" name="A1_ANKLE_TARGET_OFFSET_TO_COP_AUTHORITY" fullname="PowerliftingSimulator.Tests.PhysicalAnkleCopAuthorityTests.A1_ANKLE_TARGET_OFFSET_TO_COP_AUTHORITY" methodname="A1_ANKLE_TARGET_OFFSET_TO_COP_AUTHORITY" classname="PowerliftingSimulator.Tests.PhysicalAnkleCopAuthorityTests" runstate="Runnable" seed="1117320255" result="Passed" start-time="2026-09-06 05:02:53Z" end-time="2026-09-06 05:02:54Z" duration="1.224557" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[A1 ANKLE COP AUTHORITY] supportAp=[-0.1548,0.1353] bestCopAp=0.2552 atOffset=26.0deg reachableFraction=1.413
+commanded_offset_deg,cop_ap,com_ap,cop_minus_com,ankle_actual_deg,foot_pitch_deg,contacts
+0.0,-0.0483,0.0363,-0.0846,-9.48,0.18,8
+3.0,0.0093,0.1530,-0.1437,-19.47,0.23,8
+6.0,0.1049,0.3617,-0.2568,-34.63,0.34,8
+9.0,0.1322,0.7430,-0.6108,-41.81,-20.26,8
+12.0,0.2551,1.3342,-1.0792,16.17,-68.61,8
+15.0,0.2552,1.3455,-1.0903,18.80,-68.81,8
+18.0,0.2552,1.3455,-1.0902,18.99,-68.74,8
+22.0,0.2552,1.3456,-1.0904,19.10,-68.63,8
+26.0,0.2552,1.3458,-1.0905,19.21,-68.53,8
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1014" name="PhysicalAthletePlayModeTests" fullname="PowerliftingSimulator.Tests.PhysicalAthletePlayModeTests" classname="PowerliftingSimulator.Tests.PhysicalAthletePlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-06 05:02:54Z" end-time="2026-09-06 05:02:59Z" duration="4.217348" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1015" name="PASSIVE_PHYSICAL_ATHLETE_FALLS_COHERENTLY_AND_RESETS" fullname="PowerliftingSimulator.Tests.PhysicalAthletePlayModeTests.PASSIVE_PHYSICAL_ATHLETE_FALLS_COHERENTLY_AND_RESETS" methodname="PASSIVE_PHYSICAL_ATHLETE_FALLS_COHERENTLY_AND_RESETS" classname="PowerliftingSimulator.Tests.PhysicalAthletePlayModeTests" runstate="Runnable" seed="798973878" result="Passed" start-time="2026-09-06 05:02:54Z" end-time="2026-09-06 05:02:59Z" duration="4.214829" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1016" name="PhysicalBarbellPlayModeTests" fullname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests" classname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-06 05:02:59Z" end-time="2026-09-06 05:03:02Z" duration="2.840739" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1018" name="GAM8_COLLAR_LAYOUT_DRIVES_PRESENTATION_AND_CHILD_COLLIDERS" fullname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests.GAM8_COLLAR_LAYOUT_DRIVES_PRESENTATION_AND_CHILD_COLLIDERS" methodname="GAM8_COLLAR_LAYOUT_DRIVES_PRESENTATION_AND_CHILD_COLLIDERS" classname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests" runstate="Runnable" seed="1166499499" result="Passed" start-time="2026-09-06 05:02:59Z" end-time="2026-09-06 05:03:00Z" duration="0.869118" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1017" name="GAM8_SCENE_HAS_ONE_DYNAMIC_BAR_AND_COMPLETE_OBSERVATION" fullname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests.GAM8_SCENE_HAS_ONE_DYNAMIC_BAR_AND_COMPLETE_OBSERVATION" methodname="GAM8_SCENE_HAS_ONE_DYNAMIC_BAR_AND_COMPLETE_OBSERVATION" classname="PowerliftingSimulator.Tests.PhysicalBarbellPlayModeTests" runstate="Runnable" seed="663310249" result="Passed" start-time="2026-09-06 05:03:00Z" end-time="2026-09-06 05:03:02Z" duration="1.968930" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1019" name="PhysicalSquatBalanceObservationTests" fullname="PowerliftingSimulator.Tests.PhysicalSquatBalanceObservationTests" classname="PowerliftingSimulator.Tests.PhysicalSquatBalanceObservationTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-09-06 05:03:02Z" end-time="2026-09-06 05:03:05Z" duration="3.266516" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1020" name="B1_SUPPORT_POLYGON_COMES_FROM_PLANTAR_CONTACTS" fullname="PowerliftingSimulator.Tests.PhysicalSquatBalanceObservationTests.B1_SUPPORT_POLYGON_COMES_FROM_PLANTAR_CONTACTS" methodname="B1_SUPPORT_POLYGON_COMES_FROM_PLANTAR_CONTACTS" classname="PowerliftingSimulator.Tests.PhysicalSquatBalanceObservationTests" runstate="Runnable" seed="1364338195" result="Passed" start-time="2026-09-06 05:03:02Z" end-time="2026-09-06 05:03:02Z" duration="0.731429" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[B1 SUPPORT] contacts=8 ap=[-0.1549,0.1352] len=0.2901 ml=[-0.1794,0.1792] width=0.3586 planeY=0.0000 cop=(-0.0042, 0.0000, -0.0179) impulse=11.3234
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1021" name="B2_COP_ESTIMATE_LIES_INSIDE_THE_SUPPORT_POLYGON" fullname="PowerliftingSimulator.Tests.PhysicalSquatBalanceObservationTests.B2_COP_ESTIMATE_LIES_INSIDE_THE_SUPPORT_POLYGON" methodname="B2_COP_ESTIMATE_LIES_INSIDE_THE_SUPPORT_POLYGON" classname="PowerliftingSimulator.Tests.PhysicalSquatBalanceObservationTests" runstate="Runnable" seed="1911316551" result="Passed" start-time="2026-09-06 05:03:02Z" end-time="2026-09-06 05:03:03Z" duration="0.777780" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1022" name="B3_REDUCED_ORDER_STATE_IS_SELF_CONSISTENT" fullname="PowerliftingSimulator.Tests.PhysicalSquatBalanceObservationTests.B3_REDUCED_ORDER_STATE_IS_SELF_CONSISTENT" methodname="B3_REDUCED_ORDER_STATE_IS_SELF_CONSISTENT" classname="PowerliftingSimulator.Tests.PhysicalSquatBalanceObservationTests" runstate="Runnable" seed="1566356722" result="Passed" start-time="2026-09-06 05:03:03Z" end-time="2026-09-06 05:03:04Z" duration="0.821375" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[B3 REDUCED ORDER] mass=100.00 com=(0.0019,1.0920,-0.0143) comVel=(0.0119,-0.1749,0.0763) h=1.0920 omega=2.9973 captureAp=0.0111
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1023" name="B4_STATIC_FEASIBILITY_NO_BAR_NO_BALANCE" fullname="PowerliftingSimulator.Tests.PhysicalSquatBalanceObservationTests.B4_STATIC_FEASIBILITY_NO_BAR_NO_BALANCE" methodname="B4_STATIC_FEASIBILITY_NO_BAR_NO_BALANCE" classname="PowerliftingSimulator.Tests.PhysicalSquatBalanceObservationTests" runstate="Runnable" seed="842571341" result="Passed" start-time="2026-09-06 05:03:04Z" end-time="2026-09-06 05:03:05Z" duration="0.933346" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[B4 STATIC FEASIBILITY] STATUS=BALANCE_CONTROLLER_REQUIRED startComAp=-0.0318 marginFront=0.1671 marginRear=0.1229
+tick,com_ap,com_vel_ap,capture_ap,cop_ap,support_ap_min,support_ap_max,margin_front,margin_rear,ankle_target_deg,ankle_actual_deg,ankle_demand,foot_pitch_deg,contacts,slip_mps
+0,-0.0318,0.0000,-0.0318,nan,-0.0318,-0.0318,0.0000,0.0000,0.00,0.00,0.000,0.00,0,0.0000
+10,-0.0318,0.0000,-0.0318,-0.0714,-0.1547,0.1353,0.1671,0.1229,0.00,-0.15,0.037,0.10,8,0.0036
+20,-0.0225,0.1771,0.0367,-0.0749,-0.1548,0.1353,0.1579,0.1322,0.00,-2.47,0.016,-0.10,8,0.0239
+30,-0.0071,0.1561,0.0449,-0.0717,-0.1548,0.1353,0.1424,0.1477,0.00,-4.88,0.043,0.20,8,0.0006
+40,0.0131,0.2368,0.0916,-0.0571,-0.1548,0.1353,0.1222,0.1678,0.00,-7.16,0.052,0.13,8,0.0021
+50,0.0392,0.2861,0.1337,-0.0482,-0.1548,0.1353,0.0962,0.1939,0.00,-9.78,0.075,0.19,8,0.0008
+60,0.0719,0.3630,0.1911,-0.0331,-0.1548,0.1353,0.0635,0.2266,0.00,-12.82,0.098,0.19,8,0.0011
+70,0.1126,0.4490,0.2589,-0.0189,-0.1548,0.1353,0.0228,0.2673,0.00,-16.40,0.125,0.24,8,0.0023
+80,0.1630,0.5569,0.3426,0.0002,-0.1548,0.1353,-0.0277,0.3178,0.00,-20.55,0.157,0.27,8,0.0038
+90,0.2253,0.6864,0.4436,0.0241,-0.1548,0.1353,-0.0900,0.3800,0.00,-25.42,0.196,0.32,8,0.0062
+100,0.3018,0.8418,0.5646,0.0564,-0.1548,0.1353,-0.1665,0.4566,0.00,-31.13,0.243,0.35,8,0.0094
+110,0.3949,1.0165,0.7038,0.1025,-0.1548,0.1353,-0.2596,0.5496,0.00,-37.87,0.303,0.40,8,0.0518
+120,0.5067,1.2258,0.8650,0.1350,-0.1552,0.1352,-0.3715,0.6619,0.00,-44.71,0.362,-1.09,8,0.0344
+130,0.6436,1.5174,1.0624,0.1343,-0.0456,0.1344,-0.5093,0.6892,0.00,-48.26,0.342,-8.09,8,0.0132
+140,0.8120,1.8403,1.2752,0.1334,0.0867,0.1337,-0.6783,0.7254,0.00,-44.68,0.261,-25.09,8,0.0207
+150,1.0086,2.0533,1.4419,0.1330,0.1312,0.1533,-0.8553,0.8774,0.00,-31.23,0.081,-54.53,8,0.0199
+160,1.2139,2.0242,1.5030,0.1458,0.1451,0.2464,-0.9675,1.0688,0.00,-6.41,0.172,-88.21,8,0.0902
+170,1.3035,0.2583,1.3404,0.2509,0.1519,0.2523,-1.0512,1.1516,0.00,8.40,0.052,-76.99,7,0.0568
+180,1.3051,-0.0153,1.3029,0.2524,0.1529,0.2541,-1.0510,1.1522,0.00,8.00,0.052,-78.35,8,0.0229
+190,1.3038,-0.0129,1.3019,0.2529,0.1530,0.2544,-1.0493,1.1507,0.00,7.78,0.048,-78.95,8,0.0046
+200,1.3032,-0.0053,1.3025,0.2528,0.1530,0.2544,-1.0488,1.1502,0.00,7.72,0.049,-79.01,8,0.0104
+210,1.3032,-0.0031,1.3027,0.2528,0.1530,0.2544,-1.0487,1.1501,0.00,7.75,0.049,-79.01,8,0.0105
+220,1.3032,-0.0028,1.3028,0.2528,0.1530,0.2544,-1.0487,1.1502,0.00,7.76,0.049,-79.01,8,0.0104
+230,1.3032,-0.0029,1.3027,0.2528,0.1530,0.2544,-1.0487,1.1502,0.00,7.76,0.049,-79.01,8,0.0104
+240,1.3032,-0.0030,1.3027,0.2528,0.1530,0.2544,-1.0487,1.1502,0.00,7.76,0.049,-79.01,8,0.0000
+250,1.3032,0.0000,1.3032,nan,1.3032,1.3032,0.0000,0.0000,0.00,7.76,0.051,-79.01,0,0.0000
+260,1.3032,0.0000,1.3032,nan,1.3032,1.3032,0.0000,0.0000,0.00,7.76,0.051,-79.01,0,0.0000
+270,1.3032,0.0000,1.3032,nan,1.3032,1.3032,0.0000,0.0000,0.00,7.76,0.051,-79.01,0,0.0000
+280,1.3032,0.0000,1.3032,nan,1.3032,1.3032,0.0000,0.0000,0.00,7.76,0.051,-79.01,0,0.0000
+290,1.3032,0.0000,1.3032,nan,1.3032,1.3032,0.0000,0.0000,0.00,7.76,0.051,-79.01,0,0.0000
+299,1.3032,0.0000,1.3032,nan,1.3032,1.3032,0.0000,0.0000,0.00,7.76,0.051,-79.01,0,0.0000
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1024" name="PhysicalSquatControlPlayModeTests" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests" classname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests" runstate="Runnable" testcasecount="4" result="Failed" site="Child" start-time="2026-09-06 05:03:05Z" end-time="2026-09-06 05:03:10Z" duration="4.963060" total="4" passed="1" failed="3" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1025" name="G1_UNLOADED_PHYSICAL_SQUAT_QUALIFICATION" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests.G1_UNLOADED_PHYSICAL_SQUAT_QUALIFICATION" methodname="G1_UNLOADED_PHYSICAL_SQUAT_QUALIFICATION" classname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests" runstate="Runnable" seed="988927844" result="Failed" start-time="2026-09-06 05:03:05Z" end-time="2026-09-06 05:03:07Z" duration="1.706228" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Did not recover to lockout height: standing=1.019, final=0.204
+  Expected: less than 0.119999997f
+  But was:  0.814620376f
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests+<G1_UNLOADED_PHYSICAL_SQUAT_QUALIFICATION>d__10.MoveNext () [0x00823] in C:\Users\Educacion\Desktop\Projects\PowerliftingSimulator\Assets\Tests\PlayMode\PhysicalSquatControlPlayModeTests.cs:125
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[THIGH: axis=(1.00, 0.00, 0.00) secAxis=(0.00, -1.00, 0.00) lowX=-120 highX=45
+SHANK: axis=(1.00, 0.00, 0.00) secAxis=(0.00, -0.99, 0.11) lowX=-5 highX=145
+FOOT:  axis=(1.00, 0.00, 0.00) secAxis=(0.00, 1.00, 0.00) lowX=-45 highX=55
+[G1 Tick 000] sq=0.00 pelvis=(0.003,1.018,0.010) thorax=(0.001,1.374,-0.023) foot=(-0.114,0.049,-0.010) shank=(-0.112,0.386,-0.043) apErr=-0.002
+  Ankle: req=(13.49, 0.00, 0.26) act=(356.19, 0.09, 359.50) errRad=0.302
+  Knee:  req=(0.34, 0.00, 0.00) act=(1.08, 0.01, -0.01) errRad=-0.013
+  Hip:   req=(0.89, 0.00, 0.13) act=(2.46, 359.98, 0.06) errRad=-0.027
+  Abd:   req=(359.44, 0.00, 0.07) act=(351.87, 359.91, 0.84) errRad=0.132
+[G1 Tick 001] sq=0.01 pelvis=(0.004,1.017,0.011) thorax=(0.001,1.373,-0.021) foot=(-0.113,0.049,-0.010) shank=(-0.112,0.386,-0.043) apErr=-0.001
+  Ankle: req=(13.72, 0.00, 0.28) act=(356.20, 0.07, 359.38) errRad=0.306
+  Knee:  req=(0.68, 0.00, 0.00) act=(0.92, 0.00, 359.99) errRad=-0.004
+  Hip:   req=(1.08, 0.00, 0.14) act=(2.43, 359.98, 0.08) errRad=-0.024
+  Abd:   req=(359.23, 0.00, 0.07) act=(351.39, 359.88, 0.90) errRad=0.137
+[G1 Tick 010] sq=0.03 pelvis=(0.006,1.020,0.023) thorax=(0.002,1.371,-0.011) foot=(-0.114,0.049,-0.010) shank=(-0.112,0.388,-0.039) apErr=0.008
+  Ankle: req=(11.47, 0.00, 0.46) act=(355.73, 0.06, 359.72) errRad=0.275
+  Knee:  req=(3.86, 0.00, 0.00) act=(0.39, 0.00, 359.99) errRad=0.061
+  Hip:   req=(356.41, 0.00, 0.23) act=(0.82, 0.00, 359.95) errRad=-0.077
+  Abd:   req=(0.51, 0.00, 0.11) act=(348.49, 359.79, 1.21) errRad=0.210
+[G1 Tick 025] sq=0.08 pelvis=(0.011,1.016,0.028) thorax=(0.004,1.366,0.008) foot=(-0.114,0.049,-0.010) shank=(-0.110,0.386,-0.031) apErr=0.021
+  Ankle: req=(10.11, 0.00, 0.72) act=(353.61, 0.08, 359.90) errRad=0.288
+  Knee:  req=(9.47, 0.00, 0.00) act=(3.69, 0.00, 359.99) errRad=0.101
+  Hip:   req=(352.03, 0.00, 0.36) act=(355.91, 0.05, 359.77) errRad=-0.068
+  Abd:   req=(0.88, 0.00, 0.18) act=(346.90, 359.76, 1.59) errRad=0.244
+[G1 Tick 050] sq=0.15 pelvis=(0.019,1.018,0.014) thorax=(0.008,1.371,0.063) foot=(-0.114,0.050,-0.010) shank=(-0.107,0.386,-0.033) apErr=0.046
+  Ankle: req=(7.92, 0.00, 0.97) act=(353.73, 0.03, 0.43) errRad=0.248
+  Knee:  req=(19.35, 0.00, 0.00) act=(5.00, 0.00, 359.99) errRad=0.250
+  Hip:   req=(346.12, 0.00, 0.49) act=(346.91, 0.09, 359.35) errRad=-0.014
+  Abd:   req=(0.62, 0.00, 0.24) act=(349.80, 359.95, 2.12) errRad=0.189
+[G1 Tick 075] sq=0.23 pelvis=(0.022,1.021,-0.007) thorax=(0.012,1.344,0.172) foot=(-0.113,0.050,-0.010) shank=(-0.106,0.387,-0.041) apErr=0.095
+  Ankle: req=(5.77, 0.00, 0.81) act=(354.78, 359.82, 0.72) errRad=0.192
+  Knee:  req=(29.21, 0.00, 0.00) act=(4.97, 359.99, 359.99) errRad=0.423
+  Hip:   req=(339.72, 0.00, 0.41) act=(335.86, 0.00, 359.12) errRad=0.067
+  Abd:   req=(357.76, 0.00, 0.20) act=(359.86, 0.47, 2.11) errRad=-0.037
+[G1 Tick 100] sq=0.30 pelvis=(0.019,1.018,0.033) thorax=(0.014,1.207,0.358) foot=(-0.114,0.050,-0.011) shank=(-0.107,0.385,-0.031) apErr=0.201
+  Ankle: req=(3.09, 0.00, 0.33) act=(352.22, 359.69, 0.63) errRad=0.190
+  Knee:  req=(39.42, 0.00, 0.00) act=(4.96, 359.98, 0.00) errRad=0.601
+  Hip:   req=(329.57, 0.00, 0.17) act=(320.49, 359.89, 359.23) errRad=0.159
+  Abd:   req=(358.47, 0.00, 0.08) act=(11.89, 0.91, 1.57) errRad=-0.234
+[G1 Tick 125] sq=0.38 pelvis=(0.007,0.953,0.270) thorax=(-0.002,0.892,0.636) foot=(-0.113,0.050,-0.012) shank=(-0.111,0.361,0.032) apErr=0.410
+  Ankle: req=(356.97, 0.00, 359.89) act=(336.59, 359.75, 359.89) errRad=0.356
+  Knee:  req=(51.70, 0.00, 0.00) act=(4.79, 359.97, 0.01) errRad=0.819
+  Hip:   req=(310.05, 0.00, 359.94) act=(315.00, 0.32, 359.10) errRad=-0.016
+  Abd:   req=(5.04, 0.00, 359.97) act=(29.57, 1.56, 1.89) errRad=-0.442
+[G1 Tick 150] sq=0.45 pelvis=(-0.015,0.628,0.764) thorax=(-0.028,0.387,1.046) foot=(-0.113,0.095,0.015) shank=(-0.118,0.301,0.214) apErr=0.671
+  Ankle: req=(347.13, 0.00, 357.90) act=(317.14, 0.51, 359.13) errRad=0.525
+  Knee:  req=(64.32, 0.00, 0.00) act=(5.39, 0.02, 359.97) errRad=1.028
+  Hip:   req=(297.06, 0.00, 358.95) act=(315.00, 359.97, 359.86) errRad=-0.313
+  Abd:   req=(5.51, 0.00, 359.47) act=(22.91, 0.92, 0.71) errRad=-0.304
+[G1 Tick 175] sq=0.53 pelvis=(-0.125,0.682,1.051) thorax=(-0.162,0.384,1.263) foot=(-0.070,0.276,0.182) shank=(-0.118,0.454,0.445) apErr=0.000
+  Ankle: req=(339.63, 0.00, 0.00) act=(340.55, 0.01, 0.00) errRad=-0.016
+  Knee:  req=(75.34, 0.00, 0.00) act=(5.08, 0.01, 0.00) errRad=1.226
+  Hip:   req=(285.72, 0.00, 0.00) act=(315.00, 0.04, 0.20) errRad=-0.511
+  Abd:   req=(5.90, 0.00, 0.00) act=(22.27, 359.83, 356.34) errRad=-0.286
+[G1 Tick 200] sq=0.60 pelvis=(-0.328,0.633,1.167) thorax=(-0.261,0.330,1.345) foot=(-0.039,0.199,0.365) shank=(-0.177,0.371,0.597) apErr=0.000
+  Ankle: req=(338.29, 0.00, 0.00) act=(339.09, 0.06, 0.01) errRad=-0.014
+  Knee:  req=(80.62, 0.00, 0.00) act=(4.59, 359.98, 0.08) errRad=1.327
+  Hip:   req=(280.32, 0.00, 0.00) act=(315.00, 0.60, 1.04) errRad=-0.605
+  Abd:   req=(6.02, 0.00, 0.00) act=(37.15, 0.24, 359.82) errRad=-0.543
+[G1 Tick 225] sq=0.68 pelvis=(-0.519,0.526,1.140) thorax=(-0.337,0.270,1.328) foot=(-0.327,0.178,0.269) shank=(-0.446,0.301,0.538) apErr=0.000
+  Ankle: req=(337.42, 0.00, 0.00) act=(338.27, 0.00, 0.01) errRad=-0.015
+  Knee:  req=(85.27, 0.00, 0.00) act=(5.03, 359.99, 0.02) errRad=1.400
+  Hip:   req=(275.89, 0.00, 0.00) act=(315.00, 359.46, 0.79) errRad=-0.683
+  Abd:   req=(6.07, 0.00, 0.00) act=(27.20, 357.77, 359.91) errRad=-0.369
+[G1 Tick 250] sq=0.75 pelvis=(-0.669,0.339,1.037) thorax=(-0.386,0.247,1.246) foot=(-0.423,0.075,0.210) shank=(-0.560,0.128,0.457) apErr=0.807
+  Ankle: req=(347.20, 0.00, 357.15) act=(327.33, 4.23, 342.09) errRad=0.353
+  Knee:  req=(86.57, 180.00, 180.00) act=(4.79, 0.17, 359.97) errRad=1.547
+  Hip:   req=(271.82, 180.00, 178.58) act=(314.80, 2.44, 8.10) errRad=-0.814
+  Abd:   req=(6.27, 0.00, 359.29) act=(23.20, 351.44, 4.22) errRad=-0.289
+[G1 Tick 275] sq=0.83 pelvis=(-0.778,0.220,1.032) thorax=(-0.466,0.227,1.226) foot=(-0.426,0.066,0.208) shank=(-0.587,0.080,0.458) apErr=0.787
+  Ankle: req=(347.82, 0.00, 357.00) act=(330.05, 2.02, 352.75) errRad=0.311
+  Knee:  req=(79.37, 180.00, 180.00) act=(4.70, 0.15, 0.09) errRad=1.674
+  Hip:   req=(278.05, 180.00, 178.46) act=(316.87, 346.55, 22.35) errRad=-0.915
+  Abd:   req=(6.13, 0.00, 359.23) act=(30.04, 347.90, 357.17) errRad=-0.419
+[G1 Tick 300] sq=0.90 pelvis=(-0.797,0.210,1.028) thorax=(-0.489,0.236,1.232) foot=(-0.430,0.068,0.179) shank=(-0.591,0.077,0.449) apErr=0.821
+  Ankle: req=(348.18, 0.00, 357.00) act=(337.67, 359.13, 356.99) errRad=0.184
+  Knee:  req=(73.34, 180.00, 180.00) act=(4.93, 0.15, 0.12) errRad=1.775
+  Hip:   req=(279.33, 180.00, 178.36) act=(316.38, 347.43, 17.87) errRad=-0.940
+  Abd:   req=(3.98, 0.00, 359.18) act=(28.91, 346.62, 357.95) errRad=-0.435
+[G1 Tick 325] sq=0.98 pelvis=(-0.775,0.213,1.031) thorax=(-0.476,0.227,1.253) foot=(-0.428,0.067,0.177) shank=(-0.588,0.077,0.447) apErr=0.836
+  Ankle: req=(342.92, 0.00, 357.00) act=(336.99, 2.14, 356.55) errRad=0.104
+  Knee:  req=(67.55, 180.00, 180.00) act=(4.70, 0.17, 0.18) errRad=1.880
+  Hip:   req=(289.56, 180.00, 178.36) act=(316.15, 349.51, 16.44) errRad=-1.121
+  Abd:   req=(6.40, 0.00, 359.18) act=(24.38, 347.52, 356.85) errRad=-0.317
+[G1 Tick 350] sq=1.00 pelvis=(-0.778,0.213,1.029) thorax=(-0.477,0.228,1.249) foot=(-0.428,0.067,0.177) shank=(-0.588,0.077,0.446) apErr=0.834
+  Ankle: req=(343.79, 0.00, 357.00) act=(337.19, 1.40, 355.60) errRad=0.116
+  Knee:  req=(66.00, 180.00, 180.00) act=(4.80, 0.14, 0.19) errRad=1.906
+  Hip:   req=(291.00, 180.00, 178.36) act=(316.04, 349.97, 16.35) errRad=-1.145
+  Abd:   req=(6.40, 0.00, 359.18) act=(25.03, 347.31, 356.96) errRad=-0.328
+[G1 Tick 375] sq=0.96 pelvis=(-0.777,0.213,1.029) thorax=(-0.477,0.228,1.250) foot=(-0.428,0.067,0.177) shank=(-0.588,0.077,0.446) apErr=0.834
+  Ankle: req=(344.21, 0.00, 357.00) act=(337.19, 1.38, 355.53) errRad=0.123
+  Knee:  req=(68.79, 180.00, 180.00) act=(4.79, 0.14, 0.20) errRad=1.857
+  Hip:   req=(288.42, 180.00, 178.36) act=(316.01, 350.17, 16.19) errRad=-1.100
+  Abd:   req=(6.40, 0.00, 359.18) act=(24.95, 347.42, 357.00) errRad=-0.326
+[G1 Tick 400] sq=0.89 pelvis=(-0.777,0.213,1.029) thorax=(-0.477,0.227,1.250) foot=(-0.427,0.067,0.177) shank=(-0.588,0.077,0.446) apErr=0.834
+  Ankle: req=(345.12, 0.00, 357.00) act=(337.22, 1.30, 355.38) errRad=0.138
+  Knee:  req=(74.30, 180.00, 180.00) act=(4.79, 0.13, 0.20) errRad=1.761
+  Hip:   req=(283.31, 180.00, 178.36) act=(315.96, 350.54, 16.01) errRad=-1.012
+  Abd:   req=(6.43, 0.00, 359.18) act=(24.97, 347.50, 356.88) errRad=-0.326
+[G1 Tick 425] sq=0.81 pelvis=(-0.777,0.213,1.029) thorax=(-0.477,0.227,1.250) foot=(-0.427,0.067,0.176) shank=(-0.588,0.077,0.446) apErr=0.834
+  Ankle: req=(346.27, 0.00, 357.00) act=(337.26, 1.15, 355.27) errRad=0.157
+  Knee:  req=(80.56, 180.00, 180.00) act=(4.79, 0.12, 0.20) errRad=1.652
+  Hip:   req=(277.47, 180.00, 178.36) act=(315.90, 350.94, 15.77) errRad=-0.910
+  Abd:   req=(6.39, 0.00, 359.18) act=(25.02, 347.51, 356.75) errRad=-0.328
+[G1 Tick 450] sq=0.74 pelvis=(-0.777,0.213,1.029) thorax=(-0.477,0.227,1.251) foot=(-0.427,0.067,0.176) shank=(-0.588,0.077,0.446) apErr=0.836
+  Ankle: req=(347.61, 0.00, 357.00) act=(337.32, 1.04, 354.92) errRad=0.180
+  Knee:  req=(88.22, 180.00, 180.00) act=(4.79, 0.11, 0.20) errRad=1.518
+  Hip:   req=(270.27, 180.00, 178.36) act=(315.80, 351.60, 15.29) errRad=-0.785
+  Abd:   req=(6.23, 0.00, 359.18) act=(24.99, 347.50, 356.50) errRad=-0.331
+[G1 Tick 475] sq=0.66 pelvis=(-0.777,0.213,1.030) thorax=(-0.476,0.226,1.251) foot=(-0.427,0.067,0.176) shank=(-0.588,0.077,0.446) apErr=0.836
+  Ankle: req=(349.05, 0.00, 357.00) act=(337.37, 0.93, 354.73) errRad=0.204
+  Knee:  req=(84.15, 0.00, 0.00) act=(4.79, 0.10, 0.19) errRad=1.385
+  Hip:   req=(276.95, 0.00, 358.36) act=(315.72, 352.15, 14.97) errRad=-0.660
+  Abd:   req=(6.04, 0.00, 359.18) act=(25.03, 347.51, 356.32) errRad=-0.335
+[G1 Tick 500] sq=0.59 pelvis=(-0.777,0.213,1.030) thorax=(-0.477,0.226,1.251) foot=(-0.427,0.067,0.176) shank=(-0.588,0.077,0.446) apErr=0.836
+  Ankle: req=(349.81, 0.00, 357.00) act=(337.40, 0.88, 354.64) errRad=0.217
+  Knee:  req=(80.45, 0.00, 0.00) act=(4.80, 0.09, 0.19) errRad=1.320
+  Hip:   req=(280.48, 0.00, 358.36) act=(315.69, 352.34, 14.79) errRad=-0.598
+  Abd:   req=(6.05, 0.00, 359.18) act=(25.06, 347.45, 356.20) errRad=-0.336
+[G1 Tick 525] sq=0.51 pelvis=(-0.776,0.213,1.029) thorax=(-0.476,0.226,1.252) foot=(-0.426,0.066,0.176) shank=(-0.588,0.077,0.446) apErr=0.836
+  Ankle: req=(351.92, 0.00, 357.00) act=(337.46, 0.69, 354.51) errRad=0.253
+  Knee:  req=(73.01, 0.00, 0.00) act=(4.79, 0.07, 0.19) errRad=1.191
+  Hip:   req=(288.11, 0.00, 358.36) act=(315.60, 353.05, 14.44) errRad=-0.466
+  Abd:   req=(5.81, 0.00, 359.18) act=(25.10, 347.54, 356.05) errRad=-0.341
+[G1 Tick 550] sq=0.44 pelvis=(-0.775,0.213,1.029) thorax=(-0.476,0.225,1.253) foot=(-0.426,0.066,0.175) shank=(-0.588,0.077,0.446) apErr=0.836
+  Ankle: req=(354.94, 0.00, 357.00) act=(337.48, 0.73, 354.32) errRad=0.305
+  Knee:  req=(61.71, 0.00, 0.00) act=(4.82, 0.08, 0.20) errRad=0.993
+  Hip:   req=(299.77, 0.00, 358.36) act=(315.48, 354.20, 13.93) errRad=-0.263
+  Abd:   req=(5.44, 0.00, 359.18) act=(24.93, 347.75, 355.84) errRad=-0.345
+[G1 Tick 575] sq=0.36 pelvis=(-0.772,0.213,1.029) thorax=(-0.476,0.221,1.257) foot=(-0.425,0.067,0.173) shank=(-0.586,0.077,0.446) apErr=0.839
+  Ankle: req=(358.11, 0.00, 357.00) act=(338.16, 0.63, 353.84) errRad=0.348
+  Knee:  req=(49.76, 0.00, 0.00) act=(4.92, 0.05, 0.21) errRad=0.783
+  Hip:   req=(312.07, 0.00, 358.35) act=(315.15, 357.57, 11.91) errRad=-0.050
+  Abd:   req=(5.00, 0.00, 359.18) act=(23.83, 347.93, 354.86) errRad=-0.335
+[G1 Tick 600] sq=0.29 pelvis=(-0.768,0.213,1.028) thorax=(-0.476,0.217,1.263) foot=(-0.425,0.067,0.172) shank=(-0.585,0.077,0.446) apErr=0.841
+  Ankle: req=(0.60, 0.00, 357.00) act=(338.35, 0.92, 353.15) errRad=0.389
+  Knee:  req=(37.90, 0.00, 0.00) act=(4.97, 0.15, 0.05) errRad=0.575
+  Hip:   req=(324.13, 0.00, 358.35) act=(315.16, 0.85, 10.42) errRad=0.155
+  Abd:   req=(4.40, 0.00, 359.18) act=(22.46, 348.21, 354.09) errRad=-0.323
+[G1 Tick 625] sq=0.21 pelvis=(-0.760,0.213,1.027) thorax=(-0.479,0.214,1.271) foot=(-0.424,0.067,0.170) shank=(-0.585,0.077,0.443) apErr=0.844
+  Ankle: req=(1.99, 0.00, 357.00) act=(338.16, 2.15, 352.43) errRad=0.417
+  Knee:  req=(26.90, 0.00, 0.00) act=(4.85, 0.29, 0.06) errRad=0.385
+  Hip:   req=(334.97, 0.00, 358.35) act=(321.03, 2.69, 9.66) errRad=0.239
+  Abd:   req=(3.55, 0.00, 359.18) act=(25.19, 347.92, 352.45) errRad=-0.388
+[G1 Tick 650] sq=0.14 pelvis=(-0.754,0.213,1.027) thorax=(-0.485,0.215,1.283) foot=(-0.425,0.067,0.170) shank=(-0.585,0.078,0.442) apErr=0.849
+  Ankle: req=(3.28, 0.00, 357.00) act=(337.80, 3.38, 352.60) errRad=0.446
+  Knee:  req=(17.26, 0.00, 0.00) act=(4.77, 0.34, 0.11) errRad=0.218
+  Hip:   req=(344.07, 0.00, 358.35) act=(328.07, 3.64, 9.70) errRad=0.273
+  Abd:   req=(2.40, 0.00, 359.18) act=(29.05, 348.03, 351.03) errRad=-0.477
+[G1 Tick 675] sq=0.06 pelvis=(-0.725,0.213,1.022) thorax=(-0.487,0.221,1.307) foot=(-0.417,0.066,0.155) shank=(-0.570,0.078,0.432) apErr=0.874
+  Ankle: req=(4.81, 0.00, 357.00) act=(338.91, 3.43, 352.17) errRad=0.454
+  Knee:  req=(8.13, 0.00, 0.00) act=(4.82, 0.07, 0.06) errRad=0.058
+  Hip:   req=(352.46, 0.00, 358.33) act=(335.75, 5.39, 8.40) errRad=0.283
+  Abd:   req=(1.10, 0.00, 359.16) act=(29.33, 349.89, 351.23) errRad=-0.502
+[G1 Tick 700] sq=0.00 pelvis=(-0.668,0.213,1.027) thorax=(-0.478,0.225,1.349) foot=(-0.411,0.066,0.144) shank=(-0.558,0.078,0.425) apErr=0.907
+  Ankle: req=(7.14, 0.00, 357.00) act=(339.30, 3.22, 351.72) errRad=0.488
+  Knee:  req=(0.00, 0.00, 0.00) act=(0.35, 0.28, 0.18) errRad=-0.006
+  Hip:   req=(0.00, 0.00, 358.31) act=(345.96, 5.64, 8.50) errRad=0.236
+  Abd:   req=(0.00, 0.00, 359.16) act=(25.43, 351.24, 354.12) errRad=-0.449
+[G1 Tick 725] sq=0.00 pelvis=(-0.619,0.213,1.031) thorax=(-0.461,0.225,1.372) foot=(-0.405,0.066,0.133) shank=(-0.545,0.078,0.421) apErr=0.933
+  Ankle: req=(7.71, 0.00, 357.00) act=(340.08, 2.46, 353.56) errRad=0.483
+  Knee:  req=(0.00, 0.00, 0.00) act=(356.86, 0.00, 0.16) errRad=0.055
+  Hip:   req=(0.00, 0.00, 358.34) act=(348.93, 6.20, 7.71) errRad=0.184
+  Abd:   req=(0.00, 0.00, 359.17) act=(18.48, 351.03, 356.41) errRad=-0.326
+[G1 Tick 750] sq=0.00 pelvis=(-0.581,0.212,1.031) thorax=(-0.441,0.220,1.380) foot=(-0.404,0.066,0.129) shank=(-0.536,0.078,0.417) apErr=0.943
+  Ankle: req=(5.88, 0.00, 357.39) act=(338.57, 3.53, 351.66) errRad=0.479
+  Knee:  req=(0.00, 0.00, 0.00) act=(355.89, 0.19, 0.17) errRad=0.072
+  Hip:   req=(0.00, 0.00, 358.70) act=(350.90, 6.43, 7.46) errRad=0.150
+  Abd:   req=(0.00, 0.00, 359.35) act=(15.07, 349.97, 357.75) errRad=-0.265
+[G1 Tick 775] sq=0.00 pelvis=(-0.551,0.209,1.034) thorax=(-0.425,0.212,1.387) foot=(-0.399,0.069,0.126) shank=(-0.525,0.082,0.417) apErr=0.952
+  Ankle: req=(5.61, 0.00, 358.05) act=(338.19, 3.93, 352.11) errRad=0.482
+  Knee:  req=(0.00, 0.00, 0.00) act=(355.34, 0.06, 0.11) errRad=0.081
+  Hip:   req=(0.00, 0.00, 359.02) act=(351.75, 7.08, 7.39) errRad=0.134
+  Abd:   req=(0.00, 0.00, 359.51) act=(12.85, 349.15, 358.45) errRad=-0.225
+[G1 Tick 799] sq=0.00 pelvis=(-0.509,0.204,1.029) thorax=(-0.398,0.203,1.387) foot=(-0.392,0.076,0.116) shank=(-0.506,0.088,0.410) apErr=0.959
+  Ankle: req=(5.44, 0.00, 358.93) act=(335.62, 4.32, 347.78) errRad=0.525
+  Knee:  req=(0.00, 0.00, 0.00) act=(357.09, -0.01, 0.01) errRad=0.051
+  Hip:   req=(0.00, 0.00, 359.46) act=(352.46, 8.46, 7.59) errRad=0.121
+  Abd:   req=(0.00, 0.00, 359.73) act=(10.09, 347.32, 358.52) errRad=-0.178
+]]></output>
+            </test-case>
+            <test-case id="1026" name="G2_BARBELL_25KG_PHYSICAL_SQUAT_QUALIFICATION" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests.G2_BARBELL_25KG_PHYSICAL_SQUAT_QUALIFICATION" methodname="G2_BARBELL_25KG_PHYSICAL_SQUAT_QUALIFICATION" classname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests" runstate="Runnable" seed="1855259840" result="Failed" start-time="2026-09-06 05:03:07Z" end-time="2026-09-06 05:03:08Z" duration="1.323197" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Bar did not return to standing lockout height.
+  Expected: less than 0.119999997f
+  But was:  1.12681139f
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests+<G2_BARBELL_25KG_PHYSICAL_SQUAT_QUALIFICATION>d__11.MoveNext () [0x0022f] in C:\Users\Educacion\Desktop\Projects\PowerliftingSimulator\Assets\Tests\PlayMode\PhysicalSquatControlPlayModeTests.cs:173
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[[G2 Tick 000] sq=0.00 state=DESCENT barY=1.328 pelvisY=1.010 apErr=-0.013 sep=0.005
+[G2 Tick 025] sq=0.08 state=DESCENT barY=1.103 pelvisY=0.985 apErr=0.000 sep=0.008
+[G2 Tick 050] sq=0.15 state=DESCENT barY=1.059 pelvisY=0.981 apErr=-0.010 sep=0.008
+[G2 Tick 075] sq=0.23 state=DESCENT barY=1.139 pelvisY=0.993 apErr=-0.028 sep=0.007
+[G2 Tick 100] sq=0.30 state=DESCENT barY=1.248 pelvisY=1.009 apErr=-0.029 sep=0.006
+[G2 Tick 125] sq=0.38 state=DESCENT barY=1.302 pelvisY=1.016 apErr=-0.014 sep=0.006
+[G2 Tick 150] sq=0.45 state=DESCENT barY=1.335 pelvisY=1.016 apErr=0.028 sep=0.007
+[G2 Tick 175] sq=0.53 state=DESCENT barY=1.355 pelvisY=1.006 apErr=0.122 sep=0.007
+[G2 Tick 200] sq=0.60 state=DESCENT barY=1.319 pelvisY=0.974 apErr=0.306 sep=0.006
+[G2 Tick 225] sq=0.68 state=DESCENT barY=1.025 pelvisY=0.872 apErr=0.609 sep=0.001
+[G2 Tick 250] sq=0.75 state=DESCENT barY=0.236 pelvisY=0.491 apErr=0.879 sep=0.014
+[G2 Tick 275] sq=0.83 state=DESCENT barY=0.217 pelvisY=0.367 apErr=0.855 sep=0.005
+[G2 Tick 300] sq=0.90 state=DESCENT barY=0.212 pelvisY=0.375 apErr=0.862 sep=0.006
+[G2 Tick 325] sq=0.98 state=DESCENT barY=0.212 pelvisY=0.375 apErr=0.862 sep=0.006
+[G2 Tick 350] sq=1.00 state=BOTTOM barY=0.212 pelvisY=0.375 apErr=0.862 sep=0.006
+[G2 Tick 375] sq=0.96 state=ASCENT barY=0.212 pelvisY=0.376 apErr=0.863 sep=0.006
+[G2 Tick 400] sq=0.89 state=ASCENT barY=0.212 pelvisY=0.376 apErr=0.863 sep=0.006
+[G2 Tick 425] sq=0.81 state=ASCENT barY=0.212 pelvisY=0.376 apErr=0.863 sep=0.006
+[G2 Tick 450] sq=0.74 state=ASCENT barY=0.212 pelvisY=0.376 apErr=0.863 sep=0.006
+[G2 Tick 475] sq=0.66 state=ASCENT barY=0.212 pelvisY=0.377 apErr=0.863 sep=0.006
+[G2 Tick 500] sq=0.59 state=ASCENT barY=0.212 pelvisY=0.378 apErr=0.866 sep=0.006
+[G2 Tick 525] sq=0.51 state=ASCENT barY=0.212 pelvisY=0.378 apErr=0.866 sep=0.006
+[G2 Tick 550] sq=0.44 state=ASCENT barY=0.212 pelvisY=0.380 apErr=0.867 sep=0.006
+[G2 Tick 575] sq=0.36 state=ASCENT barY=0.211 pelvisY=0.381 apErr=0.851 sep=0.007
+[G2 Tick 600] sq=0.29 state=ASCENT barY=0.211 pelvisY=0.380 apErr=0.855 sep=0.007
+[G2 Tick 625] sq=0.21 state=ASCENT barY=0.210 pelvisY=0.373 apErr=0.861 sep=0.009
+[G2 Tick 650] sq=0.14 state=ASCENT barY=0.209 pelvisY=0.355 apErr=0.886 sep=0.008
+[G2 Tick 675] sq=0.06 state=ASCENT barY=0.209 pelvisY=0.339 apErr=0.903 sep=0.007
+[G2 Tick 700] sq=0.00 state=LOCKOUT barY=0.212 pelvisY=0.310 apErr=0.962 sep=0.004
+[G2 Tick 725] sq=0.00 state=LOCKOUT barY=0.216 pelvisY=0.287 apErr=0.965 sep=0.004
+[G2 Tick 750] sq=0.00 state=LOCKOUT barY=0.218 pelvisY=0.254 apErr=0.975 sep=0.004
+[G2 Tick 775] sq=0.00 state=LOCKOUT barY=0.210 pelvisY=0.155 apErr=0.989 sep=0.005
+[G2 Tick 799] sq=0.00 state=LOCKOUT barY=0.209 pelvisY=0.150 apErr=0.994 sep=0.006
+]]></output>
+            </test-case>
+            <test-case id="1027" name="G3_BARBELL_105KG_PHYSICAL_SQUAT_QUALIFICATION" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests.G3_BARBELL_105KG_PHYSICAL_SQUAT_QUALIFICATION" methodname="G3_BARBELL_105KG_PHYSICAL_SQUAT_QUALIFICATION" classname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests" runstate="Runnable" seed="997999085" result="Failed" start-time="2026-09-06 05:03:08Z" end-time="2026-09-06 05:03:09Z" duration="0.968462" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Bar did not return to standing lockout height.
+  Expected: less than 0.150000006f
+  But was:  1.01272559f
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests+<G3_BARBELL_105KG_PHYSICAL_SQUAT_QUALIFICATION>d__12.MoveNext () [0x0022f] in C:\Users\Educacion\Desktop\Projects\PowerliftingSimulator\Assets\Tests\PlayMode\PhysicalSquatControlPlayModeTests.cs:217
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[[G3 Tick 000] sq=0.00 state=DESCENT barY=1.223 pelvisY=1.001 apErr=-0.032 sep=0.034
+[G3 Tick 025] sq=0.08 state=DESCENT barY=0.798 pelvisY=0.950 apErr=-0.014 sep=0.042
+[G3 Tick 050] sq=0.15 state=DESCENT barY=0.687 pelvisY=0.977 apErr=-0.013 sep=0.049
+[G3 Tick 075] sq=0.23 state=DESCENT barY=0.874 pelvisY=0.960 apErr=-0.062 sep=0.040
+[G3 Tick 100] sq=0.30 state=DESCENT barY=1.018 pelvisY=0.976 apErr=-0.077 sep=0.036
+[G3 Tick 125] sq=0.38 state=DESCENT barY=1.058 pelvisY=0.982 apErr=-0.072 sep=0.039
+[G3 Tick 150] sq=0.45 state=DESCENT barY=1.077 pelvisY=0.983 apErr=-0.063 sep=0.040
+[G3 Tick 175] sq=0.53 state=DESCENT barY=1.103 pelvisY=0.985 apErr=-0.050 sep=0.041
+[G3 Tick 200] sq=0.60 state=DESCENT barY=1.141 pelvisY=0.989 apErr=-0.019 sep=0.042
+[G3 Tick 225] sq=0.68 state=DESCENT barY=1.158 pelvisY=0.979 apErr=0.051 sep=0.041
+[G3 Tick 250] sq=0.75 state=DESCENT barY=1.146 pelvisY=0.934 apErr=0.199 sep=0.038
+[G3 Tick 275] sq=0.83 state=DESCENT barY=0.925 pelvisY=0.751 apErr=0.458 sep=0.032
+[G3 Tick 300] sq=0.90 state=DESCENT barY=0.678 pelvisY=0.408 apErr=0.718 sep=0.037
+[G3 Tick 325] sq=0.98 state=DESCENT barY=0.387 pelvisY=0.135 apErr=0.668 sep=0.031
+[G3 Tick 350] sq=1.00 state=BOTTOM barY=0.225 pelvisY=0.154 apErr=0.000 sep=0.033
+[G3 Tick 375] sq=0.96 state=ASCENT barY=0.223 pelvisY=0.130 apErr=0.000 sep=0.031
+[G3 Tick 400] sq=0.89 state=ASCENT barY=0.224 pelvisY=0.133 apErr=0.000 sep=0.030
+[G3 Tick 425] sq=0.81 state=ASCENT barY=0.223 pelvisY=0.131 apErr=0.000 sep=0.032
+[G3 Tick 450] sq=0.74 state=ASCENT barY=0.223 pelvisY=0.132 apErr=0.000 sep=0.031
+[G3 Tick 475] sq=0.66 state=ASCENT barY=0.223 pelvisY=0.132 apErr=0.000 sep=0.031
+[G3 Tick 500] sq=0.59 state=ASCENT barY=0.223 pelvisY=0.132 apErr=0.000 sep=0.030
+[G3 Tick 525] sq=0.51 state=ASCENT barY=0.223 pelvisY=0.131 apErr=0.000 sep=0.031
+[G3 Tick 550] sq=0.44 state=ASCENT barY=0.223 pelvisY=0.131 apErr=0.000 sep=0.031
+[G3 Tick 575] sq=0.36 state=ASCENT barY=0.223 pelvisY=0.131 apErr=0.839 sep=0.031
+[G3 Tick 600] sq=0.29 state=ASCENT barY=0.223 pelvisY=0.130 apErr=0.851 sep=0.032
+[G3 Tick 625] sq=0.21 state=ASCENT barY=0.224 pelvisY=0.128 apErr=0.846 sep=0.032
+[G3 Tick 650] sq=0.14 state=ASCENT barY=0.223 pelvisY=0.124 apErr=0.846 sep=0.034
+[G3 Tick 675] sq=0.06 state=ASCENT barY=0.224 pelvisY=0.131 apErr=0.869 sep=0.032
+[G3 Tick 700] sq=0.00 state=LOCKOUT barY=0.224 pelvisY=0.122 apErr=0.870 sep=0.034
+[G3 Tick 725] sq=0.00 state=LOCKOUT barY=0.225 pelvisY=0.111 apErr=0.862 sep=0.033
+[G3 Tick 750] sq=0.00 state=LOCKOUT barY=0.225 pelvisY=0.106 apErr=0.864 sep=0.035
+[G3 Tick 775] sq=0.00 state=LOCKOUT barY=0.225 pelvisY=0.108 apErr=0.861 sep=0.035
+[G3 Tick 799] sq=0.00 state=LOCKOUT barY=0.225 pelvisY=0.112 apErr=0.864 sep=0.035
+]]></output>
+            </test-case>
+            <test-case id="1028" name="G4_MUTATION_GATES_REJECT_FORBIDDEN_AUTHORITY" fullname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests.G4_MUTATION_GATES_REJECT_FORBIDDEN_AUTHORITY" methodname="G4_MUTATION_GATES_REJECT_FORBIDDEN_AUTHORITY" classname="PowerliftingSimulator.Tests.PhysicalSquatControlPlayModeTests" runstate="Runnable" seed="2130969186" result="Passed" start-time="2026-09-06 05:03:09Z" end-time="2026-09-06 05:03:10Z" duration="0.961297" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1029" name="PhysicalSquatReconciliationTests" fullname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests" classname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests" runstate="Runnable" testcasecount="7" result="Failed" site="Child" start-time="2026-09-06 05:03:10Z" end-time="2026-09-06 05:03:15Z" duration="4.904223" total="7" passed="5" failed="2" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1030" name="R1_REFERENCE_SOURCE_IS_GAM10_CANONICAL_V2" fullname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests.R1_REFERENCE_SOURCE_IS_GAM10_CANONICAL_V2" methodname="R1_REFERENCE_SOURCE_IS_GAM10_CANONICAL_V2" classname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests" runstate="Runnable" seed="361020644" result="Passed" start-time="2026-09-06 05:03:10Z" end-time="2026-09-06 05:03:10Z" duration="0.741343" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1031" name="R2_STANDING_LOGICAL_TARGET_IS_SPAWN_NEUTRAL" fullname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests.R2_STANDING_LOGICAL_TARGET_IS_SPAWN_NEUTRAL" methodname="R2_STANDING_LOGICAL_TARGET_IS_SPAWN_NEUTRAL" classname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests" runstate="Runnable" seed="1091754496" result="Passed" start-time="2026-09-06 05:03:11Z" end-time="2026-09-06 05:03:11Z" duration="0.590129" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[R2 STANDING TARGET vs SPAWN NEUTRAL]
+left_foot    standing_logical_target_deg=0.00 euler=(0.00, 0.00, 0.00)
+right_foot   standing_logical_target_deg=0.00 euler=(0.00, 0.00, 0.00)
+left_shank   standing_logical_target_deg=0.00 euler=(0.00, 0.00, 0.00)
+right_shank  standing_logical_target_deg=0.00 euler=(0.00, 0.00, 0.00)
+left_thigh   standing_logical_target_deg=0.00 euler=(0.00, 0.00, 0.00)
+right_thigh  standing_logical_target_deg=0.00 euler=(0.00, 0.00, 0.00)
+abdomen      standing_logical_target_deg=0.00 euler=(0.00, 0.00, 0.00)
+thorax       standing_logical_target_deg=0.00 euler=(0.00, 0.00, 0.00)
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1032" name="R3_PRODUCTION_STANDING_HOLD_UNLOADED" fullname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests.R3_PRODUCTION_STANDING_HOLD_UNLOADED" methodname="R3_PRODUCTION_STANDING_HOLD_UNLOADED" classname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests" runstate="Runnable" seed="159599386" result="Failed" start-time="2026-09-06 05:03:11Z" end-time="2026-09-06 05:03:12Z" duration="0.706159" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  The production scene cannot hold the accepted standing pose for 5 s at unloaded: standing=1.076 m, min=0.112 m, final=0.134 m, max AP COM error=1.083 m, max ankle balance correction=0.262 rad.
+  Expected: greater than 0.99583751f
+  But was:  0.13408643f
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests+<RunStandingHold>d__12.MoveNext () [0x00328] in C:\Users\Educacion\Desktop\Projects\PowerliftingSimulator\Assets\Tests\PlayMode\PhysicalSquatReconciliationTests.cs:197
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[[STANDING HOLD unloaded] standing=1.076 min=0.112 final=0.134 maxApErr=1.083 maxAnkleCorr=0.262
+tick,pelvis_y_m,ap_com_error_m,ml_com_error_m,ankle_balance_rad,max_drive_saturation
+0,1.0749,0.0000,0.0000,0.0000,0.000
+25,1.0240,-0.0077,0.0016,0.1723,0.128
+50,1.0153,0.0151,0.0057,0.2309,0.134
+75,1.0078,0.0424,0.0107,0.2197,0.166
+100,0.9948,0.0823,0.0139,0.2110,0.201
+125,0.9702,0.1483,0.0141,0.1999,0.235
+150,0.9169,0.2649,0.0086,0.1731,0.260
+175,0.7958,0.4663,-0.0067,0.1244,0.360
+200,0.5664,0.6934,-0.0384,0.0859,0.301
+225,0.1147,1.0665,-0.0759,-0.0877,0.924
+250,0.1316,1.0791,-0.0706,-0.0846,0.138
+275,0.1340,1.0787,-0.0705,-0.0845,0.139
+300,0.1341,1.0787,-0.0705,-0.0845,0.139
+325,0.1341,1.0787,-0.0705,-0.0845,0.138
+350,0.1341,1.0787,-0.0705,-0.0845,0.138
+375,0.1341,1.0787,-0.0705,-0.0845,0.138
+400,0.1341,1.0787,-0.0705,-0.0845,0.138
+425,0.1341,1.0787,-0.0705,-0.0845,0.138
+450,0.1341,1.0787,-0.0705,-0.0845,0.138
+475,0.1341,1.0787,-0.0705,-0.0845,0.138
+499,0.1341,1.0787,-0.0705,-0.0845,0.138
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1033" name="R4_PRODUCTION_STANDING_HOLD_25KG" fullname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests.R4_PRODUCTION_STANDING_HOLD_25KG" methodname="R4_PRODUCTION_STANDING_HOLD_25KG" classname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests" runstate="Runnable" seed="1212451098" result="Failed" start-time="2026-09-06 05:03:12Z" end-time="2026-09-06 05:03:13Z" duration="0.705039" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  The production scene cannot hold the accepted standing pose for 5 s at 25kg: standing=1.076 m, min=0.094 m, final=0.096 m, max AP COM error=1.100 m, max ankle balance correction=0.262 rad.
+  Expected: greater than 0.99583751f
+  But was:  0.0955170318f
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests+<RunStandingHold>d__12.MoveNext () [0x00328] in C:\Users\Educacion\Desktop\Projects\PowerliftingSimulator\Assets\Tests\PlayMode\PhysicalSquatReconciliationTests.cs:197
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[[STANDING HOLD 25kg] standing=1.076 min=0.094 final=0.096 maxApErr=1.100 maxAnkleCorr=0.262
+tick,pelvis_y_m,ap_com_error_m,ml_com_error_m,ankle_balance_rad,max_drive_saturation
+0,1.0743,0.0000,0.0000,0.0000,0.000
+25,1.0190,-0.0175,0.0014,0.1526,0.152
+50,0.9913,0.0007,0.0048,0.2398,0.327
+75,0.9721,-0.0036,0.0108,0.0616,0.293
+100,0.9764,-0.0291,0.0207,-0.1039,0.291
+125,0.9874,-0.0554,0.0334,-0.0982,0.288
+150,0.9957,-0.0822,0.0448,-0.0945,0.289
+175,1.0030,-0.1205,0.0548,-0.0906,0.290
+200,1.0123,-0.1952,0.0658,-0.0795,0.290
+225,1.0057,-0.3444,0.0772,-0.0531,0.289
+250,0.9045,-0.6214,0.0850,-0.0014,0.293
+275,0.4950,-0.9318,0.0878,0.0460,0.134
+300,0.4634,-0.9701,-0.0173,0.0432,0.221
+325,0.3567,-0.9856,-0.1391,0.0395,0.852
+350,0.3270,-0.9914,-0.0828,0.0220,0.167
+375,0.2713,-1.0185,-0.1034,0.0258,0.167
+400,0.1403,-1.0547,-0.0715,0.0373,0.294
+425,0.0942,-1.0712,-0.1027,0.0233,0.155
+450,0.0944,-1.0871,-0.1077,0.0308,0.112
+475,0.0950,-1.0948,-0.1123,0.0250,0.080
+499,0.0955,-1.0993,-0.1163,0.0137,0.078
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1036" name="R5_BALANCE_CORRECTION_STAYS_WITHIN_ITS_DECLARED_BOUND" fullname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests.R5_BALANCE_CORRECTION_STAYS_WITHIN_ITS_DECLARED_BOUND" methodname="R5_BALANCE_CORRECTION_STAYS_WITHIN_ITS_DECLARED_BOUND" classname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests" runstate="Runnable" seed="1796516718" result="Passed" start-time="2026-09-06 05:03:13Z" end-time="2026-09-06 05:03:13Z" duration="0.761367" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1034" name="R6_JOINT_FRAME_SIGN_CALIBRATION" fullname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests.R6_JOINT_FRAME_SIGN_CALIBRATION" methodname="R6_JOINT_FRAME_SIGN_CALIBRATION" classname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests" runstate="Runnable" seed="1224556237" result="Passed" start-time="2026-09-06 05:03:13Z" end-time="2026-09-06 05:03:14Z" duration="0.747522" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[R6 JOINT FRAME SIGN CALIBRATION @ s_q=0.25]
+left_foot    flexion_x_deg=-10.00 y=+0.00 z=+0.00
+right_foot   flexion_x_deg=-10.00 y=+0.00 z=+0.00
+left_shank   flexion_x_deg=+32.00 y=+0.00 z=+0.00
+right_shank  flexion_x_deg=+32.00 y=+0.00 z=+0.00
+left_thigh   flexion_x_deg=-30.00 y=+0.00 z=+0.00
+right_thigh  flexion_x_deg=-30.00 y=+0.00 z=+0.00
+abdomen      flexion_x_deg=+4.00 y=+0.00 z=+0.00
+thorax       flexion_x_deg=+6.00 y=+0.00 z=+0.00
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1035" name="R7_PHYSICAL_TRUNK_SUMS_TO_CANONICAL_TRUNK_FLEXION" fullname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests.R7_PHYSICAL_TRUNK_SUMS_TO_CANONICAL_TRUNK_FLEXION" methodname="R7_PHYSICAL_TRUNK_SUMS_TO_CANONICAL_TRUNK_FLEXION" classname="PowerliftingSimulator.Tests.PhysicalSquatReconciliationTests" runstate="Runnable" seed="306071189" result="Passed" start-time="2026-09-06 05:03:14Z" end-time="2026-09-06 05:03:15Z" duration="0.648250" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[R7 TRUNK DISTRIBUTION]
+phase=0.25 canonical=10.00 abdomen=4.00 thorax=6.00 sum=10.00
+phase=0.55 canonical=15.00 abdomen=6.00 thorax=8.99 sum=14.99
+phase=0.75 canonical=15.65 abdomen=6.26 thorax=9.38 sum=15.64
+phase=1.00 canonical=16.00 abdomen=6.40 thorax=9.59 sum=15.99
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1037" name="PhysicalSquatStandingGateTests" fullname="PowerliftingSimulator.Tests.PhysicalSquatStandingGateTests" classname="PowerliftingSimulator.Tests.PhysicalSquatStandingGateTests" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-09-06 05:03:15Z" end-time="2026-09-06 05:03:15Z" duration="0.823891" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1038" name="S1_TEN_SECOND_UNLOADED_STANDING_GATE" fullname="PowerliftingSimulator.Tests.PhysicalSquatStandingGateTests.S1_TEN_SECOND_UNLOADED_STANDING_GATE" methodname="S1_TEN_SECOND_UNLOADED_STANDING_GATE" classname="PowerliftingSimulator.Tests.PhysicalSquatStandingGateTests" runstate="Runnable" seed="341254454" result="Failed" start-time="2026-09-06 05:03:15Z" end-time="2026-09-06 05:03:15Z" duration="0.822682" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  The athlete did not stay standing. settlePelvisY=0.9948 finalPelvisY=0.1341 minPelvisY=0.1123 worstCaptureMargin=-1.3211 worstCopExcursion=0.0000 maxComVel=2.0269 saturatedFraction=0.004 slippingFraction=0.057 worstFootPitch=89.74 lostContact=False
+  Expected: greater than 0.944815457f
+  But was:  0.134086385f
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.Tests.PhysicalSquatStandingGateTests+<RunStandingGate>d__10.MoveNext () [0x00531] in C:\Users\Educacion\Desktop\Projects\PowerliftingSimulator\Assets\Tests\PlayMode\PhysicalSquatStandingGateTests.cs:180
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[[S1 TEN SECOND STANDING GATE unloaded] settlePelvisY=0.9948 finalPelvisY=0.1341 minPelvisY=0.1123 worstCaptureMargin=-1.3211 worstCopExcursion=0.0000 maxComVel=2.0269 saturatedFraction=0.004 slippingFraction=0.057 worstFootPitch=89.74 lostContact=False
+tick,com_ap,com_vel_ap,capture_ap,cop_des_ap,cop_meas_ap,support_ap_min,support_ap_max,capture_margin_front,capture_margin_rear,ankle_offset_deg,hip_offset_deg,trunk_offset_deg,hip_blend,max_drive_saturation,foot_pitch_deg,contacts,slip_mps,pelvis_y
+0,-0.0318,0.0000,-0.0318,0.0000,0.0000,-0.0318,-0.0318,0.0000,0.0000,0.00,0.00,0.00,0.00,0.000,0.00,0,0.0000,1.0749
+25,-0.0175,0.0975,0.0151,0.1052,0.0685,-0.1549,0.1352,0.1201,0.1700,9.87,0.00,0.00,0.00,0.128,-0.33,8,0.0060,1.0240
+50,0.0053,0.0938,0.0364,0.1052,-0.0080,-0.1549,0.1352,0.0987,0.1913,13.23,0.88,-0.44,0.21,0.134,0.00,8,0.0014,1.0153
+75,0.0325,0.1270,0.0745,0.1052,0.0069,-0.1549,0.1352,0.0607,0.2294,12.59,0.00,0.00,0.00,0.166,-0.03,8,0.0016,1.0078
+100,0.0724,0.2008,0.1382,0.1052,0.0186,-0.1549,0.1352,-0.0030,0.2931,12.09,0.00,0.00,0.00,0.201,0.01,8,0.0024,0.9948
+125,0.1384,0.3401,0.2484,0.1052,0.0336,-0.1549,0.1352,-0.1133,0.4033,11.45,0.00,0.00,0.00,0.235,0.12,8,0.0157,0.9702
+150,0.2551,0.6060,0.4468,0.1052,0.0694,-0.1549,0.1352,-0.3117,0.6017,9.92,0.00,0.00,0.00,0.260,0.28,8,0.0086,0.9169
+175,0.4561,1.0262,0.7644,0.1052,0.1328,-0.1555,0.1352,-0.6292,0.9199,7.13,0.00,0.00,0.00,0.360,-0.10,8,0.0392,0.7958
+200,0.8021,1.7780,1.2643,0.1136,0.1326,0.0841,0.1333,-1.1311,1.1802,4.92,0.00,0.00,0.00,0.301,-22.97,8,0.0190,0.5664
+225,1.2860,1.2530,1.4649,0.2458,0.2705,0.1631,0.2758,-1.1890,1.3018,-5.02,0.00,0.00,0.00,0.924,-84.13,8,0.0154,0.1147
+250,1.2986,-0.0103,1.2971,0.2458,0.2700,0.1632,0.2758,-1.0213,1.1339,-4.85,0.00,0.00,0.00,0.138,-85.79,8,0.0124,0.1316
+275,1.2981,-0.0024,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0220,1.1346,-4.84,0.00,0.00,0.00,0.139,-85.82,8,0.0123,0.1340
+300,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0220,1.1346,-4.84,0.00,0.00,0.00,0.139,-85.83,8,0.0123,0.1341
+325,1.2982,-0.0025,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+350,1.2982,-0.0026,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+375,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+400,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+425,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+450,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+475,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+500,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+525,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+550,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+575,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+600,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+625,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+650,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+675,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+700,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+725,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+750,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+775,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+800,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+825,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+850,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+875,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+900,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+925,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+950,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+975,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+999,1.2982,-0.0027,1.2978,0.2458,0.2700,0.1632,0.2758,-1.0221,1.1346,-4.84,0.00,0.00,0.00,0.138,-85.83,8,0.0123,0.1341
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1039" name="PhysicalStandingEquilibriumTests" fullname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests" classname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests" runstate="Runnable" testcasecount="5" result="Failed" site="Child" start-time="2026-09-06 05:03:15Z" end-time="2026-09-06 05:03:21Z" duration="5.593526" total="5" passed="4" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1040" name="E1_EXPERIMENT_A_NOMINAL_ONLY_BASELINE" fullname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests.E1_EXPERIMENT_A_NOMINAL_ONLY_BASELINE" methodname="E1_EXPERIMENT_A_NOMINAL_ONLY_BASELINE" classname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests" runstate="Runnable" seed="1415096697" result="Passed" start-time="2026-09-06 05:03:15Z" end-time="2026-09-06 05:03:16Z" duration="0.650471" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[E1 EXPERIMENT A baseline] 1.0749,1.0153,0.7430,0.7430,0.0596,0.4946,1.2014,1.2014,-0.7120,-0.0757,0.1351,0.358,0.000,44.42,0.78,False
+tick,time_s,pelvis_y,com_ap,com_ap_vel,com_ml,com_ml_vel,cop_measured_ap,cop_desired_ap,cop_excursion_from_initial,cop_error,capture_ap,support_ap_rear,support_ap_front,capture_margin_rear,capture_margin_front,ankle_nominal_deg,ankle_gravity_deg,ankle_balance_deg,ankle_final_deg,ankle_actual_deg,knee_actual_deg,hip_actual_deg,abdomen_actual_deg,thorax_actual_deg,max_demand,foot_pitch_deg,contacts,slip_mps
+0,0.000,1.0749,-0.0318,0.0000,0.0000,0.0000,NaN,0.0000,0.0000,0.0000,-0.0318,-0.0318,-0.0318,0.0000,0.0000,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.000,0.00,0,0.0000
+5,0.050,1.0553,-0.0318,0.0000,0.0000,0.0000,NaN,0.0000,0.0000,0.0000,-0.0318,-0.0318,-0.0318,0.0000,0.0000,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.000,0.00,0,0.0000
+10,0.100,1.0161,-0.0318,0.0000,0.0000,0.0000,-0.0714,0.0000,0.0000,0.0000,-0.0318,-0.1547,0.1353,0.1229,0.1671,0.00,0.00,0.00,0.00,-0.15,0.15,-0.03,-0.09,-0.08,0.000,0.10,8,0.0036
+15,0.150,1.0129,-0.0303,0.0855,0.0004,0.0104,-0.1077,0.0000,-0.0364,0.0000,-0.0018,-0.1548,0.1353,0.1529,0.1372,0.00,0.00,0.00,0.00,-2.93,1.18,-1.11,-2.23,-3.23,0.285,0.85,8,0.0054
+20,0.200,1.0242,-0.0225,0.1771,0.0006,0.0032,-0.0749,0.0000,-0.0035,0.0000,0.0367,-0.1548,0.1353,0.1914,0.0987,0.00,0.00,0.00,0.00,-2.47,1.37,-0.53,-4.45,-5.47,0.271,-0.10,8,0.0239
+25,0.250,1.0208,-0.0144,0.1471,0.0009,0.0052,-0.0313,0.0000,0.0400,0.0000,0.0348,-0.1548,0.1353,0.1895,0.1006,0.00,0.00,0.00,0.00,-3.18,1.42,1.14,-6.42,-6.36,0.128,-0.11,8,0.0091
+30,0.300,1.0153,-0.0071,0.1561,0.0012,0.0090,-0.0717,0.0000,-0.0003,0.0000,0.0449,-0.1548,0.1353,0.1996,0.0904,0.00,0.00,0.00,0.00,-4.88,1.60,2.13,-8.58,-7.86,0.120,0.20,8,0.0006
+35,0.350,1.0131,0.0019,0.1992,0.0018,0.0121,-0.0744,0.0000,-0.0030,0.0000,0.0680,-0.1548,0.1353,0.2228,0.0673,0.00,0.00,0.00,0.00,-6.18,1.90,2.71,-10.22,-8.49,0.165,0.29,8,0.0015
+40,0.400,1.0124,0.0131,0.2368,0.0025,0.0151,-0.0571,0.0000,0.0143,0.0000,0.0916,-0.1548,0.1353,0.2464,0.0437,0.00,0.00,0.00,0.00,-7.16,1.97,3.35,-11.68,-9.63,0.147,0.13,8,0.0021
+45,0.450,1.0090,0.0255,0.2571,0.0033,0.0171,-0.0475,0.0000,0.0238,0.0000,0.1107,-0.1548,0.1353,0.2655,0.0246,0.00,0.00,0.00,0.00,-8.33,2.01,4.09,-13.12,-10.71,0.148,0.12,8,0.0005
+50,0.500,1.0046,0.0392,0.2861,0.0042,0.0192,-0.0482,0.0000,0.0232,0.0000,0.1337,-0.1548,0.1353,0.2884,0.0016,0.00,0.00,0.00,0.00,-9.78,2.07,4.77,-14.63,-11.82,0.163,0.19,8,0.0008
+55,0.550,0.9999,0.0545,0.3243,0.0052,0.0206,-0.0425,0.0000,0.0289,0.0000,0.1614,-0.1548,0.1353,0.3161,-0.0261,0.00,0.00,0.00,0.00,-11.26,2.14,5.43,-16.17,-12.96,0.178,0.20,8,0.0006
+60,0.600,0.9943,0.0719,0.3630,0.0063,0.0216,-0.0331,0.0000,0.0382,0.0000,0.1911,-0.1548,0.1353,0.3458,-0.0558,0.00,0.00,0.00,0.00,-12.82,2.20,6.11,-17.71,-14.10,0.193,0.19,8,0.0011
+70,0.700,0.9788,0.1126,0.4490,0.0085,0.0222,-0.0189,0.0000,0.0525,0.0000,0.2589,-0.1548,0.1353,0.4136,-0.1236,0.00,0.00,0.00,0.00,-16.40,2.27,7.42,-20.70,-16.28,0.220,0.24,8,0.0023
+80,0.800,0.9568,0.1630,0.5569,0.0106,0.0214,0.0002,0.0000,0.0715,0.0000,0.3426,-0.1548,0.1353,0.4974,-0.2073,0.00,0.00,0.00,0.00,-20.55,2.29,8.59,-23.48,-18.31,0.244,0.27,8,0.0038
+90,0.900,0.9252,0.2253,0.6864,0.0126,0.0190,0.0241,0.0000,0.0954,0.0000,0.4436,-0.1548,0.1353,0.5984,-0.3083,0.00,0.00,0.00,0.00,-25.42,2.21,9.54,-25.81,-20.01,0.261,0.32,8,0.0062
+100,1.000,0.8803,0.3018,0.8418,0.0143,0.0156,0.0564,0.0000,0.1278,0.0000,0.5646,-0.1548,0.1353,0.7193,-0.4293,0.00,0.00,0.00,0.00,-31.13,1.97,10.10,-27.28,-21.13,0.267,0.35,8,0.0094
+110,1.100,0.8173,0.3949,1.0165,0.0155,0.0082,0.1025,0.0000,0.1739,0.0000,0.7038,-0.1548,0.1353,0.8585,-0.5685,0.00,0.00,0.00,0.00,-37.87,1.49,10.06,-27.29,-21.25,0.297,0.40,8,0.0518
+120,1.200,0.7430,0.4946,1.2014,0.0156,-0.0047,0.1351,0.0000,0.2065,0.0000,0.8473,-0.1552,0.1353,1.0025,-0.7120,0.00,0.00,0.00,0.00,-44.11,0.95,9.32,-25.42,-19.97,0.358,-0.78,8,0.0336
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1041" name="E2_PRELOAD_SENSITIVITY_IDENTIFICATION" fullname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests.E2_PRELOAD_SENSITIVITY_IDENTIFICATION" methodname="E2_PRELOAD_SENSITIVITY_IDENTIFICATION" classname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests" runstate="Runnable" seed="1249747766" result="Passed" start-time="2026-09-06 05:03:16Z" end-time="2026-09-06 05:03:18Z" duration="1.506214" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[E2 PRELOAD SENSITIVITY]
+family,bias_deg,initial_pelvis_y,settled_pelvis_y,min_pelvis_y,final_pelvis_y,initial_sag,final_com_ap,final_com_ap_vel,max_com_ap_vel,worst_capture_margin,cop_min_ap,cop_max_ap,max_saturation,sustained_saturation,max_posture_error_deg,worst_foot_pitch_deg,lost_contact
+Ankle,-6.0,1.0749,1.0180,1.0128,1.0128,0.0569,0.0115,0.1726,0.1726,0.0614,-0.0614,-0.0327,0.128,0.000,11.60,0.15,False
+Ankle,-4.0,1.0749,1.0171,1.0103,1.0103,0.0578,0.0196,0.2097,0.2097,0.0417,-0.0673,-0.0386,0.137,0.000,12.52,0.18,False
+Ankle,-2.0,1.0749,1.0164,1.0078,1.0078,0.0585,0.0287,0.2475,0.2475,0.0223,-0.0722,-0.0433,0.149,0.000,13.53,0.30,False
+Ankle,0.0,1.0749,1.0153,1.0055,1.0055,0.0596,0.0362,0.2791,0.2791,0.0067,-0.0757,-0.0476,0.160,0.000,14.37,0.29,False
+Ankle,2.0,1.0749,1.0143,1.0022,1.0022,0.0606,0.0460,0.3209,0.3209,-0.0147,-0.0833,-0.0529,0.173,0.000,15.43,0.43,False
+Ankle,4.0,1.0748,1.0134,0.9991,0.9991,0.0614,0.0548,0.3570,0.3570,-0.0328,-0.0888,-0.0572,0.185,0.000,16.37,0.50,False
+Ankle,6.0,1.0748,1.0126,0.9960,0.9960,0.0623,0.0633,0.3895,0.3895,-0.0509,-0.0887,-0.0590,0.196,0.000,17.25,0.41,False
+Knee,-6.0,1.0748,1.0195,1.0112,1.0112,0.0553,0.0405,0.3063,0.3063,0.0067,-0.0788,-0.0581,0.148,0.000,13.86,0.22,False
+Knee,-4.0,1.0749,1.0187,1.0100,1.0100,0.0562,0.0385,0.2969,0.2969,0.0081,-0.0781,-0.0555,0.151,0.000,13.89,0.33,False
+Knee,-2.0,1.0749,1.0172,1.0079,1.0079,0.0576,0.0379,0.2903,0.2903,0.0063,-0.0768,-0.0519,0.156,0.000,14.18,0.34,False
+Knee,0.0,1.0749,1.0153,1.0055,1.0055,0.0595,0.0363,0.2790,0.2790,0.0070,-0.0755,-0.0474,0.160,0.000,14.37,0.29,False
+Knee,2.0,1.0748,1.0128,1.0020,1.0020,0.0621,0.0368,0.2776,0.2776,0.0023,-0.0773,-0.0433,0.167,0.000,14.79,0.38,False
+Knee,4.0,1.0748,1.0108,1.0001,1.0001,0.0641,0.0354,0.2719,0.2719,0.0004,-0.0801,-0.0415,0.170,0.000,15.26,0.28,False
+Knee,6.0,1.0748,1.0100,0.9988,0.9988,0.0649,0.0357,0.2781,0.2781,-0.0077,-0.0843,-0.0443,0.172,0.000,15.48,0.31,False
+Hip,-6.0,1.0748,1.0091,0.9927,0.9927,0.0657,0.0448,0.3000,0.3000,-0.0162,-0.0835,-0.0360,0.211,0.000,18.03,0.45,False
+Hip,-4.0,1.0748,1.0107,0.9968,0.9968,0.0641,0.0427,0.2952,0.2952,-0.0099,-0.0829,-0.0396,0.197,0.000,17.04,0.44,False
+Hip,-2.0,1.0748,1.0127,1.0010,1.0010,0.0621,0.0401,0.2899,0.2899,-0.0032,-0.0800,-0.0435,0.180,0.000,15.81,0.44,False
+Hip,0.0,1.0748,1.0152,1.0054,1.0054,0.0596,0.0364,0.2796,0.2796,0.0064,-0.0759,-0.0476,0.160,0.000,14.40,0.29,False
+Hip,2.0,1.0749,1.0170,1.0092,1.0092,0.0579,0.0337,0.2737,0.2737,0.0137,-0.0739,-0.0511,0.142,0.000,13.11,0.23,False
+Hip,4.0,1.0749,1.0183,1.0126,1.0126,0.0566,0.0307,0.2680,0.2680,0.0209,-0.0754,-0.0555,0.136,0.000,11.79,0.23,False
+Hip,6.0,1.0749,1.0195,1.0149,1.0149,0.0554,0.0288,0.2652,0.2652,0.0262,-0.0775,-0.0615,0.146,0.000,10.69,0.31,False
+Abdomen,-6.0,1.0749,1.0124,0.9987,0.9987,0.0625,0.0406,0.2839,0.2839,0.0006,-0.0765,-0.0348,0.206,0.000,23.54,0.37,False
+Abdomen,-4.0,1.0749,1.0121,0.9991,0.9991,0.0628,0.0411,0.2903,0.2903,-0.0050,-0.0800,-0.0398,0.198,0.000,21.22,0.38,False
+Abdomen,-2.0,1.0749,1.0133,1.0023,1.0023,0.0615,0.0388,0.2854,0.2854,0.0003,-0.0792,-0.0435,0.180,0.000,17.83,0.33,False
+Abdomen,0.0,1.0749,1.0152,1.0054,1.0054,0.0596,0.0364,0.2796,0.2796,0.0064,-0.0759,-0.0476,0.160,0.000,14.41,0.29,False
+Abdomen,2.0,1.0749,1.0163,1.0083,1.0083,0.0585,0.0343,0.2752,0.2752,0.0115,-0.0742,-0.0509,0.141,0.000,11.01,0.22,False
+Abdomen,4.0,1.0748,1.0171,1.0104,1.0104,0.0577,0.0330,0.2765,0.2765,0.0135,-0.0769,-0.0572,0.136,0.000,9.98,0.27,False
+Abdomen,6.0,1.0748,1.0179,1.0124,1.0124,0.0570,0.0305,0.2696,0.2696,0.0198,-0.0786,-0.0606,0.147,0.000,9.23,0.30,False
+Thorax,-6.0,1.0748,1.0135,1.0015,1.0015,0.0613,0.0394,0.2838,0.2838,0.0030,-0.0779,-0.0392,0.188,0.000,19.43,0.34,False
+Thorax,-4.0,1.0749,1.0130,1.0013,1.0013,0.0619,0.0399,0.2883,0.2883,-0.0018,-0.0803,-0.0426,0.185,0.000,17.28,0.35,False
+Thorax,-2.0,1.0749,1.0138,1.0034,1.0034,0.0611,0.0381,0.2839,0.2839,0.0023,-0.0790,-0.0448,0.173,0.000,15.28,0.32,False
+Thorax,0.0,1.0749,1.0152,1.0054,1.0054,0.0596,0.0364,0.2795,0.2795,0.0065,-0.0759,-0.0476,0.160,0.000,14.40,0.29,False
+Thorax,2.0,1.0748,1.0160,1.0074,1.0074,0.0589,0.0347,0.2758,0.2758,0.0102,-0.0741,-0.0500,0.147,0.000,13.54,0.22,False
+Thorax,4.0,1.0748,1.0164,1.0088,1.0088,0.0584,0.0341,0.2789,0.2789,0.0104,-0.0767,-0.0545,0.137,0.000,12.84,0.27,False
+Thorax,6.0,1.0748,1.0169,1.0103,1.0103,0.0579,0.0322,0.2749,0.2749,0.0144,-0.0780,-0.0603,0.143,0.000,12.07,0.28,False
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1044" name="E3_EXPERIMENT_B_PRELOAD_ONLY_EQUILIBRIUM" fullname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests.E3_EXPERIMENT_B_PRELOAD_ONLY_EQUILIBRIUM" methodname="E3_EXPERIMENT_B_PRELOAD_ONLY_EQUILIBRIUM" classname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests" runstate="Runnable" seed="2052720713" result="Failed" start-time="2026-09-06 05:03:18Z" end-time="2026-09-06 05:03:19Z" duration="0.921295" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  The athlete lost plantar contact. 1.0749,1.0153,0.1172,0.1332,0.0596,1.3032,0.0000,2.0703,-1.3090,-0.0757,0.2531,0.140,0.013,48.66,88.21,True
+  Expected: False
+  But was:  True
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests+<E3_EXPERIMENT_B_PRELOAD_ONLY_EQUILIBRIUM>d__13.MoveNext () [0x000f1] in C:\Users\Educacion\Desktop\Projects\PowerliftingSimulator\Assets\Tests\PlayMode\PhysicalStandingEquilibriumTests.cs:270
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[[E3 EXPERIMENT B preload only] 1.0749,1.0153,0.1172,0.1332,0.0596,1.3032,0.0000,2.0703,-1.3090,-0.0757,0.2531,0.140,0.013,48.66,88.21,True
+tick,time_s,pelvis_y,com_ap,com_ap_vel,com_ml,com_ml_vel,cop_measured_ap,cop_desired_ap,cop_excursion_from_initial,cop_error,capture_ap,support_ap_rear,support_ap_front,capture_margin_rear,capture_margin_front,ankle_nominal_deg,ankle_gravity_deg,ankle_balance_deg,ankle_final_deg,ankle_actual_deg,knee_actual_deg,hip_actual_deg,abdomen_actual_deg,thorax_actual_deg,max_demand,foot_pitch_deg,contacts,slip_mps
+0,0.000,1.0749,-0.0318,0.0000,0.0000,0.0000,NaN,0.0000,NaN,0.0000,-0.0318,-0.0318,-0.0318,0.0000,0.0000,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.000,0.00,0,0.0000
+25,0.250,1.0208,-0.0144,0.1471,0.0009,0.0052,-0.0313,0.0000,0.0400,0.0000,0.0348,-0.1548,0.1353,0.1895,0.1006,0.00,0.00,0.00,0.00,-3.18,1.42,1.14,-6.42,-6.36,0.128,-0.11,8,0.0091
+50,0.500,1.0046,0.0392,0.2861,0.0042,0.0192,-0.0482,0.0000,0.0232,0.0000,0.1337,-0.1548,0.1353,0.2884,0.0016,0.00,0.00,0.00,0.00,-9.78,2.07,4.77,-14.63,-11.82,0.163,0.19,8,0.0008
+75,0.750,0.9688,0.1364,0.5005,0.0096,0.0220,-0.0101,0.0000,0.0612,0.0000,0.2987,-0.1548,0.1353,0.4535,-0.1634,0.00,0.00,0.00,0.00,-18.40,2.29,8.02,-22.13,-17.33,0.232,0.26,8,0.0030
+100,1.000,0.8803,0.3018,0.8418,0.0143,0.0156,0.0564,0.0000,0.1278,0.0000,0.5646,-0.1548,0.1353,0.7193,-0.4293,0.00,0.00,0.00,0.00,-31.13,1.97,10.10,-27.28,-21.13,0.267,0.35,8,0.0094
+125,1.250,0.6859,0.5716,1.3617,0.0151,-0.0112,0.1349,0.0000,0.2063,0.0000,0.9594,-0.1551,0.1351,1.1146,-0.8243,0.00,0.00,0.00,0.00,-47.15,0.66,8.48,-23.12,-18.22,0.362,-3.73,8,0.0687
+150,1.500,0.3188,1.0086,2.0533,0.0110,-0.0158,0.1330,0.0000,0.2043,0.0000,1.4419,0.1312,0.1533,1.3107,-1.2886,0.00,0.00,0.00,0.00,-31.23,0.54,4.97,-13.33,-13.45,0.115,-54.53,8,0.0199
+175,1.750,0.1323,1.3065,-0.0431,0.0016,0.0333,0.2525,0.0000,0.3239,0.0000,1.3004,0.1533,0.2538,1.1471,-1.0466,0.00,0.00,0.00,0.00,8.30,2.60,4.82,0.06,11.22,0.152,-77.84,7,0.0120
+200,2.000,0.1331,1.3032,-0.0053,0.0086,0.0001,0.2528,0.0000,0.3241,0.0000,1.3025,0.1530,0.2544,1.1495,-1.0481,0.00,0.00,0.00,0.00,7.72,2.32,4.35,-0.52,11.18,0.140,-79.01,8,0.0104
+225,2.250,0.1332,1.3032,-0.0029,0.0086,0.0004,0.2528,0.0000,0.3242,0.0000,1.3028,0.1530,0.2544,1.1497,-1.0483,0.00,0.00,0.00,0.00,7.76,2.28,4.30,-0.57,11.17,0.139,-79.01,8,0.0104
+250,2.500,0.1332,1.3032,0.0000,0.0086,0.0000,NaN,0.0000,NaN,0.0000,1.3032,1.3032,1.3032,0.0000,0.0000,0.00,0.00,0.00,0.00,7.76,2.28,4.29,-0.58,11.17,0.140,-79.01,0,0.0000
+275,2.750,0.1332,1.3032,0.0000,0.0086,0.0000,NaN,0.0000,NaN,0.0000,1.3032,1.3032,1.3032,0.0000,0.0000,0.00,0.00,0.00,0.00,7.76,2.28,4.29,-0.58,11.17,0.140,-79.01,0,0.0000
+300,3.000,0.1332,1.3032,0.0000,0.0086,0.0000,NaN,0.0000,NaN,0.0000,1.3032,1.3032,1.3032,0.0000,0.0000,0.00,0.00,0.00,0.00,7.76,2.28,4.29,-0.58,11.17,0.140,-79.01,0,0.0000
+325,3.250,0.1332,1.3032,0.0000,0.0086,0.0000,NaN,0.0000,NaN,0.0000,1.3032,1.3032,1.3032,0.0000,0.0000,0.00,0.00,0.00,0.00,7.76,2.28,4.29,-0.58,11.17,0.140,-79.01,0,0.0000
+350,3.500,0.1332,1.3032,0.0000,0.0086,0.0000,NaN,0.0000,NaN,0.0000,1.3032,1.3032,1.3032,0.0000,0.0000,0.00,0.00,0.00,0.00,7.76,2.28,4.29,-0.58,11.17,0.140,-79.01,0,0.0000
+375,3.750,0.1332,1.3032,0.0000,0.0086,0.0000,NaN,0.0000,NaN,0.0000,1.3032,1.3032,1.3032,0.0000,0.0000,0.00,0.00,0.00,0.00,7.76,2.28,4.29,-0.58,11.17,0.140,-79.01,0,0.0000
+400,4.000,0.1332,1.3032,0.0000,0.0086,0.0000,NaN,0.0000,NaN,0.0000,1.3032,1.3032,1.3032,0.0000,0.0000,0.00,0.00,0.00,0.00,7.76,2.28,4.29,-0.58,11.17,0.140,-79.01,0,0.0000
+425,4.250,0.1332,1.3032,0.0000,0.0086,0.0000,NaN,0.0000,NaN,0.0000,1.3032,1.3032,1.3032,0.0000,0.0000,0.00,0.00,0.00,0.00,7.76,2.28,4.29,-0.58,11.17,0.140,-79.01,0,0.0000
+450,4.500,0.1332,1.3032,0.0000,0.0086,0.0000,NaN,0.0000,NaN,0.0000,1.3032,1.3032,1.3032,0.0000,0.0000,0.00,0.00,0.00,0.00,7.76,2.28,4.29,-0.58,11.17,0.140,-79.01,0,0.0000
+475,4.750,0.1332,1.3032,0.0000,0.0086,0.0000,NaN,0.0000,NaN,0.0000,1.3032,1.3032,1.3032,0.0000,0.0000,0.00,0.00,0.00,0.00,7.76,2.28,4.29,-0.58,11.17,0.140,-79.01,0,0.0000
+499,4.990,0.1332,1.3032,0.0000,0.0086,0.0000,NaN,0.0000,NaN,0.0000,1.3032,1.3032,1.3032,0.0000,0.0000,0.00,0.00,0.00,0.00,7.76,2.28,4.29,-0.58,11.17,0.140,-79.01,0,0.0000
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1042" name="E4_SPAWN_CONTACT_GEOMETRY" fullname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests.E4_SPAWN_CONTACT_GEOMETRY" methodname="E4_SPAWN_CONTACT_GEOMETRY" classname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests" runstate="Runnable" seed="1264386978" result="Passed" start-time="2026-09-06 05:03:19Z" end-time="2026-09-06 05:03:19Z" duration="0.868684" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[E4 SPAWN CONTACT GEOMETRY] supportPlaneY=0.0000 leftFootMinAtSpawn=0.0468 rightFootMinAtSpawn=0.0468 spawnGap=0.0468 m referencePlantarY left=0.0942 right=0.0942 colliderMinusPlantar=-0.0475 footColliderSize=(0.1300,0.1000,0.2900) footBoundsZ=[-0.1546,0.1357]
+tick,pelvis_y,left_foot_min_y,right_foot_min_y,left_foot_vel_y,contacts
+0,1.0758,0.0468,0.0468,0.0000,0
+1,1.0749,0.0458,0.0458,-0.0981,0
+2,1.0729,0.0438,0.0438,-0.1961,0
+3,1.0700,0.0409,0.0409,-0.2941,0
+4,1.0660,0.0370,0.0370,-0.3920,0
+5,1.0611,0.0321,0.0321,-0.4899,0
+6,1.0553,0.0262,0.0262,-0.5878,0
+7,1.0484,0.0193,0.0193,-0.6856,0
+8,1.0406,0.0115,0.0115,-0.7834,0
+9,1.0318,0.0027,0.0027,-0.8811,8
+10,1.0231,-0.0006,-0.0006,-0.2680,8
+11,1.0161,-0.0017,-0.0016,-0.0557,8
+12,1.0114,-0.0024,-0.0023,-0.0271,8
+13,1.0091,-0.0028,-0.0026,-0.0332,8
+14,1.0089,-0.0027,-0.0026,-0.0434,8
+15,1.0103,-0.0024,-0.0026,-0.0691,8
+16,1.0129,-0.0019,-0.0017,-0.0927,8
+17,1.0159,-0.0015,-0.0014,-0.0774,8
+18,1.0189,-0.0011,-0.0011,-0.0669,8
+19,1.0214,-0.0007,-0.0008,-0.0499,8
+20,1.0232,-0.0005,-0.0006,-0.0257,8
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1043" name="E5_COMBINED_PRELOAD_CANDIDATES" fullname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests.E5_COMBINED_PRELOAD_CANDIDATES" methodname="E5_COMBINED_PRELOAD_CANDIDATES" classname="PowerliftingSimulator.Tests.PhysicalStandingEquilibriumTests" runstate="Runnable" seed="1680262205" result="Passed" start-time="2026-09-06 05:03:19Z" end-time="2026-09-06 05:03:21Z" duration="1.642502" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[[E5 COMBINED PRELOAD CANDIDATES]
+ankle_deg,knee_deg,hip_deg,abdomen_deg,thorax_deg,initial_pelvis_y,settled_pelvis_y,min_pelvis_y,final_pelvis_y,initial_sag,final_com_ap,final_com_ap_vel,max_com_ap_vel,worst_capture_margin,cop_min_ap,cop_max_ap,max_saturation,sustained_saturation,max_posture_error_deg,worst_foot_pitch_deg,lost_contact
+0.0,0.0,0.0,0.0,0.0,1.0749,1.0153,0.3397,0.3397,0.0596,0.9881,2.0419,2.0419,-1.2963,-0.0757,0.1351,0.138,0.000,48.66,51.01,False
+-6.0,0.0,6.0,6.0,6.0,1.0749,1.0227,0.7422,0.7422,0.0522,0.7219,1.6965,1.6965,-1.0281,-0.0737,0.1400,0.308,0.000,36.69,10.78,False
+-8.0,0.0,6.0,6.0,6.0,1.0749,1.0236,0.8673,0.8673,0.0513,0.5635,1.4069,1.4069,-0.8212,-0.0695,0.1399,0.307,0.000,31.85,3.33,False
+-10.0,0.0,6.0,6.0,6.0,1.0749,1.0240,0.9477,0.9477,0.0509,0.4172,1.1441,1.1441,-0.6142,-0.0690,0.0918,0.278,0.000,35.27,0.62,False
+-12.0,0.0,6.0,6.0,6.0,1.0749,1.0245,0.9983,0.9983,0.0504,0.2910,0.9844,0.9844,-0.4521,-0.0740,0.0032,0.281,0.000,35.42,0.73,False
+-12.0,2.0,6.0,6.0,6.0,1.0749,1.0234,1.0117,1.0117,0.0516,0.2349,0.8182,0.8182,-0.3542,-0.0718,-0.0185,0.281,0.000,35.42,0.70,False
+-10.0,0.0,4.0,4.0,4.0,1.0749,1.0232,0.9659,0.9659,0.0517,0.3771,1.1170,1.1170,-0.5766,-0.0649,0.0552,0.295,0.000,35.27,0.63,False
+-8.0,0.0,8.0,8.0,8.0,1.0749,1.0239,0.8122,0.8122,0.0510,0.6126,1.6651,1.6651,-0.9076,-0.0872,0.1413,0.326,0.000,35.49,5.92,False
+-12.0,0.0,12.0,12.0,12.0,1.0749,1.0223,0.9987,0.9987,0.0526,0.3100,0.9859,0.9859,-0.4583,-0.1243,0.0532,0.222,0.000,43.61,0.49,False
+
+
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1045" name="PhysicsFoundationPlayModeTests" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" testcasecount="13" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:21Z" duration="0.189845" total="13" passed="13" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1047" name="BodyChangesOnlyAfterTheOwnedStep" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.BodyChangesOnlyAfterTheOwnedStep" methodname="BodyChangesOnlyAfterTheOwnedStep" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="24303976" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:21Z" duration="0.010477" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1046" name="CreatesAnIsolatedManualPhysicsScene" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.CreatesAnIsolatedManualPhysicsScene" methodname="CreatesAnIsolatedManualPhysicsScene" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="696105299" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:21Z" duration="0.008670" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1050" name="GLOBAL_FIXED_TIMESTEP_AUTHORITY" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.GLOBAL_FIXED_TIMESTEP_AUTHORITY" methodname="GLOBAL_FIXED_TIMESTEP_AUTHORITY" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="366669542" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:21Z" duration="0.006777" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1049" name="InputRenderWindowTracksTheAuthoritativeCatchUpHorizon" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.InputRenderWindowTracksTheAuthoritativeCatchUpHorizon" methodname="InputRenderWindowTracksTheAuthoritativeCatchUpHorizon" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="848477191" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:21Z" duration="0.008805" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1051" name="MANUAL_STEP_CANNOT_CONSUME_RENDER_RESIDUAL" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.MANUAL_STEP_CANNOT_CONSUME_RENDER_RESIDUAL" methodname="MANUAL_STEP_CANNOT_CONSUME_RENDER_RESIDUAL" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="255985078" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:21Z" duration="0.012730" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1052" name="MANUAL_STEP_CANNOT_RESUME_RENDER_MODE" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.MANUAL_STEP_CANNOT_RESUME_RENDER_MODE" methodname="MANUAL_STEP_CANNOT_RESUME_RENDER_MODE" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="103749266" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:21Z" duration="0.009345" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1055" name="ObservationIsAStablePostStepCopy" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.ObservationIsAStablePostStepCopy" methodname="ObservationIsAStablePostStepCopy" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="1701395407" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:21Z" duration="0.010743" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1053" name="PREPARED_RENDER_FRAME_CAN_BE_CANCELLED_AFTER_CAPTURE_FAILURE" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.PREPARED_RENDER_FRAME_CAN_BE_CANCELLED_AFTER_CAPTURE_FAILURE" methodname="PREPARED_RENDER_FRAME_CAN_BE_CANCELLED_AFTER_CAPTURE_FAILURE" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="1300302056" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:21Z" duration="0.012170" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1048" name="RenderCatchUpIsBoundedAtFourTicks" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.RenderCatchUpIsBoundedAtFourTicks" methodname="RenderCatchUpIsBoundedAtFourTicks" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="1249612381" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:21Z" duration="0.018917" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1057" name="RESET_NONZERO_WALL_TIME" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.RESET_NONZERO_WALL_TIME" methodname="RESET_NONZERO_WALL_TIME" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="112260732" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:21Z" duration="0.021989" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1056" name="ResetRestoresTheProbeAndASecondRuntimeCanBeCreated" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.ResetRestoresTheProbeAndASecondRuntimeCanBeCreated" methodname="ResetRestoresTheProbeAndASecondRuntimeCanBeCreated" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="302769938" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:21Z" duration="0.024794" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1058" name="ShutdownLeavesTheMainSceneLoaded" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.ShutdownLeavesTheMainSceneLoaded" methodname="ShutdownLeavesTheMainSceneLoaded" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="734551822" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:21Z" duration="0.015732" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1054" name="SLOW_FRAME_TIME_DOMAIN" fullname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests.SLOW_FRAME_TIME_DOMAIN" methodname="SLOW_FRAME_TIME_DOMAIN" classname="PowerliftingSimulator.Tests.PhysicsFoundationPlayModeTests" runstate="Runnable" seed="931874358" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:21Z" duration="0.020385" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1059" name="PhysicsOwnershipExperimentTests" fullname="PowerliftingSimulator.Tests.PhysicsOwnershipExperimentTests" classname="PowerliftingSimulator.Tests.PhysicsOwnershipExperimentTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:21Z" duration="0.028623" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1060" name="AutomaticDefaultSceneAndExplicitLocalSceneAdvanceIndependently" fullname="PowerliftingSimulator.Tests.PhysicsOwnershipExperimentTests.AutomaticDefaultSceneAndExplicitLocalSceneAdvanceIndependently" methodname="AutomaticDefaultSceneAndExplicitLocalSceneAdvanceIndependently" classname="PowerliftingSimulator.Tests.PhysicsOwnershipExperimentTests" runstate="Runnable" seed="127131684" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:21Z" duration="0.017693" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1061" name="BoundedScriptTransitionDoesNotDoubleStepDefaultScene" fullname="PowerliftingSimulator.Tests.PhysicsOwnershipExperimentTests.BoundedScriptTransitionDoesNotDoubleStepDefaultScene" methodname="BoundedScriptTransitionDoesNotDoubleStepDefaultScene" classname="PowerliftingSimulator.Tests.PhysicsOwnershipExperimentTests" runstate="Runnable" seed="1394645973" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:21Z" duration="0.008406" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1062" name="PoweredJointPlayModeTests" fullname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" classname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:25Z" duration="3.287209" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1066" name="FINITE_CAPACITY_SCALES_WITH_ACTIVATION" fullname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests.FINITE_CAPACITY_SCALES_WITH_ACTIVATION" methodname="FINITE_CAPACITY_SCALES_WITH_ACTIVATION" classname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" runstate="Runnable" seed="1032913863" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:21Z" duration="0.007815" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1067" name="ONE_POWERED_JOINT_WRITER_ONLY" fullname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests.ONE_POWERED_JOINT_WRITER_ONLY" methodname="ONE_POWERED_JOINT_WRITER_ONLY" classname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" runstate="Runnable" seed="1382736315" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:21Z" duration="0.017364" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1064" name="POSITIVE_ELBOW_FLEXION_COMMAND_HAS_CORRECT_SIGN" fullname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests.POSITIVE_ELBOW_FLEXION_COMMAND_HAS_CORRECT_SIGN" methodname="POSITIVE_ELBOW_FLEXION_COMMAND_HAS_CORRECT_SIGN" classname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" runstate="Runnable" seed="133809860" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:21Z" duration="0.014347" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1063" name="POSITIVE_KNEE_FLEXION_COMMAND_HAS_CORRECT_SIGN" fullname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests.POSITIVE_KNEE_FLEXION_COMMAND_HAS_CORRECT_SIGN" methodname="POSITIVE_KNEE_FLEXION_COMMAND_HAS_CORRECT_SIGN" classname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" runstate="Runnable" seed="1856850016" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:21Z" duration="0.014591" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1068" name="POWERED_NEUTRAL_OPPOSES_PASSIVE_AND_ACTUAL_HUMAN_RESPONDS_TO_PULSE" fullname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests.POWERED_NEUTRAL_OPPOSES_PASSIVE_AND_ACTUAL_HUMAN_RESPONDS_TO_PULSE" methodname="POWERED_NEUTRAL_OPPOSES_PASSIVE_AND_ACTUAL_HUMAN_RESPONDS_TO_PULSE" classname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" runstate="Runnable" seed="800723768" result="Passed" start-time="2026-09-06 05:03:21Z" end-time="2026-09-06 05:03:25Z" duration="3.203127" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1065" name="TARGET_ROTATION_IS_PARENT_WORLD_ROTATION_INVARIANT" fullname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests.TARGET_ROTATION_IS_PARENT_WORLD_ROTATION_INVARIANT" methodname="TARGET_ROTATION_IS_PARENT_WORLD_ROTATION_INVARIANT" classname="PowerliftingSimulator.Tests.PoweredJointPlayModeTests" runstate="Runnable" seed="2143913469" result="Passed" start-time="2026-09-06 05:03:25Z" end-time="2026-09-06 05:03:25Z" duration="0.025257" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: C:/Users/Educacion/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

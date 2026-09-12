@@ -1,0 +1,8 @@
+GAM-11 PHASE 5H12 F3 POSTURE LIMIT GUARD COUNTERFACTUAL
+Identical dynamic descent. The only difference is PostureGuardEnabled.
+
+load  guard  deepestSq  finalPelvisY  minGuardScale  firstFrontCross  firstComOut  maxAnkleProx  lostContact
+   0  ON          1.00        0.5296         0.0000              366          396         1.000  False
+   0  OFF         1.00        0.4710         1.0000            never        never         0.702  False
+  25  ON          1.00        0.5764         0.0000              331          350         1.000  False
+  25  OFF         1.00        0.0900         1.0000            never        never         0.602  True

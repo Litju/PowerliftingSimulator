@@ -1,0 +1,19 @@
+GAM-11 PHASE 5H14 T4 VISUAL GATE
+Frames captured on the driven descent this phase measured, and on the
+production auto-cycle the existing visual qualification uses.
+
+--- driven descent, 25 kg ---
+  tag                      s_q   heelClrL  heelClrR  supportLen  trunkAct  trunkRef  excess
+  h14_driven_25kg_sq0.00  0.00   -0.0002   -0.0003      0.2900     -5.39      3.91   -9.30
+  h14_driven_25kg_sq0.55  0.55   -0.0002   -0.0002      0.2900     37.25     31.37    5.87
+  h14_driven_25kg_sq0.70  0.70   -0.0001   -0.0001      0.2900     43.69     33.28   10.41
+  h14_driven_25kg_sq0.80  0.80   -0.0001   -0.0001      0.2900     46.16     34.73   11.43
+  h14_driven_25kg_sq1.00  1.00   -0.0001   -0.0002      0.2900     46.00     35.97   10.03
+
+--- production auto-cycle, 25 kg, the path the existing visual capture uses ---
+  tag                      s_q   heelClrL  heelClrR  supportLen  trunkAct  trunkRef  excess
+  h14_auto_25kg_t175_sq0.53  0.53   -0.0002   -0.0002      0.2900     35.42     30.45    4.97
+  h14_auto_25kg_t250_sq0.75  0.75   -0.0001   -0.0001      0.2900     45.18     34.08   11.10
+  h14_auto_25kg_t325_sq0.98  0.98   -0.0001   -0.0001      0.2900     46.91     35.86   11.05
+  h14_auto_25kg_t350_sq1.00  1.00   -0.0002   -0.0001      0.2900     43.17     35.97    7.20
+

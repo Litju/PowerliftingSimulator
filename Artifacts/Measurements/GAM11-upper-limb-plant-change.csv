@@ -1,0 +1,5 @@
+quantity,t_pose_arms,gam10_setup_arms,delta
+com_ap_m,-0.03632,-0.02937,0.00695
+com_ml_m,0.00104,0.00113,0.00009
+com_height_m,1.06332,1.04696,-0.01636
+system_mass_kg,100.000,100.000,0

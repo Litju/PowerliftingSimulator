@@ -99,8 +99,13 @@ namespace PowerliftingSimulator.Tests
             FoundationBootstrap bootstrap = UnityEngine.Object.FindFirstObjectByType<FoundationBootstrap>();
             Assert.That(rig, Is.Not.Null);
             Assert.That(bootstrap, Is.Not.Null);
-            Assert.That(rig.PoweredController.PoweredJointCount, Is.EqualTo(14));
-            Assert.That(rig.PoweredController.PassiveJointCount, Is.EqualTo(1));
+            // Fifteen powered, none passive. GAM-7 left head_neck without a
+            // family profile, so it had no drive and no activation, and the
+            // rendered standing evidence showed the head falling into hard
+            // extension over ten seconds while the rest of the body held. The
+            // neck now carries a finite postural drive like every other joint.
+            Assert.That(rig.PoweredController.PoweredJointCount, Is.EqualTo(15));
+            Assert.That(rig.PoweredController.PassiveJointCount, Is.EqualTo(0));
 
             rig.ResetPassive();
             float passiveStart = rig.CalculateWholeBodyCom().y;
