@@ -81,7 +81,7 @@ namespace PowerliftingSimulator.Tests
             _trialSummary.AppendLine(
                 "load_kg,repeat,bar_signal,status,sample_count,lockout_sample_index,lockout_time_s," +
                 "stationary_count,stationary_median_abs_v_mps,velocity_sigma_mps,acceleration_sigma_mps2," +
-                "sensitivity,sequence,v0_index,vmax1_index,dmax1_index,vmin_index,vmax2_index," +
+                "sensitivity_classification,sequence,v0_index,vmax1_index,dmax1_index,vmin_index,vmax2_index," +
                 "knee_error_peak_index,knee_error_peak_deg,knee_error_peak_location");
             _eventSummary.AppendLine(
                 "load_kg,repeat,status,event,sample_index,time_from_squat_start_s,time_from_v0_s," +
@@ -107,7 +107,7 @@ namespace PowerliftingSimulator.Tests
                 "bar_vy_filtered_mps,bar_a_raw_mps2,bar_a_filtered_mps2,velocity_noise_sigma_mps,velocity_threshold_mps," +
                 "acceleration_noise_sigma_mps2,acceleration_threshold_mps2,accepted_full_sequence,criterion");
             _sensitivitySummary.AppendLine(
-                "load_kg,repeat,variant,cutoff_hz,noise_sigma_multiplier,status,v0_index,vmax1_index,dmax1_index,vmin_index,vmax2_index,stable_vs_default");
+                "load_kg,repeat,variant,cutoff_hz,noise_sigma_multiplier,status,v0_index,vmax1_index,dmax1_index,vmin_index,vmax2_index,classification_stable_vs_default");
             _repeatabilitySummary.AppendLine(
                 "load_kg,trial_count,bar_signal,repeatability,status_1,status_2,status_3,vmax1_time_range_s,vmin_time_range_s,vmax2_time_range_s");
 
@@ -234,7 +234,7 @@ namespace PowerliftingSimulator.Tests
                 new SquatBarVelocityDetectorOptions(0.01f, 12f, 4f)
             };
 
-            trial.SensitivityStatus = "STABLE";
+            trial.SensitivityStatus = "STABLE_CLASSIFICATION";
             for (int index = 0; index < variants.Length; index++)
             {
                 SquatBarVelocityEventDetection result = SquatBarVelocityEventDetector.Detect(
@@ -257,7 +257,7 @@ namespace PowerliftingSimulator.Tests
                     F(EventIndex(result, SquatBarVelocityEventKind.Dmax1)),
                     F(EventIndex(result, SquatBarVelocityEventKind.Vmin)),
                     F(EventIndex(result, SquatBarVelocityEventKind.Vmax2)),
-                    stable ? "STABLE" : "UNRESOLVED"));
+                    stable ? "STABLE_CLASSIFICATION" : "UNRESOLVED"));
             }
         }
 

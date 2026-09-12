@@ -73,7 +73,10 @@ Kinetics, 42, 63–71. DOI: [10.2478/hukin-2014-0061](https://doi.org/10.2478/hu
 
 - Population: 15 healthy males, `82 ± 11 kg`, `179 ± 6 cm`, with
   `6 ± 3` years of resistance training.
-- Squat/load: free-weight two-legged 6-RM squats, `135 ± 33 kg`.
+- Squat/load: free-weight two-legged 6-RM squats. The participant/methods
+  summary reports `135 ± 33 kg`; the Results section reports the lifted 6-RM
+  load as `137 ± 28 kg`. These are the paper's differing overall summaries,
+  not separate load values for the sticking and no-sticking groups.
 - Event definition: the first maximal upward velocity to the first local
   minimum upward velocity; a participant need not display a clear sticking
   region. Ten of fifteen participants displayed one in the last repetition.

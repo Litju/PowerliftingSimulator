@@ -307,6 +307,7 @@ namespace PowerliftingSimulator.Tests
         // ---------------------------------------------------------------
         // Experiment B: nominal + preload, no balance feedback at all.
         // ---------------------------------------------------------------
+        [Explicit("Characterization experiment; excluded from default qualification suites.")]
         [UnityTest]
         public IEnumerator E3_EXPERIMENT_B_PRELOAD_ONLY_EQUILIBRIUM()
         {

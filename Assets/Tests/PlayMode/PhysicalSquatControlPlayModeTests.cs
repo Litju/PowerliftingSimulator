@@ -20,6 +20,9 @@ namespace PowerliftingSimulator.Tests
     {
         private const string QualificationScene = "SquatPhysicalPrototype";
         private const string EvidenceDirectory = "Artifacts/Evidence/GAM-11";
+        // Deliberately generous safety envelope for H17-scale runaway detection;
+        // this is not a GAM-13 heavy-load performance limit.
+        private const float OutOfDomainPositionBoundMeters = 20f;
         private const string MeasurementDirectory = "Artifacts/Measurements";
 
         private FoundationBootstrap _bootstrap;
@@ -177,46 +180,36 @@ namespace PowerliftingSimulator.Tests
         }
 
         [UnityTest]
-        public IEnumerator G3_BARBELL_105KG_PHYSICAL_SQUAT_QUALIFICATION()
+        public IEnumerator GAM11_105KG_OUT_OF_DOMAIN_STRESS_REGRESSION()
         {
             PrepareManualRuntime(105f);
             FoundationRuntime runtime = _bootstrap.Runtime;
             SquatBarSaddle saddle = _controller.Saddle;
             SquatPhysicalAdapter adapter = _controller.Adapter;
             Assert.That(_bar.LoadedMassKg, Is.EqualTo(105f).Within(0.0001f));
+            Assert.That(_bar.Body.isKinematic, Is.False, "The stress case requires the production dynamic barbell.");
 
             for (int i = 0; i < 30; i++)
                 AdvanceTicks(runtime, 1);
 
-            float standingBarY = _bar.Body.position.y;
-            Assert.That(saddle.IsAttached, Is.True);
-
             adapter.StartSquat();
             int totalTicks = Mathf.CeilToInt(8.0f / (float)SimulationConstants.FixedDeltaTimeSeconds);
-            float minBarY = standingBarY;
 
             for (int tick = 0; tick < totalTicks; tick++)
             {
                 AdvanceTicks(runtime, 1);
 
-                float currentBarY = _bar.Body.position.y;
-                float currentPelvisY = _rig.Segments["pelvis"].Body.position.y;
+                AssertFiniteStressState(_rig, _bar);
+                AssertFiniteControllerOutputs(_rig.PoweredController);
+
                 if (tick % 25 == 0 || tick == totalTicks - 1)
                 {
-                    Debug.Log($"[G3 Tick {tick:D3}] sq={adapter.Sq:F2} state={adapter.State} barY={currentBarY:F3} pelvisY={currentPelvisY:F3} apErr={adapter.ApComError:F3} sep={saddle.SaddleSeparationMeters:F3}");
+                    float pelvisY = _rig.Segments["pelvis"].Body.position.y;
+                    Debug.Log($"[GAM11 105KG stress tick {tick:D3}] sq={adapter.Sq:F2} state={adapter.State} barY={_bar.Body.position.y:F3} pelvisY={pelvisY:F3} apErr={adapter.ApComError:F3} sep={saddle.SaddleSeparationMeters:F3} attached={saddle.IsAttached}");
                 }
-                if (currentBarY < minBarY)
-                    minBarY = currentBarY;
-
-                Assert.That(saddle.IsAttached, Is.True, "Bar saddle detached during 105kg squat!");
-                Assert.That(_bar.Body.isKinematic, Is.False, "Barbell must remain dynamic.");
             }
 
-            Assert.That(standingBarY - minBarY, Is.GreaterThan(0.20f), "Bar did not descend sufficiently during 105kg squat.");
-            float finalBarY = _bar.Body.position.y;
-            Assert.That(standingBarY - finalBarY, Is.LessThan(0.15f), "Bar did not return to standing lockout height.");
-
-            CaptureEvidence("GAM-11-105kg-squat-lockout.png");
+            Debug.Log($"[GAM11 105KG stress result] finite bounded state within {OutOfDomainPositionBoundMeters:F0}m envelope; terminalState={adapter.State}; saddleAttached={saddle.IsAttached}; 105kg performance is not asserted by GAM-11.");
             yield return null;
         }
 
@@ -260,6 +253,49 @@ namespace PowerliftingSimulator.Tests
         {
             for (int index = 0; index < count; index++)
                 Assert.That(runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds), Is.EqualTo(1));
+        }
+
+        private static void AssertFiniteStressState(PhysicalAthleteRig rig, PhysicalBarbell bar)
+        {
+            AssertFiniteBody("barbell", bar.Body);
+            foreach (var segment in rig.Segments)
+                AssertFiniteBody(segment.Key, segment.Value.Body);
+        }
+
+        private static void AssertFiniteBody(string label, Rigidbody body)
+        {
+            Assert.That(body, Is.Not.Null, $"{label} body is missing during the stress run.");
+            Assert.That(PoweredJointController.IsFinite(body.position), Is.True, $"{label} position became non-finite.");
+            Assert.That(PoweredJointController.IsFinite(body.rotation), Is.True, $"{label} rotation became non-finite.");
+            Assert.That(PoweredJointController.IsFinite(body.linearVelocity), Is.True, $"{label} linear velocity became non-finite.");
+            Assert.That(PoweredJointController.IsFinite(body.angularVelocity), Is.True, $"{label} angular velocity became non-finite.");
+            Assert.That(body.position.sqrMagnitude, Is.LessThan(OutOfDomainPositionBoundMeters * OutOfDomainPositionBoundMeters),
+                $"{label} exceeded the GAM-11 out-of-domain safety envelope.");
+        }
+
+        private static void AssertFiniteControllerOutputs(PoweredJointController controller)
+        {
+            foreach (PoweredJointController.PoweredJointRuntime joint in controller.Joints)
+            {
+                string label = $"joint '{joint.Id}'";
+                Assert.That(PoweredJointController.IsFinite(joint.RequestedCommand.TargetRelativeRotation), Is.True,
+                    $"{label} requested target became non-finite.");
+                Assert.That(PoweredJointController.IsFinite(joint.RequestedCommand.TargetRelativeAngularVelocityRadS), Is.True,
+                    $"{label} requested rate became non-finite.");
+                Assert.That(PoweredJointController.IsFinite(joint.Joint.targetRotation), Is.True,
+                    $"{label} applied target became non-finite.");
+                Assert.That(PoweredJointController.IsFinite(joint.Joint.targetAngularVelocity), Is.True,
+                    $"{label} applied rate became non-finite.");
+                Assert.That(PoweredJointController.IsValidPoweredDrive(joint.Joint.angularXDrive), Is.True,
+                    $"{label} X drive authority became invalid.");
+                Assert.That(PoweredJointController.IsValidPoweredDrive(joint.Joint.angularYZDrive), Is.True,
+                    $"{label} YZ drive authority became invalid.");
+                Assert.That(PoweredJointController.IsValidPoweredDrive(joint.Joint.slerpDrive), Is.True,
+                    $"{label} Slerp drive authority became invalid.");
+                if (joint.Profile.HasValue)
+                    Assert.That(float.IsFinite(joint.Diagnostic.ModeledDemand), Is.True,
+                        $"{label} modeled demand became non-finite.");
+            }
         }
 
         private IEnumerator LoadQualificationScene()

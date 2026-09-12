@@ -2,8 +2,8 @@
 
 MISSION=GAM11_PHASE5H20_EVENT_BASED_BIOMECHANICAL_VALIDATION_AND_CONTROL_DECISION
 ISSUE=GAM-11
-START_HEAD=84fc03bdfeb97231eefc93278400eafed6839d1b
-FINAL_HEAD=resolve with `git rev-parse HEAD` after the receipt commit
+H20_START_HEAD=84fc03bdfeb97231eefc93278400eafed6839d1b
+H20_RESULT_HEAD=26d848d9cebd36abd2f6afce6793037177ad46f8
 CHECKPOINT=`checkpoint/gam11-pre-h20-event-validation` = `84fc03bdfeb97231eefc93278400eafed6839d1b`
 WORKTREE_STATUS=clean before H20; final status verified after explicit staging/commit
 SKILLS_USED=`powerlifting-foundation`, `powerlifting-physical-athlete`, `powerlifting-equipment`, `unity-physics`, `unity-csharp-scripting`, `physics-tuning`, `biomechanics-modeler`,`numerical-vvuq-scientist`, `scientific-critical-thinking`, `research`; Linear connector used for issue read/post
@@ -48,6 +48,12 @@ edge padding. Filtering is diagnostic/offline and does not alter simulation.
 Raw acceleration is also retained as the central difference of raw velocity;
 filtered acceleration is used only for `dmax1` identification.
 
+`ACCELERATION_NOISE_COMPARISON=CONSERVATIVE_NOT_BANDWIDTH_MATCHED`. H20
+estimates the acceleration noise scale from held raw velocity first-differences,
+while candidate `dmax1` is evaluated on filtered acceleration. The comparison
+is conservative but not bandwidth-matched; GAM-13 may improve the estimator if
+heavy-load event calibration requires higher sensitivity.
+
 `NOISE_FLOOR_METHOD=` final 60 ticks of a 120-tick no-intent SETUP hold at the
 same production configuration, using robust MAD scale (`1.4826 × MAD`) on
 held velocity and its first difference. The 25 kg low-motion window measured:
@@ -56,6 +62,11 @@ held velocity and its first difference. The 25 kg low-motion window measured:
 |---|---:|---:|
 | velocity | `0.004848627 m/s` | `0.019394508 m/s` |
 | acceleration | `0.080142610 m/s²` | `0.320570439 m/s²` |
+
+`FOUR_SIGMA_CRITERION=SIMULATOR_EVENT_RESOLUTION_GATE`. The four-sigma
+threshold is a conservative engineering evidence threshold for this
+Unity/PhysX plant; it is not a universal biomechanical definition of a
+sticking region.
 
 The held-window median absolute velocity was `0.016943600 m/s`; this is a
 conservative low-motion/solver-and-plant floor, not a claim of perfect static
@@ -88,6 +99,10 @@ signal.
 `25KG_EVENT_SEQUENCE=NO_RESOLVABLE_STICKING_REGION`. The raw/filtered trace has
 observable candidate extrema, but the complete sequence is rejected by the
 declared noise criterion in every repeat and every sensitivity variant.
+
+`SENSITIVITY_RESULT=STABLE_CLASSIFICATION`. All sensitivity variants return
+`NO_RESOLVABLE_STICKING_REGION`; this does not establish that all candidate
+extrema are invariant.
 
 `0KG_STICKING_REGION=NOT_APPLICABLE_NO_BAR_SIGNAL`
 `25KG_STICKING_REGION=NO_RESOLVABLE_STICKING_REGION`
@@ -203,6 +218,10 @@ force-plate COP.`
 
 ## Qualification
 
+The counts below are the H20 baseline run at `H20_RESULT_HEAD`, before H20A
+test-contract cleanup. The final default-suite counts are recorded in the H20A
+closeout receipt.
+
 `MASTER_SPEC=PASS` — 68 files, hashes and dependencies verified.
 `EDITMODE=PASS` — full suite 73/73; H20 detector contract 6/6.
 `PLAYMODE_H20=PASS` — H20 fresh-trial/graphics test 1/1; headless replay also 1/1.
@@ -223,7 +242,7 @@ comparison remains convention-limited; contact COP/normal force remains an
 engine impulse estimate; results are same-machine Unity/PhysX evidence, not a
 cross-platform determinism claim; 105 kg remains outside H20/GAM-13 scope.
 
-`NEXT_ACTION=` Keep GAM-11 In Progress. Request owner review/acceptance of the
-H20 finite-impedance baseline and its explicit no-sticking/no-bar limitations;
-resolve the separate 105 kg acceptance gate before closure. Do not implement a
-control correction in H20 and do not start GAM-12 automatically.
+`NEXT_ACTION=` H20A scope closeout: retain owner-accepted 0/25 kg finite-
+impedance results, classify 105 kg as an out-of-domain stability stress only,
+and defer heavy-load performance/calibration to GAM-13. Do not implement a
+control correction in H20 or start GAM-12 in this phase.

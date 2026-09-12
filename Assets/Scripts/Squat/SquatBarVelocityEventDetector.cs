@@ -166,9 +166,11 @@ namespace PowerliftingSimulator.Squat
     }
 
     /// <summary>
-    /// Offline diagnostic event extraction for an actual vertical bar signal.
-    /// The input samples remain the raw engine observations; filtering is used
-    /// only to make event identity robust to solver-scale jitter.
+    /// OFFLINE_DIAGNOSTIC_ONLY event extraction for an actual vertical bar
+    /// signal. There is NO_RUNTIME_CALLSITE and no hot-path cost: production
+    /// simulation never invokes this detector. The input samples remain raw
+    /// engine observations; filtering is used only to make event identity
+    /// robust to solver-scale jitter.
     /// </summary>
     public static class SquatBarVelocityEventDetector
     {
