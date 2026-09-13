@@ -129,6 +129,7 @@ namespace PowerliftingSimulator.Athlete
         public const string CalibrationVersion = "GAM7_CONFIGURABLE_JOINT_LOCAL_V1";
         public const string SourceClass = "GAME_CALIBRATION";
         public const float PulseRadians = 20f * Mathf.Deg2Rad;
+        public const float ModeledDemandSaturationThreshold = 0.95f;
 
         private static readonly JointFamilyProfile[] Profiles =
         {
@@ -311,7 +312,29 @@ namespace PowerliftingSimulator.Athlete
                     throw new InvalidOperationException($"Joint '{joint.Id}' produced non-finite authority.");
 
                 WritePoweredJoint(joint, targetVelocity, maximumForce);
-                joint.Diagnostic = BuildDiagnostic(joint, targetVelocity, maximumForce, activation, command.CapacityScale);
+                joint.Diagnostic = BuildCurrentDiagnostic(joint);
+            }
+        }
+
+        /// <summary>
+        /// Recomputes read-only diagnostics from the current post-physics
+        /// joint state. The ordinary Diagnostic remains the pre-physics
+        /// command diagnostic consumed by the controller; this separate slot
+        /// prevents observation from changing control timing.
+        /// </summary>
+        public void CapturePostPhysicsDiagnostics()
+        {
+            foreach (PoweredJointRuntime joint in _joints)
+            {
+                if (!joint.Profile.HasValue)
+                {
+                    joint.PostPhysicsDiagnostic = default;
+                    joint.HasPostPhysicsDiagnostic = false;
+                    continue;
+                }
+
+                joint.PostPhysicsDiagnostic = BuildCurrentDiagnostic(joint);
+                joint.HasPostPhysicsDiagnostic = true;
             }
         }
 
@@ -515,6 +538,26 @@ namespace PowerliftingSimulator.Athlete
                 solverTorque);
         }
 
+        private PoweredJointDiagnostic BuildCurrentDiagnostic(PoweredJointRuntime joint)
+        {
+            JointCommand command = joint.RequestedCommand;
+            JointFamilyProfile profile = joint.Profile.Value;
+            float activation = Mode == PoweredAthleteMode.Passive ? 0f : command.Activation;
+            float maximumForce = profile.BaseCapacityNm * command.CapacityScale * activation;
+            if (!float.IsFinite(maximumForce))
+                throw new InvalidOperationException($"Joint '{joint.Id}' produced non-finite authority.");
+
+            Vector3 targetVelocity = Vector3.ClampMagnitude(
+                command.TargetRelativeAngularVelocityRadS,
+                profile.MaxTargetRateRadS);
+            return BuildDiagnostic(
+                joint,
+                targetVelocity,
+                maximumForce,
+                activation,
+                command.CapacityScale);
+        }
+
         private static Vector3 QuaternionLog(Quaternion quaternion)
         {
             quaternion = NormalizeCanonical(quaternion);
@@ -544,6 +587,16 @@ namespace PowerliftingSimulator.Athlete
                 ? Mathf.Max(0.001f, highDegrees)
                 : Mathf.Max(0.001f, -lowDegrees);
             return Mathf.Clamp01(Mathf.Abs(xDegrees) / limit);
+        }
+
+        /// <summary>
+        /// Returns the signed twist about the calibrated joint axis in
+        /// radians. This is the same projection used by the limit diagnostic;
+        /// it is a joint-space engineering scalar, not an included angle.
+        /// </summary>
+        public static float SignedTwistRadians(Quaternion rotation, Vector3 axis)
+        {
+            return SignedTwistDegrees(NormalizeCanonical(rotation), axis) * Mathf.Deg2Rad;
         }
 
         private static float SignedTwistDegrees(Quaternion rotation, Vector3 axis)
@@ -589,6 +642,8 @@ namespace PowerliftingSimulator.Athlete
             public JointCommand RequestedCommand { get; internal set; }
             public Quaternion AppliedTarget { get; internal set; }
             public PoweredJointDiagnostic Diagnostic { get; internal set; }
+            public PoweredJointDiagnostic PostPhysicsDiagnostic { get; internal set; }
+            public bool HasPostPhysicsDiagnostic { get; internal set; }
             public ulong LastCommandTick { get; internal set; }
 
             internal PhysicalAthleteRig.JointRuntime Runtime { get; }
@@ -598,6 +653,8 @@ namespace PowerliftingSimulator.Athlete
                 RequestedCommand = JointCommand.Neutral(0f);
                 AppliedTarget = Quaternion.identity;
                 Diagnostic = default;
+                PostPhysicsDiagnostic = default;
+                HasPostPhysicsDiagnostic = false;
                 LastCommandTick = ulong.MaxValue;
             }
         }

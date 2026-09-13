@@ -27,6 +27,8 @@ namespace PowerliftingSimulator.Squat.Unity
         private readonly Vector3[] _completedPoints = new Vector3[MaxTrackedContacts];
         private readonly float[] _completedNormalImpulses = new float[MaxTrackedContacts];
         private int _completedCount;
+        private bool _postPhysicsStepCompleted;
+        private bool _hasSlipUpdate;
 
         public bool IsInContact => _contactCount > 0;
         public int ContactCount => _contactCount;
@@ -47,10 +49,40 @@ namespace PowerliftingSimulator.Squat.Unity
 
         public void BeginPhysicsStep()
         {
+            // The post-physics collector may already have promoted the
+            // contacts for the current completed step. Keep them available to
+            // the next pre-physics controller read instead of clearing them.
+            if (_postPhysicsStepCompleted)
+            {
+                _postPhysicsStepCompleted = false;
+                return;
+            }
+
+            PromotePendingContacts();
+        }
+
+        /// <summary>
+        /// Promotes collision callbacks from the just-completed local
+        /// PhysicsScene step. This is the authoritative post-physics contact
+        /// boundary used by the squat observation collector.
+        /// </summary>
+        public void CompletePhysicsStep()
+        {
             Array.Copy(_pendingPoints, _completedPoints, _pendingCount);
             Array.Copy(_pendingNormalImpulses, _completedNormalImpulses, _pendingCount);
             _completedCount = _pendingCount;
             _pendingCount = 0;
+            _postPhysicsStepCompleted = true;
+            _hasSlipUpdate = false;
+        }
+
+        private void PromotePendingContacts()
+        {
+            Array.Copy(_pendingPoints, _completedPoints, _pendingCount);
+            Array.Copy(_pendingNormalImpulses, _completedNormalImpulses, _pendingCount);
+            _completedCount = _pendingCount;
+            _pendingCount = 0;
+            _hasSlipUpdate = false;
         }
 
         private void Awake()
@@ -114,12 +146,16 @@ namespace PowerliftingSimulator.Squat.Unity
 
         public void PhysicsTickUpdate(float dt)
         {
+            if (_hasSlipUpdate)
+                return;
+
             if (_rigidbody == null)
                 return;
 
             if (!IsInContact || !_hasSupportContact || dt <= 0.0001f)
             {
                 _lastSlipSpeed = 0f;
+                _hasSlipUpdate = true;
                 return;
             }
 
@@ -135,6 +171,7 @@ namespace PowerliftingSimulator.Squat.Unity
             // this prototype's 100 Hz timestep, not measurable plantar slip.
             if (slipSpeed > ContactSolverNoiseFloorMps)
                 _slipAccumulator += slipSpeed * dt;
+            _hasSlipUpdate = true;
         }
 
         public void ResetContact()
@@ -145,6 +182,8 @@ namespace PowerliftingSimulator.Squat.Unity
             _lastSlipSpeed = 0f;
             _pendingCount = 0;
             _completedCount = 0;
+            _postPhysicsStepCompleted = false;
+            _hasSlipUpdate = false;
         }
     }
 }

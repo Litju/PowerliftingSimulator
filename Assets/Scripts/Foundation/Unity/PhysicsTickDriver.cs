@@ -20,6 +20,7 @@ namespace PowerliftingSimulator.Foundation.Unity
         private bool _completingRenderFrame;
         private bool _stepInProgress;
         private Action<SimulationTime, PlayerIntentFrame> _prePhysicsStep;
+        private Action<SimulationTime, PhysicalObservation, PlayerIntentFrame> _postPhysicsStep;
 
         internal PhysicsTickDriver(AuthoritativePhysicsScene authoritativeScene, InputTimeDomain inputTimeDomain)
         {
@@ -73,6 +74,17 @@ namespace PowerliftingSimulator.Foundation.Unity
             _prePhysicsStep = step;
         }
 
+        internal void RegisterPostPhysicsStep(
+            Action<SimulationTime, PhysicalObservation, PlayerIntentFrame> step)
+        {
+            if (step == null)
+                throw new ArgumentNullException(nameof(step));
+            if (_postPhysicsStep != null)
+                throw new InvalidOperationException("The authoritative post-physics observation callback already has an owner.");
+
+            _postPhysicsStep = step;
+        }
+
         public void StepOne()
         {
             if (!_authoritativeScene.IsValid)
@@ -106,6 +118,7 @@ namespace PowerliftingSimulator.Foundation.Unity
                     time,
                     _observations.AcquireWriteStorage());
                 _observations.Publish(observation);
+                _postPhysicsStep?.Invoke(time, observation, LastIntentFrame);
                 if (_attemptTrace.IsRecording)
                     _attemptTrace.Append(observation, LastIntentFrame);
             }

@@ -30,6 +30,7 @@ namespace PowerliftingSimulator.Squat.Unity
         private SquatBarSaddle _saddle;
         private PhysicalFootContactDetector _leftFootContact;
         private PhysicalFootContactDetector _rightFootContact;
+        private SquatObservationCollector _observationCollector;
         private bool _isInitialized;
         private float _selectedLoadKg = 25f;
         private string _startupFailure = string.Empty;
@@ -40,6 +41,8 @@ namespace PowerliftingSimulator.Squat.Unity
         public SquatBarSaddle Saddle => _saddle;
         public PhysicalFootContactDetector LeftFootContact => _leftFootContact;
         public PhysicalFootContactDetector RightFootContact => _rightFootContact;
+        public SquatObservationCollector ObservationCollector => _observationCollector;
+        public SquatTrace ObservationTrace => _observationCollector == null ? null : _observationCollector.Trace;
         public float CurrentLoadKg => _selectedLoadKg;
         public bool IsInitialized => _isInitialized;
         public bool RuntimeWired => _isInitialized && foundation != null && athleteRig != null &&
@@ -99,6 +102,14 @@ namespace PowerliftingSimulator.Squat.Unity
 
             if (attachBarSaddle && _selectedLoadKg > 0f)
                 EnsureSaddle();
+
+            _observationCollector = new SquatObservationCollector(
+                foundation.Runtime,
+                athleteRig,
+                barbell,
+                _adapter,
+                _leftFootContact,
+                _rightFootContact);
 
             _adapter.Reset();
             _adapter.EquilibriumLoadKg = _selectedLoadKg;
@@ -196,6 +207,8 @@ namespace PowerliftingSimulator.Squat.Unity
         {
             if (!_isInitialized || barbell == null)
                 return;
+            if (_observationCollector != null && _observationCollector.IsRecording)
+                throw new InvalidOperationException("The squat load cannot change while an observation trace is recording.");
 
             _selectedLoadKg = Mathf.Max(0f, loadKg);
             // Single writer for the load the spine equilibrium calibration
@@ -208,6 +221,10 @@ namespace PowerliftingSimulator.Squat.Unity
             }
 
             foundation.Reset();
+            _leftFootContact?.ResetContact();
+            _rightFootContact?.ResetContact();
+            if (_observationCollector != null && !_observationCollector.IsRecording)
+                _observationCollector.Clear();
             if (_selectedLoadKg <= 0f)
             {
                 if (barbell.Body != null)

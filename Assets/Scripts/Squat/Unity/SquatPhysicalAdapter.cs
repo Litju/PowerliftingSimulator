@@ -595,6 +595,34 @@ namespace PowerliftingSimulator.Squat.Unity
             LegalDepth = depth.BilateralLegalReference;
         }
 
+        /// <summary>
+        /// Captures the raw calibrated joint-anchor landmarks used by the
+        /// existing depth proxy. This is an observation seam only; it does
+        /// not evaluate or latch a competition judgment.
+        /// </summary>
+        public bool TryGetRawDepthLandmarks(
+            out SquatPoint3 leftHipCrease,
+            out SquatPoint3 rightHipCrease,
+            out SquatPoint3 leftKneeTop,
+            out SquatPoint3 rightKneeTop)
+        {
+            leftHipCrease = default;
+            rightHipCrease = default;
+            leftKneeTop = default;
+            rightKneeTop = default;
+            if (!TryJointAnchor("left_thigh", out Vector3 leftHip) ||
+                !TryJointAnchor("right_thigh", out Vector3 rightHip) ||
+                !TryJointAnchor("left_shank", out Vector3 leftKnee) ||
+                !TryJointAnchor("right_shank", out Vector3 rightKnee))
+                return false;
+
+            leftHipCrease = new SquatPoint3(leftHip.x, leftHip.y, leftHip.z);
+            rightHipCrease = new SquatPoint3(rightHip.x, rightHip.y, rightHip.z);
+            leftKneeTop = new SquatPoint3(leftKnee.x, leftKnee.y, leftKnee.z);
+            rightKneeTop = new SquatPoint3(rightKnee.x, rightKnee.y, rightKnee.z);
+            return true;
+        }
+
         private bool TryJointAnchor(string jointId, out Vector3 worldAnchor)
         {
             worldAnchor = Vector3.zero;
@@ -1271,7 +1299,7 @@ namespace PowerliftingSimulator.Squat.Unity
                     maximum = Mathf.Max(maximum, joint.Diagnostic.ModeledDemand);
             }
             _maxDriveSaturation = maximum;
-            _isDriveSaturated = maximum >= 0.95f;
+            _isDriveSaturated = maximum >= PoweredJointController.ModeledDemandSaturationThreshold;
         }
 
         public static float CalculateBalanceOffset(
