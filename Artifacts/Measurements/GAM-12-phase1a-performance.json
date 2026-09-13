@@ -1,0 +1,63 @@
+{
+    "schema": "GAM12_P1A_TRACE_APPEND_PERFORMANCE_V1",
+    "unityVersion": "6000.3.22f1",
+    "scene": "SquatPhysicalPrototype",
+    "environment": "Unity 6000.3.22f1 PlayMode with graphics disabled; Stopwatch.GetTimestamp around FoundationRuntime.AdvanceRenderFrame(0.01), one 100 Hz tick per call, after warm-up. This measures the total fixed physics/observation path, not collector-only time.",
+    "traceRecordingComparison": "The same production collector/runtime and fresh production scene-reload reset are used with trace recording OFF and ON; all 17 registered physical bodies are compared at every 800-tick sample. This is TRACE_APPEND_PERTURBATION, not a PRE_P1_RUNTIME versus POST_P1_RUNTIME comparison.",
+    "traceAppendTrajectorySampleCount": 800,
+    "sampleCount": 300,
+    "warmupTickCount": 100,
+    "gcAllocStatus": "UNRESOLVED",
+    "gcBytesPerPhysicsTick": "NOT_RELIABLY_ISOLATED",
+    "gcMeasurementReason": "The existing standalone ProfilerRecorder harness qualifies the GAM-9 physical-athlete scene, not the squat collector. PlayMode frame counters cannot honestly isolate one fixed tick from test-runner work; static hot-path inspection is not a zero-byte measurement.",
+    "loads": [
+        {
+            "loadKg": 0.0,
+            "traceAppendPerturbationWithinContract": true,
+            "traceAppendMaxPositionDeltaM": 0.0,
+            "traceAppendMaxRotationDeltaDeg": 0.0,
+            "traceAppendMaxLinearVelocityDeltaMps": 0.0,
+            "traceAppendMaxAngularVelocityDeltaRadS": 0.0,
+            "timingRecordingOff": {
+                "sampleCount": 300,
+                "medianMs": 0.4332,
+                "p95Ms": 0.6704,
+                "p99Ms": 0.9148,
+                "maxMs": 1.1527
+            },
+            "timingRecordingOn": {
+                "sampleCount": 300,
+                "medianMs": 0.6364,
+                "p95Ms": 1.2703,
+                "p99Ms": 1.9088,
+                "maxMs": 2.8916
+            },
+            "timingP95DeltaOnMinusOffMs": 0.5999,
+            "timingInterpretation": "PERFORMANCE_REGRESSION=NO_EVIDENCE; recording-ON p95 is within the existing 2.0 ms one-tick budget, and the measured OFF/ON delta is reported but does not establish causality in this Editor fallback. OFF/ON p95=0.6704/1.2703 ms; ON-OFF delta=0.5999 ms."
+        },
+        {
+            "loadKg": 25.0,
+            "traceAppendPerturbationWithinContract": true,
+            "traceAppendMaxPositionDeltaM": 0.0,
+            "traceAppendMaxRotationDeltaDeg": 0.0,
+            "traceAppendMaxLinearVelocityDeltaMps": 0.0,
+            "traceAppendMaxAngularVelocityDeltaRadS": 0.0,
+            "timingRecordingOff": {
+                "sampleCount": 300,
+                "medianMs": 0.5999,
+                "p95Ms": 0.8755,
+                "p99Ms": 1.0697,
+                "maxMs": 1.239
+            },
+            "timingRecordingOn": {
+                "sampleCount": 300,
+                "medianMs": 0.9046,
+                "p95Ms": 1.9496,
+                "p99Ms": 2.4327,
+                "maxMs": 4.0754
+            },
+            "timingP95DeltaOnMinusOffMs": 1.0741,
+            "timingInterpretation": "PERFORMANCE_REGRESSION=NO_EVIDENCE; recording-ON p95 is within the existing 2.0 ms one-tick budget, and the measured OFF/ON delta is reported but does not establish causality in this Editor fallback. OFF/ON p95=0.8755/1.9496 ms; ON-OFF delta=1.0741 ms."
+        }
+    ]
+}

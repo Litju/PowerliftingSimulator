@@ -27,6 +27,11 @@ SCHEMA_ID
 PHYSICS_SAMPLE_PERIOD
 0.010 s / 100 Hz, from `SimulationConstants.FixedDeltaTimeSeconds`.
 
+TRACE_STORAGE_DETERMINISTIC=YES
+FIXED_STEP_ACQUISITION=YES
+FULL_PHYSICAL_ATTEMPT_DETERMINISTIC=NOT_CLAIMED
+CROSS_PLATFORM_DETERMINISM=NOT_CLAIMED
+
 POST_PHYSICS_SAMPLING_POINT
 `PhysicsTickDriver.StepOne`: after the sole local `PhysicsScene.Simulate(0.01)`, after `AuthoritativePhysicsScene.CaptureObservation` and publication, the registered `SquatObservationCollector` promotes current contact callbacks, captures read-only post-step joint diagnostics, refreshes the squat observer, builds one snapshot, and appends it to `SquatTrace`; the existing foundation `AttemptTrace` append follows.
 
@@ -36,8 +41,11 @@ Use a specialized `SquatTrace`. `AttemptTrace` already owns generic copied body 
 UNITY_ADAPTER
 `SquatObservationCollector` in `PowerliftingSimulator.Squat.Unity`; pure snapshot/schema/trace contracts remain in the no-engine-reference `PowerliftingSimulator.Squat` assembly.
 
-PRODUCTION_CONTROL_CHANGED
-NO. The collector has no Rigidbody, drive-target, force, torque, velocity, transform, or phase-control write path. Post-step diagnostics use a separate read-only slot so controller timing is unchanged.
+ACTUATION_LAW_CHANGED=NO
+PHYSICS_PARAMETERS_CHANGED=NO
+REFERENCE_MOTION_CHANGED=NO
+OBSERVER_TIMING_CHANGED=YES — P1 added the post-physics contact promotion/read path and a separate post-physics diagnostic slot; the actuation law is unchanged.
+RESET_CONTACT_STATE_CHANGED=YES — P1 added contact-detector reset handling at load/reset boundaries.
 
 CHANNEL_COUNT
 164 catalog channels, each with canonical name, unit, frame, source class, availability semantics, provenance version, and claim note.
@@ -63,6 +71,11 @@ Raw calibrated `left_thigh`/`right_thigh` and `left_shank`/`right_shank` joint a
 COM_SUPPORT_SOURCE
 `SquatBalanceObserver` mass-weighted engine-model COM and velocity from copied post-physics bodies; support bounds/contact counts from buffered `PhysicalFootContactDetector` plantar contacts. The impulse-weighted engine contact point is source-classed as an engine contact estimate, never human COP or force-plate data.
 
+CONTACT_CLAIM_BOUNDARY
+ENGINE_CONTACT_POINT != FORCE_PLATE_COP
+TOTAL_NORMAL_IMPULSE != MEASURED_GRF
+SUPPORT_AP_ML_BOUNDS != EXACT_CONVEX_SUPPORT_POLYGON
+
 JOINT_SOURCE
 `PoweredJointController.CapturePostPhysicsDiagnostics` reads current post-PhysX calibrated joint state into a separate diagnostic slot. Snapshot scalar angles/rates are logical `J_i` twist projections; thorax orientation/pitch is copied/derived from the world body state. Reference scalars and actual-reference errors are secondary context/engineering diagnostics.
 
@@ -78,6 +91,9 @@ NO. Existing GAM-11 diagnostics remain untouched and are not promoted to GAM-12 
 HEAVY_LOAD_CALIBRATION_IMPLEMENTED
 NO.
 
+TRACE_FREEZE_LIFECYCLE=PASS
+AUTOMATIC_ATTEMPT_END_ORCHESTRATION=NOT_IMPLEMENTED
+
 MASTER_SPEC
 PASS — `Verify-MasterSpec.ps1`: 68 files, hashes PASS, dependencies PASS.
 
@@ -85,7 +101,7 @@ EDITMODE
 PASS — new P1 pure contracts 11/11; full EditMode 84/84.
 
 P1_INTEGRATION
-PASS — one bounded production-scene fixture, actual 0 kg and 25 kg deterministic squat attempts, 800 raw samples each, post-physics parity and freeze checks 1/1.
+PASS — one bounded production-scene fixture, actual 0 kg and 25 kg fixed-step acquisition attempts, 800 raw samples each, post-physics parity and freeze checks 1/1. Full physical attempt repeatability was not claimed in P1.
 
 GAM11_REGRESSION
 PASS — focused `PhysicalSquatControlPlayModeTests` 4/4, including existing unloaded 0 kg and 25 kg physical qualifications.

@@ -1,0 +1,363 @@
+{
+    "schema": "GAM12_P1A_COMPLETE_TRACE_REPEATABILITY_V1",
+    "unityVersion": "6000.3.22f1",
+    "scene": "SquatPhysicalPrototype",
+    "fixedStepSeconds": 0.01,
+    "repeatCount": 3,
+    "sampleCountPerAttempt": 800,
+    "inputSequence": "Canonical fresh scene reset via production LoadSceneMode.Single before each attempt; StartSquat(); 800 x FoundationRuntime.AdvanceRenderFrame(0.01).",
+    "resetBoundary": "Equivalent to SquatPhysicalPrototypeController.ResetPrototype: SceneManager.LoadScene(activeScene.path, LoadSceneMode.Single), which rebuilds the production physics scene and contact state.",
+    "exactComparisonClass": "simulation tick/time alignment; enums; availability flags; intent edges/held flags; booleans; counts; schema identifiers; quality flags.",
+    "floatWithToleranceComparisonClass": "positions/landmarks/COM/support; velocities; scalar diagnostics; lengths/impulses; canonical quaternion shortest-arc orientation.",
+    "toleranceBasis": "Position/length/depth/support=PhysicalAthleteDefinition.AnchorToleranceMeters (0.0001 m); linear and angular velocity=qualified GAM-9 repeatability tolerance (0.0001 in declared units); dimensionless and joint-angle channels=FoundationTolerances.UnitConversionRoundTrip (0.00001, radians for angles); mass/force/impulse=existing load/drive physics scalar tolerance (0.0001 in declared units); orientation=qualified GAM-9 repeatability tolerance (0.01 deg); time=FoundationTolerances.SimulationTimeMapping.",
+    "loads": [
+        {
+            "loadKg": 0.0,
+            "repeatCount": 3,
+            "sampleCount": 800,
+            "tickAlignment": true,
+            "earliestDivergenceTick": "NONE",
+            "earliestOutOfContractTick": "NONE",
+            "firstMismatch": "NONE",
+            "withinDeclaredContract": true,
+            "finalStateMaxPositionM": 0.0,
+            "finalStateMaxVelocityMps": 0.0,
+            "finalStateMaxAngularVelocityRadS": 0.0,
+            "finalStateMaxOrientationDeg": 0.0,
+            "maximumAbsoluteDifferenceByChannelFamily": [
+                {
+                    "family": "time_s",
+                    "unit": "s",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "phase",
+                    "unit": "1",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "intent_scalar",
+                    "unit": "1",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "position_m",
+                    "unit": "m",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "velocity_mps",
+                    "unit": "m/s",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "orientation_rad",
+                    "unit": "rad",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "angular_velocity_rad_s",
+                    "unit": "rad/s",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "mass_kg",
+                    "unit": "kg",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "depth_landmarks_m",
+                    "unit": "m",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "force_nm",
+                    "unit": "N*m",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "impulse_ns",
+                    "unit": "N*s",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "joint_angle_rad",
+                    "unit": "rad",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "joint_velocity_rad_s",
+                    "unit": "rad/s",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "joint_scalar",
+                    "unit": "1",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "drive_scalar",
+                    "unit": "1",
+                    "maxAbsDifference": 0.0
+                }
+            ],
+            "finalStateDifferenceByChannelFamily": [
+                {
+                    "family": "time_s",
+                    "unit": "s",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "phase",
+                    "unit": "1",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "intent_scalar",
+                    "unit": "1",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "position_m",
+                    "unit": "m",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "velocity_mps",
+                    "unit": "m/s",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "orientation_rad",
+                    "unit": "rad",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "angular_velocity_rad_s",
+                    "unit": "rad/s",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "mass_kg",
+                    "unit": "kg",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "depth_landmarks_m",
+                    "unit": "m",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "force_nm",
+                    "unit": "N*m",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "impulse_ns",
+                    "unit": "N*s",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "joint_angle_rad",
+                    "unit": "rad",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "joint_velocity_rad_s",
+                    "unit": "rad/s",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "joint_scalar",
+                    "unit": "1",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "drive_scalar",
+                    "unit": "1",
+                    "maxAbsDifference": 0.0
+                }
+            ],
+            "verdict": "EXACT_REPEATABLE",
+            "pairVerdicts": [
+                "EXACT_REPEATABLE",
+                "EXACT_REPEATABLE",
+                "EXACT_REPEATABLE"
+            ]
+        },
+        {
+            "loadKg": 25.0,
+            "repeatCount": 3,
+            "sampleCount": 800,
+            "tickAlignment": true,
+            "earliestDivergenceTick": "NONE",
+            "earliestOutOfContractTick": "NONE",
+            "firstMismatch": "NONE",
+            "withinDeclaredContract": true,
+            "finalStateMaxPositionM": 0.0,
+            "finalStateMaxVelocityMps": 0.0,
+            "finalStateMaxAngularVelocityRadS": 0.0,
+            "finalStateMaxOrientationDeg": 0.0,
+            "maximumAbsoluteDifferenceByChannelFamily": [
+                {
+                    "family": "time_s",
+                    "unit": "s",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "phase",
+                    "unit": "1",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "intent_scalar",
+                    "unit": "1",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "position_m",
+                    "unit": "m",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "velocity_mps",
+                    "unit": "m/s",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "orientation_rad",
+                    "unit": "rad",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "angular_velocity_rad_s",
+                    "unit": "rad/s",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "mass_kg",
+                    "unit": "kg",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "depth_landmarks_m",
+                    "unit": "m",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "force_nm",
+                    "unit": "N*m",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "impulse_ns",
+                    "unit": "N*s",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "joint_angle_rad",
+                    "unit": "rad",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "joint_velocity_rad_s",
+                    "unit": "rad/s",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "joint_scalar",
+                    "unit": "1",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "drive_scalar",
+                    "unit": "1",
+                    "maxAbsDifference": 0.0
+                }
+            ],
+            "finalStateDifferenceByChannelFamily": [
+                {
+                    "family": "time_s",
+                    "unit": "s",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "phase",
+                    "unit": "1",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "intent_scalar",
+                    "unit": "1",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "position_m",
+                    "unit": "m",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "velocity_mps",
+                    "unit": "m/s",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "orientation_rad",
+                    "unit": "rad",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "angular_velocity_rad_s",
+                    "unit": "rad/s",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "mass_kg",
+                    "unit": "kg",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "depth_landmarks_m",
+                    "unit": "m",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "force_nm",
+                    "unit": "N*m",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "impulse_ns",
+                    "unit": "N*s",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "joint_angle_rad",
+                    "unit": "rad",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "joint_velocity_rad_s",
+                    "unit": "rad/s",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "joint_scalar",
+                    "unit": "1",
+                    "maxAbsDifference": 0.0
+                },
+                {
+                    "family": "drive_scalar",
+                    "unit": "1",
+                    "maxAbsDifference": 0.0
+                }
+            ],
+            "verdict": "EXACT_REPEATABLE",
+            "pairVerdicts": [
+                "EXACT_REPEATABLE",
+                "EXACT_REPEATABLE",
+                "EXACT_REPEATABLE"
+            ]
+        }
+    ]
+}
