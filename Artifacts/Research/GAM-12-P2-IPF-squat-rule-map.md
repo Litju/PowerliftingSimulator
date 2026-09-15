@@ -40,6 +40,10 @@ Retrieved 2026-09-14 from the current official [IPF Technical Rules page](https:
 - Support legality begins at `SquatCommandIssued` and ends immediately before `RackCommandIssued`; support slip is a command-relative delta from the cumulative P1 value at Squat.
 - Final lockout/posture is evaluated independently from support legality, so support failure cannot masquerade as `FAILED_LOCKOUT`.
 - A canonical judgment requires trace coverage and continuity for the start window, Squat-to-Rack window, and Rack-to-Rerack lifecycle; uncovered command events are incomplete evidence.
+- Knee-unlock commencement search begins at the established consecutive pre-Squat start window boundary, not at arbitrary trace history. Knee flex before that window is legal setup history; knee unlock inside the qualified window remains invalid start/early evidence, while post-Squat unlock establishes normal commencement.
+- Each required command event tick must resolve to an exact trace sample whose simulation time agrees within the canonical `FoundationTolerances.SimulationTimeMapping`; a mismatch is incomplete evidence rather than a competition decision.
+- `RerackStarted <= SquatCommandIssued` is impossible lifecycle evidence and is incomplete, including the same-tick boundary; `SquatCommandIssued < RerackStarted < RackCommandIssued` remains the ordinary `EARLY_RACK` rule violation.
+- `GAME_TEMPORAL_DISCRETIZATION_POLICY` is tick-granular at the canonical 100 Hz / 0.01 s resolution. Same-sample command/support ordering makes no sub-10-ms temporal-order claim.
 
 ## P2 decision policy
 

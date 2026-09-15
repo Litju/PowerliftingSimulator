@@ -437,7 +437,7 @@ namespace PowerliftingSimulator.Squat
         public const string DefaultSourceVersion = "3";
         public const string DefaultEffectiveDate = "2026-03-01";
         public const string DefaultRetrievedDate = "2026-09-14";
-        public const string DefaultImplementationVersion = "GAM12_P2A_RULE_PROCESSOR_V1";
+        public const string DefaultImplementationVersion = "GAM12_P2A1_RULE_PROCESSOR_V1";
         public const string DefaultSimplificationVersion = "GAM12_P2_GAME_SIMPLIFICATIONS_V1";
         public const string DefaultToleranceVersion = SquatRuleToleranceSet.DefaultVersion;
         public const string DefaultPrimaryViolationPrecedenceVersion =
@@ -1005,7 +1005,12 @@ namespace PowerliftingSimulator.Squat
             }
 
             if (rackCommand.SimulationTick <= squatCommand.SimulationTick)
-                return IncompleteJudgment(trace);
+                return IncompleteJudgment(trace, squatCommand, rackCommand, rerackStarted);
+
+            // A rerack at the Squat tick has no observable sub-tick ordering;
+            // both it and any rerack before Squat are malformed lifecycle evidence.
+            if (rerackStarted.SimulationTick <= squatCommand.SimulationTick)
+                return IncompleteJudgment(trace, squatCommand, rackCommand, rerackStarted);
 
             if (!HasRuleWindowCoverage(
                     trace,
@@ -1014,7 +1019,12 @@ namespace PowerliftingSimulator.Squat
                     rerackStarted,
                     out int squatCommandIndex,
                     out int rackCommandIndex,
-                    out _))
+                    out int rerackStartedIndex))
+                return IncompleteJudgment(trace, squatCommand, rackCommand, rerackStarted);
+
+            if (!HasCommandEventTimeCoherence(trace[squatCommandIndex], squatCommand) ||
+                !HasCommandEventTimeCoherence(trace[rackCommandIndex], rackCommand) ||
+                !HasCommandEventTimeCoherence(trace[rerackStartedIndex], rerackStarted))
                 return IncompleteJudgment(trace, squatCommand, rackCommand, rerackStarted);
 
             int preRackEnd = rackCommandIndex - 1;
@@ -1049,7 +1059,7 @@ namespace PowerliftingSimulator.Squat
                     MaxTrunkAngle(invalidStart));
             }
 
-            int attemptCommencement = FindAttemptCommencementFromKnees(trace, 0, preRackEnd);
+            int attemptCommencement = FindAttemptCommencementFromKnees(trace, startBegin, preRackEnd);
             int physicalOnset = FindFirstPhysicalDescentMotionOnset(trace, 0, preRackEnd);
             int postCommandOnset = FindFirstPhysicalDescentMotionOnsetAtOrAfter(
                 trace,
@@ -1358,6 +1368,14 @@ namespace PowerliftingSimulator.Squat
             int lifecycleBegin = Math.Min(rackCommandIndex, rerackStartedIndex);
             int lifecycleEnd = Math.Max(rackCommandIndex, rerackStartedIndex);
             return HasConsecutiveWindow(trace, lifecycleBegin, lifecycleEnd);
+        }
+
+        private static bool HasCommandEventTimeCoherence(
+            SquatObservationSnapshot traceSample,
+            SquatRuleCommandEvent commandEvent)
+        {
+            return Math.Abs(commandEvent.SimulationTimeSeconds - traceSample.SimulationTimeSeconds) <=
+                FoundationTolerances.SimulationTimeMapping;
         }
 
         private bool HasMandatoryEvidence(SquatTrace trace, int preRackEnd)

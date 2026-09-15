@@ -181,6 +181,19 @@ namespace PowerliftingSimulator.Tests
         }
 
         [Test]
+        public void LEGAL_SETUP_KNEE_FLEX_BEFORE_ESTABLISHED_START_DOES_NOT_CREATE_EARLY_DESCENT()
+        {
+            SquatAttemptJudgment judgment = Evaluate(
+                BuildLegalSetupKneeFlexTrace(),
+                new SquatRuleCommandTimeline(6ul, 16ul, 17ul));
+
+            Assert.That(judgment.EvidenceStatus, Is.EqualTo(SquatJudgmentEvidenceStatus.EVALUABLE));
+            Assert.That(judgment.Outcome, Is.EqualTo(SquatJudgmentOutcome.GOOD_LIFT));
+            Assert.That(judgment.HasDecision, Is.True);
+            Assert.That(HasViolation(judgment, SquatRuleViolationKind.EARLY_DESCENT), Is.False);
+        }
+
+        [Test]
         public void SAME_TICK_KNEE_UNLOCK_REMAINS_NOT_EARLY()
         {
             SquatAttemptJudgment judgment = Evaluate(
@@ -235,6 +248,25 @@ namespace PowerliftingSimulator.Tests
         public void FULLY_COVERED_COMMAND_TIMELINE_REMAINS_JUDGEABLE()
         {
             SquatAttemptJudgment judgment = Evaluate(BuildGoodTrace(), CanonicalTimeline());
+
+            Assert.That(judgment.EvidenceStatus, Is.EqualTo(SquatJudgmentEvidenceStatus.EVALUABLE));
+            Assert.That(judgment.Outcome, Is.EqualTo(SquatJudgmentOutcome.GOOD_LIFT));
+            Assert.That(judgment.HasDecision, Is.True);
+        }
+
+        [Test]
+        public void COHERENT_TIMELINE_REMAINS_JUDGEABLE()
+        {
+            SquatRuleCommandTimeline timeline = new SquatRuleCommandTimeline(new[]
+            {
+                Command(
+                    SquatRuleCommandKind.SquatCommandIssued,
+                    3ul,
+                    SimulationConstants.TimeForTick(3ul) + FoundationTolerances.SimulationTimeMapping * 0.5d),
+                Command(SquatRuleCommandKind.RackCommandIssued, 13ul),
+                Command(SquatRuleCommandKind.RerackStarted, 14ul)
+            });
+            SquatAttemptJudgment judgment = Evaluate(BuildGoodTrace(), timeline);
 
             Assert.That(judgment.EvidenceStatus, Is.EqualTo(SquatJudgmentEvidenceStatus.EVALUABLE));
             Assert.That(judgment.Outcome, Is.EqualTo(SquatJudgmentOutcome.GOOD_LIFT));
@@ -337,6 +369,34 @@ namespace PowerliftingSimulator.Tests
             Assert.That(judgment.EvidenceStatus, Is.EqualTo(SquatJudgmentEvidenceStatus.INCOMPLETE_ATTEMPT));
             Assert.That(judgment.HasDecision, Is.False);
             Assert.That(judgment.Outcome, Is.EqualTo(SquatJudgmentOutcome.UNDETERMINED));
+        }
+
+        [Test]
+        public void COMMAND_EVENT_TICK_TIME_MISMATCH_IS_INCOMPLETE()
+        {
+            SquatRuleCommandTimeline timeline = new SquatRuleCommandTimeline(new[]
+            {
+                Command(SquatRuleCommandKind.SquatCommandIssued, 3ul, 0.031d),
+                Command(SquatRuleCommandKind.RackCommandIssued, 13ul),
+                Command(SquatRuleCommandKind.RerackStarted, 14ul)
+            });
+            SquatAttemptJudgment judgment = Evaluate(BuildGoodTrace(), timeline);
+
+            AssertIncomplete(judgment);
+        }
+
+        [Test]
+        public void RERACK_BEFORE_SQUAT_IS_INCOMPLETE()
+        {
+            SquatRuleCommandTimeline timeline = new SquatRuleCommandTimeline(new[]
+            {
+                Command(SquatRuleCommandKind.SquatCommandIssued, 3ul),
+                Command(SquatRuleCommandKind.RackCommandIssued, 13ul),
+                Command(SquatRuleCommandKind.RerackStarted, 2ul)
+            });
+            SquatAttemptJudgment judgment = Evaluate(BuildGoodTrace(), timeline);
+
+            AssertIncomplete(judgment);
         }
 
         [Test]
@@ -462,7 +522,7 @@ namespace PowerliftingSimulator.Tests
             SquatRuleViolationRecord violation = judgment.PrimaryViolation;
 
             Assert.That(violation.RuleSetId, Is.EqualTo(SquatRuleSetMetadata.DefaultRuleSetId));
-            Assert.That(violation.RuleImplementationVersion, Is.EqualTo(SquatRuleSetMetadata.DefaultImplementationVersion));
+            Assert.That(violation.RuleImplementationVersion, Is.EqualTo("GAM12_P2A1_RULE_PROCESSOR_V1"));
             Assert.That(violation.ToleranceVersion, Is.EqualTo(SquatRuleToleranceSet.DefaultVersion));
             Assert.That(violation.SourceClassification, Is.EqualTo(SquatRuleImplementationClass.GAME_SIMPLIFICATION));
             Assert.That(violation.EvidenceChannels, Is.Not.EqualTo(SquatRuleEvidenceChannel.NONE));
@@ -571,6 +631,14 @@ namespace PowerliftingSimulator.Tests
         private static SquatRuleCommandEvent Command(SquatRuleCommandKind kind, ulong tick) =>
             new SquatRuleCommandEvent(kind, tick, tick * StepSeconds);
 
+        private static SquatRuleCommandEvent Command(
+            SquatRuleCommandKind kind,
+            ulong tick,
+            double simulationTimeSeconds) => new SquatRuleCommandEvent(
+                kind,
+                tick,
+                simulationTimeSeconds);
+
         private static SquatTrace BuildGoodTrace(
             float depthAtBottomM = -0.02f,
             float leftDepthAtBottomM = float.NaN,
@@ -614,6 +682,30 @@ namespace PowerliftingSimulator.Tests
             snapshots.Add(Snapshot(tickOffset + 14ul, 1.02f, 0f, leftBottom, rightBottom, finalKneeAngleRad, 0f, 0f, barAvailable, true, postRackSlipM, loadKg, phaseConflict));
             if (omittedTick.HasValue)
                 snapshots.RemoveAll(snapshot => snapshot.SimulationTick == omittedTick.Value);
+            return Trace(snapshots);
+        }
+
+        private static SquatTrace BuildLegalSetupKneeFlexTrace()
+        {
+            List<SquatObservationSnapshot> snapshots = new List<SquatObservationSnapshot>();
+            snapshots.Add(Snapshot(0ul, 1f, 0f, 0f, 0f, 0.15f, 0f, 0f));
+            snapshots.Add(Snapshot(1ul, 1f, 0f, 0f, 0f, 0.15f, 0f, 0f));
+            snapshots.Add(Snapshot(2ul, 1f, 0f, 0f, 0f, 0.15f, 0f, 0f));
+            snapshots.Add(Snapshot(3ul, 1f, 0f, 0f, 0f, 0f, 0f, 0f));
+            snapshots.Add(Snapshot(4ul, 1f, 0f, 0f, 0f, 0f, 0f, 0f));
+            snapshots.Add(Snapshot(5ul, 1f, 0f, 0f, 0f, 0f, 0f, 0f));
+            snapshots.Add(Snapshot(6ul, 1f, 0f, 0f, 0f, 0f, 0f, 0f));
+            snapshots.Add(Snapshot(7ul, 0.90f, -0.12f, 0f, 0f, 0.3f, 0.3f, 0.1f));
+            snapshots.Add(Snapshot(8ul, 0.80f, -0.12f, -0.02f, -0.02f, 0.8f, 0.8f, 0.15f));
+            snapshots.Add(Snapshot(9ul, 0.79f, 0f, -0.02f, -0.02f, 0.9f, 0.9f, 0.15f));
+            snapshots.Add(Snapshot(10ul, 0.84f, 0.12f, -0.02f, -0.02f, 0.7f, 0.7f, 0.12f));
+            snapshots.Add(Snapshot(11ul, 0.94f, 0.12f, -0.02f, -0.02f, 0.4f, 0.4f, 0.08f));
+            snapshots.Add(Snapshot(12ul, 1.02f, 0.08f, -0.02f, -0.02f, 0.1f, 0.1f, 0.02f));
+            snapshots.Add(Snapshot(13ul, 1.02f, 0f, -0.02f, -0.02f, 0f, 0f, 0f));
+            snapshots.Add(Snapshot(14ul, 1.02f, 0f, -0.02f, -0.02f, 0f, 0f, 0f));
+            snapshots.Add(Snapshot(15ul, 1.02f, 0f, -0.02f, -0.02f, 0f, 0f, 0f));
+            snapshots.Add(Snapshot(16ul, 1.02f, 0f, -0.02f, -0.02f, 0f, 0f, 0f));
+            snapshots.Add(Snapshot(17ul, 1.02f, 0f, -0.02f, -0.02f, 0f, 0f, 0f));
             return Trace(snapshots);
         }
 
