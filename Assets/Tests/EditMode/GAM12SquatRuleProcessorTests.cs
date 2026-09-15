@@ -123,6 +123,170 @@ namespace PowerliftingSimulator.Tests
         }
 
         [Test]
+        public void PRE_SQUAT_CUMULATIVE_SLIP_DOES_NOT_CREATE_SUPPORT_VIOLATION()
+        {
+            SquatAttemptJudgment judgment = Evaluate(
+                BuildGoodTrace(slipAtSquatM: 0.03f, supportSlipM: 0.03f),
+                CanonicalTimeline());
+
+            Assert.That(judgment.Outcome, Is.EqualTo(SquatJudgmentOutcome.GOOD_LIFT));
+            Assert.That(HasViolation(judgment, SquatRuleViolationKind.SUPPORT_VIOLATION), Is.False);
+        }
+
+        [Test]
+        public void POST_SQUAT_INCREMENTAL_SLIP_CAN_CREATE_SUPPORT_VIOLATION()
+        {
+            SquatAttemptJudgment judgment = Evaluate(
+                BuildGoodTrace(slipAtSquatM: 0.03f, supportSlipM: 0.06f),
+                CanonicalTimeline());
+
+            AssertNoLiftWith(judgment, SquatRuleViolationKind.SUPPORT_VIOLATION);
+            Assert.That(judgment.PrimaryViolation.MeasuredValueA, Is.EqualTo(0.03f).Within(0.00001f));
+        }
+
+        [Test]
+        public void POST_SQUAT_PRE_DESCENT_FOOT_MOVEMENT_IS_JUDGED()
+        {
+            SquatAttemptJudgment judgment = Evaluate(
+                BuildGoodTrace(
+                    descentOnsetTick: 5ul,
+                    delayDescentUntilAfterCommand: true,
+                    supportLostBeforeDescent: true),
+                CanonicalTimeline());
+
+            AssertNoLiftWith(judgment, SquatRuleViolationKind.SUPPORT_VIOLATION);
+            Assert.That(judgment.PrimaryViolation.OnsetTick, Is.EqualTo(3ul));
+        }
+
+        [Test]
+        public void BAR_SETTLING_WITH_LOCKED_KNEES_DOES_NOT_CREATE_EARLY_DESCENT()
+        {
+            SquatAttemptJudgment judgment = Evaluate(
+                BuildGoodTrace(barSettlingBeforeSquat: true),
+                CanonicalTimeline());
+
+            Assert.That(judgment.EvidenceStatus, Is.EqualTo(SquatJudgmentEvidenceStatus.EVALUABLE));
+            Assert.That(HasViolation(judgment, SquatRuleViolationKind.EARLY_DESCENT), Is.False);
+            Assert.That(HasViolation(judgment, SquatRuleViolationKind.FAILED_START_POSITION), Is.True);
+        }
+
+        [Test]
+        public void KNEE_UNLOCK_BEFORE_SQUAT_CREATES_EARLY_DESCENT()
+        {
+            SquatAttemptJudgment judgment = Evaluate(
+                BuildGoodTrace(descentOnsetTick: 2ul),
+                CanonicalTimeline());
+
+            AssertNoLiftWith(judgment, SquatRuleViolationKind.EARLY_DESCENT);
+        }
+
+        [Test]
+        public void SAME_TICK_KNEE_UNLOCK_REMAINS_NOT_EARLY()
+        {
+            SquatAttemptJudgment judgment = Evaluate(
+                BuildGoodTrace(descentOnsetTick: 3ul),
+                CanonicalTimeline());
+
+            Assert.That(judgment.EvidenceStatus, Is.EqualTo(SquatJudgmentEvidenceStatus.EVALUABLE));
+            Assert.That(HasViolation(judgment, SquatRuleViolationKind.EARLY_DESCENT), Is.False);
+        }
+
+        [Test]
+        public void RACK_AFTER_TRACE_END_IS_INCOMPLETE()
+        {
+            SquatAttemptJudgment judgment = Evaluate(
+                BuildGoodTrace(),
+                new SquatRuleCommandTimeline(3ul, 15ul, 16ul));
+
+            AssertIncomplete(judgment);
+        }
+
+        [Test]
+        public void RERACK_AFTER_TRACE_END_IS_INCOMPLETE()
+        {
+            SquatAttemptJudgment judgment = Evaluate(
+                BuildGoodTrace(),
+                new SquatRuleCommandTimeline(3ul, 13ul, 15ul));
+
+            AssertIncomplete(judgment);
+        }
+
+        [Test]
+        public void SQUAT_COMMAND_BEFORE_TRACE_START_IS_INCOMPLETE()
+        {
+            SquatAttemptJudgment judgment = Evaluate(
+                BuildGoodTrace(tickOffset: 1ul),
+                new SquatRuleCommandTimeline(0ul, 13ul, 14ul));
+
+            AssertIncomplete(judgment);
+        }
+
+        [Test]
+        public void TRACE_GAP_IN_RULE_WINDOW_IS_INCOMPLETE()
+        {
+            SquatAttemptJudgment judgment = Evaluate(
+                BuildGoodTrace(omittedTick: 6ul),
+                CanonicalTimeline());
+
+            AssertIncomplete(judgment);
+        }
+
+        [Test]
+        public void FULLY_COVERED_COMMAND_TIMELINE_REMAINS_JUDGEABLE()
+        {
+            SquatAttemptJudgment judgment = Evaluate(BuildGoodTrace(), CanonicalTimeline());
+
+            Assert.That(judgment.EvidenceStatus, Is.EqualTo(SquatJudgmentEvidenceStatus.EVALUABLE));
+            Assert.That(judgment.Outcome, Is.EqualTo(SquatJudgmentOutcome.GOOD_LIFT));
+            Assert.That(judgment.HasDecision, Is.True);
+        }
+
+        [Test]
+        public void VALID_LOCKOUT_PLUS_SUPPORT_VIOLATION_DOES_NOT_CREATE_FAILED_LOCKOUT()
+        {
+            SquatAttemptJudgment judgment = Evaluate(
+                BuildGoodTrace(supportLostAtFinal: true),
+                CanonicalTimeline());
+
+            AssertNoLiftWith(judgment, SquatRuleViolationKind.SUPPORT_VIOLATION);
+            Assert.That(HasViolation(judgment, SquatRuleViolationKind.FAILED_LOCKOUT), Is.False);
+            Assert.That(judgment.PrimaryViolationKind, Is.EqualTo(SquatRuleViolationKind.SUPPORT_VIOLATION));
+        }
+
+        [Test]
+        public void FAILED_LOCKOUT_WITH_VALID_SUPPORT_STILL_ADDS_FAILED_LOCKOUT()
+        {
+            SquatAttemptJudgment judgment = Evaluate(
+                BuildGoodTrace(finalKneeAngleRad: 0.15f),
+                CanonicalTimeline());
+
+            AssertNoLiftWith(judgment, SquatRuleViolationKind.FAILED_LOCKOUT);
+            Assert.That(HasViolation(judgment, SquatRuleViolationKind.SUPPORT_VIOLATION), Is.False);
+        }
+
+        [Test]
+        public void LOCKOUT_AND_SUPPORT_FAILURE_CAN_COEXIST_WHEN_BOTH_ARE_REAL()
+        {
+            SquatAttemptJudgment judgment = Evaluate(
+                BuildGoodTrace(finalKneeAngleRad: 0.15f, supportLostAtFinal: true),
+                CanonicalTimeline());
+
+            AssertNoLiftWith(judgment, SquatRuleViolationKind.FAILED_LOCKOUT);
+            Assert.That(HasViolation(judgment, SquatRuleViolationKind.SUPPORT_VIOLATION), Is.True);
+        }
+
+        [Test]
+        public void PRIMARY_REASON_NOT_POLLUTED_BY_SUPPORT_INSIDE_LOCKOUT()
+        {
+            SquatAttemptJudgment judgment = Evaluate(
+                BuildGoodTrace(supportLostAtFinal: true),
+                CanonicalTimeline());
+
+            Assert.That(judgment.PrimaryViolationKind, Is.EqualTo(SquatRuleViolationKind.SUPPORT_VIOLATION));
+            Assert.That(HasViolation(judgment, SquatRuleViolationKind.FAILED_LOCKOUT), Is.False);
+        }
+
+        [Test]
         public void MULTIPLE_VIOLATIONS_ARE_RETAINED_AND_PRIMARY_IS_NOT_INSERTION_ORDER()
         {
             SquatAttemptJudgment judgment = Evaluate(
@@ -352,6 +516,13 @@ namespace PowerliftingSimulator.Tests
             Assert.That(HasViolation(judgment, expected), Is.True, expected.ToString());
         }
 
+        private static void AssertIncomplete(SquatAttemptJudgment judgment)
+        {
+            Assert.That(judgment.EvidenceStatus, Is.EqualTo(SquatJudgmentEvidenceStatus.INCOMPLETE_ATTEMPT));
+            Assert.That(judgment.Outcome, Is.EqualTo(SquatJudgmentOutcome.UNDETERMINED));
+            Assert.That(judgment.HasDecision, Is.False);
+        }
+
         private static bool HasViolation(SquatAttemptJudgment judgment, SquatRuleViolationKind kind)
         {
             for (int index = 0; index < judgment.ViolationCount; index++)
@@ -411,7 +582,14 @@ namespace PowerliftingSimulator.Tests
             bool phaseConflict = false,
             float loadKg = 25f,
             float supportSlipM = 0f,
-            float postRackSlipM = 0f)
+            float postRackSlipM = 0f,
+            float slipAtSquatM = 0f,
+            bool supportLostBeforeDescent = false,
+            bool supportLostAtFinal = false,
+            bool delayDescentUntilAfterCommand = false,
+            bool barSettlingBeforeSquat = false,
+            ulong tickOffset = 0ul,
+            ulong? omittedTick = null)
         {
             float leftBottom = float.IsNaN(leftDepthAtBottomM) ? depthAtBottomM : leftDepthAtBottomM;
             float rightBottom = float.IsNaN(rightDepthAtBottomM) ? depthAtBottomM : rightDepthAtBottomM;
@@ -419,21 +597,23 @@ namespace PowerliftingSimulator.Tests
             float commandTickKnee = descentOnsetTick <= 3ul ? 0.2f : 0f;
             float commandTickBarVelocity = descentOnsetTick <= 3ul ? -0.12f : 0f;
             List<SquatObservationSnapshot> snapshots = new List<SquatObservationSnapshot>();
-            snapshots.Add(Snapshot(0ul, 1f, 0f, 0f, 0f, startKneeAngleRad, 0f, 0f, barAvailable, true, 0f, loadKg, phaseConflict));
-            snapshots.Add(Snapshot(1ul, 1f, 0f, 0f, 0f, startKneeAngleRad, 0f, 0f, barAvailable, true, 0f, loadKg, phaseConflict));
-            snapshots.Add(Snapshot(2ul, 1f, descentOnsetTick == 2ul ? -0.12f : 0f, 0f, 0f, preCommandKnee, 0f, 0f, barAvailable, true, 0f, loadKg, phaseConflict));
-            snapshots.Add(Snapshot(3ul, 1f, commandTickBarVelocity, 0f, 0f, commandTickKnee, 0f, 0f, barAvailable, true, 0f, loadKg, phaseConflict));
-            snapshots.Add(Snapshot(4ul, 0.95f, descentOnsetTick == 4ul ? -0.12f : 0f, 0f, 0f, 0.2f, 0.2f, 0.1f, barAvailable, true, supportSlipM, loadKg, phaseConflict));
-            snapshots.Add(Snapshot(5ul, 0.83f, -0.12f, 0f, 0f, 0.6f, 0.6f, 0.12f, barAvailable, true, supportSlipM, loadKg, phaseConflict));
-            snapshots.Add(Snapshot(6ul, 0.80f, 0f, leftBottom, rightBottom, 0.9f, 0.9f, 0.15f, barAvailable, true, supportSlipM, loadKg, phaseConflict));
-            snapshots.Add(Snapshot(7ul, 0.84f, 0.12f, leftBottom, rightBottom, 0.7f, 0.7f, 0.12f, barAvailable, true, supportSlipM, loadKg, phaseConflict));
-            snapshots.Add(Snapshot(8ul, 0.90f, 0.12f, leftBottom, rightBottom, 0.4f, 0.4f, 0.08f, barAvailable, true, supportSlipM, loadKg, phaseConflict));
-            snapshots.Add(Snapshot(9ul, 1.00f, 0.10f, leftBottom, rightBottom, 0.1f, 0.1f, 0.02f, barAvailable, true, supportSlipM, loadKg, phaseConflict));
-            snapshots.Add(Snapshot(10ul, 1.02f, 0.01f, leftBottom, rightBottom, finalKneeAngleRad, 0f, 0f, barAvailable, true, supportSlipM, loadKg, phaseConflict));
-            snapshots.Add(Snapshot(11ul, 1.02f, 0f, leftBottom, rightBottom, finalKneeAngleRad, 0f, 0f, barAvailable, true, supportSlipM, loadKg, phaseConflict));
-            snapshots.Add(Snapshot(12ul, 1.02f, 0f, leftBottom, rightBottom, finalKneeAngleRad, 0f, 0f, barAvailable, true, supportSlipM, loadKg, phaseConflict));
-            snapshots.Add(Snapshot(13ul, 1.02f, 0f, leftBottom, rightBottom, finalKneeAngleRad, 0f, 0f, barAvailable, true, supportSlipM, loadKg, phaseConflict));
-            snapshots.Add(Snapshot(14ul, 1.02f, 0f, leftBottom, rightBottom, finalKneeAngleRad, 0f, 0f, barAvailable, true, postRackSlipM, loadKg, phaseConflict));
+            snapshots.Add(Snapshot(tickOffset + 0ul, 1f, 0f, 0f, 0f, startKneeAngleRad, 0f, 0f, barAvailable, true, slipAtSquatM, loadKg, phaseConflict));
+            snapshots.Add(Snapshot(tickOffset + 1ul, 1f, 0f, 0f, 0f, startKneeAngleRad, 0f, 0f, barAvailable, true, slipAtSquatM, loadKg, phaseConflict));
+            snapshots.Add(Snapshot(tickOffset + 2ul, barSettlingBeforeSquat ? 0.95f : 1f, barSettlingBeforeSquat ? -0.12f : (descentOnsetTick == 2ul ? -0.12f : 0f), 0f, 0f, preCommandKnee, 0f, 0f, barAvailable, true, slipAtSquatM, loadKg, phaseConflict));
+            snapshots.Add(Snapshot(tickOffset + 3ul, 1f, commandTickBarVelocity, 0f, 0f, commandTickKnee, 0f, 0f, barAvailable, true, slipAtSquatM, loadKg, phaseConflict, hasSupport: !supportLostBeforeDescent, footInContact: !supportLostBeforeDescent));
+            snapshots.Add(Snapshot(tickOffset + 4ul, delayDescentUntilAfterCommand ? 1f : 0.95f, delayDescentUntilAfterCommand ? 0f : (descentOnsetTick == 4ul ? -0.12f : 0f), 0f, 0f, delayDescentUntilAfterCommand ? 0f : 0.2f, delayDescentUntilAfterCommand ? 0f : 0.2f, delayDescentUntilAfterCommand ? 0f : 0.1f, barAvailable, true, supportSlipM, loadKg, phaseConflict, hasSupport: !supportLostBeforeDescent, footInContact: !supportLostBeforeDescent));
+            snapshots.Add(Snapshot(tickOffset + 5ul, 0.83f, -0.12f, 0f, 0f, 0.6f, 0.6f, 0.12f, barAvailable, true, supportSlipM, loadKg, phaseConflict));
+            snapshots.Add(Snapshot(tickOffset + 6ul, 0.80f, 0f, leftBottom, rightBottom, 0.9f, 0.9f, 0.15f, barAvailable, true, supportSlipM, loadKg, phaseConflict));
+            snapshots.Add(Snapshot(tickOffset + 7ul, 0.84f, 0.12f, leftBottom, rightBottom, 0.7f, 0.7f, 0.12f, barAvailable, true, supportSlipM, loadKg, phaseConflict));
+            snapshots.Add(Snapshot(tickOffset + 8ul, 0.90f, 0.12f, leftBottom, rightBottom, 0.4f, 0.4f, 0.08f, barAvailable, true, supportSlipM, loadKg, phaseConflict));
+            snapshots.Add(Snapshot(tickOffset + 9ul, 1.00f, 0.10f, leftBottom, rightBottom, 0.1f, 0.1f, 0.02f, barAvailable, true, supportSlipM, loadKg, phaseConflict));
+            snapshots.Add(Snapshot(tickOffset + 10ul, 1.02f, 0.01f, leftBottom, rightBottom, finalKneeAngleRad, 0f, 0f, barAvailable, true, supportSlipM, loadKg, phaseConflict, hasSupport: !supportLostAtFinal, footInContact: !supportLostAtFinal));
+            snapshots.Add(Snapshot(tickOffset + 11ul, 1.02f, 0f, leftBottom, rightBottom, finalKneeAngleRad, 0f, 0f, barAvailable, true, supportSlipM, loadKg, phaseConflict, hasSupport: !supportLostAtFinal, footInContact: !supportLostAtFinal));
+            snapshots.Add(Snapshot(tickOffset + 12ul, 1.02f, 0f, leftBottom, rightBottom, finalKneeAngleRad, 0f, 0f, barAvailable, true, supportSlipM, loadKg, phaseConflict, hasSupport: !supportLostAtFinal, footInContact: !supportLostAtFinal));
+            snapshots.Add(Snapshot(tickOffset + 13ul, 1.02f, 0f, leftBottom, rightBottom, finalKneeAngleRad, 0f, 0f, barAvailable, true, supportSlipM, loadKg, phaseConflict));
+            snapshots.Add(Snapshot(tickOffset + 14ul, 1.02f, 0f, leftBottom, rightBottom, finalKneeAngleRad, 0f, 0f, barAvailable, true, postRackSlipM, loadKg, phaseConflict));
+            if (omittedTick.HasValue)
+                snapshots.RemoveAll(snapshot => snapshot.SimulationTick == omittedTick.Value);
             return Trace(snapshots);
         }
 
@@ -516,7 +696,9 @@ namespace PowerliftingSimulator.Tests
             bool supportAvailable = true,
             float slipM = 0f,
             float loadKg = 25f,
-            bool phaseConflict = false)
+            bool phaseConflict = false,
+            bool hasSupport = true,
+            bool footInContact = true)
         {
             double time = tick * StepSeconds;
             PlayerIntentFrame intent = new PlayerIntentFrame(
@@ -560,21 +742,21 @@ namespace PowerliftingSimulator.Tests
                     new Vector3Value(0f, 0f, 0f),
                     125f,
                     SquatTelemetryAvailability.AVAILABLE,
-                    true,
-                    -0.30f,
-                    0.30f,
-                    -0.20f,
-                    0.20f,
-                    0f,
-                    2,
+                    hasSupport,
+                    hasSupport ? -0.30f : float.NaN,
+                    hasSupport ? 0.30f : float.NaN,
+                    hasSupport ? -0.20f : float.NaN,
+                    hasSupport ? 0.20f : float.NaN,
+                    hasSupport ? 0f : float.NaN,
+                    hasSupport ? 2 : 0,
                     SquatTelemetryAvailability.NOT_AVAILABLE,
                     SquatTelemetryValue.UnavailableVector3,
                     0f)
                 : SquatSupportObservation.Unavailable();
             SquatFootObservation foot = new SquatFootObservation(
                 SquatTelemetryAvailability.AVAILABLE,
-                true,
-                1,
+                footInContact,
+                footInContact ? 1 : 0,
                 1,
                 slipM,
                 0f);

@@ -378,8 +378,8 @@ namespace PowerliftingSimulator.Squat
                 Descriptor("trunk_erect_tolerance", "rad", TrunkErectToleranceRad, source, "Bounded game proxy for an erect trunk posture."),
                 Descriptor("motionless_bar_velocity", "m/s", MotionlessBarVelocityMps, source, "Solver-scale motion threshold for apparent stillness."),
                 Descriptor("motionless_bar_angular_velocity", "rad/s", MotionlessBarAngularVelocityRadS, source, "Solver-scale angular stillness threshold."),
-                Descriptor("descent_onset_velocity", "m/s", DescentOnsetVelocityMps, source, "Direct whole-bar downward-motion threshold used with knee unlocking."),
-                Descriptor("descent_onset_persistence", "ticks", DescentOnsetPersistenceTicks, source, "Versioned observation persistence for descent-onset support."),
+                Descriptor("descent_onset_velocity", "m/s", DescentOnsetVelocityMps, source, "Direct whole-bar downward-motion threshold for the separate physical-descent-motion proxy; it does not establish official attempt commencement."),
+                Descriptor("descent_onset_persistence", "ticks", DescentOnsetPersistenceTicks, source, "Versioned observation persistence for the separate physical-descent-motion proxy."),
                 Descriptor("ascent_establishment_velocity", "m/s", AscentEstablishmentVelocityMps, source, "Direct upward bar-velocity threshold for ascent establishment."),
                 Descriptor("ascent_establishment_persistence", "ticks", AscentEstablishmentPersistenceTicks, source, "Consecutive direct upward samples required before ascent is established."),
                 Descriptor("ascent_establishment_displacement", "m", AscentEstablishmentDisplacementM, source, "Minimum upward displacement from the observed first bottom."),
@@ -389,7 +389,7 @@ namespace PowerliftingSimulator.Squat
                 Descriptor("double_descent_velocity", "m/s", DoubleDescentVelocityMps, source, "Direct downward bar-velocity threshold for a second bottom movement."),
                 Descriptor("double_descent_tolerance", "m", DoubleDescentToleranceM, source, "Minimum second-descent displacement beyond the first reversal."),
                 Descriptor("double_descent_persistence", "ticks", DoubleDescentPersistenceTicks, source, "Consecutive downward samples required before a second descent is recorded."),
-                Descriptor("support_slip_tolerance", "m", SupportSlipToleranceM, source, "Existing 20 mm support/slip game proxy boundary."),
+                Descriptor("support_slip_tolerance", "m", SupportSlipToleranceM, source, "Existing 20 mm command-relative support/slip game proxy boundary after the Squat baseline."),
                 Descriptor("support_slip_speed", "m/s", SupportSlipSpeedMps, source, "Support-slip speed proxy above allowed foot rocking tolerance."),
                 Descriptor("support_violation_persistence", "ticks", SupportViolationPersistenceTicks, source, "Persistence for observed loss/slip support events."),
                 Descriptor("start_position_persistence", "ticks", StartPositionPersistenceTicks, source, "Pre-command samples required for a stable start predicate."),
@@ -437,11 +437,13 @@ namespace PowerliftingSimulator.Squat
         public const string DefaultSourceVersion = "3";
         public const string DefaultEffectiveDate = "2026-03-01";
         public const string DefaultRetrievedDate = "2026-09-14";
-        public const string DefaultImplementationVersion = "GAM12_P2_RULE_PROCESSOR_V1";
+        public const string DefaultImplementationVersion = "GAM12_P2A_RULE_PROCESSOR_V1";
         public const string DefaultSimplificationVersion = "GAM12_P2_GAME_SIMPLIFICATIONS_V1";
         public const string DefaultToleranceVersion = SquatRuleToleranceSet.DefaultVersion;
         public const string DefaultPrimaryViolationPrecedenceVersion =
             "GAM12_P2_PRIMARY_PRECEDENCE_FIRST_ONSET_THEN_EXPLICIT_RANK_V1";
+        public const string DefaultTemporalDiscretizationPolicy =
+            "GAME_TEMPORAL_DISCRETIZATION_POLICY";
         public const string OfficialSourceUrl = "https://www.powerlifting.sport/rules/codes/info/technical-rules";
         public const string OfficialPdfUrl = "https://www.powerlifting.sport/fileadmin/ipf/data/rules/technical-rules/english/2026_IPF_Technical_Rulebook__effective_01_March_2026__v3.pdf";
 
@@ -529,6 +531,7 @@ namespace PowerliftingSimulator.Squat
         public string PdfUrl { get; }
         public string PdfSha256 { get; }
         public string PrimaryViolationPrecedenceVersion => DefaultPrimaryViolationPrecedenceVersion;
+        public string TemporalDiscretizationPolicy => DefaultTemporalDiscretizationPolicy;
         public string RulebookVersion => SourceVersion;
         public string RulebookEffectiveDate => EffectiveDate;
         public int RuleMappingCount => _ruleMappings.Count;
@@ -587,9 +590,9 @@ namespace PowerliftingSimulator.Squat
                     "The Squat signal must precede commencement and the Rack signal must precede reracking.",
                     "Explicit command timeline and physical onset/rerack events are supplied as value data.",
                     SquatRuleMappingDisposition.RULE_DERIVED_GAME_PROXY,
-                    "Physical descent onset before Squat records EARLY_DESCENT; rerack before Rack records EARLY_RACK.",
+                    "Knee-unlock commencement before Squat records EARLY_DESCENT; rerack before Rack records EARLY_RACK.",
                     SquatRuleImplementationClass.RULE_DERIVED_GAME_PROXY,
-                    "Command event provenance is explicit; state and input are not substituted."),
+                    "Command event provenance is explicit; state and input are not substituted. Same-tick commencement is not early under the GAME_TEMPORAL_DISCRETIZATION_POLICY."),
                 new SquatRuleMapping(
                     "4.1(3) / 4.1.1(5)", pdfPerformance + "; " + pdfDisqualification,
                     printedPerformance + "; " + printedDisqualification,
@@ -605,9 +608,9 @@ namespace PowerliftingSimulator.Squat
                     "The attempt commences at knee unlocking; double bouncing or a second descent is prohibited.",
                     "Bilateral calibrated knee scalars and raw bar position/velocity are available.",
                     SquatRuleMappingDisposition.RULE_DERIVED_GAME_PROXY,
-                    "A persistent direct bar reversal before ascent establishment records DOUBLE_DESCENT.",
+                    "Attempt commencement is the first loss of the bilateral locked-knee proxy; physical bar descent remains a separate motion-analysis signal. A persistent direct bar reversal before ascent establishment records DOUBLE_DESCENT.",
                     SquatRuleImplementationClass.RULE_DERIVED_GAME_PROXY,
-                    "Named velocity, displacement, and persistence thresholds reject solver-scale noise."),
+                    "Knee lockout uses the versioned calibrated scalar tolerance; named velocity, displacement, and persistence thresholds reject solver-scale motion noise."),
                 new SquatRuleMapping(
                     "4.1(4) / 4.1.1(2) / 4.1.1(3)", pdfPerformance + "; " + pdfDisqualification,
                     printedPerformance + "; " + printedDisqualification,
@@ -631,9 +634,9 @@ namespace PowerliftingSimulator.Squat
                     "Foot stepping backward, forward, or laterally is disallowed; rocking between ball and heel is permitted. Movement after Rack is allowed.",
                     "P1 provides foot contact and slip summaries, not exact bilateral foot trajectories.",
                     SquatRuleMappingDisposition.GAME_SIMPLIFICATION,
-                    "Before Rack, persistent support loss or slip beyond the named proxy tolerance records SUPPORT_VIOLATION; post-Rack samples are ignored.",
+                    "From SquatCommandIssued up to RackCommandIssued, persistent support loss or command-relative slip delta beyond the named proxy tolerance records SUPPORT_VIOLATION; post-Rack samples are ignored.",
                     SquatRuleImplementationClass.GAME_SIMPLIFICATION,
-                    "The proxy does not call all observed slip stepping or distinguish every referee-visible foot motion."),
+                    "The proxy does not call all observed slip stepping or distinguish every referee-visible foot motion. Cumulative P1 slip is baseline-subtracted at Squat."),
                 new SquatRuleMapping(
                     "4.1(5)", pdfPerformance, printedPerformance,
                     "The lifter stays with the bar while reracking and may not exit through the front of the rack.",
@@ -1004,14 +1007,22 @@ namespace PowerliftingSimulator.Squat
             if (rackCommand.SimulationTick <= squatCommand.SimulationTick)
                 return IncompleteJudgment(trace);
 
-            int preRackEnd = LastIndexBefore(trace, rackCommand.SimulationTick);
-            if (preRackEnd < 0)
-                return IncompleteJudgment(trace);
+            if (!HasRuleWindowCoverage(
+                    trace,
+                    squatCommand,
+                    rackCommand,
+                    rerackStarted,
+                    out int squatCommandIndex,
+                    out int rackCommandIndex,
+                    out _))
+                return IncompleteJudgment(trace, squatCommand, rackCommand, rerackStarted);
+
+            int preRackEnd = rackCommandIndex - 1;
 
             if (!HasMandatoryEvidence(trace, preRackEnd))
                 return InsufficientEvidenceJudgment(trace, squatCommand, rackCommand, rerackStarted);
 
-            int startEnd = LastIndexBefore(trace, squatCommand.SimulationTick);
+            int startEnd = squatCommandIndex - 1;
             if (startEnd < 0 || !HasConsecutiveWindow(trace, startEnd - _tolerances.StartPositionPersistenceTicks + 1, startEnd))
                 return IncompleteJudgment(trace, squatCommand, rackCommand, rerackStarted);
 
@@ -1038,29 +1049,28 @@ namespace PowerliftingSimulator.Squat
                     MaxTrunkAngle(invalidStart));
             }
 
-            int physicalOnset = FindFirstPhysicalDescentOnset(trace, 0, preRackEnd);
-            int postCommandOnset = FindFirstPhysicalDescentOnsetAtOrAfter(
+            int attemptCommencement = FindAttemptCommencementFromKnees(trace, 0, preRackEnd);
+            int physicalOnset = FindFirstPhysicalDescentMotionOnset(trace, 0, preRackEnd);
+            int postCommandOnset = FindFirstPhysicalDescentMotionOnsetAtOrAfter(
                 trace,
                 squatCommand.SimulationTick,
                 preRackEnd);
-            if (physicalOnset < 0)
+            if (attemptCommencement < 0 || physicalOnset < 0)
                 return IncompleteJudgment(trace, squatCommand, rackCommand, rerackStarted, violations);
 
-            if (trace[physicalOnset].SimulationTick < squatCommand.SimulationTick)
+            if (trace[attemptCommencement].SimulationTick < squatCommand.SimulationTick)
             {
-                SquatObservationSnapshot onset = trace[physicalOnset];
+                SquatObservationSnapshot onset = trace[attemptCommencement];
                 AddViolation(
                     violations,
                     SquatRuleViolationKind.EARLY_DESCENT,
                     onset.SimulationTick,
                     SquatRuleImplementationClass.RULE_DERIVED_GAME_PROXY,
                     SquatRuleEvidenceChannel.COMMAND_TIMELINE |
-                    SquatRuleEvidenceChannel.BAR_POSITION |
-                    SquatRuleEvidenceChannel.BAR_LINEAR_VELOCITY |
                     SquatRuleEvidenceChannel.KNEE_JOINTS,
-                    onset.Bar.LinearVelocityWorldMetersPerSecond.Y,
                     onset.Joints.LeftKnee.ActualAngleRadians,
-                    onset.Joints.RightKnee.ActualAngleRadians);
+                    onset.Joints.RightKnee.ActualAngleRadians,
+                    _tolerances.KneeUnlockToleranceRad);
             }
 
             if (postCommandOnset < 0)
@@ -1164,10 +1174,24 @@ namespace PowerliftingSimulator.Squat
                     0f);
             }
 
-            int supportViolationIndex = FindSupportViolationIndex(trace, postCommandOnset, preRackEnd);
+            float leftSlipBaseline = trace[squatCommandIndex].LeftFoot.SlipAccumulatedMeters;
+            float rightSlipBaseline = trace[squatCommandIndex].RightFoot.SlipAccumulatedMeters;
+            bool supportSlipEvidenceValid;
+            int supportViolationIndex = FindSupportViolationIndex(
+                trace,
+                squatCommandIndex,
+                preRackEnd,
+                leftSlipBaseline,
+                rightSlipBaseline,
+                out supportSlipEvidenceValid);
+            if (!supportSlipEvidenceValid)
+                return IncompleteJudgment(trace, squatCommand, rackCommand, rerackStarted, violations);
+
             if (supportViolationIndex >= 0)
             {
                 SquatObservationSnapshot eventSample = trace[supportViolationIndex];
+                float leftSlipDelta = eventSample.LeftFoot.SlipAccumulatedMeters - leftSlipBaseline;
+                float rightSlipDelta = eventSample.RightFoot.SlipAccumulatedMeters - rightSlipBaseline;
                 AddViolation(
                     violations,
                     SquatRuleViolationKind.SUPPORT_VIOLATION,
@@ -1176,7 +1200,7 @@ namespace PowerliftingSimulator.Squat
                     SquatRuleEvidenceChannel.SUPPORT_CONTACT |
                     SquatRuleEvidenceChannel.FOOT_CONTACT |
                     SquatRuleEvidenceChannel.FOOT_SLIP,
-                    Math.Max(eventSample.LeftFoot.SlipAccumulatedMeters, eventSample.RightFoot.SlipAccumulatedMeters),
+                    Math.Max(leftSlipDelta, rightSlipDelta),
                     Math.Max(eventSample.LeftFoot.SlipSpeedMetersPerSecond, eventSample.RightFoot.SlipSpeedMetersPerSecond),
                     _tolerances.SupportSlipToleranceM);
             }
@@ -1203,7 +1227,7 @@ namespace PowerliftingSimulator.Squat
                 : SquatJudgmentOutcome.NO_LIFT;
             SquatRuleEventTicks eventTicks = new SquatRuleEventTicks(
                 squatCommand.SimulationTick,
-                trace[physicalOnset].SimulationTick,
+                trace[attemptCommencement].SimulationTick,
                 bottomIndex >= 0 ? trace[bottomIndex].SimulationTick : SquatRuleEventTicks.NotAvailable,
                 ascentIndex >= 0 ? trace[ascentIndex].SimulationTick : SquatRuleEventTicks.NotAvailable,
                 finalValid ? trace[finalBegin].SimulationTick : SquatRuleEventTicks.NotAvailable,
@@ -1308,6 +1332,34 @@ namespace PowerliftingSimulator.Squat
             return true;
         }
 
+        private bool HasRuleWindowCoverage(
+            SquatTrace trace,
+            SquatRuleCommandEvent squatCommand,
+            SquatRuleCommandEvent rackCommand,
+            SquatRuleCommandEvent rerackStarted,
+            out int squatCommandIndex,
+            out int rackCommandIndex,
+            out int rerackStartedIndex)
+        {
+            squatCommandIndex = FindIndexAtTick(trace, squatCommand.SimulationTick);
+            rackCommandIndex = FindIndexAtTick(trace, rackCommand.SimulationTick);
+            rerackStartedIndex = FindIndexAtTick(trace, rerackStarted.SimulationTick);
+            if (squatCommandIndex < 0 || rackCommandIndex < 0 || rerackStartedIndex < 0)
+                return false;
+
+            int startEnd = squatCommandIndex - 1;
+            int startBegin = startEnd - _tolerances.StartPositionPersistenceTicks + 1;
+            if (!HasConsecutiveWindow(trace, startBegin, startEnd))
+                return false;
+
+            if (!HasConsecutiveWindow(trace, squatCommandIndex, rackCommandIndex))
+                return false;
+
+            int lifecycleBegin = Math.Min(rackCommandIndex, rerackStartedIndex);
+            int lifecycleEnd = Math.Max(rackCommandIndex, rerackStartedIndex);
+            return HasConsecutiveWindow(trace, lifecycleBegin, lifecycleEnd);
+        }
+
         private bool HasMandatoryEvidence(SquatTrace trace, int preRackEnd)
         {
             for (int index = 0; index <= preRackEnd; index++)
@@ -1358,7 +1410,7 @@ namespace PowerliftingSimulator.Squat
         {
             for (int index = start; index <= end; index++)
             {
-                if (!IsFinalPosition(trace[index]))
+                if (!IsFinalLockoutPosture(trace[index]))
                     return index;
             }
 
@@ -1374,13 +1426,12 @@ namespace PowerliftingSimulator.Squat
                 HasEstablishedSupport(sample);
         }
 
-        private bool IsFinalPosition(SquatObservationSnapshot sample)
+        private bool IsFinalLockoutPosture(SquatObservationSnapshot sample)
         {
             return IsKneesLocked(sample) &&
                 MaxHipAngle(sample) <= _tolerances.HipErectToleranceRad &&
                 MaxTrunkAngle(sample) <= _tolerances.TrunkErectToleranceRad &&
-                IsBarMotionless(sample) &&
-                HasEstablishedSupport(sample);
+                IsBarMotionless(sample);
         }
 
         private bool IsKneesLocked(SquatObservationSnapshot sample)
@@ -1400,7 +1451,18 @@ namespace PowerliftingSimulator.Squat
             return sample.Support.HasSupport && sample.LeftFoot.IsInContact && sample.RightFoot.IsInContact;
         }
 
-        private int FindFirstPhysicalDescentOnset(SquatTrace trace, int start, int end)
+        private int FindAttemptCommencementFromKnees(SquatTrace trace, int start, int end)
+        {
+            for (int index = start; index <= end; index++)
+            {
+                if (!IsKneesLocked(trace[index]))
+                    return index;
+            }
+
+            return -1;
+        }
+
+        private int FindFirstPhysicalDescentMotionOnset(SquatTrace trace, int start, int end)
         {
             int persistence = _tolerances.DescentOnsetPersistenceTicks;
             for (int index = start; index + persistence - 1 <= end; index++)
@@ -1411,7 +1473,7 @@ namespace PowerliftingSimulator.Squat
                 bool physical = true;
                 for (int sampleIndex = index; sampleIndex < index + persistence; sampleIndex++)
                 {
-                    if (!IsPhysicalDescentSample(trace, sampleIndex))
+                    if (!IsPhysicalDescentMotionSample(trace, sampleIndex))
                     {
                         physical = false;
                         break;
@@ -1425,7 +1487,7 @@ namespace PowerliftingSimulator.Squat
             return -1;
         }
 
-        private int FindFirstPhysicalDescentOnsetAtOrAfter(SquatTrace trace, ulong tick, int end)
+        private int FindFirstPhysicalDescentMotionOnsetAtOrAfter(SquatTrace trace, ulong tick, int end)
         {
             int persistence = _tolerances.DescentOnsetPersistenceTicks;
             for (int index = 0; index + persistence - 1 <= end; index++)
@@ -1437,7 +1499,7 @@ namespace PowerliftingSimulator.Squat
                 bool physical = true;
                 for (int sampleIndex = index; sampleIndex < index + persistence; sampleIndex++)
                 {
-                    if (!IsPhysicalDescentSample(trace, sampleIndex))
+                    if (!IsPhysicalDescentMotionSample(trace, sampleIndex))
                     {
                         physical = false;
                         break;
@@ -1451,12 +1513,10 @@ namespace PowerliftingSimulator.Squat
             return -1;
         }
 
-        private bool IsPhysicalDescentSample(SquatTrace trace, int index)
+        private bool IsPhysicalDescentMotionSample(SquatTrace trace, int index)
         {
             SquatObservationSnapshot sample = trace[index];
-            if (Math.Abs(sample.Joints.LeftKnee.ActualAngleRadians) > _tolerances.KneeUnlockToleranceRad ||
-                Math.Abs(sample.Joints.RightKnee.ActualAngleRadians) > _tolerances.KneeUnlockToleranceRad ||
-                sample.Bar.LinearVelocityWorldMetersPerSecond.Y <= -_tolerances.DescentOnsetVelocityMps)
+            if (sample.Bar.LinearVelocityWorldMetersPerSecond.Y <= -_tolerances.DescentOnsetVelocityMps)
                 return true;
 
             if (index == 0)
@@ -1611,15 +1671,30 @@ namespace PowerliftingSimulator.Squat
             return -1;
         }
 
-        private int FindSupportViolationIndex(SquatTrace trace, int start, int end)
+        private int FindSupportViolationIndex(
+            SquatTrace trace,
+            int start,
+            int end,
+            float leftSlipBaseline,
+            float rightSlipBaseline,
+            out bool slipEvidenceValid)
         {
+            slipEvidenceValid = true;
             int runStart = -1;
             for (int index = start; index <= end; index++)
             {
                 SquatObservationSnapshot sample = trace[index];
+                float leftSlipDelta = sample.LeftFoot.SlipAccumulatedMeters - leftSlipBaseline;
+                float rightSlipDelta = sample.RightFoot.SlipAccumulatedMeters - rightSlipBaseline;
+                if (leftSlipDelta < 0f || rightSlipDelta < 0f)
+                {
+                    slipEvidenceValid = false;
+                    return -1;
+                }
+
                 bool violation = !HasEstablishedSupport(sample) ||
-                    sample.LeftFoot.SlipAccumulatedMeters > _tolerances.SupportSlipToleranceM ||
-                    sample.RightFoot.SlipAccumulatedMeters > _tolerances.SupportSlipToleranceM ||
+                    leftSlipDelta > _tolerances.SupportSlipToleranceM ||
+                    rightSlipDelta > _tolerances.SupportSlipToleranceM ||
                     sample.LeftFoot.SlipSpeedMetersPerSecond > _tolerances.SupportSlipSpeedMps ||
                     sample.RightFoot.SlipSpeedMetersPerSecond > _tolerances.SupportSlipSpeedMps;
                 if (!violation)
@@ -1670,12 +1745,14 @@ namespace PowerliftingSimulator.Squat
             return true;
         }
 
-        private static int LastIndexBefore(SquatTrace trace, ulong tick)
+        private static int FindIndexAtTick(SquatTrace trace, ulong tick)
         {
-            for (int index = trace.Count - 1; index >= 0; index--)
+            for (int index = 0; index < trace.Count; index++)
             {
-                if (trace[index].SimulationTick < tick)
+                if (trace[index].SimulationTick == tick)
                     return index;
+                if (trace[index].SimulationTick > tick)
+                    break;
             }
 
             return -1;

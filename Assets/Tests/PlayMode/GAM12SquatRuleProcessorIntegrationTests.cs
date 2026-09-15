@@ -65,7 +65,9 @@ namespace PowerliftingSimulator.Tests
             SquatAttemptJudgment firstJudgment = processor.Evaluate(trace, timeline);
             SquatAttemptJudgment secondJudgment = processor.Evaluate(trace, timeline);
 
-            Assert.That(firstJudgment.EvidenceStatus, Is.Not.EqualTo(SquatJudgmentEvidenceStatus.INVALID_TRACE));
+            Assert.That(firstJudgment.EvidenceStatus, Is.EqualTo(SquatJudgmentEvidenceStatus.INCOMPLETE_ATTEMPT));
+            Assert.That(firstJudgment.Outcome, Is.EqualTo(SquatJudgmentOutcome.UNDETERMINED));
+            Assert.That(firstJudgment.HasDecision, Is.False);
             Assert.That(firstJudgment.EvaluatedTraceSchema, Is.EqualTo(SquatTrace.SchemaVersion));
             Assert.That(secondJudgment.EvidenceStatus, Is.EqualTo(firstJudgment.EvidenceStatus));
             Assert.That(secondJudgment.Outcome, Is.EqualTo(firstJudgment.Outcome));
