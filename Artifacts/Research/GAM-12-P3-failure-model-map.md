@@ -39,6 +39,8 @@ The detector has no Unity references, no force/torque/transform writes, no
 safety actuation, no rule-processor edits, no P1 schema edits, and no load
 threshold. The current 0 kg configuration remains insufficient for full
 bar-dependent no-failure claims because the canonical bar is unavailable.
-The accepted 25 kg real trace is evaluated honestly as incomplete with no
-fabricated physical failure; completing its attempt lifecycle belongs to later
-GAM-12 integration/closeout.
+The accepted 25 kg real trace is evaluated over the frozen P4 attempt lifecycle
+with no fabricated physical failure. As of the GAM-12 closeout its complete
+lifecycle reports `EVALUABLE / NO_PHYSICAL_FAILURE` in 3/3 fresh runs; see
+`Artifacts/Receipts/GAM-12-completion.md`. The earlier bounded-fixture wording
+described the pre-P4 state and no longer applies.

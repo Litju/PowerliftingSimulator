@@ -180,20 +180,40 @@ namespace PowerliftingSimulator.Tests
         public void EARLY_SETUP_HISTORY_CANNOT_CHANGE_LOCKOUT_REFERENCE()
         {
             // Setup/walkout samples are intentionally outside the canonical
-            // trace. Only the qualified start window establishes P3's first
-            // standing reference sample.
-            SquatTrace afterQuietSetup = BuildTrace();
-            afterQuietSetup.EndRecording();
-            SquatAttemptRecord recordAfterQuietSetup = BuildCompletedLifecycle().FinalizeAttempt(afterQuietSetup);
+            // trace, so P3's standing reference is the trace's own first
+            // qualified sample and nothing earlier. This is exercised by
+            // shifting only the recorded standing height: the same relative
+            // attempt must reach lockout at the same tick, while a recorded
+            // window that starts far above its own top region must not.
+            SquatTrace atReference = BuildTrace();
+            atReference.EndRecording();
+            SquatAttemptRecord recordAtReference = BuildCompletedLifecycle().FinalizeAttempt(atReference);
 
-            SquatTrace afterNoisySetup = BuildTrace();
-            afterNoisySetup.EndRecording();
-            SquatAttemptRecord recordAfterNoisySetup = BuildCompletedLifecycle().FinalizeAttempt(afterNoisySetup);
+            SquatTrace shiftedReference = BuildTrace(standingHeightOffsetM: 0.40f);
+            shiftedReference.EndRecording();
+            SquatAttemptRecord recordShiftedReference =
+                BuildCompletedLifecycle().FinalizeAttempt(shiftedReference);
 
-            Assert.That(recordAfterQuietSetup.FirstTraceTick, Is.EqualTo(0ul));
-            Assert.That(recordAfterNoisySetup.FirstTraceTick, Is.EqualTo(0ul));
-            Assert.That(recordAfterNoisySetup.FailureResult.Outcome, Is.EqualTo(recordAfterQuietSetup.FailureResult.Outcome));
-            Assert.That(recordAfterNoisySetup.EventTicks.LockoutTick, Is.EqualTo(recordAfterQuietSetup.EventTicks.LockoutTick));
+            Assert.That(recordAtReference.FirstTraceTick, Is.EqualTo(0ul));
+            Assert.That(recordShiftedReference.FirstTraceTick, Is.EqualTo(0ul));
+
+            // The unshifted attempt returns to its own recorded standing height
+            // and locks out.
+            Assert.That(
+                recordAtReference.PhysicalFailureOutcome,
+                Is.EqualTo(SquatFailureResultKind.NO_PHYSICAL_FAILURE));
+
+            // The shifted attempt never returns to the height its own first
+            // recorded sample established, so the reference is read from the
+            // trace rather than assumed, and no lockout is fabricated.
+            Assert.That(
+                recordShiftedReference.PhysicalFailureOutcome,
+                Is.Not.EqualTo(SquatFailureResultKind.NO_PHYSICAL_FAILURE));
+            Assert.That(
+                recordShiftedReference.FailureResult.PrimaryFailureKind,
+                Is.Not.EqualTo(SquatFailureKind.FAILED_LOCKOUT),
+                "Terminality is PHYSICAL_LOCKOUT-shaped here and the completion region is never entered, " +
+                "so no terminal lockout postcondition may be invented.");
         }
 
         [Test]
@@ -283,15 +303,16 @@ namespace PowerliftingSimulator.Tests
         private static SquatTrace BuildTrace(
             bool shallowDepth = false,
             bool barAvailable = true,
-            bool saddleBroken = false)
+            bool saddleBroken = false,
+            float standingHeightOffsetM = 0f)
         {
             SquatTrace trace = new SquatTrace(15);
             trace.BeginRecording();
             float depth = shallowDepth ? 0f : -0.02f;
-            trace.Append(Snapshot(0ul, 1.00f, 0f, 0f, 0f, 0f, barAvailable, saddleBroken));
-            trace.Append(Snapshot(1ul, 1.00f, 0f, 0f, 0f, 0f, barAvailable, saddleBroken));
-            trace.Append(Snapshot(2ul, 1.00f, 0f, 0f, 0f, 0f, barAvailable, saddleBroken));
-            trace.Append(Snapshot(3ul, 1.00f, 0f, 0f, 0f, 0f, barAvailable, saddleBroken));
+            trace.Append(Snapshot(0ul, 1.00f + standingHeightOffsetM, 0f, 0f, 0f, 0f, barAvailable, saddleBroken));
+            trace.Append(Snapshot(1ul, 1.00f + standingHeightOffsetM, 0f, 0f, 0f, 0f, barAvailable, saddleBroken));
+            trace.Append(Snapshot(2ul, 1.00f + standingHeightOffsetM, 0f, 0f, 0f, 0f, barAvailable, saddleBroken));
+            trace.Append(Snapshot(3ul, 1.00f + standingHeightOffsetM, 0f, 0f, 0f, 0f, barAvailable, saddleBroken));
             trace.Append(Snapshot(4ul, 0.90f, -0.12f, 0f, 0f, 0.30f, barAvailable, saddleBroken));
             trace.Append(Snapshot(5ul, 0.80f, -0.12f, depth, depth, 0.60f, barAvailable, saddleBroken));
             trace.Append(Snapshot(6ul, 0.79f, 0f, depth, depth, 0.90f, barAvailable, saddleBroken));

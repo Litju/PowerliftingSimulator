@@ -28,6 +28,7 @@ namespace PowerliftingSimulator.Squat.Unity
         private int _lockoutSamples;
         private ulong _squatCommandTick;
         private SquatObservationSnapshot _standingReference;
+        private bool _hasStandingReference;
         private SquatAttemptRecord _record;
         private bool _hasPhysicalDescent;
         private bool _hasAscent;
@@ -82,6 +83,7 @@ namespace PowerliftingSimulator.Squat.Unity
             _lockoutSamples = 0;
             _squatCommandTick = SquatAttemptEventTicks.NotAvailable;
             _standingReference = default(SquatObservationSnapshot);
+            _hasStandingReference = false;
             _hasPhysicalDescent = false;
             _hasAscent = false;
             _lowestBarPositionY = float.PositiveInfinity;
@@ -165,8 +167,21 @@ namespace PowerliftingSimulator.Squat.Unity
             {
                 _lifecycle.ObserveStartWindowSample(snapshot.SimulationTick);
                 _startWindowSamples++;
-                if (_startWindowSamples == 1)
+                // The standing reference must come from a sample that still
+                // satisfies the raw start predicate. Recording begins on a
+                // persisted candidate run, but a later start-window sample can
+                // degrade, and an unqualified reference would shift the whole
+                // lockout height comparison. The sealed rule processor remains
+                // the authority on start legality.
+                if (!_hasStandingReference && IsStartPositionCandidate(snapshot))
+                {
                     _standingReference = snapshot;
+                    _hasStandingReference = true;
+                }
+                else if (_startWindowSamples == 1)
+                {
+                    _standingReference = snapshot;
+                }
                 return;
             }
 

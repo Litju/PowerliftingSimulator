@@ -1432,6 +1432,13 @@ namespace PowerliftingSimulator.Squat
         {
             if (_physicalLockoutReached || !_hasCompletionRegionEntry)
                 return;
+            // A frozen trace may extend past the authoritative terminal sample
+            // (Rack and Rerack are later ticks). Completion-region evidence
+            // recorded after termination cannot support a terminal
+            // postcondition, and admitting it would emit a record whose onset
+            // follows its own latch.
+            if (_completionRegionEntryContext.SimulationTick > terminalSample.SimulationTick)
+                return;
 
             _candidateCount = 0;
             QueueCandidate(

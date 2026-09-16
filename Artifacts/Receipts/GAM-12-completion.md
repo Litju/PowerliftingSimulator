@@ -7,10 +7,9 @@ GAM12_COMPLETION_DECISION
 PASS
 
 STATUS
-PASS_WITH_LIMITATIONS — every GAM-12 acceptance gate passed. One pre-existing
-GAM-11 performance gate fails for a measured machine-state reason recorded
-under `PERFORMANCE_GATE`; no budget was relaxed and it is not claimed as
-passing.
+PASS — every GAM-12 acceptance gate passed. The only non-passing outcomes in the
+final headless PlayMode run are 8 graphics-device gates and 2 explicit skips,
+none of them GAM-12 tests.
 
 START_HEAD
 3096bacd1992cd16b6e06c92eaf6b6993a7935c1
@@ -166,12 +165,13 @@ competition/failure claim are fabricated. P2/P3 may remain
 ## Gates
 
 FOCUSED_P3A1_AND_P4_EDITMODE
-PASS — 75/75. XML SHA-256
+PASS — 75/75 before the PR-review fixes. XML SHA-256
 `4895B97B1D2FA2BD00F0F4696A00B8D07382871B29887B385ADECA78ACD56A4A`.
 
 FULL_EDITMODE
-PASS — 204/204. XML SHA-256
-`6097D2365228C0A9CF194AF182B18EABF5D779339B85E37E18DCCEFB07D4A2E3`.
+PASS — 206/206 after the PR-review fixes (204 plus two terminal-context guard
+tests). XML SHA-256
+`2CC21F9836D1FDB367C0DB1EB0928A880A0AF66C6AAAC5E643DC60DFE6A7771E`.
 
 GAM12_PLAYMODE_INTEGRATION
 PASS — 4/4 on the committed tree: attempt-lifecycle 25 kg closeout,
@@ -182,14 +182,18 @@ The 25 kg lifecycle test performs three internal fresh `LoadSceneMode.Single`
 repeats.
 
 HEADLESS_PLAYMODE
-184 total; 173 passed; 9 failed; 2 skipped. XML SHA-256
-`73FDA7E5A08225FD460E78FD265450BF8E97BEC24EA1D01070416777A01EAE5D`.
-All nine non-passes are pre-existing environment gates, not GAM-12
-regressions: eight require a graphics device (`RenderTexture.Create failed`
-or explicit "requires a graphics device" assertions) and one is the known
-`UpperLimbPerformanceTests.UPPER_LIMB_PERFORMANCE_AND_STABILITY_BUDGET`
-physics-step p95 variance (2.5183 ms vs the 2.0 ms budget). Every GAM-12
-EditMode and PlayMode test passed.
+184 total; 174 passed; 8 failed; 2 skipped; 0 inconclusive. That is 10 outcomes
+that are not passes: 8 failures and 2 skips, accounted for separately below.
+XML SHA-256
+`6C24CD3EF4A84A433E3C5BC89D964ACE4BEA6262ADFC49518B550424AF1EE191`.
+All 8 failures require a graphics device (`RenderTexture.Create failed`, or
+explicit "requires a graphics device" assertions). None is a GAM-12 test.
+Both skips are explicit and expected:
+`PhysicalStandingEquilibriumTests.E3_EXPERIMENT_B_PRELOAD_ONLY_EQUILIBRIUM`
+(characterization experiment excluded from default qualification suites) and
+`PhysicalStandingVisualSmokeTests.V1_UNLOADED_STANDING_VISUAL_SMOKE`
+(declines to capture blank frames without a graphics device).
+Every GAM-12 EditMode and PlayMode test passed.
 
 GRAPHICS_PLAYMODE
 PASS_WITH_LIMITATIONS — full graphics run: 184 total; 179 passed; 4 failed;
@@ -208,26 +212,38 @@ passed:
   1224` (`ERROR_USER_MAPPED_FILE`) writing a GAM-11 evidence PNG.
 - `UpperLimbProxyCharacterizationTests.T4_P0_BASELINE_CONTACT_GEOMETRY` PASSED
   on rerun, same transient Win32 1224 cause.
-- `UpperLimbPerformanceTests.UPPER_LIMB_PERFORMANCE_AND_STABILITY_BUDGET`
-  still FAILS. See `PERFORMANCE_GATE` below.
+- `UpperLimbPerformanceTests.UPPER_LIMB_PERFORMANCE_AND_STABILITY_BUDGET` still
+  failed on that rerun and passed later once machine contention was removed. See
+  `PERFORMANCE_GATE` below.
 The sole skip `PhysicalStandingEquilibriumTests.E3_EXPERIMENT_B_PRELOAD_ONLY_EQUILIBRIUM`
 is explicitly excluded from default qualification suites.
 
+This graphics run predates the PR-review fixes. The post-fix verification was
+the full headless PlayMode run recorded under `HEADLESS_PLAYMODE`, whose only
+non-passes are graphics-device gates and the two explicit skips, plus full
+EditMode 206/206 and MasterSpec PASS.
+
 PERFORMANCE_GATE
-FAIL — pre-existing GAM-11 gate, attributed to machine state, not to GAM-12.
-`UPPER_LIMB_PERFORMANCE_AND_STABILITY_BUDGET` measured physics_step p95
-2.5183 ms headless, 7.0104 ms in the full graphics run, 3.0144 ms targeted, and
-2.8977 ms fully isolated, against a 2.0 ms budget. The committed GAM-11
-baseline for the same test is 0.3300 ms.
+PASS — resolved, and the earlier failure was proven environmental.
 
-Measured machine state during these runs: Intel i5-1135G7 clamped to
-1382 MHz of its 2400 MHz base (no turbo headroom), CPU at 100 % load, and
-457 MB free of 7585 MB physical memory, with six external
-`codebase-memory-mcp` processes each holding roughly 26 000-29 000 s of
-accumulated CPU time. Those processes are not part of this repository and were
-not started by this work.
+`UPPER_LIMB_PERFORMANCE_AND_STABILITY_BUDGET` first failed with physics_step p95
+of 2.5183 ms headless, 7.0104 ms in the full graphics run, 3.0144 ms targeted,
+and 2.8977 ms fully isolated, against a 2.0 ms budget, while the committed
+GAM-11 baseline for the same test is 0.3300 ms.
 
-Discriminating evidence that GAM-12 is not the cause:
+Measured machine state during those runs: Intel i5-1135G7 clamped to 1382 MHz,
+CPU pinned at 100 % load, and 457 MB free of 7585 MB physical memory, with 19
+external `codebase-memory-mcp` worker processes holding roughly 91 CPU-hours in
+aggregate. Those processes are not part of this repository and were not started
+by this work. Unity was measured accumulating 0.3 s of CPU per 20 s of wall
+clock, about 1.5 % of one core.
+
+After that contention was removed (free physical memory recovered from 457 MB to
+1900 MB), the same test passes with every metric inside budget: physics_step p95
+0.7123 ms, catch_up_frame 2.1985 ms, foundation_frame 0.6645 ms,
+controller_execution 0.0716 ms.
+
+Corroborating discriminators that GAM-12 was never the cause:
 - The degradation is uniform across four independent metrics, including paths
   GAM-12 does not touch: physics_step 0.3300 -> 2.8977 ms, catch_up_frame
   1.0762 -> 18.9549 ms, foundation_frame 0.3348 -> 2.7729 ms,
@@ -237,18 +253,18 @@ Discriminating evidence that GAM-12 is not the cause:
   any changed code — degrading from p95 0.6704 ms to 3.1379 ms, while the
   recording ON-minus-OFF delta *shrank* from 0.5999 ms to 0.2818 ms. The
   incremental cost of the observation path did not increase.
-- The same binary produced 2.52, 7.01, 3.01 and 2.90 ms across four runs in one
-  session; a deterministic code regression would not vary by 2.8x.
+- The same binary produced 2.52, 7.01, 3.01, 2.90 and finally 0.71 ms across
+  five runs in one session; a deterministic code regression would not vary 10x.
 - The only per-tick production addition is one null-checked delegate invocation
   in `SquatObservationCollector.CapturePostPhysics`; the registered
   `SquatAttemptOrchestrator.HandleSnapshot` returns immediately when no attempt
   is armed, and the perf fixture never arms one. No per-tick allocation was
   added.
 
-No performance budget was relaxed, and this gate is not claimed as passing.
-All regenerated prior-issue evidence and measurement artifacts were restored to
-their committed values so that no qualified GAM-6..GAM-11 or GAM-12 P1A
-baseline is overwritten with a throttled-machine measurement.
+No performance budget was relaxed. All regenerated prior-issue evidence and
+measurement artifacts were restored to their committed values so that no
+qualified GAM-6..GAM-11 or GAM-12 P1A baseline is overwritten by a measurement
+taken from this run.
 
 MASTER_SPEC
 PASS — `Tools/Spec/Verify-MasterSpec.ps1`: `MASTER_SPEC_FILES=68`,
@@ -283,6 +299,59 @@ NO — no load sweep, no threshold retuning, no scripted load-threshold failure.
 
 LOAD_THRESHOLD_SCRIPT
 NO — load metadata mutation to 500 kg does not change any classification.
+
+## PR review resolution
+
+An automated review of `main -> work/gam-12-squat-rules-telemetry` raised eight
+findings. Five were resolved in this closeout; three are accepted as real and
+deliberately deferred because fixing them would breach a GAM-12 prohibition or
+change a sealed layer on speculation rather than on a failing test.
+
+RESOLVED
+1. `PhysicsTickDriver.StepOne` committed the Foundation attempt-trace append
+   only after the registered post-physics observer ran, and
+   `CompleteRenderFrame` skipped its accumulator decrement when a step threw.
+   An observer fault could therefore leave a trace gap and retain render time
+   for a tick that had already advanced the simulation clock. The append now
+   precedes the observer, and a tick whose clock advanced always consumes its
+   accumulated render time. The success path is unchanged.
+2. `SquatAttemptOrchestrator.HandleStartWindow` accepted the first recorded
+   sample as the lockout standing reference without revalidating it. The
+   reference is now taken from the first start-window sample that still
+   satisfies the raw start predicate.
+3. `EARLY_SETUP_HISTORY_CANNOT_CHANGE_LOCKOUT_REFERENCE` compared two identical
+   traces and could not fail. It now shifts only the recorded standing height
+   and asserts that the reference is read from the trace rather than assumed.
+4. `GAM12Phase1AValidationTests` wrote the shared accumulator's verdict into a
+   per-pair slot in the sample-count mismatch branch, which mislabelled every
+   later pair in the same load as a repeatability failure. The branch now uses
+   a dedicated per-pair accumulator and merges it into the aggregate.
+5. Receipt accounting and a stale pre-P4 statement in
+   `Artifacts/Research/GAM-12-P3-failure-model-map.md` were corrected.
+
+DEFERRED — `SquatRuleProcessor` reports `attemptCommencement` (bilateral knee
+unlock) as `EventTicks.DescentOnsetTick`, which the attempt record surfaces as
+`PhysicalDescentOnsetTick`. The real 25 kg run shows the two genuinely differ:
+P2 reports 150 while the P3 physical-motion predicate finds 172. The label is
+therefore imprecise. Changing it alters output of the sealed P2 processor, which
+this mission explicitly prohibits, and it changes no rule verdict. Recorded here
+as a confirmed provenance defect for a P2 follow-up.
+
+DEFERRED — `SquatObservationCollector.CaptureSupport` and `CaptureJoint` pass
+runtime values to strict `AVAILABLE` constructors without validating every
+field, so a non-finite or out-of-range producer value would throw inside the
+post-physics callback instead of yielding an explicit `NOT_AVAILABLE`. No
+observed run produces such a value. The fix belongs with the P1 layer and would
+otherwise convert an unobserved producer fault into silent unavailability on
+speculation.
+
+DEFERRED — `SquatAttemptOrchestrator` does not restart start qualification when
+an already-recorded start-window sample stops qualifying; it still issues Squat.
+The sealed rule processor remains the authority on start legality and already
+reports `FAILED_START_POSITION` for exactly this condition, so attempt truth is
+not corrupted. Restarting qualification mid-recording requires ending and
+clearing the trace, a behavioural redesign of the qualification path that this
+closeout will not make against a proven 3/3 gate.
 
 ## Known limitations
 

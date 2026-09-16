@@ -405,6 +405,52 @@ namespace PowerliftingSimulator.Tests
         }
 
         [Test]
+        public void COMPLETION_REGION_ENTRY_AFTER_THE_TERMINAL_TICK_IS_NOT_FAILED_LOCKOUT()
+        {
+            // Ascent establishes at tick 8 and the completion region is first
+            // entered at tick 9. A terminal sample before that entry cannot
+            // support the postcondition, and must never emit a record whose
+            // onset follows its latch.
+            SquatTrace trace = BuildTopRegionWithoutLockout(30);
+            SquatObservationSnapshot beforeEntry = trace[8];
+
+            SquatFailureResult result = new SquatFailureDetector().Evaluate(
+                trace,
+                SquatFailureCompletionContext.Terminal(
+                    beforeEntry.SimulationTick,
+                    beforeEntry.SimulationTimeSeconds,
+                    SquatAttemptTerminalReason.TIMEOUT));
+
+            Assert.That(result.TerminalContextStatus, Is.EqualTo(SquatFailureTerminalContextStatus.TRACE_COVERED));
+            Assert.That(result.FailureRecord, Is.Null);
+            Assert.That(result.PrimaryFailureKind, Is.EqualTo(SquatFailureKind.NONE));
+        }
+
+        [Test]
+        public void FAILED_LOCKOUT_ONSET_NEVER_FOLLOWS_ITS_LATCH()
+        {
+            SquatTrace trace = BuildTopRegionWithoutLockout(30);
+
+            for (int index = 0; index < trace.Count; index++)
+            {
+                SquatObservationSnapshot terminal = trace[index];
+                SquatFailureResult result = new SquatFailureDetector().Evaluate(
+                    trace,
+                    SquatFailureCompletionContext.Terminal(
+                        terminal.SimulationTick,
+                        terminal.SimulationTimeSeconds,
+                        SquatAttemptTerminalReason.TIMEOUT));
+
+                if (result.FailureRecord == null)
+                    continue;
+                Assert.That(
+                    result.FailureRecord.OnsetTick,
+                    Is.LessThanOrEqualTo(result.FailureRecord.LatchedTick),
+                    "terminalTick=" + terminal.SimulationTick);
+            }
+        }
+
+        [Test]
         public void TERMINAL_BELOW_COMPLETION_REGION_NOT_FAILED_LOCKOUT()
         {
             SquatFailureResult result = EvaluateTerminal(BuildAscentBelowCompletionRegion());

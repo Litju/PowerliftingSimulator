@@ -312,9 +312,15 @@ namespace PowerliftingSimulator.Tests
                     SquatObservationSnapshot[] right = traces[rightIndex];
                     if (left.Length != right.Length)
                     {
-                        maximum.Mismatch(0ul, "sample_count");
+                        // Record the verdict for this pair only. Writing the
+                        // shared accumulator's verdict would report merged
+                        // state here and mark every later pair in this load as
+                        // a repeatability failure it was never compared for.
+                        ComparisonAccumulator sampleCountPair = new ComparisonAccumulator();
+                        sampleCountPair.Mismatch(0ul, "sample_count");
+                        maximum.Merge(sampleCountPair);
                         result.tickAlignment = false;
-                        result.pairVerdicts[pairIndex++] = maximum.Verdict;
+                        result.pairVerdicts[pairIndex++] = sampleCountPair.Verdict;
                         continue;
                     }
 
