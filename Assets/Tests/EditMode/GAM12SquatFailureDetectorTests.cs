@@ -282,25 +282,317 @@ namespace PowerliftingSimulator.Tests
         }
 
         [Test]
-        public void FAILED_PHYSICAL_LOCKOUT()
+        public void TERMINAL_AFTER_TOP_REGION_WITHOUT_LOCKOUT_FAILED_LOCKOUT()
         {
-            SquatFailureResult result = Evaluate(BuildFailedLockout());
+            SquatFailureResult result = EvaluateTerminal(BuildTopRegionWithoutLockout(12));
 
+            Assert.That(result.TerminalContextStatus, Is.EqualTo(SquatFailureTerminalContextStatus.TRACE_COVERED));
             Assert.That(result.Outcome, Is.EqualTo(SquatFailureResultKind.PHYSICAL_FAILURE));
             Assert.That(result.FailureRecord.PrimaryFailureKind, Is.EqualTo(SquatFailureKind.FAILED_LOCKOUT));
-            Assert.That(result.FailureRecord.OnsetTick, Is.EqualTo(8ul));
-            Assert.That(result.FailureRecord.LatchedTick, Is.EqualTo(
-                8ul + (ulong)SquatFailureCalibration.Default.LockoutCompletionTimeoutTicks - 1ul));
         }
 
         [Test]
-        public void EARLIER_FAILURE_REMAINS_PRIMARY_WHEN_LOCKOUT_LATER_FAILS()
+        public void TOP_REGION_GT_60_TICKS_WITHOUT_TERMINALITY_NO_FAILED_LOCKOUT()
         {
-            SquatFailureResult result = Evaluate(BuildEarlyBalanceThenFailedLockout());
+            int beyondOldDwell = SquatFailureCalibration.Default.LockoutCompletionTimeoutTicks + 40;
+            SquatFailureResult result = Evaluate(BuildTopRegionWithoutLockout(beyondOldDwell));
+
+            Assert.That(result.TerminalContextStatus, Is.EqualTo(SquatFailureTerminalContextStatus.NOT_TERMINAL));
+            Assert.That(result.Outcome, Is.Not.EqualTo(SquatFailureResultKind.PHYSICAL_FAILURE));
+            Assert.That(result.FailureRecord, Is.Null);
+            Assert.That(result.PrimaryFailureKind, Is.EqualTo(SquatFailureKind.NONE));
+        }
+
+        [Test]
+        public void TOP_REGION_GT_60_TICKS_THEN_VALID_LOCKOUT_NO_FAILURE()
+        {
+            int beyondOldDwell = SquatFailureCalibration.Default.LockoutCompletionTimeoutTicks + 40;
+            SquatTrace trace = BuildTopRegionThenLockout(beyondOldDwell);
+
+            SquatFailureResult nonTerminal = Evaluate(trace);
+            SquatFailureResult terminal = EvaluateTerminal(
+                trace,
+                SquatAttemptTerminalReason.PHYSICAL_LOCKOUT);
+
+            Assert.That(nonTerminal.PrimaryFailureKind, Is.EqualTo(SquatFailureKind.NONE));
+            Assert.That(terminal.Outcome, Is.EqualTo(SquatFailureResultKind.NO_PHYSICAL_FAILURE));
+            Assert.That(terminal.PrimaryFailureKind, Is.EqualTo(SquatFailureKind.NONE));
+            Assert.That(terminal.FailureRecord, Is.Null);
+        }
+
+        [Test]
+        public void SLOW_CONTINUOUS_ASCENT_LONGER_THAN_OLD_TIMEOUT_THEN_LOCKOUT_IS_NOT_FAILED_LOCKOUT()
+        {
+            SquatTrace trace = BuildSlowContinuousAscentThenLockout();
+
+            Assert.That(Evaluate(trace).PrimaryFailureKind, Is.EqualTo(SquatFailureKind.NONE));
+            Assert.That(
+                EvaluateTerminal(trace, SquatAttemptTerminalReason.PHYSICAL_LOCKOUT).Outcome,
+                Is.EqualTo(SquatFailureResultKind.NO_PHYSICAL_FAILURE));
+        }
+
+        [Test]
+        public void VALID_LOCKOUT_PLUS_TERMINAL_CONTEXT_NO_FAILURE()
+        {
+            SquatFailureResult result = EvaluateTerminal(
+                BuildGoodAttempt(),
+                SquatAttemptTerminalReason.PHYSICAL_LOCKOUT);
+
+            Assert.That(result.TerminalContextStatus, Is.EqualTo(SquatFailureTerminalContextStatus.TRACE_COVERED));
+            Assert.That(result.EvidenceStatus, Is.EqualTo(SquatFailureEvidenceStatus.EVALUABLE));
+            Assert.That(result.Outcome, Is.EqualTo(SquatFailureResultKind.NO_PHYSICAL_FAILURE));
+            Assert.That(result.FailureRecord, Is.Null);
+        }
+
+        [Test]
+        public void LOCKOUT_REACHED_AT_ANY_TIME_BEFORE_TERMINALITY_FORBIDS_FAILED_LOCKOUT()
+        {
+            int dwell = SquatFailureCalibration.Default.LockoutCompletionTimeoutTicks;
+
+            foreach (int topRegionSamples in new[] { 1, dwell - 1, dwell, dwell + 100 })
+            {
+                SquatFailureResult result = EvaluateTerminal(
+                    BuildTopRegionThenLockout(topRegionSamples),
+                    SquatAttemptTerminalReason.PHYSICAL_LOCKOUT);
+
+                Assert.That(
+                    result.PrimaryFailureKind,
+                    Is.EqualTo(SquatFailureKind.NONE),
+                    "topRegionSamples=" + topRegionSamples);
+                Assert.That(result.Outcome, Is.EqualTo(SquatFailureResultKind.NO_PHYSICAL_FAILURE));
+            }
+        }
+
+        [Test]
+        public void FAILED_LOCKOUT_ONSET_EQUALS_FIRST_COMPLETION_REGION_ENTRY()
+        {
+            // Ascent is established at tick 8; the bar first satisfies the
+            // completion-region height at tick 9.
+            SquatFailureResult result = EvaluateTerminal(BuildTopRegionWithoutLockout(30));
+
+            Assert.That(result.FailureRecord.PrimaryFailureKind, Is.EqualTo(SquatFailureKind.FAILED_LOCKOUT));
+            Assert.That(result.FailureRecord.OnsetTick, Is.EqualTo(9ul));
+            Assert.That(result.FailureRecord.OnsetTick, Is.Not.EqualTo(8ul));
+        }
+
+        [Test]
+        public void FAILED_LOCKOUT_LATCH_EQUALS_TERMINAL_TICK()
+        {
+            SquatTrace trace = BuildTopRegionWithoutLockout(30);
+            ulong terminalTick = trace[trace.Count - 1].SimulationTick;
+
+            SquatFailureResult result = EvaluateTerminal(trace);
+
+            Assert.That(result.FailureRecord.PrimaryFailureKind, Is.EqualTo(SquatFailureKind.FAILED_LOCKOUT));
+            Assert.That(result.FailureRecord.LatchedTick, Is.EqualTo(terminalTick));
+            Assert.That(result.FailureRecord.LatchedTick, Is.GreaterThan(result.FailureRecord.OnsetTick));
+        }
+
+        [Test]
+        public void FAILED_LOCKOUT_LATCH_FOLLOWS_AN_EARLIER_TERMINAL_TICK()
+        {
+            SquatTrace trace = BuildTopRegionWithoutLockout(30);
+            SquatObservationSnapshot earlierTerminal = trace[trace.Count - 6];
+
+            SquatFailureResult result = new SquatFailureDetector().Evaluate(
+                trace,
+                SquatFailureCompletionContext.Terminal(
+                    earlierTerminal.SimulationTick,
+                    earlierTerminal.SimulationTimeSeconds,
+                    SquatAttemptTerminalReason.TIMEOUT));
+
+            Assert.That(result.FailureRecord.LatchedTick, Is.EqualTo(earlierTerminal.SimulationTick));
+        }
+
+        [Test]
+        public void TERMINAL_BELOW_COMPLETION_REGION_NOT_FAILED_LOCKOUT()
+        {
+            SquatFailureResult result = EvaluateTerminal(BuildAscentBelowCompletionRegion());
+
+            Assert.That(result.TerminalContextStatus, Is.EqualTo(SquatFailureTerminalContextStatus.TRACE_COVERED));
+            Assert.That(result.PrimaryFailureKind, Is.EqualTo(SquatFailureKind.NONE));
+            Assert.That(result.FailureRecord, Is.Null);
+            Assert.That(result.Outcome, Is.EqualTo(SquatFailureResultKind.UNDETERMINED));
+            Assert.That(result.EvidenceStatus, Is.EqualTo(SquatFailureEvidenceStatus.INCOMPLETE_ATTEMPT));
+        }
+
+        [Test]
+        public void MID_ASCENT_STALL_REMAINS_STALL()
+        {
+            SquatFailureResult result = EvaluateTerminal(BuildTerminalStall());
+
+            Assert.That(result.FailureRecord.PrimaryFailureKind, Is.EqualTo(SquatFailureKind.MID_ASCENT_STALL));
+            Assert.That(ContainsKind(result, SquatFailureKind.FAILED_LOCKOUT), Is.False);
+        }
+
+        [Test]
+        public void BAR_REVERSAL_REMAINS_BAR_REVERSAL()
+        {
+            SquatFailureResult result = EvaluateTerminal(BuildBarReversal());
+
+            Assert.That(result.FailureRecord.PrimaryFailureKind, Is.EqualTo(SquatFailureKind.BAR_REVERSAL));
+            Assert.That(ContainsKind(result, SquatFailureKind.FAILED_LOCKOUT), Is.False);
+        }
+
+        [Test]
+        public void EARLIER_IRREVERSIBLE_FAILURE_REMAINS_PRIMARY()
+        {
+            SquatFailureResult result = EvaluateTerminal(BuildEarlyBalanceThenFailedLockout());
 
             Assert.That(result.FailureRecord.PrimaryFailureKind, Is.EqualTo(SquatFailureKind.BALANCE_LOSS));
-            Assert.That(ContainsKind(result, SquatFailureKind.FAILED_LOCKOUT), Is.True);
             Assert.That(result.FailureRecord.PrimaryFailureKind, Is.Not.EqualTo(SquatFailureKind.FAILED_LOCKOUT));
+            Assert.That(ContainsKind(result, SquatFailureKind.FAILED_LOCKOUT), Is.True);
+        }
+
+        [Test]
+        public void OLD_60_TICK_PARAMETER_MUTATION_DOES_NOT_CHANGE_P3A1_RESULT()
+        {
+            SquatTrace trace = BuildTopRegionWithoutLockout(30);
+            SquatFailureCompletionContext completion = TerminalAtLastSample(trace);
+
+            SquatFailureResult baseline = new SquatFailureDetector().Evaluate(trace, completion);
+            SquatFailureResult shortDwell = new SquatFailureDetector(
+                CalibrationWithLockoutDwell(1)).Evaluate(trace, completion);
+            SquatFailureResult longDwell = new SquatFailureDetector(
+                CalibrationWithLockoutDwell(5000)).Evaluate(trace, completion);
+
+            Assert.That(baseline.PrimaryFailureKind, Is.EqualTo(SquatFailureKind.FAILED_LOCKOUT));
+            foreach (SquatFailureResult mutated in new[] { shortDwell, longDwell })
+            {
+                Assert.That(mutated.Outcome, Is.EqualTo(baseline.Outcome));
+                Assert.That(mutated.PrimaryFailureKind, Is.EqualTo(baseline.PrimaryFailureKind));
+                Assert.That(mutated.FailureRecord.OnsetTick, Is.EqualTo(baseline.FailureRecord.OnsetTick));
+                Assert.That(mutated.FailureRecord.LatchedTick, Is.EqualTo(baseline.FailureRecord.LatchedTick));
+            }
+        }
+
+        [Test]
+        public void OLD_60_TICK_PARAMETER_IS_NOT_A_CANONICAL_SELECTOR_THRESHOLD()
+        {
+            SquatFailureResult result = EvaluateTerminal(BuildTopRegionWithoutLockout(30));
+            SquatFailureEvent primary = result.FailureRecord.Primary;
+
+            for (int index = 0; index < primary.Thresholds.Count; index++)
+                Assert.That(primary.Thresholds[index].Name, Is.Not.EqualTo("lockout_completion_dwell"));
+        }
+
+        [Test]
+        public void LOAD_METADATA_MUTATION_DOES_NOT_CHANGE_RESULT()
+        {
+            List<SampleSpec> original = SamplesForTopRegionWithoutLockout(30);
+            List<SampleSpec> mutated = SamplesForTopRegionWithoutLockout(30);
+            for (int index = 0; index < mutated.Count; index++)
+                mutated[index].LoadKg = 500f;
+
+            SquatFailureResult originalResult = EvaluateTerminal(Trace(original));
+            SquatFailureResult mutatedResult = EvaluateTerminal(Trace(mutated));
+
+            Assert.That(originalResult.PrimaryFailureKind, Is.EqualTo(SquatFailureKind.FAILED_LOCKOUT));
+            Assert.That(mutatedResult.PrimaryFailureKind, Is.EqualTo(originalResult.PrimaryFailureKind));
+            Assert.That(mutatedResult.FailureRecord.OnsetTick, Is.EqualTo(originalResult.FailureRecord.OnsetTick));
+            Assert.That(mutatedResult.FailureRecord.LatchedTick, Is.EqualTo(originalResult.FailureRecord.LatchedTick));
+        }
+
+        [Test]
+        public void SQ_STATE_REFERENCE_PHASE_MUTATION_DOES_NOT_CHANGE_RESULT()
+        {
+            List<SampleSpec> original = SamplesForTopRegionWithoutLockout(30);
+            List<SampleSpec> mutated = SamplesForTopRegionWithoutLockout(30);
+            for (int index = 0; index < mutated.Count; index++)
+            {
+                mutated[index].State = SquatState.COMPLETE;
+                mutated[index].Direction = SquatPhaseDirection.None;
+                mutated[index].Sq = 0f;
+            }
+
+            SquatFailureResult originalResult = EvaluateTerminal(Trace(original));
+            SquatFailureResult mutatedResult = EvaluateTerminal(Trace(mutated));
+
+            Assert.That(originalResult.PrimaryFailureKind, Is.EqualTo(SquatFailureKind.FAILED_LOCKOUT));
+            Assert.That(mutatedResult.PrimaryFailureKind, Is.EqualTo(originalResult.PrimaryFailureKind));
+            Assert.That(mutatedResult.FailureRecord.OnsetTick, Is.EqualTo(originalResult.FailureRecord.OnsetTick));
+            Assert.That(mutatedResult.FailureRecord.LatchedTick, Is.EqualTo(originalResult.FailureRecord.LatchedTick));
+        }
+
+        [Test]
+        public void MALFORMED_TERMINAL_CONTEXT_DOES_NOT_CREATE_FAILURE()
+        {
+            SquatTrace trace = BuildTopRegionWithoutLockout(30);
+            ulong firstTick = trace[0].SimulationTick;
+            ulong lastTick = trace[trace.Count - 1].SimulationTick;
+            SquatObservationSnapshot last = trace[trace.Count - 1];
+
+            SquatFailureCompletionContext noReason = SquatFailureCompletionContext.Terminal(
+                lastTick,
+                last.SimulationTimeSeconds,
+                SquatAttemptTerminalReason.NONE);
+            SquatFailureCompletionContext afterTrace = SquatFailureCompletionContext.Terminal(
+                lastTick + 5ul,
+                last.SimulationTimeSeconds + 0.05d,
+                SquatAttemptTerminalReason.TIMEOUT);
+            SquatFailureCompletionContext beforeTrace = SquatFailureCompletionContext.Terminal(
+                firstTick == 0ul ? SquatAttemptEventTicks.NotAvailable : firstTick - 1ul,
+                0d,
+                SquatAttemptTerminalReason.TIMEOUT);
+            SquatFailureCompletionContext foreignTime = SquatFailureCompletionContext.Terminal(
+                lastTick,
+                last.SimulationTimeSeconds + 7d,
+                SquatAttemptTerminalReason.TIMEOUT);
+
+            AssertNoTerminalFailure(trace, noReason, SquatFailureTerminalContextStatus.REJECTED_MALFORMED);
+            AssertNoTerminalFailure(trace, afterTrace, SquatFailureTerminalContextStatus.REJECTED_UNCOVERED_TICK);
+            AssertNoTerminalFailure(trace, beforeTrace, SquatFailureTerminalContextStatus.REJECTED_MALFORMED);
+            AssertNoTerminalFailure(trace, foreignTime, SquatFailureTerminalContextStatus.REJECTED_TIME_MISMATCH);
+        }
+
+        [Test]
+        public void TERMINAL_REASON_DOES_NOT_SELECT_A_FAILURE_CLASS()
+        {
+            SquatTrace locksOut = BuildTopRegionThenLockout(30);
+            SquatTrace neverLocksOut = BuildTopRegionWithoutLockout(30);
+
+            foreach (SquatAttemptTerminalReason reason in new[]
+            {
+                SquatAttemptTerminalReason.PHYSICAL_LOCKOUT,
+                SquatAttemptTerminalReason.PHYSICAL_FAILURE,
+                SquatAttemptTerminalReason.TIMEOUT,
+                SquatAttemptTerminalReason.ABORTED,
+                SquatAttemptTerminalReason.LIFECYCLE_FAULT
+            })
+            {
+                Assert.That(
+                    EvaluateTerminal(locksOut, reason).PrimaryFailureKind,
+                    Is.EqualTo(SquatFailureKind.NONE),
+                    "reason=" + reason);
+                Assert.That(
+                    EvaluateTerminal(neverLocksOut, reason).PrimaryFailureKind,
+                    Is.EqualTo(SquatFailureKind.FAILED_LOCKOUT),
+                    "reason=" + reason);
+            }
+        }
+
+        [Test]
+        public void RESULT_IS_DETERMINISTIC_ON_REPEAT()
+        {
+            SquatTrace trace = BuildTopRegionWithoutLockout(30);
+            SquatFailureCompletionContext completion = TerminalAtLastSample(trace);
+
+            SquatFailureResult first = new SquatFailureDetector().Evaluate(trace, completion);
+            SquatFailureResult second = new SquatFailureDetector().Evaluate(trace, completion);
+            SquatFailureDetector reused = new SquatFailureDetector();
+            SquatFailureResult third = reused.Evaluate(trace, completion);
+            SquatFailureResult fourth = reused.Evaluate(trace, completion);
+
+            foreach (SquatFailureResult repeat in new[] { second, third, fourth })
+            {
+                Assert.That(repeat.EvidenceStatus, Is.EqualTo(first.EvidenceStatus));
+                Assert.That(repeat.Outcome, Is.EqualTo(first.Outcome));
+                Assert.That(repeat.TerminalContextStatus, Is.EqualTo(first.TerminalContextStatus));
+                Assert.That(repeat.PrimaryFailureKind, Is.EqualTo(first.PrimaryFailureKind));
+                Assert.That(repeat.FailureRecord.OnsetTick, Is.EqualTo(first.FailureRecord.OnsetTick));
+                Assert.That(repeat.FailureRecord.LatchedTick, Is.EqualTo(first.FailureRecord.LatchedTick));
+                Assert.That(repeat.FailureRecord.SecondaryCount, Is.EqualTo(first.FailureRecord.SecondaryCount));
+            }
         }
 
         [Test]
@@ -529,7 +821,7 @@ namespace PowerliftingSimulator.Tests
         {
             SquatFailureCalibration calibration = SquatFailureCalibration.Default;
 
-            Assert.That(calibration.Version, Is.EqualTo("GAM12_P3_FAILURE_CALIBRATION_PROVISIONAL_V1"));
+            Assert.That(calibration.Version, Is.EqualTo("GAM12_P3A1_FAILURE_CALIBRATION_PROVISIONAL_V1"));
             Assert.That(calibration.PrecedenceVersion, Is.EqualTo(
                 SquatFailureCalibration.DefaultPrecedenceVersion));
             Assert.That(calibration.Descriptors.Count, Is.GreaterThan(30));
@@ -547,6 +839,40 @@ namespace PowerliftingSimulator.Tests
 
         private static SquatFailureResult Evaluate(SquatTrace trace) =>
             new SquatFailureDetector().Evaluate(trace);
+
+        private static SquatFailureResult EvaluateTerminal(
+            SquatTrace trace,
+            SquatAttemptTerminalReason reason = SquatAttemptTerminalReason.TIMEOUT) =>
+            new SquatFailureDetector().Evaluate(trace, TerminalAtLastSample(trace, reason));
+
+        private static SquatFailureCompletionContext TerminalAtLastSample(
+            SquatTrace trace,
+            SquatAttemptTerminalReason reason = SquatAttemptTerminalReason.TIMEOUT)
+        {
+            SquatObservationSnapshot last = trace[trace.Count - 1];
+            return SquatFailureCompletionContext.Terminal(
+                last.SimulationTick,
+                last.SimulationTimeSeconds,
+                reason);
+        }
+
+        private static void AssertNoTerminalFailure(
+            SquatTrace trace,
+            SquatFailureCompletionContext completion,
+            SquatFailureTerminalContextStatus expectedStatus)
+        {
+            SquatFailureResult result = new SquatFailureDetector().Evaluate(trace, completion);
+
+            Assert.That(result.TerminalContextStatus, Is.EqualTo(expectedStatus));
+            Assert.That(result.FailureRecord, Is.Null);
+            Assert.That(result.PrimaryFailureKind, Is.EqualTo(SquatFailureKind.NONE));
+            Assert.That(result.Outcome, Is.Not.EqualTo(SquatFailureResultKind.PHYSICAL_FAILURE));
+        }
+
+        private static SquatFailureCalibration CalibrationWithLockoutDwell(int dwellTicks) =>
+            new SquatFailureCalibration(
+                version: SquatFailureCalibration.DefaultVersion,
+                lockoutCompletionTimeoutTicks: dwellTicks);
 
         private static SquatTrace BuildGoodAttempt()
         {
@@ -676,16 +1002,62 @@ namespace PowerliftingSimulator.Tests
             return Trace(samples);
         }
 
-        private static SquatTrace BuildFailedLockout()
+        private static SquatTrace BuildSlowContinuousAscentThenLockout()
         {
             List<SampleSpec> samples = BaseThroughAscentEstablishment();
-            ulong lastTick = 8ul + (ulong)SquatFailureCalibration.Default.LockoutCompletionTimeoutTicks - 1ul;
-            for (ulong tick = 9ul; tick <= lastTick; tick++)
+            for (ulong tick = 9ul; tick <= 70ul; tick++)
             {
-                SampleSpec sample = Sample(tick, tick < 11ul ? 0.98f : 1.02f, tick < 11ul ? 0.05f : 0f);
+                SampleSpec sample = Sample(tick, 0.90f + (tick - 8ul) * 0.0004f, 0.004f);
+                sample.ModeledDemand = 0f;
+                sample.DriveSaturated = false;
+                samples.Add(sample);
+            }
+
+            SampleSpec topRegion = Sample(71ul, 0.95f, 0f);
+            topRegion.KneeAngleRad = 0.20f;
+            samples.Add(topRegion);
+            samples.Add(Sample(72ul, 0.96f, 0f));
+            return Trace(samples);
+        }
+
+        private static SquatTrace BuildTopRegionThenLockout(int topRegionSamples)
+        {
+            List<SampleSpec> samples = SamplesForTopRegionWithoutLockout(topRegionSamples);
+            ulong lockoutTick = 9ul + (ulong)topRegionSamples;
+            samples.Add(Sample(lockoutTick, 0.96f, 0f));
+            return Trace(samples);
+        }
+
+        private static SquatTrace BuildTopRegionWithoutLockout(int topRegionSamples)
+        {
+            return Trace(SamplesForTopRegionWithoutLockout(topRegionSamples));
+        }
+
+        private static List<SampleSpec> SamplesForTopRegionWithoutLockout(int topRegionSamples)
+        {
+            if (topRegionSamples <= 0)
+                throw new ArgumentOutOfRangeException(nameof(topRegionSamples));
+
+            List<SampleSpec> samples = BaseThroughAscentEstablishment();
+            for (ulong tick = 9ul; tick < 9ul + (ulong)topRegionSamples; tick++)
+            {
+                SampleSpec sample = Sample(tick, 0.96f, 0f);
                 sample.KneeAngleRad = 0.20f;
                 samples.Add(sample);
             }
+            return samples;
+        }
+
+        /// <summary>
+        /// Ascent is established and progress continues, but the bar never
+        /// reaches the physical completion region. Terminality below the region
+        /// is not evidence of a failed lockout.
+        /// </summary>
+        private static SquatTrace BuildAscentBelowCompletionRegion()
+        {
+            List<SampleSpec> samples = BaseThroughAscentEstablishment();
+            for (ulong tick = 9ul; tick <= 30ul; tick++)
+                samples.Add(Sample(tick, 0.90f + (tick - 8ul) * 0.002f, 0.02f));
             return Trace(samples);
         }
 
@@ -718,7 +1090,7 @@ namespace PowerliftingSimulator.Tests
             SampleSpec ascentThree = Sample((ulong)lastBalanceTick + 4ul, 0.92f, 0.05f);
             samples.Add(ascentThree);
             ulong ascentTick = (ulong)lastBalanceTick + 4ul;
-            ulong lastTick = ascentTick + (ulong)calibration.LockoutCompletionTimeoutTicks - 1ul;
+            ulong lastTick = ascentTick + (ulong)calibration.LockoutCompletionTimeoutTicks;
             for (ulong tick = ascentTick + 1ul; tick <= lastTick; tick++)
             {
                 SampleSpec sample = Sample(tick, 1.02f, 0f);

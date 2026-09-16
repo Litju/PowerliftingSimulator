@@ -1,7 +1,7 @@
-# GAM-12 P3 — executable failure model map
+# GAM-12 P3A1 — executable failure model map
 
-Model: `GAM12_P3_FAILURE_MODEL_V1`
-Calibration: `GAM12_P3_FAILURE_CALIBRATION_PROVISIONAL_V1`
+Model: `GAM12_P3A1_FAILURE_MODEL_V1`
+Calibration: `GAM12_P3A1_FAILURE_CALIBRATION_PROVISIONAL_V1`
 Precedence: `GAM12_P3_FIRST_IRREVERSIBLE_PRECEDENCE_V1`
 
 All predicates consume `SquatObservationSnapshot` values in the frozen
@@ -18,7 +18,7 @@ context, and claim class `GAME_ENGINE_PHYSICAL_FAILURE_CLASSIFICATION`.
 | `MID_ASCENT_STALL` | Raw ascent established, low raw ascent velocity, high modeled demand, no-progress displacement, no recovery | Onset is first candidate sample; 35-tick dwell | Recoverable low-speed sticking resets; terminal no-progress latches; no filtered future data |
 | `BAR_REVERSAL` | Raw whole-bar position/velocity after ascent establishment | First persistent downward run; 2 ticks plus cumulative drop | Latches beyond direct noise boundary; separate from rule `DOWNWARD_MOVEMENT` |
 | `POSTURE_OR_BAR_LOSS` | Hard trunk game bound, critical joint-limit proximity, saddle break, coupling loss, or separation | Trunk/joint runs use 2 ticks; direct saddle break/coupling and qualified separation use 1 tick | Detail is retained; bounds are game/engine boundaries, never injury limits |
-| `FAILED_LOCKOUT` | Ascent established, then raw bilateral knee/hip/trunk posture, bar stillness, and standing-reference height never satisfy lockout | Onset is ascent establishment; bounded completion timer is 60 ticks | Latches at deadline; does not reuse adapter lockout state or include support legality |
+| `FAILED_LOCKOUT` | **Terminal postcondition.** The attempt is authoritatively terminated, the completion region had been credibly entered, and raw bilateral knee/hip/trunk posture with bar linear/angular stillness never satisfied lockout at any earlier sample | Onset is the first credible completion-region entry; latch is the authoritative terminal tick | Elapsed time in the region is not a selector; physical lockout at any tick forbids the class; the retained 60-tick dwell is observational provenance only; does not reuse adapter lockout state or include support legality |
 
 ## Result policy
 

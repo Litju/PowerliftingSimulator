@@ -31,6 +31,7 @@ namespace PowerliftingSimulator.Squat.Unity
         private PhysicalFootContactDetector _leftFootContact;
         private PhysicalFootContactDetector _rightFootContact;
         private SquatObservationCollector _observationCollector;
+        private SquatAttemptOrchestrator _attemptOrchestrator;
         private bool _isInitialized;
         private float _selectedLoadKg = 25f;
         private string _startupFailure = string.Empty;
@@ -43,6 +44,9 @@ namespace PowerliftingSimulator.Squat.Unity
         public PhysicalFootContactDetector RightFootContact => _rightFootContact;
         public SquatObservationCollector ObservationCollector => _observationCollector;
         public SquatTrace ObservationTrace => _observationCollector == null ? null : _observationCollector.Trace;
+        public SquatAttemptOrchestrator AttemptOrchestrator => _attemptOrchestrator;
+        public SquatAttemptLifecycle AttemptLifecycle => _attemptOrchestrator == null ? null : _attemptOrchestrator.Lifecycle;
+        public SquatAttemptRecord AttemptRecord => _attemptOrchestrator == null ? null : _attemptOrchestrator.Record;
         public float CurrentLoadKg => _selectedLoadKg;
         public bool IsInitialized => _isInitialized;
         public bool RuntimeWired => _isInitialized && foundation != null && athleteRig != null &&
@@ -110,6 +114,9 @@ namespace PowerliftingSimulator.Squat.Unity
                 _adapter,
                 _leftFootContact,
                 _rightFootContact);
+            _attemptOrchestrator = new SquatAttemptOrchestrator(
+                _observationCollector,
+                _adapter);
 
             _adapter.Reset();
             _adapter.EquilibriumLoadKg = _selectedLoadKg;
@@ -118,7 +125,7 @@ namespace PowerliftingSimulator.Squat.Unity
             athleteRig.PrimeCommandSource();
 
             if (autoSquatOnStart)
-                _adapter.StartSquat();
+                _attemptOrchestrator.BeginAttempt();
 
             _isInitialized = true;
             _startupFailure = string.Empty;
@@ -209,6 +216,8 @@ namespace PowerliftingSimulator.Squat.Unity
                 return;
             if (_observationCollector != null && _observationCollector.IsRecording)
                 throw new InvalidOperationException("The squat load cannot change while an observation trace is recording.");
+            if (_attemptOrchestrator != null && _attemptOrchestrator.HasStarted)
+                throw new InvalidOperationException("The squat load cannot change after an attempt lifecycle has started; reset the scene first.");
 
             _selectedLoadKg = Mathf.Max(0f, loadKg);
             // Single writer for the load the spine equilibrium calibration
@@ -243,6 +252,22 @@ namespace PowerliftingSimulator.Squat.Unity
             _adapter.SetSaddle(_saddle);
             athleteRig.SetCommandSource(_adapter);
             athleteRig.PrimeCommandSource();
+        }
+
+        public void BeginAttempt()
+        {
+            if (!_isInitialized || _attemptOrchestrator == null)
+                throw new InvalidOperationException("The squat attempt lifecycle is not initialized.");
+
+            _attemptOrchestrator.BeginAttempt();
+        }
+
+        public SquatAttemptRecord AbortAttempt()
+        {
+            if (!_isInitialized || _attemptOrchestrator == null)
+                throw new InvalidOperationException("The squat attempt lifecycle is not initialized.");
+
+            return _attemptOrchestrator.Abort();
         }
 
         public void ResetPrototype()

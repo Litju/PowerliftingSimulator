@@ -16,6 +16,7 @@ namespace PowerliftingSimulator.Squat
         private bool _hasLast;
         private ulong _lastTick;
         private double _lastTimeSeconds;
+        private bool _truthSealed;
 
         public SquatTrace(int capacity = DefaultCapacity)
         {
@@ -29,6 +30,7 @@ namespace PowerliftingSimulator.Squat
         public int Count => _count;
         public bool IsRecording { get; private set; }
         public bool IsFrozen { get; private set; }
+        public bool IsTruthSealed => _truthSealed;
         public string Schema => SchemaVersion;
 
         public double DurationSeconds => _count < 2
@@ -37,6 +39,8 @@ namespace PowerliftingSimulator.Squat
 
         public void BeginRecording()
         {
+            if (_truthSealed)
+                throw new InvalidOperationException("A squat trace sealed into attempt truth cannot be recorded again.");
             if (IsRecording)
                 throw new InvalidOperationException("The squat trace is already recording.");
 
@@ -53,6 +57,8 @@ namespace PowerliftingSimulator.Squat
 
         public void Clear()
         {
+            if (_truthSealed)
+                throw new InvalidOperationException("A squat trace sealed into attempt truth cannot be cleared.");
             if (IsRecording)
                 throw new InvalidOperationException("A recording squat trace must be finalized before it is cleared.");
 
@@ -61,6 +67,14 @@ namespace PowerliftingSimulator.Squat
             _lastTick = 0ul;
             _lastTimeSeconds = 0d;
             IsFrozen = false;
+        }
+
+        internal void SealForAttemptTruth()
+        {
+            if (!IsFrozen || IsRecording || _count == 0)
+                throw new InvalidOperationException("Only a non-empty frozen squat trace can be sealed into attempt truth.");
+
+            _truthSealed = true;
         }
 
         public SquatObservationSnapshot GetSnapshot(int index)

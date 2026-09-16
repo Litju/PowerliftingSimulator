@@ -27,6 +27,7 @@ namespace PowerliftingSimulator.Squat.Unity
         private ulong _attemptStartTick;
         private SquatObservationSnapshot _lastSnapshot;
         private bool _hasLastSnapshot;
+        private Action<SimulationTime, SquatObservationSnapshot> _snapshotObserver;
 
         public SquatObservationCollector(
             FoundationRuntime runtime,
@@ -56,6 +57,16 @@ namespace PowerliftingSimulator.Squat.Unity
         public bool IsFrozen => _trace.IsFrozen;
         public bool HasLastSnapshot => _hasLastSnapshot;
         public SquatObservationSnapshot LastSnapshot => _lastSnapshot;
+
+        public void RegisterSnapshotObserver(Action<SimulationTime, SquatObservationSnapshot> observer)
+        {
+            if (observer == null)
+                throw new ArgumentNullException(nameof(observer));
+            if (_snapshotObserver != null)
+                throw new InvalidOperationException("The squat observation snapshot observer is already registered.");
+
+            _snapshotObserver = observer;
+        }
 
         public void BeginRecording()
         {
@@ -114,6 +125,7 @@ namespace PowerliftingSimulator.Squat.Unity
             _hasLastSnapshot = true;
             if (_trace.IsRecording)
                 _trace.Append(snapshot);
+            _snapshotObserver?.Invoke(time, snapshot);
         }
 
         private SquatObservationSnapshot BuildSnapshot(

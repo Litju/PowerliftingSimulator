@@ -1,4 +1,4 @@
-# GAM-12 P3 — deterministic physical-failure rationale
+# GAM-12 P3A1 — deterministic physical-failure rationale
 
 Research date: 2026-09-15
 
@@ -15,7 +15,33 @@ import human-study thresholds, calibrate heavy loads, or make injury claims.
 | `MID_ASCENT_STALL` | Established raw ascent, near-zero raw progress, high modeled demand, no-progress dwell, and no recovery | A recoverable low-velocity sticking interval is explicitly nonterminal | Heavy-load-dependent boundaries require GAM-13 |
 | `BAR_REVERSAL` | Established ascent plus persistent raw whole-bar downward displacement beyond the physical noise bound | Separate physical event/record from rule `DOWNWARD_MOVEMENT` | Heavy-load-dependent boundaries require GAM-13 |
 | `POSTURE_OR_BAR_LOSS` | Hard trunk game bound, critical joint-limit proximity, saddle break, coupling loss, or separation | Warning posture is diagnostic only; hard posture is a game failure bound, not an injury limit | Saddle bound reuses qualified engine bound; posture is provisional |
-| `FAILED_LOCKOUT` | Established ascent followed by failure to meet raw bilateral posture, bar stillness, and standing-height completion before timeout | Completion timeout is bounded and does not use the adapter's state/boolean | Timeout requires GAM-13 calibration |
+| `FAILED_LOCKOUT` | Absence of the required lockout at authoritative attempt termination, after credible entry into the physical standing-height completion region | Qualitatively unlike the streaming failures: elapsed time in the completion region is not irreversible evidence, so this is evaluated once as a terminal postcondition and never from a timer. Physical lockout at any tick forbids the class. Does not use the adapter's state/boolean | Dwell is retained as observational provenance only and requires GAM-13 calibration |
+
+## Measured 25 kg terminal-lockout evidence (P3A1)
+
+One fresh real 25 kg attempt (`Artifacts/Evidence/GAM-12/GAM-12-P3A1-25kg-lockout-diagnostic.csv`,
+trace ticks 118-859 at 100 Hz) falsified both timer formulations of
+`FAILED_LOCKOUT`:
+
+| Event | Tick | Measured state |
+|---|---:|---|
+| standing reference | 118 | bar Y 1.403096 m |
+| physical descent onset | 172 | |
+| bottom | 483 | bar Y 0.849880 m |
+| ascent established | 517 | |
+| completion-region entry | 747 | height deficit 0.048604 m, max knee 0.760829 rad, max hip 0.642550 rad |
+| trunk erectness qualified | 763 | |
+| hip erectness qualified | 813 | |
+| bilateral knee lock qualified | 831 | |
+| physical lockout achieved | 855 | bar linear stillness was the last gate |
+
+The bar height enters the completion band 108 ticks (1.08 s) before lockout is
+physically achieved, and every unmet gate is converging monotonically the whole
+time. A 60-tick dwell measured from ascent establishment latches at tick 576, and
+a 60-tick dwell measured from completion-region entry latches at tick 806; both
+are false positives on a lift that completes. Elapsed time is therefore not
+irreversible evidence of a failed lockout, so the class became a terminal
+postcondition.
 
 ## Targeted literature check
 

@@ -133,8 +133,8 @@ namespace PowerliftingSimulator.Squat
     /// </summary>
     public sealed class SquatFailureCalibration
     {
-        public const string FailureModelVersion = "GAM12_P3_FAILURE_MODEL_V1";
-        public const string DefaultVersion = "GAM12_P3_FAILURE_CALIBRATION_PROVISIONAL_V1";
+        public const string FailureModelVersion = "GAM12_P3A1_FAILURE_MODEL_V1";
+        public const string DefaultVersion = "GAM12_P3A1_FAILURE_CALIBRATION_PROVISIONAL_V1";
         public const string DefaultPrecedenceVersion = "GAM12_P3_FIRST_IRREVERSIBLE_PRECEDENCE_V1";
 
         public const float DefaultLegalDepthMarginM = SquatDepthGeometry.DefaultDepthMarginM;
@@ -425,7 +425,7 @@ namespace PowerliftingSimulator.Squat
                 Descriptor("lockout_bar_still_velocity", "m/s", LockoutBarStillVelocityMps, "FAILED_LOCKOUT", existing, "Reuse the qualified direct bar stillness proxy.", SquatFailureCalibrationStatus.EXISTING_QUALIFIED_BOUND),
                 Descriptor("lockout_bar_still_angular_velocity", "rad/s", LockoutBarStillAngularVelocityRadS, "FAILED_LOCKOUT", existing, "Reuse the qualified direct bar angular stillness proxy.", SquatFailureCalibrationStatus.EXISTING_QUALIFIED_BOUND),
                 Descriptor("lockout_height_tolerance", "m", LockoutHeightToleranceM, "FAILED_LOCKOUT", provisional, "Standing-reference height tolerance prevents a stationary low bar from masquerading as lockout.", SquatFailureCalibrationStatus.PROVISIONAL_GAME_CALIBRATION),
-                Descriptor("lockout_completion_timeout", "ticks", LockoutCompletionTimeoutTicks, "FAILED_LOCKOUT", provisional, "Bounded physical completion policy; heavy-load behavior belongs to GAM-13.", SquatFailureCalibrationStatus.REQUIRES_GAM13_CALIBRATION),
+                Descriptor("lockout_completion_dwell", "ticks", LockoutCompletionTimeoutTicks, "FAILED_LOCKOUT", provisional, "NOT_USED_BY_CANONICAL_FAILED_LOCKOUT_SELECTION. Retained completion-region dwell provenance only; measured 25 kg evidence shows terminal joint extension and bar settling continue far beyond this dwell, so elapsed time is not irreversible evidence. Canonical FAILED_LOCKOUT is a terminal postcondition. REQUIRES_GAM13_CALIBRATION.", SquatFailureCalibrationStatus.REQUIRES_GAM13_CALIBRATION),
                 Descriptor("pre_failure_evidence_capacity", "samples", PreFailureEvidenceCapacity, "EVIDENCE_WINDOW", provisional, "Fixed-capacity ring buffer retained at primary latch.", SquatFailureCalibrationStatus.PROVISIONAL_GAME_CALIBRATION)
             };
         }
@@ -492,6 +492,77 @@ namespace PowerliftingSimulator.Squat
             if (value < 0f || value > 1f)
                 throw new ArgumentOutOfRangeException(name);
         }
+    }
+
+    /// <summary>
+    /// Whether, and how, an authoritative terminal attempt context was
+    /// accepted for terminal-postcondition evaluation. A rejected context can
+    /// never create a failure; it only records why terminality was unusable.
+    /// </summary>
+    public enum SquatFailureTerminalContextStatus : byte
+    {
+        NOT_PROVIDED,
+        NOT_TERMINAL,
+        TRACE_COVERED,
+        REJECTED_MALFORMED,
+        REJECTED_UNCOVERED_TICK,
+        REJECTED_TIME_MISMATCH
+    }
+
+    /// <summary>
+    /// Immutable terminal-attempt evidence handed to the physical failure
+    /// detector by the authoritative attempt lifecycle.
+    /// <para>
+    /// FAILED_LOCKOUT is the only terminal postcondition in the P3 ontology:
+    /// every other physical failure is a streaming irreversible cause. The
+    /// detector therefore needs only terminality, the identity of the terminal
+    /// sample, and the lifecycle's own terminal classification. The
+    /// classification is lifecycle evidence and never selects a physical
+    /// failure class by itself.
+    /// </para>
+    /// </summary>
+    public readonly struct SquatFailureCompletionContext
+    {
+        private SquatFailureCompletionContext(
+            bool isTerminal,
+            ulong terminalTick,
+            double terminalTimeSeconds,
+            SquatAttemptTerminalReason terminalReason)
+        {
+            IsTerminal = isTerminal;
+            TerminalTick = terminalTick;
+            TerminalTimeSeconds = terminalTimeSeconds;
+            TerminalReason = terminalReason;
+        }
+
+        /// <summary>
+        /// Pure physical interpretation: the attempt is not authoritatively
+        /// over, so no terminal postcondition may be decided.
+        /// </summary>
+        public static SquatFailureCompletionContext NonTerminal =>
+            new SquatFailureCompletionContext(false, 0ul, 0d, SquatAttemptTerminalReason.NONE);
+
+        public static SquatFailureCompletionContext Terminal(
+            ulong terminalTick,
+            double terminalTimeSeconds,
+            SquatAttemptTerminalReason terminalReason) =>
+            new SquatFailureCompletionContext(true, terminalTick, terminalTimeSeconds, terminalReason);
+
+        public bool IsTerminal { get; }
+        public ulong TerminalTick { get; }
+        public double TerminalTimeSeconds { get; }
+        public SquatAttemptTerminalReason TerminalReason { get; }
+
+        /// <summary>
+        /// Self-consistency only. Whether the terminal sample actually belongs
+        /// to an attempt is decided against that attempt's frozen trace.
+        /// </summary>
+        public bool IsWellFormed => !IsTerminal ||
+            (TerminalReason != SquatAttemptTerminalReason.NONE &&
+             TerminalTick != SquatAttemptEventTicks.NotAvailable &&
+             !double.IsNaN(TerminalTimeSeconds) &&
+             !double.IsInfinity(TerminalTimeSeconds) &&
+             TerminalTimeSeconds >= 0d);
     }
 
     public readonly struct SquatFailureContext
@@ -951,7 +1022,8 @@ namespace PowerliftingSimulator.Squat
             int traceCount,
             string failureModelVersion,
             string calibrationVersion,
-            string precedenceVersion)
+            string precedenceVersion,
+            SquatFailureTerminalContextStatus terminalContextStatus)
         {
             EvidenceStatus = evidenceStatus;
             Outcome = outcome;
@@ -961,6 +1033,7 @@ namespace PowerliftingSimulator.Squat
             FailureModelVersion = failureModelVersion ?? string.Empty;
             CalibrationVersion = calibrationVersion ?? string.Empty;
             PrecedenceVersion = precedenceVersion ?? string.Empty;
+            TerminalContextStatus = terminalContextStatus;
         }
 
         public SquatFailureEvidenceStatus EvidenceStatus { get; }
@@ -976,6 +1049,15 @@ namespace PowerliftingSimulator.Squat
         public string FailureModelVersion { get; }
         public string CalibrationVersion { get; }
         public string PrecedenceVersion { get; }
+
+        /// <summary>
+        /// Whether an authoritative terminal attempt context was supplied and
+        /// accepted. Only <see cref="SquatFailureTerminalContextStatus.TRACE_COVERED"/>
+        /// permits the FAILED_LOCKOUT terminal postcondition.
+        /// </summary>
+        public SquatFailureTerminalContextStatus TerminalContextStatus { get; }
+        public bool TerminalPostconditionEvaluated =>
+            TerminalContextStatus == SquatFailureTerminalContextStatus.TRACE_COVERED;
         public SquatFailureKind PrimaryFailureKind => FailureRecord == null
             ? SquatFailureKind.NONE
             : FailureRecord.PrimaryFailureKind;
@@ -1015,6 +1097,11 @@ namespace PowerliftingSimulator.Squat
         private bool _hasLegalBottom;
         private bool _hasAscentEstablished;
         private bool _physicalLockoutReached;
+        private bool _hasCompletionRegionEntry;
+        private SquatFailureContext _completionRegionEntryContext;
+        private int _completionRegionDwellRun;
+        private int _maximumCompletionRegionDwellTicks;
+        private SquatFailureTerminalContextStatus _terminalContextStatus;
         private bool _hasPreferredVertical;
         private bool _lastPreferredVerticalWasBar;
         private float _lastPreferredVerticalY;
@@ -1024,8 +1111,6 @@ namespace PowerliftingSimulator.Squat
         private bool _hasBarPosition;
         private float _lastBarPositionY;
         private float _physicalBottomPositionY;
-        private ulong _ascentEstablishmentTick;
-        private SquatFailureContext _ascentEstablishmentContext;
         private bool _hasReversalAttempt;
         private bool _reversalRecovered;
         private ulong _reversalAttemptTick;
@@ -1100,6 +1185,11 @@ namespace PowerliftingSimulator.Squat
             _hasLegalBottom = false;
             _hasAscentEstablished = false;
             _physicalLockoutReached = false;
+            _hasCompletionRegionEntry = false;
+            _completionRegionEntryContext = default(SquatFailureContext);
+            _completionRegionDwellRun = 0;
+            _maximumCompletionRegionDwellTicks = 0;
+            _terminalContextStatus = SquatFailureTerminalContextStatus.NOT_PROVIDED;
             _hasPreferredVertical = false;
             _lastPreferredVerticalWasBar = false;
             _lastPreferredVerticalY = 0f;
@@ -1112,8 +1202,6 @@ namespace PowerliftingSimulator.Squat
             _hasAscentSource = false;
             _ascentSourceWasBar = false;
             _physicalBottomPositionY = 0f;
-            _ascentEstablishmentTick = 0ul;
-            _ascentEstablishmentContext = default(SquatFailureContext);
             _hasReversalAttempt = false;
             _reversalRecovered = false;
             _reversalAttemptTick = 0ul;
@@ -1198,7 +1286,20 @@ namespace PowerliftingSimulator.Squat
                 throw new InvalidOperationException("The squat failure detector received a non-sequential or completed snapshot stream.");
         }
 
-        public SquatFailureResult Evaluate(SquatTrace trace)
+        /// <summary>
+        /// Pure physical interpretation of a frozen trace with no authoritative
+        /// terminality. The FAILED_LOCKOUT terminal postcondition is not
+        /// decided, because absence of lockout is not yet evidence of failure.
+        /// </summary>
+        public SquatFailureResult Evaluate(SquatTrace trace) =>
+            Evaluate(trace, SquatFailureCompletionContext.NonTerminal);
+
+        /// <summary>
+        /// Terminal finalization seam. Streaming physical interpretation of the
+        /// frozen trace is unchanged; the authoritative terminal context only
+        /// permits the FAILED_LOCKOUT terminal postcondition to be decided.
+        /// </summary>
+        public SquatFailureResult Evaluate(SquatTrace trace, SquatFailureCompletionContext completion)
         {
             Reset();
             if (!IsValidTrace(trace))
@@ -1210,6 +1311,12 @@ namespace PowerliftingSimulator.Squat
                     return InvalidResult(trace);
             }
 
+            _terminalContextStatus = ResolveTerminalContext(
+                trace,
+                completion,
+                out SquatObservationSnapshot terminalSample);
+            if (_terminalContextStatus == SquatFailureTerminalContextStatus.TRACE_COVERED)
+                ApplyTerminalLockoutPostcondition(terminalSample);
             return Complete(trace.Schema);
         }
 
@@ -1245,7 +1352,8 @@ namespace PowerliftingSimulator.Squat
                     _sampleCount,
                     FailureModelVersion,
                     CalibrationVersion,
-                    PrecedenceVersion);
+                    PrecedenceVersion,
+                    _terminalContextStatus);
             }
 
             if (!_allCoreEvidence)
@@ -1257,7 +1365,8 @@ namespace PowerliftingSimulator.Squat
                     _sampleCount,
                     FailureModelVersion,
                     CalibrationVersion,
-                    PrecedenceVersion);
+                    PrecedenceVersion,
+                    _terminalContextStatus);
 
             bool completedPhysicalAttempt = _hasPhysicalDescent && _hasPhysicalBottom &&
                 _hasAscentEstablished && _physicalLockoutReached;
@@ -1273,7 +1382,76 @@ namespace PowerliftingSimulator.Squat
                 _sampleCount,
                 FailureModelVersion,
                 CalibrationVersion,
-                PrecedenceVersion);
+                PrecedenceVersion,
+                _terminalContextStatus);
+        }
+
+        /// <summary>
+        /// Validates that an authoritative terminal context belongs to this
+        /// attempt: the terminal tick must be covered by the frozen trace and
+        /// its time must map to that canonical sample. A rejected context can
+        /// only suppress the terminal postcondition, never create a failure.
+        /// </summary>
+        private static SquatFailureTerminalContextStatus ResolveTerminalContext(
+            SquatTrace trace,
+            SquatFailureCompletionContext completion,
+            out SquatObservationSnapshot terminalSample)
+        {
+            terminalSample = default(SquatObservationSnapshot);
+            if (!completion.IsTerminal)
+                return SquatFailureTerminalContextStatus.NOT_TERMINAL;
+            if (!completion.IsWellFormed)
+                return SquatFailureTerminalContextStatus.REJECTED_MALFORMED;
+
+            ulong firstTick = trace[0].SimulationTick;
+            ulong lastTick = trace[trace.Count - 1].SimulationTick;
+            if (completion.TerminalTick < firstTick || completion.TerminalTick > lastTick)
+                return SquatFailureTerminalContextStatus.REJECTED_UNCOVERED_TICK;
+
+            // IsValidTrace already guarantees strictly contiguous ticks.
+            SquatObservationSnapshot candidate = trace[checked((int)(completion.TerminalTick - firstTick))];
+            if (candidate.SimulationTick != completion.TerminalTick)
+                return SquatFailureTerminalContextStatus.REJECTED_UNCOVERED_TICK;
+            if (Math.Abs(candidate.SimulationTimeSeconds - completion.TerminalTimeSeconds) >
+                FoundationTolerances.SimulationTimeMapping)
+                return SquatFailureTerminalContextStatus.REJECTED_TIME_MISMATCH;
+
+            terminalSample = candidate;
+            return SquatFailureTerminalContextStatus.TRACE_COVERED;
+        }
+
+        /// <summary>
+        /// The canonical FAILED_LOCKOUT rule. Physical lockout achieved at any
+        /// point means no FAILED_LOCKOUT. Otherwise, an authoritatively
+        /// terminated attempt that had credibly entered the completion region
+        /// without ever achieving lockout owns the terminal postcondition.
+        /// Onset stays the first completion-region entry; the latch is the
+        /// authoritative terminal tick.
+        /// </summary>
+        private void ApplyTerminalLockoutPostcondition(SquatObservationSnapshot terminalSample)
+        {
+            if (_physicalLockoutReached || !_hasCompletionRegionEntry)
+                return;
+
+            _candidateCount = 0;
+            QueueCandidate(
+                SquatFailureKind.FAILED_LOCKOUT,
+                SquatFailureDirection.NONE,
+                SquatFailureDetailKind.NONE,
+                _completionRegionEntryContext,
+                terminalSample,
+                SquatFailureEvidenceChannel.BAR_POSITION |
+                SquatFailureEvidenceChannel.BAR_LINEAR_VELOCITY |
+                SquatFailureEvidenceChannel.JOINT_KINEMATICS |
+                SquatFailureEvidenceChannel.TRUNK_KINEMATICS,
+                _maximumCompletionRegionDwellTicks,
+                MaxKneeAngle(terminalSample),
+                MaxHipAngle(terminalSample),
+                double.NaN,
+                _calibration.LockoutKneeToleranceRadians,
+                _calibration.LockoutHipToleranceRadians);
+            RegisterCandidate(_candidateBuffer[0]);
+            _candidateCount = 0;
         }
 
         private bool IsSequentiallyValid(SquatObservationSnapshot snapshot)
@@ -1316,7 +1494,8 @@ namespace PowerliftingSimulator.Squat
             trace == null ? 0 : trace.Count,
             FailureModelVersion,
             CalibrationVersion,
-            PrecedenceVersion);
+            PrecedenceVersion,
+            _terminalContextStatus);
 
         private void UpdateCompleteness(SquatObservationSnapshot snapshot)
         {
@@ -1455,8 +1634,6 @@ namespace PowerliftingSimulator.Squat
                 positionY - _physicalBottomPositionY >= _calibration.AscentEstablishmentDisplacementM)
             {
                 _hasAscentEstablished = true;
-                _ascentEstablishmentTick = snapshot.SimulationTick;
-                _ascentEstablishmentContext = Context(snapshot);
                 _reversalRecovered = _hasReversalAttempt;
             }
         }
@@ -1628,15 +1805,14 @@ namespace PowerliftingSimulator.Squat
                     snapshot,
                     SquatFailureEvidenceChannel.BAR_LINEAR_VELOCITY |
                     SquatFailureEvidenceChannel.PELVIS_LINEAR_VELOCITY |
+                    SquatFailureEvidenceChannel.SUPPORT_BOUNDS |
                     SquatFailureEvidenceChannel.JOINT_LIMITS |
-                    SquatFailureEvidenceChannel.TRUNK_KINEMATICS |
-                    SquatFailureEvidenceChannel.FOOT_CONTACT |
-                    SquatFailureEvidenceChannel.DRIVE_DEMAND,
+                    SquatFailureEvidenceChannel.TRUNK_KINEMATICS,
                     downwardVelocity,
                     ControlLossValue(snapshot),
                     _descentCollapseRun,
                     -_calibration.DescentCollapseVelocityMps,
-                    _calibration.DescentCollapseDemandThreshold01,
+                    float.NaN,
                     _calibration.DescentCollapsePersistenceTicks);
                 _descentCollapseEmitted = true;
             }
@@ -1647,10 +1823,8 @@ namespace PowerliftingSimulator.Squat
             bool supportLoss = snapshot.Support.SupportAvailability == SquatTelemetryAvailability.AVAILABLE &&
                 !snapshot.Support.HasSupport;
             bool postureLoss = HasHardTrunk(snapshot) || HasCriticalJointLimit(snapshot);
-            // A saturated modeled drive is corroborating evidence only. The
-            // accepted 25 kg walkout can saturate during a controlled descent,
-            // so authority alone cannot assert collapse. It remains in the
-            // evidence record alongside the structural loss predicate.
+            // A saturated modeled drive is corroborating context only. It is
+            // deliberately absent from the selecting evidence provenance.
             return supportLoss || postureLoss;
         }
 
@@ -1666,10 +1840,13 @@ namespace PowerliftingSimulator.Squat
 
         private float ControlLossValue(SquatObservationSnapshot snapshot)
         {
-            if (snapshot.DriveAvailability == SquatTelemetryAvailability.AVAILABLE)
-                return snapshot.MaximumModeledDemand;
-            if (HasHardTrunk(snapshot))
-                return Math.Abs(snapshot.TrunkWorldPitchRadians);
+            if (snapshot.Support.SupportAvailability == SquatTelemetryAvailability.AVAILABLE &&
+                !snapshot.Support.HasSupport)
+                return 1f;
+            if (HasHardTrunk(snapshot) && TryGetMaxTrunkAngle(snapshot, out float trunkAngle))
+                return trunkAngle;
+            if (HasCriticalJointLimit(snapshot))
+                return MaxJointLimitProximity(snapshot);
             return 1f;
         }
 
@@ -1982,6 +2159,19 @@ namespace PowerliftingSimulator.Squat
             }
         }
 
+        /// <summary>
+        /// Sequential lockout tracking only.
+        /// <para>
+        /// Elapsed time inside the completion region is NOT irreversible
+        /// evidence: measured 25 kg evidence shows bilateral knee/hip
+        /// extension, trunk erectness, and bar settling still converging more
+        /// than a second after the bar height enters the region. This therefore
+        /// records physical lockout and the first credible completion-region
+        /// entry and never latches FAILED_LOCKOUT. FAILED_LOCKOUT is decided
+        /// once - as a terminal postcondition - when the attempt is
+        /// authoritatively over.
+        /// </para>
+        /// </summary>
         private void UpdateLockout(SquatObservationSnapshot snapshot)
         {
             if (!_hasAscentEstablished || _physicalLockoutReached)
@@ -1989,49 +2179,49 @@ namespace PowerliftingSimulator.Squat
             if (IsPhysicalLockout(snapshot))
             {
                 _physicalLockoutReached = true;
+                _completionRegionDwellRun = 0;
                 return;
             }
 
-            if (!HasLockoutEvidence(snapshot))
-                return;
-
-            if (snapshot.SimulationTick - _ascentEstablishmentTick + 1ul >=
-                (ulong)_calibration.LockoutCompletionTimeoutTicks)
+            if (!IsInLockoutCompletionRegion(snapshot) || !HasLockoutEvidence(snapshot))
             {
-                QueueCandidate(
-                    SquatFailureKind.FAILED_LOCKOUT,
-                    SquatFailureDirection.NONE,
-                    SquatFailureDetailKind.NONE,
-                    _ascentEstablishmentContext,
-                    snapshot,
-                    SquatFailureEvidenceChannel.BAR_POSITION |
-                    SquatFailureEvidenceChannel.BAR_LINEAR_VELOCITY |
-                    SquatFailureEvidenceChannel.JOINT_KINEMATICS |
-                    SquatFailureEvidenceChannel.TRUNK_KINEMATICS,
-                    snapshot.SimulationTick - _ascentEstablishmentTick + 1ul,
-                    MaxKneeAngle(snapshot),
-                    MaxHipAngle(snapshot),
-                    _calibration.LockoutCompletionTimeoutTicks,
-                    _calibration.LockoutKneeToleranceRadians,
-                _calibration.LockoutHipToleranceRadians);
+                _completionRegionDwellRun = 0;
+                return;
             }
+
+            if (!_hasCompletionRegionEntry)
+            {
+                _hasCompletionRegionEntry = true;
+                _completionRegionEntryContext = Context(snapshot);
+            }
+
+            _completionRegionDwellRun++;
+            if (_completionRegionDwellRun > _maximumCompletionRegionDwellTicks)
+                _maximumCompletionRegionDwellTicks = _completionRegionDwellRun;
+        }
+
+        /// <summary>
+        /// The vicinity in which a final lockout is physically possible. This
+        /// is neither lockout nor failed lockout.
+        /// </summary>
+        private bool IsInLockoutCompletionRegion(SquatObservationSnapshot snapshot)
+        {
+            return _hasStandingReference && snapshot.Bar.IsAvailable &&
+                snapshot.Bar.PositionWorldMeters.Y >= _standingReferenceY - _calibration.LockoutHeightToleranceM;
         }
 
         private static bool HasLockoutEvidence(SquatObservationSnapshot snapshot)
         {
-            return snapshot.Bar.IsAvailable &&
-                snapshot.Joints.LeftKnee.JointAvailability == SquatTelemetryAvailability.AVAILABLE &&
-                snapshot.Joints.RightKnee.JointAvailability == SquatTelemetryAvailability.AVAILABLE &&
-                snapshot.Joints.LeftHip.JointAvailability == SquatTelemetryAvailability.AVAILABLE &&
-                snapshot.Joints.RightHip.JointAvailability == SquatTelemetryAvailability.AVAILABLE &&
-                snapshot.TrunkAvailability == SquatTelemetryAvailability.AVAILABLE ||
-                snapshot.Bar.IsAvailable &&
-                snapshot.Joints.LeftKnee.JointAvailability == SquatTelemetryAvailability.AVAILABLE &&
-                snapshot.Joints.RightKnee.JointAvailability == SquatTelemetryAvailability.AVAILABLE &&
-                snapshot.Joints.LeftHip.JointAvailability == SquatTelemetryAvailability.AVAILABLE &&
-                snapshot.Joints.RightHip.JointAvailability == SquatTelemetryAvailability.AVAILABLE &&
-                snapshot.Joints.Abdomen.JointAvailability == SquatTelemetryAvailability.AVAILABLE &&
-                snapshot.Joints.Thorax.JointAvailability == SquatTelemetryAvailability.AVAILABLE;
+            if (!snapshot.Bar.IsAvailable ||
+                snapshot.Joints.LeftKnee.JointAvailability != SquatTelemetryAvailability.AVAILABLE ||
+                snapshot.Joints.RightKnee.JointAvailability != SquatTelemetryAvailability.AVAILABLE ||
+                snapshot.Joints.LeftHip.JointAvailability != SquatTelemetryAvailability.AVAILABLE ||
+                snapshot.Joints.RightHip.JointAvailability != SquatTelemetryAvailability.AVAILABLE)
+                return false;
+
+            return snapshot.TrunkAvailability == SquatTelemetryAvailability.AVAILABLE ||
+                (snapshot.Joints.Abdomen.JointAvailability == SquatTelemetryAvailability.AVAILABLE &&
+                 snapshot.Joints.Thorax.JointAvailability == SquatTelemetryAvailability.AVAILABLE);
         }
 
         private bool IsPhysicalLockout(SquatObservationSnapshot snapshot)
@@ -2358,7 +2548,6 @@ namespace PowerliftingSimulator.Squat
                     AddMeasurement(measurements, ref measurementCount, "control_loss_signal", "1", candidate.MeasuredValueB);
                     AddMeasurement(measurements, ref measurementCount, "persistence", "ticks", candidate.MeasuredValueC);
                     AddThreshold(thresholds, ref thresholdCount, "downward_velocity", "m/s", candidate.ThresholdValueA);
-                    AddThreshold(thresholds, ref thresholdCount, "modeled_demand", "1", candidate.ThresholdValueB);
                     AddThreshold(thresholds, ref thresholdCount, "persistence", "ticks", candidate.ThresholdValueC);
                     break;
                 case SquatFailureKind.FAILED_REVERSAL:
@@ -2417,10 +2606,12 @@ namespace PowerliftingSimulator.Squat
                     }
                     break;
                 case SquatFailureKind.FAILED_LOCKOUT:
-                    AddMeasurement(measurements, ref measurementCount, "completion_window", "ticks", candidate.MeasuredValueA);
+                    // The dwell is observational only. The selectors are
+                    // authoritative terminality, credible completion-region
+                    // entry, and the direct lockout posture/stillness bounds.
+                    AddMeasurement(measurements, ref measurementCount, "completion_region_dwell_observed", "ticks", candidate.MeasuredValueA);
                     AddMeasurement(measurements, ref measurementCount, "knee_angle", "rad", candidate.MeasuredValueB);
                     AddMeasurement(measurements, ref measurementCount, "hip_angle", "rad", candidate.MeasuredValueC);
-                    AddThreshold(thresholds, ref thresholdCount, "completion_timeout", "ticks", candidate.ThresholdValueA);
                     AddThreshold(thresholds, ref thresholdCount, "knee_tolerance", "rad", candidate.ThresholdValueB);
                     AddThreshold(thresholds, ref thresholdCount, "hip_tolerance", "rad", candidate.ThresholdValueC);
                     break;
