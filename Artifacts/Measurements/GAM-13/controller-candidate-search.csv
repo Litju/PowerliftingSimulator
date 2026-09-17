@@ -1,0 +1,5 @@
+candidate,plant_profile,load_25,load_60,load_140,load_170,load_300,quantitative_failure,source_log
+OLD_SCALAR_GUARD_FIX,stiff8,PASS,FAIL,FAIL,FAIL,FAIL,"60 collapse; 140/170/300 remained upright but exceeded the fixed posture gate","D:/Dev/UnityLogs/GAM13/stage-a-old-stiff8.xml"
+VECTOR_DECOUPLED_COP,stiff8,PASS,FAIL,PASS,PASS,FAIL,"60 minPelvis=0.0957 trunk=1.4040 capture=-1.1899 supportLost; 300 minPelvis=0.0919 trunk=1.5627 capture=-1.6555 supportLost","D:/Dev/UnityLogs/GAM13/vector-decoupled-stiff8.xml"
+VECTOR_TRANSITION,stiff8,PASS,FAIL,PASS,PASS,FAIL,"60 setup collapse; 300 remained upright but saddle separation=0.0509 m exceeded the 0.0500 m gate","D:/Dev/UnityLogs/GAM13/vector-transition-stiff8.xml"
+PURE_STATE_COM_TRUNK_PLUS,stiff8,PASS,FAIL,PASS,PASS,FAIL,"60 minPelvis=0.0970 trunk=1.6765 capture=-0.4712 supportLost; 300 minPelvis=0.0970 trunk=1.4542 capture=-1.6644 supportLost","D:/Dev/UnityLogs/GAM13/pure-state-comtrunkplus-stiff8.xml"

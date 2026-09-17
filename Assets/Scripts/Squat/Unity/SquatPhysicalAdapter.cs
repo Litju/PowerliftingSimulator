@@ -1251,7 +1251,8 @@ namespace PowerliftingSimulator.Squat.Unity
                 if (joint == null)
                     continue;
 
-                float errorRad = Quaternion.Angle(composition.Nominal, joint.Diagnostic.ActualRelative) * Mathf.Deg2Rad;
+                Quaternion expected = composition.Nominal * composition.GravityBias;
+                float errorRad = Quaternion.Angle(expected, joint.Diagnostic.ActualRelative) * Mathf.Deg2Rad;
                 if (errorRad > worstError)
                 {
                     worstError = errorRad;
@@ -1295,13 +1296,16 @@ namespace PowerliftingSimulator.Squat.Unity
             float low = joint.Recipe.LowDegrees;
             float high = joint.Recipe.HighDegrees;
 
-            float nominal = PoweredJointController.LimitProximityOf(composition.Nominal, low, high);
-            float headroom = Mathf.Max(1f - nominal, 0.001f);
+            float expected = PoweredJointController.LimitProximityOf(
+                composition.Nominal * composition.GravityBias,
+                low,
+                high);
+            float headroom = Mathf.Max(1f - expected, 0.001f);
 
             float commanded = PoweredJointController.LimitProximityOf(composition.Final, low, high);
             float actual = joint.Diagnostic.LimitProximity;
 
-            float consumed = Mathf.Max(commanded, actual) - nominal;
+            float consumed = Mathf.Max(commanded, actual) - expected;
             return Mathf.Clamp01(consumed / headroom);
         }
 
