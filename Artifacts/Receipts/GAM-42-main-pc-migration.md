@@ -9,7 +9,7 @@ SOURCE_REPOSITORY=https://github.com/Litju/PowerliftingSimulator.git
 TARGET_PATH=E:\Data\Projects\PowerliftingSimulator
 START_HEAD=4cf5fc5fe9bd7e668e363da35cf4656202da233f
 BRANCH=work/gam-13-squat-load-calibration
-HEAD=f77d7cae1b3684d03ac1b101b5f8dfb1ea6e033e3
+HEAD=f77d7cae1b3684d03ac1b101b5f8dfb1ea6e033e
 ORIGIN_MAIN=4cf5fc5fe9bd7e668e363da35cf4656202da233f
 WORKTREE_COUNT=1
 WORKTREE_STATUS=CLEAN
@@ -48,7 +48,7 @@ MIGRATION_DECISION=PASS
 
 ## Authority gates
 
-- `git fetch --prune origin` completed; `origin/work/gam-13-squat-load-calibration` resolved to `f77d7cae1b3684d03ac1b101b5f8dfb1ea6e033e3`.
+- `git fetch --prune origin` completed; `origin/work/gam-13-squat-load-calibration` resolved to `f77d7cae1b3684d03ac1b101b5f8dfb1ea6e033e`.
 - The candidate was checked out directly; `origin/main` remained `4cf5fc5fe9bd7e668e363da35cf4656202da233f`.
 - `git lfs pull` materialized all 12 committed Stage-A PNGs. Each is a valid 1280x720 PNG, larger than 1,000 bytes, and not an LFS pointer.
 - Required report, completion receipt, ADR, and `ProjectSettings/ProjectVersion.txt` were present.
