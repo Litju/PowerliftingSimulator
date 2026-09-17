@@ -37,7 +37,7 @@ is in the Stage-A measurements and
 
 | Load | Result | Evidence |
 |---:|---|---|
-| 25 kg | PASS | fixed-plant hold; 25 kg baseline preserved in the candidate run |
+| 25 kg | PASS | Stage-A standing hold only; post-change GAM-12 lifecycle not re-run |
 | 60 kg | FAIL | persistent setup/posture/balance collapse |
 | 140 kg | PASS in selected 2x/3x diagnostics | not an exit gate because 60/300 fail |
 | 170 kg | PASS in selected 2x/3x diagnostics | not an exit gate because 60/300 fail |

@@ -8,7 +8,9 @@ Claim class: `GAME_ENGINE_CONTROL_CALIBRATION`
 
 ## Observation
 
-The existing GAM-13 25 kg physical baseline remains reproducible, but the
+The prior GAM-13 25 kg physical baseline remains the reference evidence; the
+post-change full GAM-12 lifecycle was not re-run before this blocked handoff.
+The candidate Stage-A standing hold passes at 25 kg, but
 candidate load-general feedforward still loses credible standing/setup control
 at 60 kg and 300 kg. The failure happens before a meaningful squat attempt;
 it is not a finite-capacity or P3 detector result.
