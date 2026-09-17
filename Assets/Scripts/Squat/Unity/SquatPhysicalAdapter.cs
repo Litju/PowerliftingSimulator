@@ -14,6 +14,8 @@ namespace PowerliftingSimulator.Squat.Unity
     /// </summary>
     public sealed class SquatPhysicalAdapter : IPhysicalAthleteCommandSource
     {
+        public const string CapacityCalibrationVersion = "GAM13_SQUAT_ATHLETE_CAPACITY_V1";
+        public const float GlobalStrengthScale = 3.8f;
         public const float MaxBalanceCorrectionRad = 0.17453f; // 10 degrees; target offset only
         private const float MaxMlBalanceCorrectionRad = 0.03491f; // 2 degrees; bounded lateral target trim
         public const float MaxBalanceBiasM = 0.025f; // 2.5 cm player balance bias
@@ -31,6 +33,10 @@ namespace PowerliftingSimulator.Squat.Unity
         public const float DefaultTrunkKp = 1.50f;
         private const float SupportFailureApErrorM = 0.30f;
         private const float SupportFailureMlErrorM = 0.30f;
+        private const float AnkleCapacityMultiplier = 2.5f;
+        private const float KneeCapacityMultiplier = 1.8f;
+        private const float HipCapacityMultiplier = 1.5f;
+        private const float TrunkCapacityMultiplier = 1.5f;
 
         private readonly PhysicalAthleteRig _rig;
         private readonly PhysicalAthleteRig.SegmentRuntime[] _segments;
@@ -342,15 +348,11 @@ namespace PowerliftingSimulator.Squat.Unity
             _mlBalanceCorrectionRad = _balanceController.AnkleFrontalOffsetRad;
             _isCorrectionSaturated = _balanceController.IsAnkleOffsetSaturated;
 
-            // Existing GAM-7 family profiles remain the capacity starting
-            // authority. Load changes the coupled dynamics; it does not select
-            // a scripted success/failure branch.
-            float barMass = _saddle != null && _saddle.IsAttached && _saddle.Barbell != null &&
-                _saddle.Barbell.Body != null && _saddle.Barbell.Body.gameObject.activeInHierarchy
-                ? _saddle.Barbell.LoadedMassKg
-                : 0f;
-            float loadRatio = (_rig.TotalMassKg + barMass) / Mathf.Max(_rig.TotalMassKg, 0.001f);
-            float capacityScale = Mathf.Max(3.8f, loadRatio * 3.8f) * (1f + 0.35f * brace);
+            // GAM13_SQUAT_ATHLETE_CAPACITY_V1. External load remains in the
+            // physical plant and its observations; it never selects athlete
+            // maximum capacity. Bracing is the bounded player-controlled
+            // activation factor, while family multipliers remain fixed.
+            float capacityScale = CalculateAthleteCapacityScale(brace);
 
             if (_rig.Segments.TryGetValue("pelvis", out PhysicalAthleteRig.SegmentRuntime pelvisSegment) && pelvisSegment.Body != null)
                 _minPelvisHeightM = Mathf.Min(_minPelvisHeightM, pelvisSegment.Body.position.y);
@@ -408,20 +410,20 @@ namespace PowerliftingSimulator.Squat.Unity
                 : ReferenceRateFrame.Zero;
             float phaseVelocity = _phaseVelocity;
 
-            poweredController.ApplyCommand("left_foot", new JointCommand(leftAnkleTarget, rate.LeftFoot * phaseVelocity, 1f, capacityScale * 2.5f), tick);
-            poweredController.ApplyCommand("right_foot", new JointCommand(rightAnkleTarget, rate.RightFoot * phaseVelocity, 1f, capacityScale * 2.5f), tick);
-            poweredController.ApplyCommand("left_shank", new JointCommand(leftKneeTarget, rate.LeftShank * phaseVelocity, 1f, capacityScale * 1.8f), tick);
-            poweredController.ApplyCommand("right_shank", new JointCommand(rightKneeTarget, rate.RightShank * phaseVelocity, 1f, capacityScale * 1.8f), tick);
-            poweredController.ApplyCommand("left_thigh", new JointCommand(leftHipTarget, rate.LeftThigh * phaseVelocity, 1f, capacityScale * 1.5f), tick);
-            poweredController.ApplyCommand("right_thigh", new JointCommand(rightHipTarget, rate.RightThigh * phaseVelocity, 1f, capacityScale * 1.5f), tick);
+            poweredController.ApplyCommand("left_foot", new JointCommand(leftAnkleTarget, rate.LeftFoot * phaseVelocity, 1f, capacityScale * AnkleCapacityMultiplier), tick);
+            poweredController.ApplyCommand("right_foot", new JointCommand(rightAnkleTarget, rate.RightFoot * phaseVelocity, 1f, capacityScale * AnkleCapacityMultiplier), tick);
+            poweredController.ApplyCommand("left_shank", new JointCommand(leftKneeTarget, rate.LeftShank * phaseVelocity, 1f, capacityScale * KneeCapacityMultiplier), tick);
+            poweredController.ApplyCommand("right_shank", new JointCommand(rightKneeTarget, rate.RightShank * phaseVelocity, 1f, capacityScale * KneeCapacityMultiplier), tick);
+            poweredController.ApplyCommand("left_thigh", new JointCommand(leftHipTarget, rate.LeftThigh * phaseVelocity, 1f, capacityScale * HipCapacityMultiplier), tick);
+            poweredController.ApplyCommand("right_thigh", new JointCommand(rightHipTarget, rate.RightThigh * phaseVelocity, 1f, capacityScale * HipCapacityMultiplier), tick);
             poweredController.ApplyCommand("abdomen", new JointCommand(
                 abdomenTarget,
                 SpineTargetRate(rate.Abdomen, phaseVelocity, referenceTarget.Abdomen, SquatJointFamily.Abdomen),
-                1f, capacityScale * 1.5f), tick);
+                1f, capacityScale * TrunkCapacityMultiplier), tick);
             poweredController.ApplyCommand("thorax", new JointCommand(
                 thoraxTarget,
                 SpineTargetRate(rate.Thorax, phaseVelocity, referenceTarget.Thorax, SquatJointFamily.Thorax),
-                1f, capacityScale * 1.5f), tick);
+                1f, capacityScale * TrunkCapacityMultiplier), tick);
 
             // The head holds its canonical neutral relative to the thorax and
             // nothing else. It is a postural actuator, not part of the balance
@@ -430,8 +432,8 @@ namespace PowerliftingSimulator.Squat.Unity
             // which is what left the head unheld.
             poweredController.ApplyCommand(
                 "head_neck",
-                new JointCommand(Quaternion.identity, Vector3.zero, 1f, capacityScale * 1.5f),
-                tick);
+                 new JointCommand(Quaternion.identity, Vector3.zero, 1f, capacityScale * TrunkCapacityMultiplier),
+                 tick);
 
             ApplyUpperLimbReference(poweredController, referenceTarget, rate, phaseVelocity, capacityScale, tick);
             CheckDriveSaturation(poweredController);
@@ -766,6 +768,20 @@ namespace PowerliftingSimulator.Squat.Unity
         /// the drive was told to travel along one path and arrive on another.
         /// </summary>
         public bool SpineBiasRateFeedforwardEnabled { get; set; } = true;
+
+        /// <summary>
+        /// Load-independent athlete capacity scale. The bar and athlete mass
+        /// still affect the physical equations through the bodies and
+        /// observations; they are deliberately absent from this capability
+        /// model.
+        /// </summary>
+        public static float CalculateAthleteCapacityScale(float brace01)
+        {
+            if (!float.IsFinite(brace01))
+                throw new ArgumentOutOfRangeException(nameof(brace01));
+            float brace = Mathf.Clamp01(brace01);
+            return GlobalStrengthScale * (1f + 0.35f * brace);
+        }
 
         private static Quaternion SagittalAndFrontal(float sagittalRad, float frontalRad)
         {

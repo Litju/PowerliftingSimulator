@@ -1,0 +1,6 @@
+candidate,impedance_factor,load_kg,measured_ticks,min_pelvis_y_m,max_trunk_pitch_rad,min_capture_margin_m,max_com_speed_mps,max_posture_error_deg,max_limit_proximity,min_guard_scale,max_ankle_offset_deg,min_support_contacts,support_lost,pass
+seed,1,25,500,0.9777,0.1454,0.1077,0.0053,1.432,0.017,0.913,6.0,8,false,true
+seed,1,60,500,0.0974,1.7124,-1.0386,1.7019,30.629,1.000,0.000,15.0,0,true,false
+seed,1,140,500,0.0949,1.6177,-1.6618,2.4301,36.099,1.000,0.000,15.0,6,false,false
+seed,1,170,500,0.1000,1.9153,-1.6496,2.5225,36.858,1.000,0.000,15.0,0,true,false
+seed,1,300,500,0.0980,2.9208,-1.2673,2.2796,77.705,1.000,0.000,15.0,0,true,false

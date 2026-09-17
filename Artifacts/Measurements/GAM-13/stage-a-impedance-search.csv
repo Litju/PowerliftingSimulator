@@ -1,0 +1,6 @@
+candidate,impedance_factor,loads_tested,stage_a_passes,stage_a_failures,notes
+seed,1,"25,60,140,170,300",1,4,"25 kg only; heavy setup collapse"
+fixed_impedance_2x,2,"25,60,140,170,300",3,2,"140/170 held; 60/300 collapsed"
+fixed_impedance_3x,3,"25,60,140,170,300",3,2,"140/170 held; 60/300 collapsed"
+fixed_impedance_4x,4,"60,300",0,2,"60/300 collapsed; candidate gate failed"
+fixed_impedance_8x,8,"60,300",0,2,"60/300 collapsed; high diagnostic factor did not rescue plant"

@@ -63,10 +63,9 @@ namespace PowerliftingSimulator.Tests
         public const int MaximumHarnessTicks = 2200;
 
         /// <summary>
-        /// The production capacity model these measurements were taken with:
-        /// the pre-GAM-13 adapter scales capacity by (athlete + bar) / athlete.
+        /// The production capacity model used by the resumed GAM-13 search.
         /// </summary>
-        public const string CurrentCapacityModel = "PRE_GAM13_LOAD_RATIO_CAPACITY_SCALE";
+        public const string CurrentCapacityModel = SquatPhysicalAdapter.CapacityCalibrationVersion;
         private const int TicksPerYield = 50;
 
         public static string MeasurementDirectory =>

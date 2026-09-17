@@ -44,7 +44,7 @@ namespace PowerliftingSimulator.Squat.Unity
         public const float DefaultMlComKp = 12f;
         public const float DefaultMlComKd = 5f;
 
-        private const float MaxOffsetRateRadPerSecond = 4f;
+        public const float DefaultMaxOffsetRateRadPerSecond = 4f;
         private const float HipBlendOnsetFraction = 0.85f;
         private const float HipStrategyGain = 0.35f;
 
@@ -90,6 +90,8 @@ namespace PowerliftingSimulator.Squat.Unity
         public float MlComKp { get; set; } = DefaultMlComKp;
         public float MlComKd { get; set; } = DefaultMlComKd;
         public float CopTrackingGain { get; set; } = DefaultCopTrackingGain;
+        public float MaxOffsetRateRadPerSecond { get; set; } = DefaultMaxOffsetRateRadPerSecond;
+        public float CapturePointTrackingGain { get; set; }
 
         /// <summary>
         /// The identified target-to-COP gain the ankle mapping inverts.
@@ -130,6 +132,9 @@ namespace PowerliftingSimulator.Squat.Unity
         /// after it happens.
         /// </summary>
         public const float PostureGuardFullRad = 0.13963f;    // 8 deg
+
+        public float PostureGuardOnsetThresholdRad { get; set; } = PostureGuardOnsetRad;
+        public float PostureGuardFullThresholdRad { get; set; } = PostureGuardFullRad;
 
         /// <summary>
         /// Joint-limit proximity at which the guard stops trusting the drive.
@@ -336,6 +341,9 @@ namespace PowerliftingSimulator.Squat.Unity
 
             float heightOverGravity = balance.ComHeightM / SquatBalanceObserver.GravityMagnitudeMps2;
             float copDesired = balance.SystemCom.z - heightOverGravity * desiredAcceleration;
+            float captureTarget = balance.CaptureAp -
+                Mathf.Clamp01(CapturePointTrackingGain) * (balance.CaptureAp - comRefAp);
+            copDesired = Mathf.Lerp(copDesired, captureTarget, Mathf.Clamp01(CapturePointTrackingGain));
             CopDesiredApUnclamped = copDesired;
 
             float interiorMargin = Mathf.Min(
@@ -416,7 +424,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 (ComKp * error + ComKd * velocity) * heightOverGravity;
             float trunkTargetOffset = -hipTargetOffset * 0.5f;
 
-            float maxStep = MaxOffsetRateRadPerSecond * dt;
+            float maxStep = Mathf.Max(0.01f, MaxOffsetRateRadPerSecond) * dt;
             AnkleSagittalOffsetRad = Step(AnkleSagittalOffsetRad, ankleTargetOffset, AnkleSagittalBoundRad, maxStep);
             HipSagittalOffsetRad = Step(HipSagittalOffsetRad, hipTargetOffset, MaxHipSagittalOffsetRad, maxStep);
             TrunkSagittalOffsetRad = Step(TrunkSagittalOffsetRad, trunkTargetOffset, MaxTrunkSagittalOffsetRad, maxStep);
@@ -436,7 +444,9 @@ namespace PowerliftingSimulator.Squat.Unity
             if (!PostureGuardEnabled)
                 return 1f;
 
-            float excess = Mathf.InverseLerp(PostureGuardOnsetRad, PostureGuardFullRad, PostureErrorRad);
+            float onset = Mathf.Max(0.001f, PostureGuardOnsetThresholdRad);
+            float full = Mathf.Max(onset, PostureGuardFullThresholdRad);
+            float excess = Mathf.InverseLerp(onset, full, PostureErrorRad);
             float growth = Mathf.Clamp01(
                 Mathf.Max(0f, PostureErrorRateRadPerS) / PostureGuardRateFullRadPerS);
             float postureScale = 1f - excess * growth;
@@ -522,7 +532,7 @@ namespace PowerliftingSimulator.Squat.Unity
 
         private void DecayToward(float dt)
         {
-            float maxStep = MaxOffsetRateRadPerSecond * dt;
+            float maxStep = Mathf.Max(0.01f, MaxOffsetRateRadPerSecond) * dt;
             AnkleSagittalOffsetRad = Step(AnkleSagittalOffsetRad, 0f, AnkleSagittalBoundRad, maxStep);
             HipSagittalOffsetRad = Step(HipSagittalOffsetRad, 0f, MaxHipSagittalOffsetRad, maxStep);
             TrunkSagittalOffsetRad = Step(TrunkSagittalOffsetRad, 0f, MaxTrunkSagittalOffsetRad, maxStep);

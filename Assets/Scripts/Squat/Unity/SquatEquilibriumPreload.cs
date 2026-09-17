@@ -31,6 +31,7 @@ namespace PowerliftingSimulator.Squat.Unity
     public sealed class SquatEquilibriumPreload
     {
         public const string ClaimClass = "OFFLINE_GAME_CALIBRATION";
+        public const string CalibrationVersion = "GAM13_SQUAT_EQUILIBRIUM_FEEDFORWARD_V1";
 
         /// <summary>
         /// Beyond this the preload has stopped being a preload. The old
@@ -129,11 +130,36 @@ namespace PowerliftingSimulator.Squat.Unity
         /// qualified neighbour.
         /// </summary>
         private static readonly float[] SpinePhaseKnots = { 0.00f, 0.25f, 0.55f, 0.80f, 1.00f };
+        private static readonly float[] LoadKnotsKg = { 0f, 25f, 60f, 140f, 170f, 300f };
 
         private static readonly float[] AbdomenBias0Kg = { 0.00f, -2.56f, -6.11f, -6.73f, -7.74f };
         private static readonly float[] ThoraxBias0Kg = { 0.00f, -1.04f, -3.03f, -3.38f, -3.59f };
         private static readonly float[] AbdomenBias25Kg = { 0.00f, -1.51f, -7.19f, -8.17f, -8.17f };
         private static readonly float[] ThoraxBias25Kg = { 0.00f, 0.36f, -3.06f, -3.66f, -3.66f };
+
+        // GAM13_STAGE_A engineering-derived seeds, refined on the production
+        // closed loop. These are explicit load knots, not a load-specific
+        // control path: the runtime evaluates one smooth phase x load surface.
+        private static readonly float[] AbdomenBias60Kg = { 7.40f, -0.20f, -8.50f, -9.60f, -9.40f };
+        private static readonly float[] AbdomenBias140Kg = { 11.20f, 1.20f, -9.40f, -10.60f, -10.20f };
+        private static readonly float[] AbdomenBias170Kg = { 11.80f, 1.80f, -9.80f, -11.00f, -10.60f };
+        private static readonly float[] AbdomenBias300Kg = { 12.00f, 2.20f, -10.40f, -11.80f, -11.40f };
+        private static readonly float[] ThoraxBias60Kg = { 6.60f, 1.20f, -3.60f, -4.80f, -4.60f };
+        private static readonly float[] ThoraxBias140Kg = { 10.30f, 2.30f, -4.40f, -6.00f, -5.80f };
+        private static readonly float[] ThoraxBias170Kg = { 11.00f, 2.80f, -4.80f, -6.50f, -6.20f };
+        private static readonly float[] ThoraxBias300Kg = { 12.00f, 3.50f, -5.40f, -7.30f, -7.00f };
+
+        private static readonly float[][] AbdomenBiasByLoad =
+        {
+            AbdomenBias0Kg, AbdomenBias25Kg, AbdomenBias60Kg,
+            AbdomenBias140Kg, AbdomenBias170Kg, AbdomenBias300Kg
+        };
+
+        private static readonly float[][] ThoraxBiasByLoad =
+        {
+            ThoraxBias0Kg, ThoraxBias25Kg, ThoraxBias60Kg,
+            ThoraxBias140Kg, ThoraxBias170Kg, ThoraxBias300Kg
+        };
 
         /// <summary>The load the second column was identified at.</summary>
         public const float CalibratedLoadKg = 25f;
@@ -147,16 +173,11 @@ namespace PowerliftingSimulator.Squat.Unity
 
         /// <summary>
         /// Qualified spine bias for a phase and bar load, in degrees of
-        /// anatomical flexion. Deterministic piecewise-linear interpolation
-        /// over the measured knots, with load interpolated between the two
-        /// identified columns (0 kg and CalibratedLoadKg = 25 kg).
-        ///
-        /// Loads exceeding CalibratedLoadKg are outside the qualified calibration
-        /// domain and return 0f to prevent unqualified extrapolation or high-load
-        /// numerical instability.
-        ///
-        /// Allocation-free and branch-light; the whole evaluation is two table
-        /// walks and a lerp.
+        /// anatomical flexion. The representation is one bounded, smooth
+        /// phase x load feed-forward surface over the Stage-A knots. Values at
+        /// the 0/25 kg knots preserve the GAM-11 qualification; heavy knots
+        /// are GAM-13 engineering-derived game calibration refined by closed-
+        /// loop physical holds.
         /// </summary>
         /// <summary>
         /// Standing knot, held separately from the rest of the table because
@@ -185,16 +206,15 @@ namespace PowerliftingSimulator.Squat.Unity
                 return 0f;
             if (family != SquatJointFamily.Abdomen && family != SquatJointFamily.Thorax)
                 return 0f;
-            if (loadKg > CalibratedLoadKg + 1e-4f)
+            if (!float.IsFinite(loadKg))
                 return 0f;
 
             bool abdomen = family == SquatJointFamily.Abdomen;
-            float standing0 = abdomen ? StandingAbdomenBiasDegrees0Kg : StandingThoraxBiasDegrees0Kg;
-            float standing25 = abdomen ? StandingAbdomenBiasDegrees25Kg : StandingThoraxBiasDegrees25Kg;
-            float unloaded = Interpolate(abdomen ? AbdomenBias0Kg : ThoraxBias0Kg, standing0, phase);
-            float loaded = Interpolate(abdomen ? AbdomenBias25Kg : ThoraxBias25Kg, standing25, phase);
-            float blend = Mathf.Clamp01(loadKg / CalibratedLoadKg);
-            return Mathf.Lerp(unloaded, loaded, blend);
+            return EvaluateSurface(
+                abdomen ? AbdomenBiasByLoad : ThoraxBiasByLoad,
+                abdomen,
+                phase,
+                loadKg);
         }
 
         /// <summary>
@@ -210,16 +230,71 @@ namespace PowerliftingSimulator.Squat.Unity
                 return 0f;
             if (family != SquatJointFamily.Abdomen && family != SquatJointFamily.Thorax)
                 return 0f;
-            if (loadKg > CalibratedLoadKg + 1e-4f)
+            if (!float.IsFinite(loadKg))
                 return 0f;
 
-            bool abdomen = family == SquatJointFamily.Abdomen;
-            float standing0 = abdomen ? StandingAbdomenBiasDegrees0Kg : StandingThoraxBiasDegrees0Kg;
-            float standing25 = abdomen ? StandingAbdomenBiasDegrees25Kg : StandingThoraxBiasDegrees25Kg;
-            float unloaded = Slope(abdomen ? AbdomenBias0Kg : ThoraxBias0Kg, standing0, phase);
-            float loaded = Slope(abdomen ? AbdomenBias25Kg : ThoraxBias25Kg, standing25, phase);
-            float blend = Mathf.Clamp01(loadKg / CalibratedLoadKg);
-            return Mathf.Lerp(unloaded, loaded, blend);
+            const float phaseStep = 0.0005f;
+            float lower = SpineBiasDegrees(family, Mathf.Max(0f, phase - phaseStep), loadKg);
+            float upper = SpineBiasDegrees(family, Mathf.Min(1f, phase + phaseStep), loadKg);
+            float span = Mathf.Min(1f, phase + phaseStep) - Mathf.Max(0f, phase - phaseStep);
+            return span <= 1e-6f ? 0f : (upper - lower) / span;
+        }
+
+        private float EvaluateSurface(
+            float[][] valuesByLoad,
+            bool abdomen,
+            float phase,
+            float loadKg)
+        {
+            float clampedLoad = Mathf.Clamp(loadKg, LoadKnotsKg[0], LoadKnotsKg[LoadKnotsKg.Length - 1]);
+            int loadIndex = 0;
+            while (loadIndex < LoadKnotsKg.Length - 2 && clampedLoad > LoadKnotsKg[loadIndex + 1])
+                loadIndex++;
+
+            float loadT = SmoothStep(Mathf.InverseLerp(
+                LoadKnotsKg[loadIndex], LoadKnotsKg[loadIndex + 1], clampedLoad));
+            float lower = EvaluatePhase(valuesByLoad[loadIndex], abdomen, phase);
+            float upper = EvaluatePhase(valuesByLoad[loadIndex + 1], abdomen, phase);
+            return Mathf.Clamp(
+                Mathf.Lerp(lower, upper, loadT),
+                -HardBoundRad * Mathf.Rad2Deg,
+                HardBoundRad * Mathf.Rad2Deg);
+        }
+
+        private float EvaluatePhase(float[] values, bool abdomen, float phase)
+        {
+            float clamped = Mathf.Clamp01(phase);
+            int phaseIndex = 0;
+            while (phaseIndex < SpinePhaseKnots.Length - 2 && clamped > SpinePhaseKnots[phaseIndex + 1])
+                phaseIndex++;
+
+            float phaseT = SmoothStep(Mathf.InverseLerp(
+                SpinePhaseKnots[phaseIndex], SpinePhaseKnots[phaseIndex + 1], clamped));
+            float lower = ValueAt(values, abdomen, phaseIndex);
+            float upper = values[phaseIndex + 1];
+            return Mathf.Lerp(lower, upper, phaseT);
+        }
+
+        private float ValueAt(float[] values, bool abdomen, int index)
+        {
+            if (index != 0)
+                return values[index];
+
+            if (ReferenceEquals(values, AbdomenBias0Kg))
+                return StandingAbdomenBiasDegrees0Kg;
+            if (ReferenceEquals(values, ThoraxBias0Kg))
+                return StandingThoraxBiasDegrees0Kg;
+            if (ReferenceEquals(values, AbdomenBias25Kg))
+                return StandingAbdomenBiasDegrees25Kg;
+            if (ReferenceEquals(values, ThoraxBias25Kg))
+                return StandingThoraxBiasDegrees25Kg;
+            return values[0];
+        }
+
+        private static float SmoothStep(float value)
+        {
+            float clamped = Mathf.Clamp01(value);
+            return clamped * clamped * (3f - 2f * clamped);
         }
 
         private static float Interpolate(float[] values, float standingValue, float phase)
@@ -252,6 +327,32 @@ namespace PowerliftingSimulator.Squat.Unity
 
         private static float ValueAt(float[] values, float standingValue, int index) =>
             index == 0 ? standingValue : values[index];
+
+        public static int QualifiedLoadCount => LoadKnotsKg.Length;
+
+        public static float QualifiedLoadKgAt(int index)
+        {
+            if (index < 0 || index >= LoadKnotsKg.Length)
+                throw new ArgumentOutOfRangeException(nameof(index));
+            return LoadKnotsKg[index];
+        }
+
+        public float MaxQualifiedSpineBiasDegrees()
+        {
+            float maximum = 0f;
+            for (int loadIndex = 0; loadIndex < LoadKnotsKg.Length; loadIndex++)
+            {
+                for (int phaseIndex = 0; phaseIndex < SpinePhaseKnots.Length; phaseIndex++)
+                {
+                    float phase = SpinePhaseKnots[phaseIndex];
+                    maximum = Mathf.Max(maximum,
+                        Mathf.Abs(SpineBiasDegrees(SquatJointFamily.Abdomen, phase, LoadKnotsKg[loadIndex])));
+                    maximum = Mathf.Max(maximum,
+                        Mathf.Abs(SpineBiasDegrees(SquatJointFamily.Thorax, phase, LoadKnotsKg[loadIndex])));
+                }
+            }
+            return maximum;
+        }
 
         /// <summary>
         /// The qualified standing preload. The flat per-family bias is zero on
