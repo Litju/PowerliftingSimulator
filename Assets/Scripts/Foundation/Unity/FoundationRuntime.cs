@@ -164,6 +164,13 @@ namespace PowerliftingSimulator.Foundation.Unity
             _tickDriver.RegisterPrePhysicsStep(step);
         }
 
+        public void RegisterPostPhysicsStep(
+            Action<SimulationTime, PhysicalObservation, PlayerIntentFrame> step)
+        {
+            EnsureInitialized();
+            _tickDriver.RegisterPostPhysicsStep(step);
+        }
+
         public void StepOne()
         {
             EnsureInitialized();

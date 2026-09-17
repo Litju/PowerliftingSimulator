@@ -19,7 +19,9 @@ namespace PowerliftingSimulator.Foundation.Unity
         private bool _manualSteppingMode;
         private bool _completingRenderFrame;
         private bool _stepInProgress;
+        private bool _tickAdvanced;
         private Action<SimulationTime, PlayerIntentFrame> _prePhysicsStep;
+        private Action<SimulationTime, PhysicalObservation, PlayerIntentFrame> _postPhysicsStep;
 
         internal PhysicsTickDriver(AuthoritativePhysicsScene authoritativeScene, InputTimeDomain inputTimeDomain)
         {
@@ -73,6 +75,17 @@ namespace PowerliftingSimulator.Foundation.Unity
             _prePhysicsStep = step;
         }
 
+        internal void RegisterPostPhysicsStep(
+            Action<SimulationTime, PhysicalObservation, PlayerIntentFrame> step)
+        {
+            if (step == null)
+                throw new ArgumentNullException(nameof(step));
+            if (_postPhysicsStep != null)
+                throw new InvalidOperationException("The authoritative post-physics observation callback already has an owner.");
+
+            _postPhysicsStep = step;
+        }
+
         public void StepOne()
         {
             if (!_authoritativeScene.IsValid)
@@ -91,10 +104,12 @@ namespace PowerliftingSimulator.Foundation.Unity
             }
 
             _stepInProgress = true;
+            _tickAdvanced = false;
             try
             {
                 double tickStartSeconds = _clock.Current.SimulationTimeSeconds;
                 SimulationTime time = _clock.Advance();
+                _tickAdvanced = true;
                 LastIntentFrame = _intentBuffer.SampleForTick(time.Tick, tickStartSeconds, time.SimulationTimeSeconds);
 
                 _prePhysicsStep?.Invoke(time, LastIntentFrame);
@@ -106,8 +121,12 @@ namespace PowerliftingSimulator.Foundation.Unity
                     time,
                     _observations.AcquireWriteStorage());
                 _observations.Publish(observation);
+                // Commit the authoritative attempt trace before any registered
+                // observer runs. The tick has already simulated, so an observer
+                // fault must not be able to leave a gap in the trace.
                 if (_attemptTrace.IsRecording)
                     _attemptTrace.Append(observation, LastIntentFrame);
+                _postPhysicsStep?.Invoke(time, observation, LastIntentFrame);
             }
             finally
             {
@@ -155,11 +174,24 @@ namespace PowerliftingSimulator.Foundation.Unity
                 while (_accumulatedRenderTimeSeconds + FoundationTolerances.RenderAccumulatorComparison >= SimulationConstants.FixedDeltaTimeSeconds &&
                        ticks < SimulationConstants.MaxCatchUpTicksPerRenderFrame)
                 {
-                    StepOne();
-                    _accumulatedRenderTimeSeconds -= SimulationConstants.FixedDeltaTimeSeconds;
-                    if (_accumulatedRenderTimeSeconds < FoundationTolerances.RenderAccumulatorComparison)
-                        _accumulatedRenderTimeSeconds = 0d;
-                    ticks++;
+                    try
+                    {
+                        StepOne();
+                    }
+                    finally
+                    {
+                        // A tick whose simulation clock already advanced must
+                        // always consume its accumulated render time. Skipping
+                        // the decrement would retain time for a tick that
+                        // happened and drift simulation time on later frames.
+                        if (_tickAdvanced)
+                        {
+                            _accumulatedRenderTimeSeconds -= SimulationConstants.FixedDeltaTimeSeconds;
+                            if (_accumulatedRenderTimeSeconds < FoundationTolerances.RenderAccumulatorComparison)
+                                _accumulatedRenderTimeSeconds = 0d;
+                            ticks++;
+                        }
+                    }
                 }
             }
             finally
