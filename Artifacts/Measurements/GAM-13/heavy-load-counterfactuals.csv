@@ -1,0 +1,30 @@
+variant,counterfactual,load_kg,terminal,p3_outcome,p3_primary,failure_onset_tick,squat_command_tick,lockout_tick,legal_physical_depth,min_worst_side_depth_m,trunk_pitch_max_rad,knee_max_force_nm,note
+cap4,all family BaseCapacityNm x4 (drive ceiling x4),60.0,TIMEOUT@1833,EVALUABLE/PHYSICAL_FAILURE,POSTURE_OR_BAR_LOSS,331,334,NA,True,-0.4140,1.524,13132.8,
+cap4,all family BaseCapacityNm x4 (drive ceiling x4),170.0,TIMEOUT@1780,EVALUABLE/PHYSICAL_FAILURE,POSTURE_OR_BAR_LOSS,278,281,NA,True,-0.4288,1.494,22161.6,
+cap025,all family BaseCapacityNm x0.25,60,NO_ATTEMPT_RECORD_WITHIN_2000_TICKS,NA,NA,NA,NA,NA,NA,NA,NA,NA,never reached a persisted start candidate; lifecycle=START_WINDOW
+cap025,all family BaseCapacityNm x0.25,170.0,TIMEOUT@1774,EVALUABLE/PHYSICAL_FAILURE,POSTURE_OR_BAR_LOSS,272,275,NA,True,-0.4288,1.500,1385.1,
+spine2,"trunk family spring x2, damper x sqrt2",60.0,TIMEOUT@1762,EVALUABLE/PHYSICAL_FAILURE,POSTURE_OR_BAR_LOSS,260,263,NA,True,-0.4288,1.361,3283.2,
+spine2,"trunk family spring x2, damper x sqrt2",170,NO_ATTEMPT_RECORD_WITHIN_2000_TICKS,NA,NA,NA,NA,NA,NA,NA,NA,NA,never reached a persisted start candidate; lifecycle=START_WINDOW
+stiff2,"ankle/knee/hip/trunk spring x2, damper x sqrt2",60.0,TIMEOUT@1783,EVALUABLE/PHYSICAL_FAILURE,POSTURE_OR_BAR_LOSS,281,284,NA,True,-0.4281,1.575,3283.2,
+stiff2,"ankle/knee/hip/trunk spring x2, damper x sqrt2",170.0,TIMEOUT@1706,EVALUABLE/PHYSICAL_FAILURE,POSTURE_OR_BAR_LOSS,204,207,NA,True,-0.4288,1.612,5540.4,
+stiff3,"ankle/knee/hip/trunk spring x3, damper x sqrt3",60.0,TIMEOUT@1766,EVALUABLE/PHYSICAL_FAILURE,POSTURE_OR_BAR_LOSS,264,267,NA,True,-0.4287,1.397,3283.2,
+stiff3,"ankle/knee/hip/trunk spring x3, damper x sqrt3",170.0,TIMEOUT@1788,EVALUABLE/PHYSICAL_FAILURE,POSTURE_OR_BAR_LOSS,286,289,NA,True,-0.4288,1.364,5540.4,
+biaslinear,"qualified 0/25 kg spine bias table linearly extrapolated to load, clamped to 12 deg hard bound",40.0,TIMEOUT@1858,EVALUABLE/PHYSICAL_FAILURE,POSTURE_OR_BAR_LOSS,356,359,NA,True,-0.0109,-1.461,2872.8,
+biaslinear,"qualified 0/25 kg spine bias table linearly extrapolated to load, clamped to 12 deg hard bound",60,NO_ATTEMPT_RECORD_WITHIN_2000_TICKS,NA,NA,NA,NA,NA,NA,NA,NA,NA,never reached a persisted start candidate; lifecycle=START_WINDOW
+biaslinear,"qualified 0/25 kg spine bias table linearly extrapolated to load, clamped to 12 deg hard bound",100.0,TIMEOUT@1770,EVALUABLE/PHYSICAL_FAILURE,POSTURE_OR_BAR_LOSS,268,271,NA,True,-0.0076,-1.473,4104.0,
+biaslinear,"qualified 0/25 kg spine bias table linearly extrapolated to load, clamped to 12 deg hard bound",140,NO_ATTEMPT_RECORD_WITHIN_2000_TICKS,NA,NA,NA,NA,NA,NA,NA,NA,NA,never reached a persisted start candidate; lifecycle=START_WINDOW
+biaslinear,"qualified 0/25 kg spine bias table linearly extrapolated to load, clamped to 12 deg hard bound",170,NO_ATTEMPT_RECORD_WITHIN_2000_TICKS,NA,NA,NA,NA,NA,NA,NA,NA,NA,never reached a persisted start candidate; lifecycle=START_WINDOW
+impedance2,stiff2 + ankle target-to-COP gain x2 + spine bias table /2,25.0,PHYSICAL_LOCKOUT@809,EVALUABLE/NO_PHYSICAL_FAILURE,NONE,NA,90,809,False,0.0023,0.140,2565.0,
+impedance2,stiff2 + ankle target-to-COP gain x2 + spine bias table /2,60.0,TIMEOUT@1774,EVALUABLE/PHYSICAL_FAILURE,POSTURE_OR_BAR_LOSS,272,275,NA,True,-0.4278,1.500,3283.2,
+impedance2,stiff2 + ankle target-to-COP gain x2 + spine bias table /2,170.0,TIMEOUT@1706,EVALUABLE/PHYSICAL_FAILURE,POSTURE_OR_BAR_LOSS,204,207,NA,True,-0.4288,1.708,5540.4,
+impedance2,stiff2 + ankle target-to-COP gain x2 + spine bias table /2,300.0,TIMEOUT@1956,EVALUABLE/PHYSICAL_FAILURE,POSTURE_OR_BAR_LOSS,454,457,NA,True,-0.4288,1.326,8208.0,
+impedance3,stiff3 + ankle target-to-COP gain x3 + spine bias table /3,25.0,PHYSICAL_LOCKOUT@797,EVALUABLE/NO_PHYSICAL_FAILURE,NONE,NA,82,797,False,0.0125,0.141,2565.0,
+impedance3,stiff3 + ankle target-to-COP gain x3 + spine bias table /3,60.0,TIMEOUT@1808,EVALUABLE/PHYSICAL_FAILURE,POSTURE_OR_BAR_LOSS,306,309,NA,True,-0.4257,1.732,3283.2,
+impedance3,stiff3 + ankle target-to-COP gain x3 + spine bias table /3,170.0,TIMEOUT@1856,EVALUABLE/PHYSICAL_FAILURE,POSTURE_OR_BAR_LOSS,354,357,NA,True,-0.4288,1.418,5540.4,
+impedance3,stiff3 + ankle target-to-COP gain x3 + spine bias table /3,300.0,TIMEOUT@1935,EVALUABLE/PHYSICAL_FAILURE,POSTURE_OR_BAR_LOSS,433,436,NA,True,-0.4288,1.271,8208.0,
+noguard,predictive balance posture guard disabled,60.0,TIMEOUT@1780,EVALUABLE/PHYSICAL_FAILURE,POSTURE_OR_BAR_LOSS,278,281,NA,True,-0.4288,1.494,3283.2,
+noguard,predictive balance posture guard disabled,170.0,TIMEOUT@1826,EVALUABLE/PHYSICAL_FAILURE,POSTURE_OR_BAR_LOSS,324,327,NA,True,-0.4288,1.397,5540.4,
+noguard+biaslinear,noguard + biaslinear,60.0,TIMEOUT@1772,EVALUABLE/PHYSICAL_FAILURE,POSTURE_OR_BAR_LOSS,270,273,NA,True,-0.4262,1.587,3283.2,
+noguard+biaslinear,noguard + biaslinear,170,NO_ATTEMPT_RECORD_WITHIN_2000_TICKS,NA,NA,NA,NA,NA,NA,NA,NA,NA,never reached a persisted start candidate; lifecycle=START_WINDOW
+noguard+impedance2,noguard + impedance2,60.0,TIMEOUT@1752,EVALUABLE/PHYSICAL_FAILURE,POSTURE_OR_BAR_LOSS,250,253,NA,True,-0.4282,1.520,3283.2,
+noguard+impedance2,noguard + impedance2,170.0,TIMEOUT@1781,EVALUABLE/PHYSICAL_FAILURE,POSTURE_OR_BAR_LOSS,279,282,NA,True,-0.4288,1.568,5540.4,
