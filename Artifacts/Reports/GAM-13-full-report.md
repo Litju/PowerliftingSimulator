@@ -2,9 +2,9 @@
 
 Date: 2026-09-18
 Mission: `GAM13_END_TO_END_SQUAT_LOAD_RESPONSE_STICKING_AND_PHYSICAL_FAILURE_CALIBRATION`
-Status: **BLOCKED — the measured production plant does not provide a valid dynamic standing family for controller synthesis**
+Status: **BLOCKED — static trim refoundation found no qualified fixed plant because loaded saddle/contact topology fails at canonical endpoints**
 Branch: `work/gam-13-squat-load-calibration`
-Evidence head: `6a299a019dd8399345408236004d2391a3314009`
+Evidence head: `dd0d747a6f6ae46ed9e64105908e2fdf25267199` plus the trim-refoundation evidence candidate
 Unity: `6000.3.22f1 (1c726e1fb402)`
 Claim class: `GAME_ENGINE_CONTROL_CALIBRATION`
 
@@ -239,3 +239,25 @@ substrate capable of establishing loaded equilibrium, or amend/re-scope the
 GAM-13 standing envelope. Until that decision and evidence exist, synthesizing
 or shipping a robust controller would be tuning a symptom rather than proving
 the dynamics.
+
+## Static-trim refoundation addendum — 2026-09-18
+
+The current-HEAD Stage-A baseline was regenerated without experimental
+overrides and preserved separately as
+`Artifacts/Measurements/GAM-13/trim-refoundation-stage-a-baseline.csv`.
+It confirms 25 kg PASS and 60/140/170/300 kg FAIL; the older
+`stage-a-standing-final.csv` remains historical provenance.
+
+The bounded static-trim experiment then evaluated the physical plant before
+dynamic identification. It found a 25 kg long-hold trim but no canonical
+60/140/170/300 kg long-hold trim on the production 1x plant. Diagnostic fixed
+impedance factors 2x, 3x, 4x, 5x, 6x, and 8x were also tested with square-root
+damping scaling. None qualified all five canonical loads; the remaining
+endpoint failures were saddle/support topology failures with finite telemetry.
+
+This addendum supersedes the report's earlier “no valid equilibrium data”
+wording only in scope: a local bounded trim is now proven at 25 kg, while the
+heavy plant family remains unqualified. The old dynamic model remains
+diagnostic-only. Capacity, sticking, supra-max failure, controller synthesis,
+held-out loads, PR, merge, and Linear closeout remain blocked pending the owner
+decision recorded in `Artifacts/Receipts/GAM-13-trim-refoundation-blocker.md`.
