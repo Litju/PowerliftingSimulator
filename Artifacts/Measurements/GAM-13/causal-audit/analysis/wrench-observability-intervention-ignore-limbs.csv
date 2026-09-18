@@ -1,0 +1,4 @@
+load_kg,profile,intervention,reported_contacts,tangential_to_normal_max,tangential_reported,window_end,samples,vertical_force_rel_error_p50,vertical_force_rel_error_p95,cop_error_m_p50,cop_error_m_p95,validated,infeasible_normal,infeasible_friction,infeasible_cop,verdict
+25,p28-v1,saddle.ignore_bar_athlete_non_thorax_true,4776,0,false,601,591,0.000379123,0.000389806,0.000701634,0.000810156,true,0,0,0,NECESSARY_CONDITIONS_EVALUATED
+300,p28-v1,saddle.ignore_bar_athlete_non_thorax_true,2553,0,false,34,24,0.00272767,0.00480256,0.004759,0.00671808,true,0,0,0,NECESSARY_CONDITIONS_EVALUATED
+60,p28-v1,saddle.ignore_bar_athlete_non_thorax_true,4763,0,false,601,591,0.000372339,0.00052717,0.000986955,0.00119207,true,0,0,0,NECESSARY_CONDITIONS_EVALUATED

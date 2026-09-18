@@ -1,0 +1,4 @@
+load_kg,profile,intervention,reported_contacts,tangential_to_normal_max,tangential_reported,window_end,samples,vertical_force_rel_error_p50,vertical_force_rel_error_p95,cop_error_m_p50,cop_error_m_p95,validated,infeasible_normal,infeasible_friction,infeasible_cop,verdict
+25,p28-v1,saddle.linear_limit_m_0.10,4793,0,false,601,591,0.000379002,0.000410465,0.000669239,0.000839399,true,0,0,0,NECESSARY_CONDITIONS_EVALUATED
+300,p28-v1,saddle.linear_limit_m_0.10,949,0,false,33,23,0.0031234,0.00496191,0.00464277,0.0069895,true,0,0,0,NECESSARY_CONDITIONS_EVALUATED
+60,p28-v1,saddle.linear_limit_m_0.10,2024,0,false,90,80,0.000610991,0.000763527,0.0924221,0.168792,false,0,0,10,NOT_OBSERVABLE
