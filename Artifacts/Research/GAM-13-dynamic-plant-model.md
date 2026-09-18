@@ -57,6 +57,18 @@ silently fitted as LTI plants. The evidence therefore cannot support one
 fixed-gain controller, gain scheduling, or a capacity calibration across the
 Stage-A family.
 
+## Solver sensitivity
+
+The bounded diagnostic compared untouched production solver settings (athlete
+12/4 iterations, bar 12/6) with a higher 24/8 setting at 25, 60, and 300 kg.
+25 kg passed under both settings. 60 and 300 kg failed under both settings,
+with the same setup-collapse classification. The result does not support
+classifying the loaded failure as a simple solver-iteration defect. A smaller
+diagnostic timestep was not run because the authoritative fixed timestep is a
+frozen 100 Hz contract; no timestep change was promoted.
+
+Evidence: `Artifacts/Measurements/GAM-13/solver-sensitivity.csv`.
+
 The following distinctions remain explicit:
 
 - local controllability rank is not dynamic stabilizability;

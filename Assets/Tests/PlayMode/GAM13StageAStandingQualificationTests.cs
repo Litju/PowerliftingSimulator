@@ -75,6 +75,45 @@ namespace PowerliftingSimulator.Tests
         }
 
         [UnityTest]
+        [Explicit("GAM-13 solver/timestep sensitivity diagnostic; excluded from default qualification suites.")]
+        public IEnumerator GAM13_STAGE_A_SOLVER_SENSITIVITY()
+        {
+            string previousPosition = Environment.GetEnvironmentVariable("GAM13_STAGE_A_SOLVER_POSITION");
+            string previousVelocity = Environment.GetEnvironmentVariable("GAM13_STAGE_A_SOLVER_VELOCITY");
+            var rows = new StringBuilder();
+            rows.AppendLine("solver_profile,load_kg,pass,summary");
+            try
+            {
+                foreach (bool higherIterations in new[] { false, true })
+                {
+                    Environment.SetEnvironmentVariable("GAM13_STAGE_A_SOLVER_POSITION", higherIterations ? "24" : null);
+                    Environment.SetEnvironmentVariable("GAM13_STAGE_A_SOLVER_VELOCITY", higherIterations ? "8" : null);
+                    string profile = higherIterations ? "HIGHER_24_8" : "NATIVE_PRODUCTION";
+                    foreach (float loadKg in new[] { 25f, 60f, 300f })
+                    {
+                        yield return LoadFreshScene();
+                        StandingResult result = RunStanding(loadKg);
+                        rows.AppendLine(string.Format(
+                            CultureInfo.InvariantCulture,
+                            "{0},{1:R},{2},\"{3}\"",
+                            profile, loadKg, result.IsPass,
+                            result.Summary.Replace("\"", "'")));
+                    }
+                }
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("GAM13_STAGE_A_SOLVER_POSITION", previousPosition);
+                Environment.SetEnvironmentVariable("GAM13_STAGE_A_SOLVER_VELOCITY", previousVelocity);
+            }
+
+            string directory = Path.Combine(Directory.GetCurrentDirectory(), "Artifacts/Measurements/GAM-13");
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(Path.Combine(directory, "solver-sensitivity.csv"), rows.ToString());
+            yield return null;
+        }
+
+        [UnityTest]
         [Explicit("GAM-13 closed-loop equilibrium identification grid; excluded from default qualification suites.")]
         public IEnumerator GAM13_STAGE_A_CLOSED_LOOP_EQUILIBRIUM_IDENTIFICATION_GRID()
         {
@@ -267,6 +306,7 @@ namespace PowerliftingSimulator.Tests
         private StandingResult RunStanding(float loadKg)
         {
             _controller.SetLoad(loadKg);
+            ConfigureSolverExperiment(_rig, _controller);
             SquatPhysicalAdapter adapter = _controller.Adapter;
             FoundationRuntime runtime = _bootstrap.Runtime;
             float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
@@ -432,6 +472,41 @@ namespace PowerliftingSimulator.Tests
                     profile.Damper * Mathf.Sqrt(factor),
                     profile.BaseCapacityNm,
                     profile.MaxTargetRateRadS);
+            }
+        }
+
+        private static void ConfigureSolverExperiment(
+            PhysicalAthleteRig rig,
+            SquatPhysicalPrototypeController controller)
+        {
+            string positionText = Environment.GetEnvironmentVariable("GAM13_STAGE_A_SOLVER_POSITION");
+            string velocityText = Environment.GetEnvironmentVariable("GAM13_STAGE_A_SOLVER_VELOCITY");
+            if (string.IsNullOrWhiteSpace(positionText) && string.IsNullOrWhiteSpace(velocityText))
+                return;
+
+            int positionIterations = string.IsNullOrWhiteSpace(positionText)
+                ? 12
+                : int.Parse(positionText, CultureInfo.InvariantCulture);
+            int velocityIterations = string.IsNullOrWhiteSpace(velocityText)
+                ? 4
+                : int.Parse(velocityText, CultureInfo.InvariantCulture);
+            Assert.That(positionIterations, Is.InRange(1, 64));
+            Assert.That(velocityIterations, Is.InRange(1, 32));
+
+            foreach (PhysicalAthleteRig.SegmentRuntime segment in rig.Segments.Values)
+            {
+                if (segment.Body == null)
+                    continue;
+                segment.Body.solverIterations = positionIterations;
+                segment.Body.solverVelocityIterations = velocityIterations;
+            }
+
+            if (controller.Saddle != null && controller.Saddle.Barbell != null && controller.Saddle.Barbell.Body != null)
+            {
+                controller.Saddle.Barbell.Body.solverIterations = positionIterations;
+                controller.Saddle.Barbell.Body.solverVelocityIterations = velocityIterations == 4
+                    ? 6
+                    : velocityIterations;
             }
         }
 
