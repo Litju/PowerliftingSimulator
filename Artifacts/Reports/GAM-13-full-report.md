@@ -1,200 +1,241 @@
 # GAM-13 full evidence report
 
-Date: 2026-09-17  
-Status: **BLOCKED — Stage-A standing qualification is not passed**  
-Mission: GAM13_END_TO_END_SQUAT_LOAD_RESPONSE_STICKING_AND_PHYSICAL_FAILURE_CALIBRATION  
-Branch: work/gam-13-squat-load-calibration  
-Production candidate at the start of the visual run: 425ed2d592f82dafec65e0cda23ceb715a0be852  
-Unity: 6000.3.22f1  
-Graphics device: Intel(R) Iris(R) Xe Graphics, Direct3D 12, driver 32.0.101.7088  
-Claim class: GAME_ENGINE_CONTROL_CALIBRATION
+Date: 2026-09-18
+Mission: `GAM13_END_TO_END_SQUAT_LOAD_RESPONSE_STICKING_AND_PHYSICAL_FAILURE_CALIBRATION`
+Status: **BLOCKED — the measured production plant does not provide a valid dynamic standing family for controller synthesis**
+Branch: `work/gam-13-squat-load-calibration`
+Evidence head: `6a299a019dd8399345408236004d2391a3314009`
+Unity: `6000.3.22f1 (1c726e1fb402)`
+Claim class: `GAME_ENGINE_CONTROL_CALIBRATION`
 
 ## Executive verdict
 
-The candidate does not qualify for GAM-13 continuation. The 25 kg standing
-case is stable. The default candidate falls out of a credible standing/setup
-state at 60, 140, 170, and 300 kg in the deterministic Stage-A hold. The
-visual captures show the failure directly: the 60 kg athlete folds and loses
-support, while the 300 kg athlete is already deeply folded at 1 s and is on the
-ground by 5 s.
+GAM-13 cannot continue to capacity, sticking, failure, or held-out-load
+calibration. The current production 1x plant passes standing at 25 kg but fails
+the Stage-A standing contract at 60, 140, 170, and 300 kg. The failure is
+setup/posture/support collapse before a meaningful squat attempt; it is not a
+measured athlete-capacity ceiling.
 
-This is a setup/balance-control failure before a meaningful squat attempt. It
-is not evidence of a valid actuator-capacity ceiling, sticking threshold, or
-physical-failure calibration. Capacity calibration therefore remains blocked.
+The new dynamic experiment strengthens the conclusion without overstating it:
 
-## What was actually tested
+- 25 kg has a valid local equilibrium window, but its fitted model has a
+  small one-step error and catastrophic held-out 50-tick free prediction error.
+- 60/140/170/300 kg have zero valid local-equilibrium rows in both
+  identification and validation trajectories; those samples are retained as
+  `TRANSIENT_LOCAL_RESPONSE`, not mislabeled LTI plants.
+- Native solver settings and a higher 24/8 diagnostic setting both pass 25 kg
+  and fail 60/300 kg. The result is not explained by solver iteration count
+  alone.
 
-The Stage-A fixture loads a fresh SquatPhysicalPrototype scene for each
-canonical load and holds SquatState.SETUP for 600 fixed ticks. The first 100
-ticks are settling; the remaining 500 ticks are measured. The fixture uses the
-production physical saddle, dynamic feet, production balance loop, and the
-fixed candidate plant.
+This is enough to block synthesis. It is not evidence that every conceivable
+future target-space controller is mathematically impossible; it is evidence
+that no controller can be responsibly qualified from the currently measured
+plant family.
 
-The standing gates are:
+## Scope and claim discipline
 
-| Gate | Limit |
-|---|---:|
-| Pelvis height | > 0.90 m |
-| Absolute trunk pitch | < 0.70 rad |
-| Capture margin | > 0.01 m |
-| COM speed | < 0.25 m/s |
-| Absolute foot pitch | < 12 deg |
-| Sustained drive saturation | < 5% |
-| Canonical posture error | < 10 deg |
-| Joint-limit proximity | < 0.95 |
-| Saddle separation | < 0.05 m |
-| Support/contact and finite-state checks | must remain valid |
+This report distinguishes:
 
-The qualification measurements below are from
-[stage-a-standing-baseline.csv](../Measurements/GAM-13/stage-a-standing-baseline.csv),
-the default seed candidate at fixed impedance 1x.
+- static/local sensitivity from a dynamic model;
+- dynamic controllability from stabilizability;
+- stabilizability from robust stability over load variation;
+- transient pre-collapse response from equilibrium linearization;
+- same-machine repeatability from physical-model certainty;
+- qualitative human squat observations from this game's rigid-body model.
 
-## Canonical-load results
+The report makes no claim of measured human torque, measured human GRF/COP,
+muscle activation, physiological fatigue, biological strength, or
+cross-platform PhysX determinism.
 
-| Load | Result | Min pelvis (m) | Max trunk (rad) | Min capture margin (m) | Max COM speed (m/s) | Min contacts |
-|---:|---|---:|---:|---:|---:|---:|
-| 25 kg | **PASS** | 0.9777 | 0.1454 | 0.1077 | 0.0053 | 8 |
-| 60 kg | **FAIL** | 0.0974 | 1.7124 | -1.0386 | 1.7019 | 0 |
-| 140 kg | **FAIL** | 0.0949 | 1.6177 | -1.6618 | 2.4301 | 6 |
-| 170 kg | **FAIL** | 0.1000 | 1.9153 | -1.6496 | 2.5225 | 0 |
-| 300 kg | **FAIL** | 0.0980 | 2.9208 | -1.2673 | 2.2796 | 0 |
+## Production plant and experiment
 
-The result is not being inferred from a single metric. At the failed loads,
-pelvis height, trunk posture, capture margin, COM speed, contact persistence,
-or several of these gates fail together. The traces remained finite; this was
-not a NaN/Inf failure.
+The selected plant is `GAM13_PRODUCTION_PLANT_V1`: the existing 1x production
+load-bearing impedance. The earlier 8x substrate remains diagnostic evidence
+only and was not used to fit this production model.
 
-## Direct visual evidence
+The Unity PlayMode fixture used fresh scenes, the production saddle and feet,
+the fixed 100 Hz simulation, the existing bounded balance loop, and a
+default-zero additive ankle residual solely for test-time excitation. It ran
+two deterministic multisine identification trajectories and two held-out
+validation trajectories at each canonical load. Each trajectory contained 100
+warm-up ticks and 800 excitation ticks. Inputs in the raw CSV are the actual
+post-rate-limit target residuals.
 
-The graphics test ran with a real D3D12 device and **without -nographics**.
-It passed 1/1 and wrote twelve 1280x720 RGB PNGs plus a telemetry sidecar.
-The test result is preserved in
-[visual-test-results.xml](../Evidence/GAM-13/stage-a-visual/visual-test-results.xml).
+Evidence:
 
-### 25 kg — stable standing at 5 s
+- [dynamic identification excitation](../Measurements/GAM-13/dynamic-id-excitation.csv)
+- [dynamic validation trajectories](../Measurements/GAM-13/dynamic-id-validation.csv)
+- [fitted model JSON](../Measurements/GAM-13/dynamic-plant-models.json)
+- [model summary](../Measurements/GAM-13/dynamic-plant-summary.csv)
+- [load transition map](../Measurements/GAM-13/load-transition-map.csv)
+- [reproducible analysis script](../../Tools/Spec/Analyze-GAM13DynamicPlant.py)
 
-![25 kg standing at 5 seconds](../Evidence/GAM-13/stage-a-visual/load-025kg-t0500.png)
+The local ARX/state-space candidate uses state/output coordinates
+`[COM_AP, COM_AP_velocity, COP_AP, capture_AP, trunk_pitch]` and three actual
+applied target residual inputs: ankle, hip, and trunk.
 
-The athlete is upright with both feet planted and the bar held across the
-shoulders. The matching visual telemetry row is: pelvis 0.9778 m, trunk
-pitch 0.1399 rad, capture margin 0.1077 m, 8 contacts, support True.
+## Stage-A standing qualification
 
-### 60 kg — visible collapse sequence
+The current production CLI run used the fixed production plant, no experimental
+impedance override, and fresh scenes at all canonical loads. The fixture holds
+setup for 600 ticks: 100 settle ticks and 500 measured ticks.
 
-![60 kg at 1 second](../Evidence/GAM-13/stage-a-visual/load-060kg-t0100.png)
+| Load | Result | Min pelvis (m) | Max trunk (rad) | Min capture margin (m) | Max COM speed (m/s) | Support |
+|---:|---|---:|---:|---:|---:|---|
+| 25 kg | **PASS** | 0.9777 | 0.1456 | 0.1079 | 0.0059 | retained |
+| 60 kg | **FAIL** | 0.1038 | 2.3943 | -1.3407 | 2.3484 | lost |
+| 140 kg | **FAIL** | 0.0923 | 1.6007 | -1.6603 | 2.3727 | unstable |
+| 170 kg | **FAIL** | 0.1005 | 1.8516 | -1.6647 | 2.4794 | unstable |
+| 300 kg | **FAIL** | 0.0987 | 2.9239 | -1.2651 | 2.2889 | lost |
 
-![60 kg at 2.5 seconds](../Evidence/GAM-13/stage-a-visual/load-060kg-t0250.png)
+The failed cases violate multiple independent gates. Values remain finite; this
+is physical/setup failure, not a numerical NaN/Inf failure.
 
-![60 kg at 5 seconds](../Evidence/GAM-13/stage-a-visual/load-060kg-t0500.png)
+## Solver sensitivity
 
-At 1 s the athlete is already outside the posture gate: trunk pitch is
-0.8786 rad and posture error is 23.66 deg. At 2.5 s the frame shows the
-athlete and bar airborne with zero support contacts; the measured capture
-margin is -0.1388 m. At 5 s the athlete is on the ground with pelvis height
-0.1021 m and trunk pitch 1.5791 rad.
+The diagnostic compared untouched production solver settings—athlete 12/4
+iterations and bar 12/6—with a higher 24/8 setting at 25, 60, and 300 kg.
 
-### 300 kg — immediate deep fold and fall
+| Solver profile | 25 kg | 60 kg | 300 kg |
+|---|---|---|---|
+| Native production | PASS | FAIL | FAIL |
+| Higher 24/8 | PASS | FAIL | FAIL |
 
-![300 kg at 1 second](../Evidence/GAM-13/stage-a-visual/load-300kg-t0100.png)
+The full rows are in
+[solver-sensitivity.csv](../Measurements/GAM-13/solver-sensitivity.csv).
+The diagnostic does not justify permanently increasing solver cost and does not
+explain the heavy-load failure as an iteration-count defect. A smaller
+timestep diagnostic was not promoted because the authoritative 100 Hz timestep
+is a frozen runtime contract.
 
-![300 kg at 5 seconds](../Evidence/GAM-13/stage-a-visual/load-300kg-t0500.png)
+## Dynamic identification results
 
-At 1 s the athlete is visibly folded under the bar: pelvis height is already
-0.7258 m, trunk pitch is 2.8097 rad, posture error is 77.64 deg, and capture
-margin is -0.4855 m. At 2.5 s the measured support count is zero and pelvis
-height is 0.3369 m; by 5 s the pelvis is 0.1050 m from the ground.
+| Load | Identification rows | Validation rows | Classification | Model result |
+|---:|---:|---:|---|---|
+| 25 kg | 1600 | 1600 | `LOCAL_EQUILIBRIUM` | local fit, rejected for robust synthesis |
+| 60 kg | 0 | 0 | `TRANSIENT_LOCAL_RESPONSE` | no valid equilibrium window |
+| 140 kg | 0 | 0 | `TRANSIENT_LOCAL_RESPONSE` | no valid equilibrium window |
+| 170 kg | 0 | 0 | `TRANSIENT_LOCAL_RESPONSE` | no valid equilibrium window |
+| 300 kg | 0 | 0 | `TRANSIENT_LOCAL_RESPONSE` | no valid equilibrium window |
 
-The remaining captured frames are available in the same directory:
+For the 25 kg local model:
 
-| Load | Initial | 1 s | 2.5 s | 5 s |
-|---:|---|---|---|---|
-| 25 kg | [PNG](../Evidence/GAM-13/stage-a-visual/load-025kg-t0000.png) | [PNG](../Evidence/GAM-13/stage-a-visual/load-025kg-t0100.png) | [PNG](../Evidence/GAM-13/stage-a-visual/load-025kg-t0250.png) | [PNG](../Evidence/GAM-13/stage-a-visual/load-025kg-t0500.png) |
-| 60 kg | [PNG](../Evidence/GAM-13/stage-a-visual/load-060kg-t0000.png) | [PNG](../Evidence/GAM-13/stage-a-visual/load-060kg-t0100.png) | [PNG](../Evidence/GAM-13/stage-a-visual/load-060kg-t0250.png) | [PNG](../Evidence/GAM-13/stage-a-visual/load-060kg-t0500.png) |
-| 300 kg | [PNG](../Evidence/GAM-13/stage-a-visual/load-300kg-t0000.png) | [PNG](../Evidence/GAM-13/stage-a-visual/load-300kg-t0100.png) | [PNG](../Evidence/GAM-13/stage-a-visual/load-300kg-t0250.png) | [PNG](../Evidence/GAM-13/stage-a-visual/load-300kg-t0500.png) |
+- one-step held-out RMSE: `0.0003148458` in the mixed state units;
+- 50-tick free multi-step RMSE: `5.5387906569e+41`;
+- maximum absolute row-sum bound of fitted `A`: `11.9168`;
+- local controllability rank: `5/5`;
+- direct measured-state observability rank: `5/5`;
+- stabilizability: **not established**;
+- robust stability over load: **not established**.
 
-The complete frame-by-frame telemetry is in
-[stage-a-visual-telemetry.csv](../Evidence/GAM-13/stage-a-visual/stage-a-visual-telemetry.csv).
-The t=0 trunk value is NaN only because the observation snapshot has not
-been produced before the first physics tick; all evaluated later samples are
-finite.
+The small one-step error is insufficient. The free multi-step validation
+diverges, so the model is retained for diagnosis and rejected for controller
+synthesis. The 5/5 rank result is not a stability proof.
 
-## Discriminating control experiments
+## Why no controller was synthesized
 
-The candidate was not rejected after one failed run. The following bounded
-diagnostics were completed on the same fixed plant:
+The fixed-controller gate requires a validated dynamic model family covering
+the intended standing region. That prerequisite is absent:
 
-| Diagnostic | Result |
+1. The heavy loads have no valid equilibrium data under the selected plant.
+2. The only valid local 25 kg model fails long-horizon held-out prediction.
+3. The existing static 3x/8x experiments were test-only substrates and cannot
+   justify shipping a controller for the 1x production plant.
+4. No quantitative evidence supports gain scheduling, because the scheduled
+   operating regions themselves are not valid dynamic models.
+
+Therefore:
+
+- no fixed controller candidate was promoted;
+- no gain schedule was added;
+- no per-load gain or impedance table was added;
+- no direct force/torque assistance was added;
+- athlete capacity remains separate and uncalibrated;
+- sticking and physical-failure calibration did not start.
+
+## Biomechanics context, used correctly
+
+The human studies below support only qualitative event framing: a successful
+heavy squat can contain a sticking region, and failure is distinguished by the
+absence of later recovery. They do not validate Unity magnitudes, rigid-body
+parameters, actuator capacity, or control stability.
+
+- Larsen, Kristiansen, and van den Tillaar, “New Insights About the Sticking
+  Region in Back Squats,” *Frontiers in Sports and Active Living* 3 (2021),
+  original research, DOI
+  [10.3389/fspor.2021.691459](https://doi.org/10.3389/fspor.2021.691459).
+  Twenty-five recreationally trained lifters performed 3-RM squats; the paper
+  analyzes kinematic/kinetic sticking-region events.
+- van den Tillaar, Andersen, and Sæterbakken, “The Existence of a Sticking
+  Region in Free Weight Squats,” *Journal of Human Kinetics* 42 (2014),
+  original research, DOI
+  [10.2478/hukin-2014-0061](https://doi.org/10.2478/hukin-2014-0061).
+  The sticking region was not present in every participant, so its absence is
+  not itself a model failure.
+- Larsen, Kristiansen, and van den Tillaar, “Effects of Barbell Load on
+  Kinematics, Kinetics, and Myoelectric Activity in Back Squats,” *Sports
+  Biomechanics* (2022), original research, DOI
+  [10.1080/14763141.2022.2085164](https://doi.org/10.1080/14763141.2022.2085164).
+  The 90/100/102% design supports qualitative load ordering and distinguishes
+  successful heavy lifts from failed attempts; it is not a game calibration
+  dataset.
+
+## Control and system-identification references
+
+These are methodological authorities for the report, not evidence about the
+Unity plant:
+
+- Forssell and Ljung, “Closed-loop Identification Revisited,” *Automatica* 35
+  (1999), 1215–1241, original methodological research, DOI
+  [10.1016/S0005-1098(99)00022-9](https://doi.org/10.1016/S0005-1098(99)00022-9).
+  Closed-loop regulation changes the identification problem; the regulator
+  cannot be ignored when interpreting data collected under feedback.
+- Van Overschee and De Moor, “Closed-Loop Subspace System Identification,”
+  *Proceedings of the 36th IEEE Conference on Decision and Control* (1997),
+  original methodological research, DOI
+  [10.1109/CDC.1997.657851](https://doi.org/10.1109/CDC.1997.657851).
+  This is the basis for treating a MIMO closed-loop dataset as a dynamic
+  state-space identification problem rather than a static inverse.
+- Schoukens and Ljung, “Nonlinear System Identification: A User-Oriented Road
+  Map,” *IEEE Control Systems* 39 (2019), 28–99, peer-reviewed methodological
+  roadmap, DOI
+  [10.1109/MCS.2019.2938121](https://doi.org/10.1109/MCS.2019.2938121).
+  It motivates local validity regions, deliberate excitation, and separate
+  validation for nonlinear systems.
+- Doyle, Glover, Khargonekar, and Francis, “State-Space Solutions to Standard
+  H2 and H-infinity Control Problems,” *IEEE Transactions on Automatic
+  Control* 34 (1989), 831–847, primary robust-control theory, DOI
+  [10.1109/9.29425](https://doi.org/10.1109/9.29425).
+  Robust synthesis requires closed-loop stability/performance conditions, not
+  a nonzero static determinant.
+
+No blogs, search-result summaries, or uncited vendor claims are used as
+technical evidence. The full audited bibliography is in
+[GAM-13-top-tier-control-references.md](../Research/GAM-13-top-tier-control-references.md).
+
+## Verification and delivery status
+
+| Gate | Result |
 |---|---|
-| Fixed impedance 2x | 60 and 300 kg still fail; 140/170 kg pass selected diagnostics |
-| Fixed impedance 3x | 60 and 300 kg still fail; 140/170 kg pass selected diagnostics |
-| Fixed impedance 4x and 8x | 60 and 300 kg still fail |
-| COP tracking gains 0.1 through 4 at 60 kg | every tested candidate fails |
-| Posture-guard disabled | fails; guard removal is not the repair |
-| Capture-point blend diagnostic | does not rescue 60/300 kg |
-| Standing spine-bias grid | does not rescue 60 kg |
-| Lower-chain bias candidate | does not restore 60/300 kg support |
-
-The measured balance-plant target-offset-to-COP slopes at the 3x diagnostic
-were approximately 0.462, 0.340, 0.275, 0.262, and 0.186 m/rad at
-25, 60, 140, 170, and 300 kg. This rejects reusing the old 0.20446 m/rad
-constant after the impedance change and shows that a single inverse constant
-is not qualified.
-
-The diagnostic measurements are preserved in
-[Artifacts/Measurements/GAM-13](../Measurements/GAM-13/), including the
-balance identification, equilibrium identification, and gain-search CSVs.
-
-## Changes and invariants
-
-The candidate changes were deliberately bounded:
-
-- equilibrium compensation is a smooth, bounded target-space feedforward;
-- impedance is fixed across loads;
-- athlete capacity is independent of external bar load;
-- dynamic balance remains feedback-only;
-- P1/P2/P3/P4 truth ownership was not changed;
-- no load-threshold script, per-load impedance, per-load balance gain, or
-  load-proportional capacity model was added.
-
-The candidate identifiers are:
-
-~~~text
-GAM13_SQUAT_EQUILIBRIUM_FEEDFORWARD_V1
-GAM13_SQUAT_ATHLETE_CAPACITY_V1
-~~~
-
-The architecture review and decision record are:
-
-- [GAM-13-heavy-load-control-architecture.md](../Research/GAM-13-heavy-load-control-architecture.md)
-- [ADR-GAM13-heavy-load-standing-control.md](../Decisions/ADR-GAM13-heavy-load-standing-control.md)
-
-## Verification status
-
-| Check | Result |
-|---|---|
-| Focused GAM-13 EditMode contract tests | 3/3 passed |
-| Graphics evidence capture | 1/1 passed; 12 PNGs written |
-| git diff --check | passed |
-| MasterSpec hashes/dependencies | passed; no master-spec hash changed |
-| Full final EditMode/PlayMode/performance acceptance | not claimed |
-| GAM-12 post-change lifecycle rerun | not completed because Stage-A is blocked |
-| Capacity/sticking/failure/held-out qualification | not started or not claimed |
+| Focused GAM-13 contract tests | PASS |
+| Dynamic identification PlayMode | PASS |
+| Solver sensitivity diagnostic | PASS |
+| Full EditMode | PASS 215/215 |
+| MasterSpec | PASS: 68 files, hashes/dependencies |
+| Stage-A production standing | 25 PASS; 60/140/170/300 FAIL |
+| Full PlayMode | not run as final acceptance; Stage-A is blocked |
+| Graphics PlayMode | not run in this wave |
+| Performance | not run in this wave |
+| 25 kg lifecycle rerun | not run after this wave; prior GAM-12 baseline remains accepted |
+| Capacity/sticking/failure/held-out calibration | not started |
 | PR/merge | not created |
-| Linear transition | not made; GAM-13 remains In Progress |
 
-## Claim ceiling and next action
+## Final decision
 
-The strongest defensible conclusion is:
+`GAM13_COMPLETION_DECISION=BLOCKED`
 
-> On the fixed candidate plant, bounded load-general equilibrium compensation
-> and load-independent athlete capacity do not currently establish and hold
-> upright supported setup at the canonical heavy loads. The failure occurs
-> before a meaningful attempt and is visually confirmed as a physical
-> posture/support collapse.
-
-The work must remain blocked at Stage A. The next authorized investigation is
-whole-body equilibrium/balance or a rig/contact/topology defect. Capacity
-calibration should not resume from the collapsed traces. No final capacity,
-sticking, supra-max failure, held-out-load, PR, merge, or Linear-completion
-claim is supported by this evidence.
-
+The next authorized decision is architectural: qualify a fixed physical
+substrate capable of establishing loaded equilibrium, or amend/re-scope the
+GAM-13 standing envelope. Until that decision and evidence exist, synthesizing
+or shipping a robust controller would be tuning a symptom rather than proving
+the dynamics.
