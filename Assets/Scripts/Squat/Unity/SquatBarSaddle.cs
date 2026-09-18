@@ -8,6 +8,14 @@ namespace PowerliftingSimulator.Squat.Unity
     public sealed class SquatBarSaddle
     {
         public const string SaddleType = "ConfigurableJoint_UpperBack_Thorax_V1";
+
+        /// <summary>
+        /// Bar/athlete collision topology. V2 applies the bar/non-thorax limb
+        /// filter to the bar Rigidbody's own colliders; V1 enumerated the
+        /// PhysicalBarbell component, found none, and filtered nothing
+        /// (Artifacts/Research/GAM-13-saddle-v2-contact-topology.md).
+        /// </summary>
+        public const string CollisionTopologyVersion = "GAM13_SADDLE_BAR_LIMB_FILTER_V2";
         public const float DefaultLinearLimitM = 0.05f;
         public const float DefaultLinearSpring = 50000f;
         public const float DefaultLinearDamper = 3000f;
@@ -53,6 +61,7 @@ namespace PowerliftingSimulator.Squat.Unity
         public bool ConnectedBodyCollisionEnabled => _joint != null && _joint.enableCollision;
         public int BarThoraxColliderPairCount => _barThoraxColliderPairCount;
         public int BarThoraxIgnoredPairCount => _barThoraxIgnoredPairCount;
+        public int FilteredBarAthletePairCount => _ignoredCollisions.Count;
         public Vector3 AnchorErrorWorld => WorldThoraxAnchor - WorldBarAnchor;
         public Vector3 AnchorErrorBarLocal => _barbell != null && _barbell.Body != null
             ? Quaternion.Inverse(_barbell.Body.rotation) * AnchorErrorWorld
@@ -135,9 +144,11 @@ namespace PowerliftingSimulator.Squat.Unity
             _barThoraxColliderPairCount = 0;
             _barThoraxIgnoredPairCount = 0;
 
-            // Keep the thorax/back contact available and suppress only non-load-bearing
-            // head/limb artifacts. The finite joint remains the coupling authority.
-            Collider[] barColliders = _barbell.GetComponentsInChildren<Collider>(true);
+            // Suppress the non-load-bearing head/limb contacts. The bar's colliders
+            // live on its authoritative Rigidbody root, not under the PhysicalBarbell
+            // component. Bar/thorax contact is left to the joint's enableCollision
+            // (disabled), so the finite joint is the complete bar/back load path.
+            Collider[] barColliders = _barbell.Body.GetComponentsInChildren<Collider>(true);
             Collider[] athleteColliders = _thoraxBody.transform.root.GetComponentsInChildren<Collider>(true);
             foreach (Collider b in barColliders)
             {
