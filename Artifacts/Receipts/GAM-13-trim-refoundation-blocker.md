@@ -31,6 +31,9 @@ Fresh current-HEAD production 1x evidence is in
 
 Historical `stage-a-standing-final.csv` was preserved unchanged; its earlier
 140/170 PASS rows are stale candidate provenance, not current-HEAD evidence.
+The baseline metadata was corrected during audit to the actual source profile:
+athlete solver `28/1`, bar solver `12/6`. The prior `12/4` athlete metadata was
+incorrect; no measured physics row changed.
 
 ## Static trim result
 

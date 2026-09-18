@@ -44,6 +44,13 @@ damped Householder QR least-squares, deterministic damping retries, maximum
 per-iteration step 3 degrees, residual tolerance 0.25 RMS, and no random
 search. The continuation grid was fixed before evaluation:
 
+The actual production solver profile during these runs was athlete `28/1`
+position/velocity iterations and barbell `12/6`. The earlier baseline artifact
+metadata that said athlete `12/4` was corrected after source audit. The older
+solver-sensitivity experiment labelled `24/8` as “higher” is not a clean
+higher-iteration comparison against the current `28/1` production profile;
+its conclusion is not used here.
+
 ```text
 25, 35, 45, 55, 60, 70, 85, 105, 125, 140, 155, 170, 200, 230, 260, 300 kg
 ```
