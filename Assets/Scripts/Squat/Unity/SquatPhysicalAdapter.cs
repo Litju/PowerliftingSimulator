@@ -172,6 +172,13 @@ namespace PowerliftingSimulator.Squat.Unity
         /// </summary>
         public float? AnkleSagittalOffsetOverrideRad { get; set; }
 
+        /// <summary>
+        /// Test-time target residual. The default is zero, so gameplay keeps
+        /// the established balance command. Identification may add a bounded
+        /// residual without replacing the stabilizing balance loop.
+        /// </summary>
+        public float AnkleSagittalOffsetAdditiveRad { get; set; }
+
         public void SetFootContactDetectors(
             PhysicalFootContactDetector leftFoot,
             PhysicalFootContactDetector rightFoot)
@@ -239,6 +246,7 @@ namespace PowerliftingSimulator.Squat.Unity
             _mlComError = 0f;
             _balanceCorrectionRad = 0f;
             _mlBalanceCorrectionRad = 0f;
+            AnkleSagittalOffsetAdditiveRad = 0f;
             _isCorrectionSaturated = false;
             _isDriveSaturated = false;
             _maxDriveSaturation = 0f;
@@ -380,7 +388,8 @@ namespace PowerliftingSimulator.Squat.Unity
             Quaternion abdomenGravityBias = SagittalAndFrontal(abdomenPreload, 0f);
             Quaternion thoraxGravityBias = SagittalAndFrontal(thoraxPreload, 0f);
 
-            float ankleSagittalOffset = AnkleSagittalOffsetOverrideRad ?? _balanceController.AnkleSagittalOffsetRad;
+            float ankleSagittalOffset = (AnkleSagittalOffsetOverrideRad ?? _balanceController.AnkleSagittalOffsetRad) +
+                AnkleSagittalOffsetAdditiveRad;
             Quaternion ankleBalance = SagittalAndFrontal(
                 ankleSagittalOffset,
                 _balanceController.AnkleFrontalOffsetRad);
