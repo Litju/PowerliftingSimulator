@@ -1,0 +1,16 @@
+load_kg,profile,intervention,window,samples,window_end_tick,bar_mass_kg,contact_impulse_sign,contact_sign_votes,contact_radial_cosine_p50,bar_support_vertical_over_weight_p50,arm_contact_normal_vertical_over_weight_p50,joint_plus_friction_vertical_over_weight_p50,friction_bound_over_weight_p50,joint_vertical_share_p50,joint_share_low_p50,joint_share_high_p50,joint_share_low_p05,joint_share_high_p95,quasi_static_samples,drive_realized_stiffness_fraction_p50,engine_force_nonzero_ticks,engine_force_nonzero_at_linear_limit,attached_samples
+140,p28-v1,production,v1,12,22,140,1,0,NA,1.46835,0,1.46835,0,1,1,1,1,1,0,NA,0,0,185
+140,p28-v1,production,pre_gross,41,51,140,1,0,NA,0.927787,0,0.927787,0,1,1,1,1,1,1,0.892309,0,0,185
+140,p28-v1,production,attached,185,601,140,1,0,NA,0.942507,0,0.942507,0,1,1,1,1,1,17,1.04702,0,0,185
+170,p28-v1,production,v1,0,1,170,1,0,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,0,NA,0,0,170
+170,p28-v1,production,pre_gross,35,45,170,1,0,NA,0.848734,0,0.848734,0,1,1,1,1,1,2,0.906907,0,0,170
+170,p28-v1,production,attached,170,601,170,1,0,NA,0.886052,0,0.886052,0,1,1,1,1,1,12,1.0822,0,0,170
+25,p28-v1,production,v1,591,601,25,1,0,NA,1.00238,0,1.00238,0,1,1,1,1,1,567,0.944687,0,0,599
+25,p28-v1,production,pre_gross,591,601,25,1,0,NA,1.00238,0,1.00238,0,1,1,1,1,1,567,0.944687,0,0,599
+25,p28-v1,production,attached,599,601,25,1,0,NA,1.00253,0,1.00253,0,1,1,1,1,1,567,0.944687,0,0,599
+300,p28-v1,production,v1,0,1,300,1,0,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,0,NA,62,62,130
+300,p28-v1,production,pre_gross,24,34,300,1,0,NA,0.919142,0,0.919142,0,1,1,1,1,1,0,NA,62,62,130
+300,p28-v1,production,attached,130,601,300,1,0,NA,0.879807,0,0.879807,0,1,1,1,1,1,0,NA,62,62,130
+60,p28-v1,production,v1,37,47,60,1,0,NA,1.02605,0,1.02605,0,1,1,1,1,1,26,0.992615,0,0,599
+60,p28-v1,production,pre_gross,591,601,60,1,0,NA,1.00169,0,1.00169,0,1,1,1,1,1,580,0.974718,0,0,599
+60,p28-v1,production,attached,599,601,60,1,0,NA,1.00169,0,1.00169,0,1,1,1,1,1,580,0.974718,0,0,599

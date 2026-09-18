@@ -570,7 +570,7 @@ namespace PowerliftingSimulator.Tests
             "break_force_n,break_torque_nm,mass_scale,connected_mass_scale,linear_limit_m,linear_limit_spring," +
             "linear_drive_spring,linear_drive_damper,linear_drive_max_force,angular_x_low_deg,angular_x_high_deg," +
             "angular_y_deg,angular_z_deg,angular_drive_spring,angular_drive_damper,angular_drive_max_force," +
-            "initial_anchor_error_m,initial_relative_qx,initial_relative_qy,initial_relative_qz,initial_relative_qw," +
+            "saddle_collision_topology,saddle_filtered_bar_athlete_pairs,initial_anchor_error_m,initial_relative_qx,initial_relative_qy,initial_relative_qz,initial_relative_qw," +
             "bar_solver_position,bar_solver_velocity,thorax_solver_position,thorax_solver_velocity,static_linear_deflection_at_spring_m";
 
         private string TopologyRow(float loadKg, SquatBarSaddle saddle)
@@ -620,6 +620,7 @@ namespace PowerliftingSimulator.Tests
                 joint.yDrive.positionSpring, joint.yDrive.positionDamper, joint.yDrive.maximumForce,
                 joint.lowAngularXLimit.limit, joint.highAngularXLimit.limit, joint.angularYLimit.limit, joint.angularZLimit.limit,
                 joint.angularXDrive.positionSpring, joint.angularXDrive.positionDamper, joint.angularXDrive.maximumForce,
+                SquatBarSaddle.CollisionTopologyVersion, saddle.FilteredBarAthletePairCount,
                 saddle.InitialAnchorErrorMeters, initial.x, initial.y, initial.z, initial.w,
                 saddle.Barbell.Body.solverIterations, saddle.Barbell.Body.solverVelocityIterations,
                 saddle.ThoraxBody.solverIterations, saddle.ThoraxBody.solverVelocityIterations,

@@ -369,7 +369,7 @@ namespace PowerliftingSimulator.Tests
         {
             string text = Environment.GetEnvironmentVariable("GAM13_TRIM_IMPEDANCE") ?? "1";
             return Mathf.Abs(float.Parse(text, CultureInfo.InvariantCulture) - 1f) <= 1e-6f
-                ? "GAM13_PRODUCTION_PLANT_V1"
+                ? "GAM13_PRODUCTION_PLANT_V2_" + SquatBarSaddle.CollisionTopologyVersion
                 : "GAM13_STATIC_TRIM_DIAGNOSTIC_IMPEDANCE_X" + text;
         }
 
@@ -395,7 +395,10 @@ namespace PowerliftingSimulator.Tests
             IReadOnlyList<HoldRow> holds,
             IReadOnlyList<ClassificationRow> classifications)
         {
-            string directory = Path.Combine(Directory.GetCurrentDirectory(), "Artifacts/Measurements/GAM-13");
+            string configured = Environment.GetEnvironmentVariable("GAM13_TRIM_OUTPUT_DIR");
+            string directory = string.IsNullOrWhiteSpace(configured)
+                ? Path.Combine(Directory.GetCurrentDirectory(), "Artifacts/Measurements/GAM-13")
+                : configured;
             Directory.CreateDirectory(directory);
             string suffix = ArtifactSuffix();
             WriteRows(Path.Combine(directory, "trim-continuation-search" + suffix + ".csv"), TrimRow.Header, continuation);

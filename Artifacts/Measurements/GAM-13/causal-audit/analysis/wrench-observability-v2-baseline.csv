@@ -1,0 +1,6 @@
+load_kg,profile,intervention,reported_contacts,tangential_to_normal_max,tangential_reported,window_end,samples,vertical_force_rel_error_p50,vertical_force_rel_error_p95,cop_error_m_p50,cop_error_m_p95,validated,infeasible_normal,infeasible_friction,infeasible_cop,verdict
+140,p28-v1,production,3066,0,false,51,41,0.00150212,0.00189785,0.000599512,0.00527572,true,0,0,0,NECESSARY_CONDITIONS_EVALUATED
+170,p28-v1,production,3688,0,false,45,35,0.00173658,0.00251637,0.000861622,0.00601944,true,0,0,0,NECESSARY_CONDITIONS_EVALUATED
+25,p28-v1,production,4776,0,false,601,591,0.000379123,0.000389806,0.000701634,0.000810156,true,0,0,0,NECESSARY_CONDITIONS_EVALUATED
+300,p28-v1,production,2553,0,false,34,24,0.00272767,0.00480256,0.004759,0.00671808,true,0,0,0,NECESSARY_CONDITIONS_EVALUATED
+60,p28-v1,production,4763,0,false,601,591,0.000372339,0.00052717,0.000986955,0.00119207,true,0,0,0,NECESSARY_CONDITIONS_EVALUATED
