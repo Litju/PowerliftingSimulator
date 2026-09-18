@@ -28,8 +28,12 @@ namespace PowerliftingSimulator.Squat.Unity
         private readonly Rigidbody _thoraxBody;
         private readonly List<CollisionIgnorePair> _ignoredCollisions = new List<CollisionIgnorePair>();
         private ConfigurableJoint _joint;
+        private SquatBarThoraxContactDetector _thoraxContactDetector;
         private bool _explicitlyBroken;
         private float _initialAnchorErrorM;
+        private Quaternion _initialRelativeBarToThorax;
+        private int _barThoraxColliderPairCount;
+        private int _barThoraxIgnoredPairCount;
 
         public SquatBarSaddle(PhysicalBarbell barbell, Rigidbody thoraxBody)
         {
@@ -45,6 +49,36 @@ namespace PowerliftingSimulator.Squat.Unity
         public bool IsBroken => !IsAttached || SaddleSeparationMeters > MaxPlausibleSeparationM;
         public float InitialAnchorErrorMeters => _initialAnchorErrorM;
         public bool SpawnAlignmentWithinTolerance => _initialAnchorErrorM <= MaxSpawnAnchorErrorM;
+        public SquatBarThoraxContactDetector ThoraxContact => _thoraxContactDetector;
+        public bool ConnectedBodyCollisionEnabled => _joint != null && _joint.enableCollision;
+        public int BarThoraxColliderPairCount => _barThoraxColliderPairCount;
+        public int BarThoraxIgnoredPairCount => _barThoraxIgnoredPairCount;
+        public Vector3 AnchorErrorWorld => WorldThoraxAnchor - WorldBarAnchor;
+        public Vector3 AnchorErrorBarLocal => _barbell != null && _barbell.Body != null
+            ? Quaternion.Inverse(_barbell.Body.rotation) * AnchorErrorWorld
+            : Vector3.zero;
+        /// <summary>
+        /// Raw ConfigurableJoint.currentForce/currentTorque diagnostics. The
+        /// engine frame/interpretation is intentionally not promoted here to
+        /// a biological or world-space force claim.
+        /// </summary>
+        public Vector3 CurrentForceEngine => _joint == null ? Vector3.zero : _joint.currentForce;
+        public Vector3 CurrentTorqueEngine => _joint == null ? Vector3.zero : _joint.currentTorque;
+        public float CurrentLinearLimitOccupancy => _joint == null || _joint.linearLimit.limit <= 0f
+            ? float.NaN
+            : AnchorErrorWorld.magnitude / _joint.linearLimit.limit;
+        public float CurrentAngularXLimitOccupancy => AngularLimitOccupancy(AxisComponent.X);
+        public float CurrentAngularYLimitOccupancy => AngularLimitOccupancy(AxisComponent.Y);
+        public float CurrentAngularZLimitOccupancy => AngularLimitOccupancy(AxisComponent.Z);
+        public float MaximumLimitOccupancy => Mathf.Max(
+            CurrentLinearLimitOccupancy,
+            Mathf.Max(CurrentAngularXLimitOccupancy, Mathf.Max(CurrentAngularYLimitOccupancy, CurrentAngularZLimitOccupancy)));
+        public bool AtFiniteLimit =>
+            float.IsFinite(MaximumLimitOccupancy) && MaximumLimitOccupancy >= 0.95f;
+        public float BarMassKg => _barbell == null || _barbell.Body == null ? float.NaN : _barbell.Body.mass;
+        public float ThoraxMassKg => _thoraxBody == null ? float.NaN : _thoraxBody.mass;
+        public float BarToThoraxMassRatio =>
+            float.IsFinite(BarMassKg) && ThoraxMassKg > 0f ? BarMassKg / ThoraxMassKg : float.NaN;
 
         public float SaddleSeparationMeters
         {
@@ -81,6 +115,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 UnityEngine.Object.DestroyImmediate(_joint);
                 _joint = null;
             }
+            _thoraxContactDetector?.Unbind();
         }
 
         private void AttachJoint()
@@ -95,6 +130,10 @@ namespace PowerliftingSimulator.Squat.Unity
             _initialAnchorErrorM = Vector3.Distance(
                 _barbell.Body.transform.TransformPoint(BarLocalAnchor),
                 _thoraxBody.transform.TransformPoint(ThoraxLocalAnchor));
+            _initialRelativeBarToThorax = Quaternion.Inverse(_barbell.Body.rotation) * _thoraxBody.rotation;
+
+            _barThoraxColliderPairCount = 0;
+            _barThoraxIgnoredPairCount = 0;
 
             // Keep the thorax/back contact available and suppress only non-load-bearing
             // head/limb artifacts. The finite joint remains the coupling authority.
@@ -110,6 +149,24 @@ namespace PowerliftingSimulator.Squat.Unity
                     _ignoredCollisions.Add(new CollisionIgnorePair(b, a));
                 }
             }
+
+            Collider[] thoraxColliders = _thoraxBody.GetComponents<Collider>();
+            foreach (Collider b in barColliders)
+            {
+                foreach (Collider a in thoraxColliders)
+                {
+                    if (b == null || a == null)
+                        continue;
+                    _barThoraxColliderPairCount++;
+                    if (Physics.GetIgnoreCollision(b, a))
+                        _barThoraxIgnoredPairCount++;
+                }
+            }
+
+            _thoraxContactDetector = _thoraxBody.GetComponent<SquatBarThoraxContactDetector>();
+            if (_thoraxContactDetector == null)
+                _thoraxContactDetector = _thoraxBody.gameObject.AddComponent<SquatBarThoraxContactDetector>();
+            _thoraxContactDetector.Bind(_barbell.Body);
 
             _joint = _barbell.Body.gameObject.AddComponent<ConfigurableJoint>();
             _joint.connectedBody = _thoraxBody;
@@ -162,6 +219,65 @@ namespace PowerliftingSimulator.Squat.Unity
             _joint.enablePreprocessing = true;
 
             _explicitlyBroken = false;
+        }
+
+        public void CompleteContactStep() => _thoraxContactDetector?.CompletePhysicsStep();
+
+        private enum AxisComponent : byte
+        {
+            X,
+            Y,
+            Z
+        }
+
+        private float AngularLimitOccupancy(AxisComponent component)
+        {
+            if (_joint == null)
+                return float.NaN;
+
+            float limitDegrees;
+            switch (component)
+            {
+                case AxisComponent.X:
+                    limitDegrees = Mathf.Max(Mathf.Abs(_joint.lowAngularXLimit.limit), Mathf.Abs(_joint.highAngularXLimit.limit));
+                    break;
+                case AxisComponent.Y:
+                    limitDegrees = Mathf.Abs(_joint.angularYLimit.limit);
+                    break;
+                default:
+                    limitDegrees = Mathf.Abs(_joint.angularZLimit.limit);
+                    break;
+            }
+            if (limitDegrees <= 0f)
+                return 0f;
+
+            Quaternion currentRelative = Quaternion.Inverse(_barbell.Body.rotation) * _thoraxBody.rotation;
+            Quaternion delta = Quaternion.Inverse(_initialRelativeBarToThorax) * currentRelative;
+            Vector3 rotationVector = QuaternionLog(delta);
+            Vector3 xAxis = _joint.axis.normalized;
+            Vector3 yAxis = _joint.secondaryAxis.normalized;
+            Vector3 zAxis = Vector3.Cross(xAxis, yAxis).normalized;
+            float componentRadians = component == AxisComponent.X
+                ? Vector3.Dot(rotationVector, xAxis)
+                : component == AxisComponent.Y
+                    ? Vector3.Dot(rotationVector, yAxis)
+                    : Vector3.Dot(rotationVector, zAxis);
+            return Mathf.Abs(componentRadians) * Mathf.Rad2Deg / limitDegrees;
+        }
+
+        private static Vector3 QuaternionLog(Quaternion value)
+        {
+            float magnitude = Mathf.Sqrt(value.x * value.x + value.y * value.y + value.z * value.z + value.w * value.w);
+            if (magnitude <= 1e-6f)
+                return Vector3.zero;
+            value = new Quaternion(value.x / magnitude, value.y / magnitude, value.z / magnitude, value.w / magnitude);
+            if (value.w < 0f)
+                value = new Quaternion(-value.x, -value.y, -value.z, -value.w);
+            float vectorMagnitude = Mathf.Sqrt(value.x * value.x + value.y * value.y + value.z * value.z);
+            if (vectorMagnitude <= 1e-6f)
+                return new Vector3(value.x, value.y, value.z) * 2f;
+            float angle = 2f * Mathf.Atan2(vectorMagnitude, Mathf.Clamp(value.w, -1f, 1f));
+            return new Vector3(value.x, value.y, value.z) * (angle / vectorMagnitude);
         }
 
         private readonly struct CollisionIgnorePair

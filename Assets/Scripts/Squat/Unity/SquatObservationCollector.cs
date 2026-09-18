@@ -94,6 +94,7 @@ namespace PowerliftingSimulator.Squat.Unity
             _rig.PoweredController.CapturePostPhysicsDiagnostics();
             _leftFoot?.CompletePhysicsStep();
             _rightFoot?.CompletePhysicsStep();
+            _adapter.Saddle?.CompleteContactStep();
             float stepSeconds = (float)time.FixedDeltaTimeSeconds;
             _leftFoot?.PhysicsTickUpdate(stepSeconds);
             _rightFoot?.PhysicsTickUpdate(stepSeconds);
