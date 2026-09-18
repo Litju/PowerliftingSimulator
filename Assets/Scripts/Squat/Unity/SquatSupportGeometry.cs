@@ -7,6 +7,11 @@ namespace PowerliftingSimulator.Squat.Unity
     /// <summary>
     /// Diagnostic geometry for the same plantar contact points used by the
     /// balance observer. It does not participate in control or failure truth.
+    ///
+    /// Points are projected to the support plane as (ML = world x, AP = world z).
+    /// Margins are exact signed Euclidean distances to the region boundary:
+    /// positive inside, negative outside. The AP-only margin reproduces the
+    /// production capture-margin proxy, which ignores ML extent.
     /// </summary>
     public static class SquatSupportGeometry
     {
@@ -19,7 +24,9 @@ namespace PowerliftingSimulator.Squat.Unity
                 float hullAreaM2,
                 bool aabbContainsQuery,
                 bool hullContainsQuery,
-                float hullSignedMarginM)
+                float hullSignedMarginM,
+                float aabbSignedMarginM,
+                float aabbApSignedMarginM)
             {
                 ContactCount = contactCount;
                 HullPointCount = hullPointCount;
@@ -28,6 +35,8 @@ namespace PowerliftingSimulator.Squat.Unity
                 AabbContainsQuery = aabbContainsQuery;
                 HullContainsQuery = hullContainsQuery;
                 HullSignedMarginM = hullSignedMarginM;
+                AabbSignedMarginM = aabbSignedMarginM;
+                AabbApSignedMarginM = aabbApSignedMarginM;
             }
 
             public int ContactCount { get; }
@@ -37,9 +46,11 @@ namespace PowerliftingSimulator.Squat.Unity
             public bool AabbContainsQuery { get; }
             public bool HullContainsQuery { get; }
             public float HullSignedMarginM { get; }
+            public float AabbSignedMarginM { get; }
+            public float AabbApSignedMarginM { get; }
         }
 
-        public static Measurement Measure(IReadOnlyList<Vector3> contacts, Vector2 queryApMl)
+        public static Measurement Measure(IReadOnlyList<Vector3> contacts, Vector2 queryMlAp)
         {
             if (contacts == null)
                 throw new ArgumentNullException(nameof(contacts));
@@ -52,8 +63,8 @@ namespace PowerliftingSimulator.Squat.Unity
                     points.Add(new Vector2(point.x, point.z));
             }
 
-            if (points.Count == 0)
-                return new Measurement(0, 0, float.NaN, float.NaN, false, false, float.NaN);
+            if (points.Count == 0 || !float.IsFinite(queryMlAp.x) || !float.IsFinite(queryMlAp.y))
+                return new Measurement(points.Count, 0, float.NaN, float.NaN, false, false, float.NaN, float.NaN, float.NaN);
 
             points.Sort(ComparePoints);
             RemoveDuplicatePoints(points);
@@ -71,12 +82,14 @@ namespace PowerliftingSimulator.Squat.Unity
                 maxZ = Mathf.Max(maxZ, point.y);
             }
 
-            var hull = BuildHull(points);
+            List<Vector2> hull = BuildHull(points);
             float hullArea = PolygonArea(hull);
-            bool aabbContains = queryApMl.x >= minX - 1e-6f && queryApMl.x <= maxX + 1e-6f &&
-                queryApMl.y >= minZ - 1e-6f && queryApMl.y <= maxZ + 1e-6f;
-            bool hullContains = hull.Count >= 3 && ContainsConvexPolygon(hull, queryApMl);
-            float signedMargin = hull.Count >= 3 ? SignedMargin(hull, queryApMl) : float.NaN;
+            bool aabbContains = queryMlAp.x >= minX - 1e-6f && queryMlAp.x <= maxX + 1e-6f &&
+                queryMlAp.y >= minZ - 1e-6f && queryMlAp.y <= maxZ + 1e-6f;
+            bool hullContains = hull.Count >= 3 && ContainsConvexPolygon(hull, queryMlAp);
+            float hullMargin = SignedDistanceToHull(hull, queryMlAp, hullContains);
+            float aabbMargin = SignedDistanceToRectangle(minX, maxX, minZ, maxZ, queryMlAp);
+            float aabbApMargin = Mathf.Min(queryMlAp.y - minZ, maxZ - queryMlAp.y);
 
             return new Measurement(
                 points.Count,
@@ -85,7 +98,9 @@ namespace PowerliftingSimulator.Squat.Unity
                 hullArea,
                 aabbContains,
                 hullContains,
-                signedMargin);
+                hullMargin,
+                aabbMargin,
+                aabbApMargin);
         }
 
         private static int ComparePoints(Vector2 left, Vector2 right)
@@ -158,19 +173,44 @@ namespace PowerliftingSimulator.Squat.Unity
             return true;
         }
 
-        private static float SignedMargin(List<Vector2> polygon, Vector2 point)
+        /// <summary>
+        /// Exact signed distance to a counter-clockwise convex hull. A hull with
+        /// fewer than three vertices has no interior, so the query is outside
+        /// by its distance to the point or segment.
+        /// </summary>
+        private static float SignedDistanceToHull(List<Vector2> hull, Vector2 point, bool inside)
         {
-            float margin = float.PositiveInfinity;
-            for (int index = 0; index < polygon.Count; index++)
-            {
-                Vector2 a = polygon[index];
-                Vector2 b = polygon[(index + 1) % polygon.Count];
-                float length = Vector2.Distance(a, b);
-                if (length <= 1e-6f)
-                    continue;
-                margin = Mathf.Min(margin, Cross(a, b, point) / length);
-            }
-            return float.IsPositiveInfinity(margin) ? float.NaN : margin;
+            if (hull.Count == 0)
+                return float.NaN;
+            if (hull.Count == 1)
+                return -Vector2.Distance(hull[0], point);
+
+            float nearest = float.PositiveInfinity;
+            int edges = hull.Count == 2 ? 1 : hull.Count;
+            for (int index = 0; index < edges; index++)
+                nearest = Mathf.Min(nearest, DistanceToSegment(hull[index], hull[(index + 1) % hull.Count], point));
+            return inside && hull.Count >= 3 ? nearest : -nearest;
+        }
+
+        private static float DistanceToSegment(Vector2 a, Vector2 b, Vector2 point)
+        {
+            Vector2 ab = b - a;
+            float lengthSquared = ab.sqrMagnitude;
+            if (lengthSquared <= 1e-12f)
+                return Vector2.Distance(a, point);
+            float t = Mathf.Clamp01(Vector2.Dot(point - a, ab) / lengthSquared);
+            return Vector2.Distance(a + t * ab, point);
+        }
+
+        private static float SignedDistanceToRectangle(float minX, float maxX, float minZ, float maxZ, Vector2 point)
+        {
+            float dx = Mathf.Max(minX - point.x, point.x - maxX);
+            float dz = Mathf.Max(minZ - point.y, point.y - maxZ);
+            if (dx <= 0f && dz <= 0f)
+                return -Mathf.Max(dx, dz);
+            float outsideX = Mathf.Max(dx, 0f);
+            float outsideZ = Mathf.Max(dz, 0f);
+            return -Mathf.Sqrt(outsideX * outsideX + outsideZ * outsideZ);
         }
     }
 }

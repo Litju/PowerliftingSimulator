@@ -251,9 +251,9 @@ namespace PowerliftingSimulator.Squat.Unity
             if (limitDegrees <= 0f)
                 return 0f;
 
-            Quaternion currentRelative = Quaternion.Inverse(_barbell.Body.rotation) * _thoraxBody.rotation;
-            Quaternion delta = Quaternion.Inverse(_initialRelativeBarToThorax) * currentRelative;
-            Vector3 rotationVector = QuaternionLog(delta);
+            // The joint axes are authored in the bar (joint-owner) frame, so the
+            // deviation from the creation-time relative pose is expressed there.
+            Vector3 rotationVector = QuaternionLog(RelativeDeviationBarFrame());
             Vector3 xAxis = _joint.axis.normalized;
             Vector3 yAxis = _joint.secondaryAxis.normalized;
             Vector3 zAxis = Vector3.Cross(xAxis, yAxis).normalized;
@@ -263,6 +263,22 @@ namespace PowerliftingSimulator.Squat.Unity
                     ? Vector3.Dot(rotationVector, yAxis)
                     : Vector3.Dot(rotationVector, zAxis);
             return Mathf.Abs(componentRadians) * Mathf.Rad2Deg / limitDegrees;
+        }
+
+        /// <summary>
+        /// Total thorax-relative bar rotation since the joint was created, in
+        /// degrees. Diagnostic only; it is independent of axis decomposition.
+        /// </summary>
+        public float RelativeRotationDegrees => _joint == null || _barbell.Body == null || _thoraxBody == null
+            ? float.NaN
+            : QuaternionLog(RelativeDeviationBarFrame()).magnitude * Mathf.Rad2Deg;
+
+        public Quaternion InitialRelativeBarToThorax => _initialRelativeBarToThorax;
+
+        private Quaternion RelativeDeviationBarFrame()
+        {
+            Quaternion currentRelative = Quaternion.Inverse(_barbell.Body.rotation) * _thoraxBody.rotation;
+            return currentRelative * Quaternion.Inverse(_initialRelativeBarToThorax);
         }
 
         private static Vector3 QuaternionLog(Quaternion value)

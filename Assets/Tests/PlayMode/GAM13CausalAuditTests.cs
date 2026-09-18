@@ -17,81 +17,177 @@ using UnityEngine.TestTools;
 namespace PowerliftingSimulator.Tests
 {
     /// <summary>
-    /// Deterministic GAM-13 causal audit. This is evidence tooling only: it
-    /// holds the production setup pose, records each post-physics tick, and
-    /// never changes targets, capacities, contact modes, or outcomes.
+    /// Deterministic GAM-13 causal audit. Evidence tooling only: it holds the
+    /// production SETUP reference, records one row per post-physics tick, and
+    /// never changes targets, capacities, contact modes, or outcomes. The
+    /// only permitted plant changes are the explicitly named solver profile
+    /// and at most one environment-selected single-property intervention.
+    ///
+    /// Onset predicates are frozen in GAM13_CAUSAL_ONSET_PREDICATES_V1
+    /// (Artifacts/Research/GAM-13-causal-onset-predicates.md) and were
+    /// committed before any trace from this fixture was interpreted.
     /// </summary>
     public sealed class GAM13CausalAuditTests
     {
-        private const string QualificationScene = "SquatPhysicalPrototype";
-        private const int AuditTicks = 500;
-        private const int ConsecutiveTicks = 3;
-        private const float AuthorityThreshold = 0.95f;
-        private const float TrackingThresholdRad = 0.17453292f;
-        private const float PostureTrunkThresholdRad = 0.70f;
-        private const float PosturePelvisThresholdM = 0.90f;
-        private const float CaptureMarginThresholdM = 0.01f;
-        private const float SaddleSeparationThresholdM = 0.05f;
-        private const float SaddleLimitThreshold = 0.95f;
-        private const float FootSlipThresholdMps = 0.05f;
-        private const string WrenchFeasibility = "NOT_OBSERVABLE";
+        public const string PredicateVersion = "GAM13_CAUSAL_ONSET_PREDICATES_V1";
 
-        private static readonly float[] AuditLoadsKg = { 25f, 60f, 300f };
+        private const string QualificationScene = "SquatPhysicalPrototype";
+        private const int AuditTicks = 600;
+        private const int StageASettleTicks = 100;
+        private const int ConsecutiveTicks = 3;
+
+        // GAM13_CAUSAL_ONSET_PREDICATES_V1. Existing contracts are reused
+        // where one exists; DriveHighDemand and GuardWithdrawalScale are the
+        // only new diagnostic thresholds.
+        private const float DriveHighDemand = 0.50f;
+        private const float DriveSaturationDemand = PoweredJointController.ModeledDemandSaturationThreshold;
+        private const float TrackingFailureRad = 10f * Mathf.Deg2Rad;
+        private const float PostureJointErrorRad = 10f * Mathf.Deg2Rad;
+        private const float PostureTrunkPitchRad = 0.70f;
+        private const float PosturePelvisHeightM = 0.90f;
+        private const float CaptureMarginM = 0.01f;
+        private const float SaddleLinearOccupancy = 0.95f;
+        private const float FootSlipMps = 0.05f;
+        private const float GuardWithdrawalScale = 0.50f;
+
+        // Stage-A standing contract, reproduced only for classification parity.
+        private const float StageAMaxComSpeedMps = 0.25f;
+        private const float StageAMaxFootPitchDeg = 12f;
+        private const float StageAMaxSaturationFraction = 0.05f;
+        private const float StageAMaxPostureErrorDeg = 10f;
+        private const float StageAMaxLimitProximity = 0.95f;
+        private const float StageAMaxSaddleSeparationM = 0.05f;
+
+        private const int ProductionBarPositionIterations = 12;
+        private const int ProductionBarVelocityIterations = 6;
+
+        private static readonly float[] CoreLoadsKg = { 25f, 60f, 300f };
+        private static readonly float[] TopologyLoadsKg = { 25f, 60f, 140f, 170f, 300f };
         private static readonly int[] VelocityProfiles = { 1, 4, 8 };
-        private static readonly int[] PositionProfiles = { 16, 28, 40 };
-        private static readonly string[] CausalJointIds =
+        private static readonly int[] PositionProfiles = { 28, 32, 40 };
+
+        private static readonly string[] LoadBearingJointIds =
         {
-            "abdomen", "thorax", "head_neck",
-            "left_upper_arm", "right_upper_arm", "left_forearm", "right_forearm",
-            "left_hand", "right_hand",
-            "left_thigh", "right_thigh", "left_shank", "right_shank",
-            "left_foot", "right_foot"
+            "left_foot", "right_foot", "left_shank", "right_shank",
+            "left_thigh", "right_thigh", "abdomen", "thorax"
         };
+
+        private static readonly string[] PoweredJointIds =
+        {
+            "left_foot", "right_foot", "left_shank", "right_shank",
+            "left_thigh", "right_thigh", "abdomen", "thorax", "head_neck",
+            "left_upper_arm", "right_upper_arm", "left_forearm", "right_forearm",
+            "left_hand", "right_hand"
+        };
+
+        /// <summary>Canonical events in declaration order.</summary>
+        public static readonly string[] CanonicalEvents =
+        {
+            "DRIVE_HIGH", "DRIVE_SATURATION", "TRACKING_FAILURE", "POSTURE_DEPARTURE",
+            "CAPTURE_DEPARTURE", "SUPPORT_LOSS", "SADDLE_LINEAR_LIMIT", "SADDLE_GROSS_FAILURE",
+            "CONTACT_MODE_CHANGE"
+        };
+
+        /// <summary>Supplementary decompositions; never used for the canonical order.</summary>
+        public static readonly string[] SupplementaryEvents =
+        {
+            "POSTURE_JOINT_ERROR", "POSTURE_GROSS", "GUARD_WITHDRAWAL", "CAPTURE_DEPARTURE_HULL",
+            "COM_OUTSIDE_HULL", "FOOT_LIFT", "FOOT_SLIP", "PLANTAR_COUNT_CHANGE",
+            "BAR_THORAX_CONTACT", "BAR_ATHLETE_CONTACT", "NONPLANTAR_GROUND_CONTACT", "SADDLE_ANGULAR_LIMIT"
+        };
+
         private FoundationBootstrap _bootstrap;
         private PhysicalAthleteRig _rig;
         private SquatPhysicalPrototypeController _controller;
+        private readonly Dictionary<string, GAM13GroundContactProbe> _probes =
+            new Dictionary<string, GAM13GroundContactProbe>(StringComparer.Ordinal);
 
         [UnityTest]
-        [Explicit("GAM-13 causal telemetry and orthogonal velocity-iteration audit.")]
-        public IEnumerator GAM13_CAUSAL_AUDIT_BASELINE_AND_VELOCITY_SENSITIVITY()
+        [Explicit("GAM-13 production-profile causal baseline and bar/back topology at the canonical loads.")]
+        public IEnumerator GAM13_CAUSAL_AUDIT_BASELINE_AND_TOPOLOGY()
         {
-            string directory = MeasurementDirectory;
-            Directory.CreateDirectory(directory);
-            File.WriteAllText(Path.Combine(directory, "causal-audit-thresholds.md"), ThresholdDocument());
-
-            var summaries = new List<AuditResult>(AuditLoadsKg.Length * VelocityProfiles.Length);
-            foreach (int velocityIterations in VelocityProfiles)
+            WriteText("causal-onset-predicates.txt", PredicateDocument());
+            var summaries = new List<AuditResult>();
+            var topology = new StringBuilder();
+            topology.AppendLine(TopologyHeader());
+            foreach (float loadKg in TopologyLoadsKg)
             {
-                foreach (float loadKg in AuditLoadsKg)
-                {
-                    yield return LoadFreshScene();
-                    summaries.Add(RunAudit(loadKg, PhysicalAthleteSolverProfile.PositionIterations, velocityIterations));
-                    yield return null;
-                }
+                yield return LoadFreshScene();
+                summaries.Add(RunAudit(loadKg,
+                    PhysicalAthleteSolverProfile.PositionIterations,
+                    PhysicalAthleteSolverProfile.VelocityIterations,
+                    null, topology));
+                yield return null;
             }
 
-            WriteSummary(Path.Combine(directory, "causal-audit-velocity-summary.csv"), summaries);
+            WriteText("causal-topology.csv", topology.ToString());
+            WriteSummary("causal-summary-baseline.csv", summaries);
+            AssertBaseline(summaries);
             yield return null;
         }
 
         [UnityTest]
-        [Explicit("GAM-13 causal position-iteration audit; run only after velocity sensitivity is reviewed.")]
-        public IEnumerator GAM13_CAUSAL_AUDIT_POSITION_SENSITIVITY()
+        [Explicit("GAM-13 athlete velocity-iteration isolation; bar fixed at 12/6.")]
+        public IEnumerator GAM13_CAUSAL_AUDIT_VELOCITY_ISOLATION()
         {
-            string directory = MeasurementDirectory;
-            Directory.CreateDirectory(directory);
-            var summaries = new List<AuditResult>(AuditLoadsKg.Length * PositionProfiles.Length);
-            foreach (int positionIterations in PositionProfiles)
+            var summaries = new List<AuditResult>();
+            foreach (int velocityIterations in VelocityProfiles)
             {
-                foreach (float loadKg in AuditLoadsKg)
+                foreach (float loadKg in CoreLoadsKg)
                 {
                     yield return LoadFreshScene();
-                    summaries.Add(RunAudit(loadKg, positionIterations, PhysicalAthleteSolverProfile.VelocityIterations));
+                    summaries.Add(RunAudit(loadKg,
+                        PhysicalAthleteSolverProfile.PositionIterations, velocityIterations, null, null));
                     yield return null;
                 }
             }
 
-            WriteSummary(Path.Combine(directory, "causal-audit-position-summary.csv"), summaries);
+            WriteSummary("causal-summary-velocity.csv", summaries);
+            yield return null;
+        }
+
+        [UnityTest]
+        [Explicit("GAM-13 athlete position-iteration isolation; bar fixed at 12/6.")]
+        public IEnumerator GAM13_CAUSAL_AUDIT_POSITION_ISOLATION()
+        {
+            var summaries = new List<AuditResult>();
+            foreach (int positionIterations in PositionProfiles)
+            {
+                foreach (float loadKg in CoreLoadsKg)
+                {
+                    yield return LoadFreshScene();
+                    summaries.Add(RunAudit(loadKg,
+                        positionIterations, PhysicalAthleteSolverProfile.VelocityIterations, null, null));
+                    yield return null;
+                }
+            }
+
+            WriteSummary("causal-summary-position.csv", summaries);
+            yield return null;
+        }
+
+        [UnityTest]
+        [Explicit("GAM-13 single-property causal intervention selected by GAM13_CAUSAL_INTERVENTION.")]
+        public IEnumerator GAM13_CAUSAL_AUDIT_INTERVENTION()
+        {
+            string intervention = Environment.GetEnvironmentVariable("GAM13_CAUSAL_INTERVENTION");
+            Assert.That(string.IsNullOrWhiteSpace(intervention), Is.False,
+                "GAM13_CAUSAL_INTERVENTION must name exactly one key=value intervention.");
+            Assert.That(intervention.IndexOf(';') < 0 && intervention.IndexOf(',') < 0, Is.True,
+                "Only one intervention property may change at a time.");
+            float[] loads = RequestedLoads();
+            var summaries = new List<AuditResult>();
+            foreach (float loadKg in loads)
+            {
+                yield return LoadFreshScene();
+                summaries.Add(RunAudit(loadKg,
+                    PhysicalAthleteSolverProfile.PositionIterations,
+                    PhysicalAthleteSolverProfile.VelocityIterations,
+                    intervention, null));
+                yield return null;
+            }
+
+            WriteSummary("causal-summary-intervention-" + SafeLabel(intervention) + ".csv", summaries);
             yield return null;
         }
 
@@ -117,117 +213,161 @@ namespace PowerliftingSimulator.Tests
             _bootstrap.enabled = false;
         }
 
-        private AuditResult RunAudit(float loadKg, int positionIterations, int velocityIterations)
+        private AuditResult RunAudit(
+            float loadKg,
+            int positionIterations,
+            int velocityIterations,
+            string intervention,
+            StringBuilder topology)
         {
             _controller.SetLoad(loadKg);
             ApplyAthleteSolverProfile(positionIterations, velocityIterations);
-            Assert.That(_controller.Saddle, Is.Not.Null, "Loaded causal audit requires the production saddle.");
-            Assert.That(_controller.Saddle.ThoraxContact, Is.Not.Null, "Loaded causal audit requires the bar/thorax callback producer.");
-            Assert.That(_controller.Saddle.Barbell.Body.solverIterations, Is.EqualTo(12), "Bar solver position budget changed during athlete isolation.");
-            Assert.That(_controller.Saddle.Barbell.Body.solverVelocityIterations, Is.EqualTo(6), "Bar solver velocity budget changed during athlete isolation.");
+            SquatBarSaddle saddle = _controller.Saddle;
+            Assert.That(saddle, Is.Not.Null, "Loaded causal audit requires the production saddle.");
+            Assert.That(saddle.ThoraxContact, Is.Not.Null, "Loaded causal audit requires the bar/thorax callback producer.");
+            Rigidbody barBody = saddle.Barbell.Body;
+            Assert.That(barBody.solverIterations, Is.EqualTo(ProductionBarPositionIterations), "Bar solver position budget changed.");
+            Assert.That(barBody.solverVelocityIterations, Is.EqualTo(ProductionBarVelocityIterations), "Bar solver velocity budget changed.");
+            string interventionLabel = ApplyIntervention(intervention);
+            AttachProbes(barBody);
+
+            string profile = $"p{positionIterations}-v{velocityIterations}";
+            string runId = $"{profile}-{interventionLabel}-{loadKg.ToString("0", CultureInfo.InvariantCulture)}kg";
+            topology?.Append(TopologyRow(loadKg, saddle));
 
             SquatPhysicalAdapter adapter = _controller.Adapter;
             FoundationRuntime runtime = _bootstrap.Runtime;
-            var authority = new OnsetTracker();
-            var tracking = new OnsetTracker();
-            var posture = new OnsetTracker();
-            var captureSupport = new OnsetTracker();
-            var saddle = new OnsetTracker();
-            var footSlip = new OnsetTracker();
-            bool barThoraxCallbackSeen = false;
-            bool nonFiniteTelemetry = false;
-            var csv = new StringBuilder();
-            AppendHeader(csv);
+            string[] bodyIds = SortedBodyIds();
+            WriteText("bodymeta-" + runId + ".csv", BodyMeta(bodyIds, barBody));
+
+            var trackers = new Dictionary<string, OnsetTracker>(StringComparer.Ordinal);
+            foreach (string name in CanonicalEvents)
+                trackers[name] = new OnsetTracker();
+            foreach (string name in SupplementaryEvents)
+                trackers[name] = new OnsetTracker();
+
+            var trace = new StringBuilder(AuditTicks * 4096);
+            var bodies = new StringBuilder(AuditTicks * 2048);
+            var contacts = new StringBuilder(AuditTicks * 1024);
+            AppendTraceHeader(trace);
+            AppendBodyHeader(bodies, bodyIds);
+            contacts.AppendLine("tick,body,other,point_x,point_y,point_z,normal_x,normal_y,normal_z,impulse_x,impulse_y,impulse_z,separation_m");
+
+            var stageA = new StageAAccumulator();
+            var reference = new ContactModeReference();
+            string contactModeReason = "NONE";
+            bool nonFinite = false;
+            int barThoraxCallbackTicks = 0;
+            float maxPenetration = 0f;
 
             for (int tick = 0; tick < AuditTicks; tick++)
             {
                 adapter.HoldReferencePhaseForQualification(0f, SquatPhaseDirection.None, SquatState.SETUP);
                 Assert.That(runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds), Is.EqualTo(1));
+                foreach (GAM13GroundContactProbe probe in _probes.Values)
+                    probe.CompleteStep();
+
                 SquatObservationSnapshot snapshot = _controller.ObservationCollector.LastSnapshot;
-                SquatBalanceObserver balance = adapter.Balance;
-                SquatBarSaddle saddleState = _controller.Saddle;
-                SquatBarThoraxContactDetector barContact = saddleState.ThoraxContact;
-                SquatSupportGeometry.Measurement supportGeometry = MeasureSupport(balance);
-                float maximumTrackingError = MaximumTrackingError(snapshot.Joints);
-                bool authoritySignal = snapshot.DriveAvailability == SquatTelemetryAvailability.AVAILABLE &&
-                    snapshot.MaximumModeledDemand >= AuthorityThreshold;
-                bool trackingSignal = maximumTrackingError >= TrackingThresholdRad;
-                bool postureSignal = Mathf.Abs(snapshot.TrunkWorldPitchRadians) >= PostureTrunkThresholdRad ||
-                    snapshot.PelvisPositionWorldMeters.Y <= PosturePelvisThresholdM;
-                bool captureSignal = !balance.HasSupport ||
-                    balance.CaptureMarginFront <= CaptureMarginThresholdM ||
-                    balance.CaptureMarginRear <= CaptureMarginThresholdM;
-                bool saddleSignal = saddleState.SaddleSeparationMeters >= SaddleSeparationThresholdM ||
-                    saddleState.MaximumLimitOccupancy >= SaddleLimitThreshold || saddleState.IsBroken;
-                bool slipSignal = (_controller.LeftFootContact != null &&
-                    _controller.LeftFootContact.SlipSpeed > FootSlipThresholdMps) ||
-                    (_controller.RightFootContact != null &&
-                    _controller.RightFootContact.SlipSpeed > FootSlipThresholdMps);
+                var sample = new TickSample(this, snapshot, adapter, saddle, barBody);
+                nonFinite |= !sample.Finite;
+                if (sample.BarThoraxCallbacks > 0)
+                    barThoraxCallbackTicks++;
+                maxPenetration = Mathf.Max(maxPenetration, sample.BarThoraxPenetrationM);
 
-                authority.Update(authoritySignal, snapshot.SimulationTick);
-                tracking.Update(trackingSignal, snapshot.SimulationTick);
-                posture.Update(postureSignal, snapshot.SimulationTick);
-                captureSupport.Update(captureSignal, snapshot.SimulationTick);
-                saddle.Update(saddleSignal, snapshot.SimulationTick);
-                footSlip.Update(slipSignal, snapshot.SimulationTick);
-                barThoraxCallbackSeen |= barContact.CompletedCollisionCallbackCount > 0;
-                nonFiniteTelemetry |= !IsFiniteTelemetry(snapshot, saddleState);
-                AppendSample(csv, loadKg, positionIterations, velocityIterations, snapshot,
-                    balance, saddleState, barContact, supportGeometry, maximumTrackingError);
+                reference.Observe(sample);
+                string modeChange = reference.ChangeReason(sample);
+                bool contactModeSignal = modeChange != "NONE";
+
+                var signals = new Dictionary<string, bool>(StringComparer.Ordinal)
+                {
+                    ["DRIVE_HIGH"] = sample.MaxLoadBearingDemand >= DriveHighDemand,
+                    ["DRIVE_SATURATION"] = sample.MaxLoadBearingDemand >= DriveSaturationDemand,
+                    ["TRACKING_FAILURE"] = sample.MaxLoadBearingErrorRad >= TrackingFailureRad,
+                    ["POSTURE_JOINT_ERROR"] = adapter.CanonicalPostureErrorRad >= PostureJointErrorRad,
+                    ["POSTURE_GROSS"] = Mathf.Abs(snapshot.TrunkWorldPitchRadians) >= PostureTrunkPitchRad ||
+                        snapshot.PelvisPositionWorldMeters.Y <= PosturePelvisHeightM,
+                    ["CAPTURE_DEPARTURE"] = sample.Balance.HasSupport &&
+                        Mathf.Min(sample.Balance.CaptureMarginFront, sample.Balance.CaptureMarginRear) <= CaptureMarginM,
+                    ["SUPPORT_LOSS"] = !sample.Balance.HasSupport,
+                    ["SADDLE_LINEAR_LIMIT"] = saddle.IsAttached && saddle.CurrentLinearLimitOccupancy >= SaddleLinearOccupancy,
+                    ["SADDLE_GROSS_FAILURE"] = saddle.IsBroken,
+                    ["CONTACT_MODE_CHANGE"] = contactModeSignal,
+                    ["GUARD_WITHDRAWAL"] = sample.Control.PostureGuardScale <= GuardWithdrawalScale,
+                    ["CAPTURE_DEPARTURE_HULL"] = sample.Capture.ContactCount > 0 &&
+                        !(sample.Capture.HullSignedMarginM > CaptureMarginM),
+                    ["COM_OUTSIDE_HULL"] = sample.Com.ContactCount > 0 && !(sample.Com.HullSignedMarginM > 0f),
+                    ["FOOT_LIFT"] = sample.LeftContacts == 0 || sample.RightContacts == 0,
+                    ["FOOT_SLIP"] = sample.LeftSlip > FootSlipMps || sample.RightSlip > FootSlipMps,
+                    ["PLANTAR_COUNT_CHANGE"] = modeChange.Contains("COUNT"),
+                    ["BAR_THORAX_CONTACT"] = sample.BarThoraxCallbacks > 0,
+                    ["BAR_ATHLETE_CONTACT"] = sample.BarAthleteBodies.Length > 0,
+                    ["NONPLANTAR_GROUND_CONTACT"] = sample.NonPlantarGroundBodies.Length > 0,
+                    ["SADDLE_ANGULAR_LIMIT"] = saddle.IsAttached && Mathf.Max(
+                        saddle.CurrentAngularXLimitOccupancy,
+                        Mathf.Max(saddle.CurrentAngularYLimitOccupancy, saddle.CurrentAngularZLimitOccupancy)) >= SaddleLinearOccupancy
+                };
+                signals["POSTURE_DEPARTURE"] = signals["POSTURE_JOINT_ERROR"] || signals["POSTURE_GROSS"];
+
+                ulong simulationTick = snapshot.SimulationTick;
+                foreach (KeyValuePair<string, bool> signal in signals)
+                    trackers[signal.Key].Update(signal.Value, simulationTick);
+                if (contactModeReason == "NONE" && trackers["CONTACT_MODE_CHANGE"].HasOnset)
+                    contactModeReason = reference.LastReason;
+
+                stageA.Observe(tick, sample, adapter, saddle, FootPitchDegrees("left_foot"),
+                    snapshot.PelvisPositionWorldMeters.Y, snapshot.TrunkWorldPitchRadians);
+                AppendTraceRow(trace, loadKg, profile, interventionLabel, snapshot, adapter, saddle, sample, signals, modeChange);
+                AppendBodyRow(bodies, simulationTick, bodyIds, barBody);
+                AppendContactRows(contacts, simulationTick);
             }
 
-            string profile = $"athlete-p{positionIterations}-v{velocityIterations}";
-            string path = Path.Combine(MeasurementDirectory,
-                $"causal-audit-{profile}-{loadKg.ToString("0", CultureInfo.InvariantCulture)}kg.csv");
-            File.WriteAllText(path, csv.ToString());
+            WriteText("trace-" + runId + ".csv", trace.ToString());
+            WriteText("bodies-" + runId + ".csv", bodies.ToString());
+            WriteText("contacts-" + runId + ".csv", contacts.ToString());
 
-            var result = new AuditResult(
-                loadKg,
-                positionIterations,
-                velocityIterations,
-                OnsetTick(authority),
-                OnsetTick(tracking),
-                OnsetTick(posture),
-                OnsetTick(captureSupport),
-                OnsetTick(saddle),
-                OnsetTick(footSlip),
-                barThoraxCallbackSeen,
-                _controller.Saddle.ConnectedBodyCollisionEnabled,
-                _controller.Saddle.BarThoraxColliderPairCount,
-                _controller.Saddle.BarThoraxIgnoredPairCount,
-                WrenchFeasibility,
-                FirstOnsetOrder(authority, tracking, posture, captureSupport, saddle, footSlip));
-            Assert.That(nonFiniteTelemetry, Is.False,
-                $"GAM-13 causal audit produced non-finite telemetry at {loadKg:F0} kg, p{positionIterations}/v{velocityIterations}.");
-            if (positionIterations == PhysicalAthleteSolverProfile.PositionIterations &&
-                velocityIterations == PhysicalAthleteSolverProfile.VelocityIterations)
+            var result = new AuditResult
             {
-                if (Mathf.Approximately(loadKg, 25f))
-                {
-                    Assert.That(result.PostureOnset, Is.Null, "25 kg baseline should remain below the causal posture onset gate.");
-                    Assert.That(result.CaptureSupportOnset, Is.Null, "25 kg baseline should retain capture/support.");
-                }
-                else
-                {
-                    Assert.That(result.PostureOnset.HasValue || result.CaptureSupportOnset.HasValue,
-                        $"{loadKg:F0} kg baseline did not reproduce the standing failure symptom within {AuditTicks} ticks.");
-                }
-            }
+                LoadKg = loadKg,
+                PositionIterations = positionIterations,
+                VelocityIterations = velocityIterations,
+                IslandPositionIterations = Mathf.Max(positionIterations, barBody.solverIterations),
+                IslandVelocityIterations = Mathf.Max(velocityIterations, barBody.solverVelocityIterations),
+                Intervention = interventionLabel,
+                ContactModeReason = contactModeReason,
+                BarThoraxCallbackTicks = barThoraxCallbackTicks,
+                MaxBarThoraxPenetrationM = maxPenetration,
+                ConnectedBodyCollisionEnabled = saddle.ConnectedBodyCollisionEnabled,
+                BarToThoraxMassRatio = saddle.BarToThoraxMassRatio,
+                NonFinite = nonFinite,
+                StageASummary = stageA.Summary(loadKg),
+                StageAPass = stageA.Pass,
+                Upright = stageA.Upright
+            };
+            foreach (string name in CanonicalEvents)
+                result.Onsets[name] = OnsetTick(trackers[name]);
+            foreach (string name in SupplementaryEvents)
+                result.Onsets[name] = OnsetTick(trackers[name]);
+
             Debug.Log("GAM13_CAUSAL " + result.ToCsv());
+            Debug.Log("GAM13_CAUSAL_STAGE_A " + result.StageASummary);
+            Assert.That(nonFinite, Is.False, $"GAM-13 causal audit produced non-finite telemetry for {runId}.");
             return result;
         }
 
-        private static bool IsFiniteTelemetry(SquatObservationSnapshot snapshot, SquatBarSaddle saddle)
+        private static void AssertBaseline(List<AuditResult> summaries)
         {
-            if (!snapshot.Bar.IsAvailable || !snapshot.Support.SystemComAvailability.Equals(SquatTelemetryAvailability.AVAILABLE) ||
-                !float.IsFinite(snapshot.Bar.PositionWorldMeters.X) || !float.IsFinite(snapshot.Bar.PositionWorldMeters.Y) ||
-                !float.IsFinite(snapshot.Bar.PositionWorldMeters.Z) || !float.IsFinite(snapshot.MaximumModeledDemand) ||
-                !float.IsFinite(saddle.SaddleSeparationMeters) || !float.IsFinite(saddle.CurrentLinearLimitOccupancy) ||
-                !float.IsFinite(saddle.CurrentForceEngine.x) || !float.IsFinite(saddle.CurrentForceEngine.y) ||
-                !float.IsFinite(saddle.CurrentForceEngine.z) || !float.IsFinite(saddle.CurrentTorqueEngine.x) ||
-                !float.IsFinite(saddle.CurrentTorqueEngine.y) || !float.IsFinite(saddle.CurrentTorqueEngine.z))
-                return false;
-            return true;
+            foreach (AuditResult result in summaries)
+            {
+                if (Mathf.Approximately(result.LoadKg, 25f))
+                {
+                    Assert.That(result.StageAPass, Is.True, "25 kg production standing must remain qualified: " + result.StageASummary);
+                }
+                else if (Mathf.Approximately(result.LoadKg, 60f) || Mathf.Approximately(result.LoadKg, 300f))
+                {
+                    Assert.That(result.StageAPass, Is.False,
+                        $"{result.LoadKg:F0} kg baseline did not reproduce the recorded standing failure: {result.StageASummary}");
+                }
+            }
         }
 
         private void ApplyAthleteSolverProfile(int positionIterations, int velocityIterations)
@@ -241,169 +381,495 @@ namespace PowerliftingSimulator.Tests
             }
         }
 
-        private SquatSupportGeometry.Measurement MeasureSupport(SquatBalanceObserver balance)
+        /// <summary>
+        /// Applies exactly one named single-property change after the load is
+        /// configured. Everything else in the plant stays at production.
+        /// </summary>
+        private string ApplyIntervention(string intervention)
         {
-            var contacts = new List<Vector3>();
-            AddFootContacts(_controller.LeftFootContact, contacts);
-            AddFootContacts(_controller.RightFootContact, contacts);
-            return SquatSupportGeometry.Measure(
-                contacts,
-                new Vector2(balance.CaptureMl, balance.CaptureAp));
+            if (string.IsNullOrWhiteSpace(intervention))
+                return "production";
+
+            string[] parts = intervention.Split('=');
+            Assert.That(parts.Length, Is.EqualTo(2), "Intervention must use key=value.");
+            string key = parts[0].Trim();
+            string value = parts[1].Trim();
+            ConfigurableJoint joint = _controller.Saddle.Joint;
+            switch (key)
+            {
+                case "saddle.linear_limit_m":
+                    joint.linearLimit = new SoftJointLimit { limit = ParseFloat(value) };
+                    break;
+                case "saddle.linear_spring":
+                {
+                    float spring = ParseFloat(value);
+                    joint.xDrive = WithSpring(joint.xDrive, spring);
+                    joint.yDrive = WithSpring(joint.yDrive, spring);
+                    joint.zDrive = WithSpring(joint.zDrive, spring);
+                    break;
+                }
+                case "saddle.enable_collision":
+                    joint.enableCollision = ParseBool(value);
+                    break;
+                case "saddle.ignore_bar_athlete_non_thorax":
+                    if (ParseBool(value))
+                        IgnoreBarAthleteNonThorax();
+                    break;
+                case "balance.posture_guard":
+                    _controller.Adapter.BalanceController.PostureGuardEnabled = ParseBool(value);
+                    break;
+                default:
+                    Assert.Fail("Unknown GAM-13 causal intervention key: " + key);
+                    break;
+            }
+            return SafeLabel(key + "=" + value);
         }
 
-        private static void AddFootContacts(PhysicalFootContactDetector detector, List<Vector3> contacts)
+        /// <summary>
+        /// The collision filter the saddle comment describes: ignore every
+        /// bar collider against every non-thorax athlete collider. Used only
+        /// as a single-property contact-topology intervention.
+        /// </summary>
+        private void IgnoreBarAthleteNonThorax()
         {
-            if (detector == null)
-                return;
-            for (int index = 0; index < detector.CompletedContactCount; index++)
-                contacts.Add(detector.CompletedContactPoint(index));
+            Rigidbody thorax = _controller.Saddle.ThoraxBody;
+            foreach (Collider bar in _controller.Saddle.Barbell.Body.GetComponentsInChildren<Collider>(true))
+            {
+                foreach (PhysicalAthleteRig.SegmentRuntime segment in _rig.Segments.Values)
+                {
+                    if (segment.Body == null || segment.Body == thorax)
+                        continue;
+                    foreach (Collider athlete in segment.Body.GetComponents<Collider>())
+                        Physics.IgnoreCollision(bar, athlete, true);
+                }
+            }
         }
 
-        private static float MaximumTrackingError(SquatJointObservationSet joints)
+        private static JointDrive WithSpring(JointDrive drive, float spring) => new JointDrive
         {
-            float maximum = 0f;
-            maximum = Mathf.Max(maximum, JointTrackingError(joints.Abdomen));
-            maximum = Mathf.Max(maximum, JointTrackingError(joints.Thorax));
-            maximum = Mathf.Max(maximum, JointTrackingError(joints.LeftHip));
-            maximum = Mathf.Max(maximum, JointTrackingError(joints.RightHip));
-            maximum = Mathf.Max(maximum, JointTrackingError(joints.LeftKnee));
-            maximum = Mathf.Max(maximum, JointTrackingError(joints.RightKnee));
-            maximum = Mathf.Max(maximum, JointTrackingError(joints.LeftAnkle));
-            maximum = Mathf.Max(maximum, JointTrackingError(joints.RightAnkle));
-            return maximum;
+            positionSpring = spring,
+            positionDamper = drive.positionDamper,
+            maximumForce = drive.maximumForce,
+            useAcceleration = drive.useAcceleration
+        };
+
+        private void AttachProbes(Rigidbody barBody)
+        {
+            _probes.Clear();
+            foreach (KeyValuePair<string, PhysicalAthleteRig.SegmentRuntime> pair in _rig.Segments)
+            {
+                if (pair.Value.Body == null)
+                    continue;
+                _probes[pair.Key] = AttachProbe(pair.Value.Body.gameObject);
+            }
+            _probes["barbell"] = AttachProbe(barBody.gameObject);
         }
 
-        private static float JointTrackingError(SquatJointObservation joint) =>
-            joint.JointAvailability == SquatTelemetryAvailability.AVAILABLE
-                ? Mathf.Abs(joint.ActualReferenceErrorRadians)
-                : 0f;
-
-        private void AppendHeader(StringBuilder csv)
+        private static GAM13GroundContactProbe AttachProbe(GameObject target)
         {
-            csv.Append("load_kg,athlete_position_iterations,athlete_velocity_iterations,tick,time_s,state,sq,");
-            csv.Append("bar_y,bar_vy,bar_mass_kg,bar_contact_callback,bar_contact_count,bar_contact_impulse_n_s,bar_contact_min_separation_m,");
-            csv.Append("thorax_contact_joint_collision_enabled,bar_thorax_pairs,bar_thorax_ignored_pairs,bar_thorax_anchor_error_m,");
-            csv.Append("saddle_separation_m,saddle_linear_limit_occupancy,saddle_angular_x_limit_occupancy,saddle_angular_y_limit_occupancy,saddle_angular_z_limit_occupancy,saddle_max_limit_occupancy,");
-            csv.Append("saddle_force_engine_x,saddle_force_engine_y,saddle_force_engine_z,saddle_torque_engine_x,saddle_torque_engine_y,saddle_torque_engine_z,");
-            csv.Append("bar_to_thorax_mass_ratio,com_x,com_y,com_z,com_vx,com_vy,com_vz,capture_ap,capture_ml,capture_margin_front_m,capture_margin_rear_m,");
-            csv.Append("support_aabb_ap_min_m,support_aabb_ap_max_m,support_aabb_ml_min_m,support_aabb_ml_max_m,support_contact_count,support_aabb_area_m2,");
-            csv.Append("support_hull_points,support_hull_area_m2,support_aabb_contains_capture,support_hull_contains_capture,support_hull_signed_margin_m,");
-            csv.Append("left_foot_contact,right_foot_contact,left_foot_slip_mps,right_foot_slip_mps,trunk_pitch_rad,pelvis_y_m,max_tracking_error_rad,max_demand,");
-            foreach (string jointId in CausalJointIds)
-                csv.Append(jointId).Append("_demand,").Append(jointId).Append("_saturated,").Append(jointId).Append("_tracking_error_x_rad,").Append(jointId).Append("_limit,").Append(jointId).Append("_current_force_engine_x,").Append(jointId).Append("_current_force_engine_y,").Append(jointId).Append("_current_force_engine_z,").Append(jointId).Append("_current_torque_engine_x,").Append(jointId).Append("_current_torque_engine_y,").Append(jointId).Append("_current_torque_engine_z,");
-            csv.AppendLine("wrench_feasibility");
+            GAM13GroundContactProbe probe = target.GetComponent<GAM13GroundContactProbe>();
+            if (probe == null)
+                probe = target.AddComponent<GAM13GroundContactProbe>();
+            probe.Clear();
+            return probe;
         }
 
-        private void AppendSample(
+        private string[] SortedBodyIds()
+        {
+            var ids = new List<string>();
+            foreach (KeyValuePair<string, PhysicalAthleteRig.SegmentRuntime> pair in _rig.Segments)
+            {
+                if (pair.Value.Body != null)
+                    ids.Add(pair.Key);
+            }
+            ids.Sort(StringComparer.Ordinal);
+            return ids.ToArray();
+        }
+
+        private Rigidbody BodyById(string id, Rigidbody barBody) =>
+            id == "barbell" ? barBody : _rig.Segments[id].Body;
+
+        private string BodyMeta(string[] bodyIds, Rigidbody barBody)
+        {
+            var csv = new StringBuilder();
+            csv.AppendLine("body,mass_kg,inertia_x,inertia_y,inertia_z,inertia_rot_x,inertia_rot_y,inertia_rot_z,inertia_rot_w,local_com_x,local_com_y,local_com_z,solver_position,solver_velocity,linear_damping,angular_damping");
+            var ids = new List<string>(bodyIds) { "barbell" };
+            foreach (string id in ids)
+            {
+                Rigidbody body = BodyById(id, barBody);
+                AppendRow(csv, id, body.mass,
+                    body.inertiaTensor.x, body.inertiaTensor.y, body.inertiaTensor.z,
+                    body.inertiaTensorRotation.x, body.inertiaTensorRotation.y,
+                    body.inertiaTensorRotation.z, body.inertiaTensorRotation.w,
+                    body.centerOfMass.x, body.centerOfMass.y, body.centerOfMass.z,
+                    body.solverIterations, body.solverVelocityIterations,
+                    body.linearDamping, body.angularDamping);
+            }
+            return csv.ToString();
+        }
+
+        private static void AppendBodyHeader(StringBuilder csv, string[] bodyIds)
+        {
+            csv.Append("tick");
+            var ids = new List<string>(bodyIds) { "barbell" };
+            foreach (string id in ids)
+            {
+                foreach (string field in new[] { "cx", "cy", "cz", "vx", "vy", "vz", "qx", "qy", "qz", "qw", "wx", "wy", "wz" })
+                    csv.Append(',').Append(id).Append('_').Append(field);
+            }
+            csv.AppendLine();
+        }
+
+        private void AppendBodyRow(StringBuilder csv, ulong tick, string[] bodyIds, Rigidbody barBody)
+        {
+            csv.Append(tick.ToString(CultureInfo.InvariantCulture));
+            var ids = new List<string>(bodyIds) { "barbell" };
+            foreach (string id in ids)
+            {
+                Rigidbody body = BodyById(id, barBody);
+                Vector3 c = body.worldCenterOfMass;
+                Vector3 v = body.linearVelocity;
+                Quaternion q = body.rotation;
+                Vector3 w = body.angularVelocity;
+                foreach (float value in new[] { c.x, c.y, c.z, v.x, v.y, v.z, q.x, q.y, q.z, q.w, w.x, w.y, w.z })
+                    csv.Append(',').Append(Format(value));
+            }
+            csv.AppendLine();
+        }
+
+        private void AppendContactRows(StringBuilder csv, ulong tick)
+        {
+            foreach (KeyValuePair<string, GAM13GroundContactProbe> pair in _probes)
+            {
+                GAM13GroundContactProbe probe = pair.Value;
+                for (int index = 0; index < probe.CompletedCount; index++)
+                {
+                    GAM13GroundContactProbe.Sample contact = probe.Completed(index);
+                    AppendRow(csv, tick, pair.Key, contact.Other,
+                        contact.Point.x, contact.Point.y, contact.Point.z,
+                        contact.Normal.x, contact.Normal.y, contact.Normal.z,
+                        contact.Impulse.x, contact.Impulse.y, contact.Impulse.z,
+                        contact.Separation);
+                }
+            }
+        }
+
+        private float FootPitchDegrees(string segmentId)
+        {
+            if (!_rig.Segments.TryGetValue(segmentId, out PhysicalAthleteRig.SegmentRuntime foot) || foot.Body == null)
+                return float.NaN;
+            Vector3 forward = foot.Body.rotation * Vector3.forward;
+            return Mathf.Asin(Mathf.Clamp(forward.y, -1f, 1f)) * Mathf.Rad2Deg;
+        }
+
+        private string TopologyHeader() =>
+            "load_kg,bar_mass_kg,thorax_mass_kg,athlete_mass_kg,bar_to_thorax_mass_ratio,bar_to_athlete_mass_ratio," +
+            "system_mass_kg,enable_collision,bar_thorax_collider_pairs,bar_thorax_ignored_pairs," +
+            "bar_athlete_ignored_pairs_total,saddle_enumerated_bar_colliders,bar_body_colliders,athlete_colliders,anchor_x,anchor_y,anchor_z,connected_anchor_x,connected_anchor_y,connected_anchor_z," +
+            "auto_configure_connected_anchor,enable_preprocessing,projection_mode,projection_distance_m,projection_angle_deg," +
+            "break_force_n,break_torque_nm,mass_scale,connected_mass_scale,linear_limit_m,linear_limit_spring," +
+            "linear_drive_spring,linear_drive_damper,linear_drive_max_force,angular_x_low_deg,angular_x_high_deg," +
+            "angular_y_deg,angular_z_deg,angular_drive_spring,angular_drive_damper,angular_drive_max_force," +
+            "initial_anchor_error_m,initial_relative_qx,initial_relative_qy,initial_relative_qz,initial_relative_qw," +
+            "bar_solver_position,bar_solver_velocity,thorax_solver_position,thorax_solver_velocity,static_linear_deflection_at_spring_m";
+
+        private string TopologyRow(float loadKg, SquatBarSaddle saddle)
+        {
+            ConfigurableJoint joint = saddle.Joint;
+            float athleteMass = 0f;
+            foreach (PhysicalAthleteRig.SegmentRuntime segment in _rig.Segments.Values)
+            {
+                if (segment.Body != null)
+                    athleteMass += segment.Body.mass;
+            }
+            int ignoredTotal = 0;
+            int athleteColliders = 0;
+            foreach (PhysicalAthleteRig.SegmentRuntime segment in _rig.Segments.Values)
+            {
+                if (segment.Body != null)
+                    athleteColliders += segment.Body.GetComponents<Collider>().Length;
+            }
+            Collider[] barBodyColliders = saddle.Barbell.Body.GetComponentsInChildren<Collider>(true);
+            int saddleEnumeratedBarColliders = saddle.Barbell.GetComponentsInChildren<Collider>(true).Length;
+            foreach (Collider bar in barBodyColliders)
+            {
+                foreach (PhysicalAthleteRig.SegmentRuntime segment in _rig.Segments.Values)
+                {
+                    if (segment.Body == null)
+                        continue;
+                    foreach (Collider athlete in segment.Body.GetComponents<Collider>())
+                    {
+                        if (Physics.GetIgnoreCollision(bar, athlete))
+                            ignoredTotal++;
+                    }
+                }
+            }
+            Quaternion initial = saddle.InitialRelativeBarToThorax;
+            float barWeight = saddle.BarMassKg * SquatBalanceObserver.GravityMagnitudeMps2;
+            var row = new StringBuilder();
+            AppendValues(row, false,
+                loadKg, saddle.BarMassKg, saddle.ThoraxMassKg, athleteMass,
+                saddle.BarToThoraxMassRatio, saddle.BarMassKg / athleteMass, athleteMass + saddle.BarMassKg,
+                joint.enableCollision, saddle.BarThoraxColliderPairCount, saddle.BarThoraxIgnoredPairCount, ignoredTotal,
+                saddleEnumeratedBarColliders, barBodyColliders.Length, athleteColliders,
+                joint.anchor.x, joint.anchor.y, joint.anchor.z,
+                joint.connectedAnchor.x, joint.connectedAnchor.y, joint.connectedAnchor.z,
+                joint.autoConfigureConnectedAnchor, joint.enablePreprocessing, joint.projectionMode,
+                joint.projectionDistance, joint.projectionAngle, joint.breakForce, joint.breakTorque,
+                joint.massScale, joint.connectedMassScale, joint.linearLimit.limit, joint.linearLimitSpring.spring,
+                joint.yDrive.positionSpring, joint.yDrive.positionDamper, joint.yDrive.maximumForce,
+                joint.lowAngularXLimit.limit, joint.highAngularXLimit.limit, joint.angularYLimit.limit, joint.angularZLimit.limit,
+                joint.angularXDrive.positionSpring, joint.angularXDrive.positionDamper, joint.angularXDrive.maximumForce,
+                saddle.InitialAnchorErrorMeters, initial.x, initial.y, initial.z, initial.w,
+                saddle.Barbell.Body.solverIterations, saddle.Barbell.Body.solverVelocityIterations,
+                saddle.ThoraxBody.solverIterations, saddle.ThoraxBody.solverVelocityIterations,
+                joint.yDrive.positionSpring > 0f ? barWeight / joint.yDrive.positionSpring : float.PositiveInfinity);
+            return row.ToString();
+        }
+
+        private void AppendTraceHeader(StringBuilder csv)
+        {
+            var columns = new List<string>
+            {
+                "load_kg", "profile", "intervention", "tick", "time_s", "state", "sq",
+                // posture
+                "pelvis_x", "pelvis_y", "pelvis_z", "trunk_pitch_rad", "thorax_qx", "thorax_qy", "thorax_qz", "thorax_qw",
+                "thorax_wx", "thorax_wy", "thorax_wz", "canonical_posture_error_rad", "canonical_posture_worst_joint",
+                "canonical_posture_limit_proximity", "canonical_unexpected_margin_consumed", "adapter_max_drive_saturation",
+                "max_lb_demand", "max_lb_demand_joint", "max_lb_error_rad", "max_lb_error_joint",
+                // balance
+                "com_x", "com_y", "com_z", "com_vx", "com_vy", "com_vz", "system_mass_kg", "com_height_m", "omega",
+                "cop_available", "cop_x", "cop_z", "total_normal_impulse_n_s", "capture_ap", "capture_ml",
+                "capture_margin_front_m", "capture_margin_rear_m", "com_margin_front_m", "com_margin_rear_m",
+                "support_ap_min", "support_ap_max", "support_ml_min", "support_ml_max", "support_contact_count", "has_support",
+                "ctrl_active", "ctrl_com_ref_ap", "ctrl_com_ap_error", "ctrl_desired_com_acc_ap", "ctrl_cop_desired_ap",
+                "ctrl_cop_desired_ap_unclamped", "ctrl_cop_measured_ap", "ctrl_cop_error_ap", "ctrl_has_cop",
+                "ctrl_raw_ankle_offset_rad", "ctrl_raw_ankle_authority", "ctrl_ankle_offset_rad", "ctrl_ankle_authority",
+                "ctrl_ankle_saturated", "ctrl_guard_scale", "ctrl_guard_enabled", "ctrl_posture_error_rad",
+                "ctrl_posture_rate_rad_s", "ctrl_posture_limit", "ctrl_unexpected_margin", "ctrl_hip_strategy_enabled",
+                "ctrl_hip_strategy_blend", "ctrl_hip_offset_rad", "ctrl_trunk_offset_rad", "ctrl_ankle_frontal_rad",
+                "ctrl_hip_frontal_rad", "ctrl_requested_ankle_torque_nm",
+                // plantar contact
+                "left_contacts", "right_contacts", "left_in_contact", "right_in_contact",
+                "left_normal_impulse_n_s", "right_normal_impulse_n_s", "left_slip_mps", "right_slip_mps",
+                "left_probe_contacts", "right_probe_contacts", "plantar_probe_normal_impulse_n_s",
+                "plantar_probe_tangential_impulse_n_s", "nonplantar_ground_bodies", "bar_ground_contacts",
+                // support geometry
+                "support_hull_points", "support_hull_area_m2", "support_aabb_area_m2",
+                "com_hull_margin_m", "com_aabb_margin_m", "com_aabb_ap_margin_m",
+                "cop_hull_margin_m", "cop_aabb_margin_m", "cop_aabb_ap_margin_m",
+                "capture_hull_margin_m", "capture_aabb_margin_m", "capture_aabb_ap_margin_m",
+                // bar and saddle
+                "bar_x", "bar_y", "bar_z", "bar_qx", "bar_qy", "bar_qz", "bar_qw", "bar_vx", "bar_vy", "bar_vz",
+                "bar_wx", "bar_wy", "bar_wz", "bar_mass_kg", "saddle_attached", "saddle_broken",
+                "saddle_sep_x", "saddle_sep_y", "saddle_sep_z", "saddle_sep_m", "saddle_sep_bar_x", "saddle_sep_bar_y",
+                "saddle_sep_bar_z", "saddle_linear_occupancy", "saddle_angular_x_occupancy", "saddle_angular_y_occupancy",
+                "saddle_angular_z_occupancy", "saddle_relative_rotation_deg", "saddle_force_x", "saddle_force_y",
+                "saddle_force_z", "saddle_torque_x", "saddle_torque_y", "saddle_torque_z", "bar_thorax_callbacks",
+                "bar_thorax_contacts", "bar_thorax_impulse_x", "bar_thorax_impulse_y", "bar_thorax_impulse_z",
+                "bar_thorax_min_separation_m", "bar_thorax_penetration_m", "bar_thorax_gap_m", "bar_athlete_bodies",
+                "bar_athlete_contacts", "bar_athlete_impulse_x", "bar_athlete_impulse_y", "bar_athlete_impulse_z",
+                "contact_mode_change"
+            };
+            foreach (string jointId in PoweredJointIds)
+            {
+                foreach (string field in new[]
+                {
+                    "applied_x", "applied_y", "applied_z", "actual_x", "actual_y", "actual_z",
+                    "err_x", "err_y", "err_z", "err_mag", "target_vel_x", "vel_x", "vel_y", "vel_z",
+                    "max_force_nm", "demand", "limit", "solver_tq_x", "solver_tq_y", "solver_tq_z"
+                })
+                    columns.Add(jointId + "_" + field);
+            }
+            foreach (string name in CanonicalEvents)
+                columns.Add("sig_" + name);
+            foreach (string name in SupplementaryEvents)
+                columns.Add("sig_" + name);
+            csv.AppendLine(string.Join(",", columns));
+        }
+
+        private void AppendTraceRow(
             StringBuilder csv,
             float loadKg,
-            int positionIterations,
-            int velocityIterations,
+            string profile,
+            string intervention,
             SquatObservationSnapshot snapshot,
-            SquatBalanceObserver balance,
+            SquatPhysicalAdapter adapter,
             SquatBarSaddle saddle,
-            SquatBarThoraxContactDetector barContact,
-            SquatSupportGeometry.Measurement supportGeometry,
-            float maximumTrackingError)
+            TickSample s,
+            Dictionary<string, bool> signals,
+            string modeChange)
         {
-            Vector3 com = balance.SystemCom;
-            Vector3 comVelocity = balance.SystemComVelocity;
-            Rigidbody barBody = saddle.Barbell.Body;
-            AppendValues(csv,
-                loadKg, positionIterations, velocityIterations, snapshot.SimulationTick,
-                snapshot.SimulationTimeSeconds, snapshot.State, snapshot.Sq,
-                snapshot.Bar.PositionWorldMeters.Y, snapshot.Bar.LinearVelocityWorldMetersPerSecond.Y,
-                barBody.mass,
-                barContact.CompletedCollisionCallbackCount > 0, barContact.CompletedContactCount,
-                barContact.CompletedTotalImpulse.magnitude, barContact.CompletedMinimumSeparationM,
-                saddle.ConnectedBodyCollisionEnabled, saddle.BarThoraxColliderPairCount, saddle.BarThoraxIgnoredPairCount,
-                saddle.AnchorErrorWorld.magnitude, saddle.SaddleSeparationMeters,
-                saddle.CurrentLinearLimitOccupancy, saddle.CurrentAngularXLimitOccupancy,
-                saddle.CurrentAngularYLimitOccupancy, saddle.CurrentAngularZLimitOccupancy,
-                saddle.MaximumLimitOccupancy,
-                saddle.CurrentForceEngine.x, saddle.CurrentForceEngine.y, saddle.CurrentForceEngine.z,
-                saddle.CurrentTorqueEngine.x, saddle.CurrentTorqueEngine.y, saddle.CurrentTorqueEngine.z,
-                saddle.BarToThoraxMassRatio, com.x, com.y, com.z,
-                comVelocity.x, comVelocity.y, comVelocity.z,
-                balance.CaptureAp, balance.CaptureMl, balance.CaptureMarginFront, balance.CaptureMarginRear,
-                balance.SupportApMin, balance.SupportApMax, balance.SupportMlMin, balance.SupportMlMax,
-                balance.SupportContactCount, supportGeometry.AabbAreaM2,
-                supportGeometry.HullPointCount, supportGeometry.HullAreaM2,
-                supportGeometry.AabbContainsQuery, supportGeometry.HullContainsQuery,
-                supportGeometry.HullSignedMarginM,
+            SquatBalanceObserver b = s.Balance;
+            SquatPredictiveBalanceController c = s.Control;
+            Rigidbody thorax = saddle.ThoraxBody;
+            Rigidbody bar = saddle.Barbell.Body;
+            Vector3 sep = saddle.AnchorErrorWorld;
+            Vector3 sepBar = saddle.AnchorErrorBarLocal;
+            Vector3 force = saddle.CurrentForceEngine;
+            Vector3 torque = saddle.CurrentTorqueEngine;
+            SquatBarThoraxContactDetector barContact = saddle.ThoraxContact;
+            Vector3 barImpulse = barContact == null ? Vector3.zero : barContact.CompletedTotalImpulse;
+            AppendValues(csv, true,
+                loadKg, profile, intervention, snapshot.SimulationTick, snapshot.SimulationTimeSeconds, snapshot.State, snapshot.Sq,
+                snapshot.PelvisPositionWorldMeters.X, snapshot.PelvisPositionWorldMeters.Y, snapshot.PelvisPositionWorldMeters.Z,
+                snapshot.TrunkWorldPitchRadians, thorax.rotation.x, thorax.rotation.y, thorax.rotation.z, thorax.rotation.w,
+                thorax.angularVelocity.x, thorax.angularVelocity.y, thorax.angularVelocity.z,
+                adapter.CanonicalPostureErrorRad, adapter.CanonicalPostureWorstJoint, adapter.CanonicalPostureLimitProximity,
+                adapter.CanonicalPostureUnexpectedMarginConsumed, adapter.MaxDriveSaturation,
+                s.MaxLoadBearingDemand, s.MaxLoadBearingDemandJoint, s.MaxLoadBearingErrorRad, s.MaxLoadBearingErrorJoint,
+                b.SystemCom.x, b.SystemCom.y, b.SystemCom.z, b.SystemComVelocity.x, b.SystemComVelocity.y, b.SystemComVelocity.z,
+                b.SystemMassKg, b.ComHeightM, b.Omega, b.HasCopEstimate,
+                b.HasCopEstimate ? b.CopEstimate.x : float.NaN, b.HasCopEstimate ? b.CopEstimate.z : float.NaN,
+                b.TotalNormalImpulse, b.CaptureAp, b.CaptureMl, b.CaptureMarginFront, b.CaptureMarginRear,
+                b.ComApMarginFront, b.ComApMarginRear, b.SupportApMin, b.SupportApMax, b.SupportMlMin, b.SupportMlMax,
+                b.SupportContactCount, b.HasSupport,
+                c.IsActive, c.ComRefAp, c.ComApError, c.DesiredComAccelerationAp, c.CopDesiredAp, c.CopDesiredApUnclamped,
+                c.CopMeasuredAp, c.CopErrorAp, c.HasCopMeasurement, c.RawAnkleSagittalOffsetRad, c.RawAnkleAuthorityFraction,
+                c.AnkleSagittalOffsetRad, c.AnkleAuthorityFraction, c.IsAnkleOffsetSaturated, c.PostureGuardScale,
+                c.PostureGuardEnabled, c.PostureErrorRad, c.PostureErrorRateRadPerS, c.PostureLimitProximity,
+                c.UnexpectedMarginConsumedFraction, c.HipTrunkStrategyEnabled, c.HipStrategyBlend, c.HipSagittalOffsetRad,
+                c.TrunkSagittalOffsetRad, c.AnkleFrontalOffsetRad, c.HipFrontalOffsetRad, c.RequestedAnkleTorqueNm,
+                s.LeftContacts, s.RightContacts,
                 _controller.LeftFootContact != null && _controller.LeftFootContact.IsInContact,
                 _controller.RightFootContact != null && _controller.RightFootContact.IsInContact,
-                _controller.LeftFootContact == null ? float.NaN : _controller.LeftFootContact.SlipSpeed,
-                _controller.RightFootContact == null ? float.NaN : _controller.RightFootContact.SlipSpeed,
-                snapshot.TrunkWorldPitchRadians, snapshot.PelvisPositionWorldMeters.Y,
-                maximumTrackingError, snapshot.MaximumModeledDemand);
+                s.LeftNormalImpulse, s.RightNormalImpulse, s.LeftSlip, s.RightSlip,
+                s.LeftProbeContacts, s.RightProbeContacts, s.PlantarProbeNormalImpulse, s.PlantarProbeTangentialImpulse,
+                s.NonPlantarGroundBodies, s.BarGroundContacts,
+                s.Com.HullPointCount, s.Com.HullAreaM2, s.Com.AabbAreaM2,
+                s.Com.HullSignedMarginM, s.Com.AabbSignedMarginM, s.Com.AabbApSignedMarginM,
+                s.Cop.HullSignedMarginM, s.Cop.AabbSignedMarginM, s.Cop.AabbApSignedMarginM,
+                s.Capture.HullSignedMarginM, s.Capture.AabbSignedMarginM, s.Capture.AabbApSignedMarginM,
+                bar.position.x, bar.position.y, bar.position.z, bar.rotation.x, bar.rotation.y, bar.rotation.z, bar.rotation.w,
+                bar.linearVelocity.x, bar.linearVelocity.y, bar.linearVelocity.z,
+                bar.angularVelocity.x, bar.angularVelocity.y, bar.angularVelocity.z, bar.mass,
+                saddle.IsAttached, saddle.IsBroken, sep.x, sep.y, sep.z, saddle.SaddleSeparationMeters,
+                sepBar.x, sepBar.y, sepBar.z, saddle.CurrentLinearLimitOccupancy,
+                saddle.CurrentAngularXLimitOccupancy, saddle.CurrentAngularYLimitOccupancy, saddle.CurrentAngularZLimitOccupancy,
+                saddle.RelativeRotationDegrees, force.x, force.y, force.z, torque.x, torque.y, torque.z,
+                s.BarThoraxCallbacks, barContact == null ? 0 : barContact.CompletedContactCount,
+                barImpulse.x, barImpulse.y, barImpulse.z,
+                barContact == null ? float.NaN : barContact.CompletedMinimumSeparationM,
+                s.BarThoraxPenetrationM, s.BarThoraxGapM, s.BarAthleteBodies, s.BarAthleteContacts,
+                s.BarAthleteImpulse.x, s.BarAthleteImpulse.y, s.BarAthleteImpulse.z, modeChange);
 
-            for (int index = 0; index < CausalJointIds.Length; index++)
+            foreach (string jointId in PoweredJointIds)
             {
-                PoweredJointController.PoweredJointRuntime joint = _rig.PoweredController.GetJoint(CausalJointIds[index]);
-                PoweredJointDiagnostic diagnostic = joint.PostPhysicsDiagnostic;
-                Vector3 force = joint.Joint.currentForce;
-                Vector3 torque = joint.Joint.currentTorque;
-                AppendValues(csv,
-                    diagnostic.ModeledDemand,
-                    diagnostic.ModeledDemand >= AuthorityThreshold,
-                    diagnostic.ErrorRad.x,
-                    diagnostic.LimitProximity,
-                    force.x, force.y, force.z,
-                    torque.x, torque.y, torque.z);
+                PoweredJointController.PoweredJointRuntime joint = _rig.PoweredController.GetJoint(jointId);
+                if (joint == null || !joint.HasPostPhysicsDiagnostic)
+                {
+                    for (int index = 0; index < 20; index++)
+                        csv.Append("NA,");
+                    continue;
+                }
+                PoweredJointDiagnostic d = joint.PostPhysicsDiagnostic;
+                Vector3 applied = RotationVector(d.AppliedTarget);
+                Vector3 actual = RotationVector(d.ActualRelative);
+                AppendValues(csv, true,
+                    applied.x, applied.y, applied.z, actual.x, actual.y, actual.z,
+                    d.ErrorRad.x, d.ErrorRad.y, d.ErrorRad.z, d.ErrorRad.magnitude,
+                    d.TargetAngularVelocityRadS.x, d.ActualAngularVelocityRadS.x, d.ActualAngularVelocityRadS.y,
+                    d.ActualAngularVelocityRadS.z, d.MaximumForceNm, d.ModeledDemand, d.LimitProximity,
+                    d.SolverTorqueJointSpaceNm.x, d.SolverTorqueJointSpaceNm.y, d.SolverTorqueJointSpaceNm.z);
             }
-            csv.AppendLine(WrenchFeasibility);
+
+            var flags = new List<string>(CanonicalEvents.Length + SupplementaryEvents.Length);
+            foreach (string name in CanonicalEvents)
+                flags.Add(signals[name] ? "1" : "0");
+            foreach (string name in SupplementaryEvents)
+                flags.Add(signals[name] ? "1" : "0");
+            csv.AppendLine(string.Join(",", flags));
         }
 
-        private static string ThresholdDocument() =>
-            "# GAM-13 causal audit thresholds\n\n" +
-            "Sampling: one post-physics row per authoritative 0.01 s tick, fresh scene per load.\n\n" +
-            $"Authority: modeled demand >= {AuthorityThreshold.ToString("0.00", CultureInfo.InvariantCulture)} for {ConsecutiveTicks} consecutive ticks.\n" +
-            $"Tracking: load-bearing actual/reference error >= {TrackingThresholdRad * Mathf.Rad2Deg:0.0} deg for {ConsecutiveTicks} consecutive ticks.\n" +
-            $"Posture: abs trunk pitch >= {PostureTrunkThresholdRad:0.00} rad or pelvis Y <= {PosturePelvisThresholdM:0.00} m for {ConsecutiveTicks} consecutive ticks.\n" +
-            $"Capture/support: no plantar support or capture margin <= {CaptureMarginThresholdM:0.00} m for {ConsecutiveTicks} consecutive ticks.\n" +
-            $"Saddle/contact: anchor separation >= {SaddleSeparationThresholdM:0.00} m or finite limit occupancy >= {SaddleLimitThreshold:0.00} for {ConsecutiveTicks} consecutive ticks.\n" +
-            $"Foot slip: contact-point slip > {FootSlipThresholdMps:0.00} m/s for {ConsecutiveTicks} consecutive ticks.\n\n" +
-            "Contact callbacks are observed separately from saddle failure. The current support AABB is a proxy; the convex hull is diagnostic.\n" +
-            $"WRENCH_FEASIBILITY={WrenchFeasibility}: captured contact impulses do not identify the admissible contact-wrench cone.\n";
-
-        private static string FirstOnsetOrder(params OnsetTracker[] trackers)
+        private static Vector3 RotationVector(Quaternion value)
         {
-            var events = new List<string>();
-            AddOnset(events, "AUTHORITY", trackers[0]);
-            AddOnset(events, "TRACKING", trackers[1]);
-            AddOnset(events, "POSTURE", trackers[2]);
-            AddOnset(events, "CAPTURE_SUPPORT", trackers[3]);
-            AddOnset(events, "SADDLE_CONTACT", trackers[4]);
-            AddOnset(events, "FOOT_SLIP", trackers[5]);
-            events.Sort((left, right) =>
-            {
-                ulong leftTick = ulong.Parse(left.Substring(left.IndexOf('@') + 1), CultureInfo.InvariantCulture);
-                ulong rightTick = ulong.Parse(right.Substring(right.IndexOf('@') + 1), CultureInfo.InvariantCulture);
-                return leftTick.CompareTo(rightTick);
-            });
-            return events.Count == 0 ? "NONE" : string.Join("|", events);
+            float magnitude = Mathf.Sqrt(value.x * value.x + value.y * value.y + value.z * value.z + value.w * value.w);
+            if (magnitude <= 1e-6f)
+                return Vector3.zero;
+            value = new Quaternion(value.x / magnitude, value.y / magnitude, value.z / magnitude, value.w / magnitude);
+            if (value.w < 0f)
+                value = new Quaternion(-value.x, -value.y, -value.z, -value.w);
+            float vectorMagnitude = Mathf.Sqrt(value.x * value.x + value.y * value.y + value.z * value.z);
+            if (vectorMagnitude <= 1e-6f)
+                return new Vector3(value.x, value.y, value.z) * 2f;
+            float angle = 2f * Mathf.Atan2(vectorMagnitude, Mathf.Clamp(value.w, -1f, 1f));
+            return new Vector3(value.x, value.y, value.z) * (angle / vectorMagnitude);
         }
 
-        private static void AddOnset(List<string> events, string name, OnsetTracker tracker)
-        {
-            if (tracker.HasOnset)
-                events.Add(name + "@" + tracker.FirstOnsetTick.ToString(CultureInfo.InvariantCulture));
-        }
+        private static string PredicateDocument() =>
+            PredicateVersion + "\n" +
+            "Sampling: one post-physics row per authoritative 0.01 s tick; fresh scene per load; SETUP hold at s_q=0.\n" +
+            $"Onset: first tick of the first run of {ConsecutiveTicks} consecutive true samples.\n" +
+            $"DRIVE_HIGH: max load-bearing modeled demand >= {DriveHighDemand:0.00} (diagnostic threshold).\n" +
+            $"DRIVE_SATURATION: max load-bearing modeled demand >= {DriveSaturationDemand:0.00} (PoweredJointController contract).\n" +
+            $"TRACKING_FAILURE: max load-bearing |applied target - actual| >= {TrackingFailureRad * Mathf.Rad2Deg:0.0} deg.\n" +
+            $"POSTURE_DEPARTURE: canonical posture error >= {PostureJointErrorRad * Mathf.Rad2Deg:0.0} deg OR |trunk pitch| >= {PostureTrunkPitchRad:0.00} rad OR pelvis y <= {PosturePelvisHeightM:0.00} m (Stage-A contract).\n" +
+            $"CAPTURE_DEPARTURE: plantar support present AND min(AP capture margin front, rear) <= {CaptureMarginM:0.00} m (production AABB proxy; Stage-A contract).\n" +
+            "SUPPORT_LOSS: no plantar contact on either foot (production HasSupport false).\n" +
+            $"SADDLE_LINEAR_LIMIT: saddle attached AND anchor separation / linear limit >= {SaddleLinearOccupancy:0.00}.\n" +
+            $"SADDLE_GROSS_FAILURE: saddle IsBroken (detached or separation > {SquatBarSaddle.MaxPlausibleSeparationM:0.00} m).\n" +
+            $"CONTACT_MODE_CHANGE: per-foot plantar contact count differs from the first bilateral-contact reference, OR foot slip > {FootSlipMps:0.00} m/s, OR any bar/thorax collision callback, OR any bar/athlete-body collision, OR any non-plantar athlete body touching the platform.\n" +
+            $"Supplementary: GUARD_WITHDRAWAL guard scale <= {GuardWithdrawalScale:0.00}; CAPTURE_DEPARTURE_HULL exact hull capture margin <= {CaptureMarginM:0.00} m; COM_OUTSIDE_HULL COM hull margin <= 0.\n" +
+            "Joint currentForce/currentTorque are engine diagnostics, not biological forces.\n";
+
+        private static string OnsetText(ulong? tick) =>
+            tick.HasValue ? tick.Value.ToString(CultureInfo.InvariantCulture) : "NA";
 
         private static ulong? OnsetTick(OnsetTracker tracker) =>
             tracker.HasOnset ? (ulong?)tracker.FirstOnsetTick : null;
 
-        private static void WriteSummary(string path, List<AuditResult> summaries)
+        private static void WriteSummary(string fileName, List<AuditResult> summaries)
         {
             var csv = new StringBuilder();
-            csv.AppendLine("load_kg,athlete_position_iterations,athlete_velocity_iterations,authority_onset_tick,tracking_onset_tick,posture_onset_tick,capture_support_onset_tick,saddle_contact_onset_tick,foot_slip_onset_tick,bar_thorax_callback_seen,connected_body_collision_enabled,bar_thorax_pairs,bar_thorax_ignored_pairs,wrench_feasibility,first_onset_order");
+            csv.AppendLine(AuditResult.Header);
             foreach (AuditResult result in summaries)
                 csv.AppendLine(result.ToCsv());
-            File.WriteAllText(path, csv.ToString());
+            WriteText(fileName, csv.ToString());
         }
 
-        private static void AppendValues(StringBuilder csv, params object[] values)
+        private static float[] RequestedLoads()
+        {
+            string text = Environment.GetEnvironmentVariable("GAM13_CAUSAL_LOADS");
+            if (string.IsNullOrWhiteSpace(text))
+                return (float[])CoreLoadsKg.Clone();
+            string[] tokens = text.Split(':');
+            var loads = new float[tokens.Length];
+            for (int index = 0; index < tokens.Length; index++)
+                loads[index] = ParseFloat(tokens[index]);
+            return loads;
+        }
+
+        private static float ParseFloat(string text) => float.Parse(text, CultureInfo.InvariantCulture);
+
+        private static bool ParseBool(string text) => string.Equals(text, "true", StringComparison.OrdinalIgnoreCase);
+
+        private static string SafeLabel(string text)
+        {
+            var builder = new StringBuilder(text.Length);
+            foreach (char character in text)
+                builder.Append(char.IsLetterOrDigit(character) || character == '.' || character == '-' ? character : '_');
+            return builder.ToString();
+        }
+
+        private static string OutputDirectory
+        {
+            get
+            {
+                string configured = Environment.GetEnvironmentVariable("GAM13_CAUSAL_OUTPUT_DIR");
+                string directory = string.IsNullOrWhiteSpace(configured)
+                    ? Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Artifacts", "Measurements", "GAM-13", "causal-audit"))
+                    : configured;
+                Directory.CreateDirectory(directory);
+                return directory;
+            }
+        }
+
+        private static void WriteText(string fileName, string content) =>
+            File.WriteAllText(Path.Combine(OutputDirectory, fileName), content);
+
+        private static void AppendRow(StringBuilder csv, params object[] values) => AppendValues(csv, false, values);
+
+        private static void AppendValues(StringBuilder csv, bool trailingComma, params object[] values)
         {
             for (int index = 0; index < values.Length; index++)
             {
@@ -411,24 +877,362 @@ namespace PowerliftingSimulator.Tests
                     csv.Append(',');
                 csv.Append(Format(values[index]));
             }
-            csv.Append(',');
+            if (trailingComma)
+                csv.Append(',');
+            else
+                csv.AppendLine();
         }
 
         private static string Format(object value)
         {
-            if (value == null)
-                return "NA";
-            if (value is float f)
-                return float.IsNaN(f) ? "NA" : f.ToString("R", CultureInfo.InvariantCulture);
-            if (value is double d)
-                return double.IsNaN(d) ? "NA" : d.ToString("R", CultureInfo.InvariantCulture);
-            if (value is bool b)
-                return b ? "true" : "false";
-            return Convert.ToString(value, CultureInfo.InvariantCulture);
+            switch (value)
+            {
+                case null:
+                    return "NA";
+                case float f:
+                    return float.IsNaN(f) ? "NA" : f.ToString("R", CultureInfo.InvariantCulture);
+                case double d:
+                    return double.IsNaN(d) ? "NA" : d.ToString("R", CultureInfo.InvariantCulture);
+                case bool b:
+                    return b ? "true" : "false";
+                case string text:
+                    return text.Length == 0 ? "NONE" : text.Replace(',', '|');
+                default:
+                    return Convert.ToString(value, CultureInfo.InvariantCulture);
+            }
         }
 
-        private static string MeasurementDirectory =>
-            Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Artifacts", "Measurements", "GAM-13"));
+        /// <summary>One post-physics measurement, computed once per tick.</summary>
+        private sealed class TickSample
+        {
+            public TickSample(
+                GAM13CausalAuditTests owner,
+                SquatObservationSnapshot snapshot,
+                SquatPhysicalAdapter adapter,
+                SquatBarSaddle saddle,
+                Rigidbody barBody)
+            {
+                Balance = adapter.Balance;
+                Control = adapter.BalanceController;
+
+                float maxDemand = 0f;
+                string demandJoint = "NONE";
+                float maxError = 0f;
+                string errorJoint = "NONE";
+                foreach (string jointId in LoadBearingJointIds)
+                {
+                    PoweredJointController.PoweredJointRuntime joint = owner._rig.PoweredController.GetJoint(jointId);
+                    if (joint == null || !joint.HasPostPhysicsDiagnostic)
+                        continue;
+                    PoweredJointDiagnostic diagnostic = joint.PostPhysicsDiagnostic;
+                    if (diagnostic.ModeledDemand > maxDemand)
+                    {
+                        maxDemand = diagnostic.ModeledDemand;
+                        demandJoint = jointId;
+                    }
+                    float error = diagnostic.ErrorRad.magnitude;
+                    if (error > maxError)
+                    {
+                        maxError = error;
+                        errorJoint = jointId;
+                    }
+                }
+                MaxLoadBearingDemand = maxDemand;
+                MaxLoadBearingDemandJoint = demandJoint;
+                MaxLoadBearingErrorRad = maxError;
+                MaxLoadBearingErrorJoint = errorJoint;
+
+                PhysicalFootContactDetector left = owner._controller.LeftFootContact;
+                PhysicalFootContactDetector right = owner._controller.RightFootContact;
+                LeftContacts = left == null ? 0 : left.CompletedContactCount;
+                RightContacts = right == null ? 0 : right.CompletedContactCount;
+                LeftSlip = left == null ? float.NaN : left.SlipSpeed;
+                RightSlip = right == null ? float.NaN : right.SlipSpeed;
+                LeftNormalImpulse = SumNormal(left);
+                RightNormalImpulse = SumNormal(right);
+
+                var plantar = new List<Vector3>(LeftContacts + RightContacts);
+                AddContacts(left, plantar);
+                AddContacts(right, plantar);
+                Com = SquatSupportGeometry.Measure(plantar, new Vector2(Balance.SystemCom.x, Balance.SystemCom.z));
+                Cop = Balance.HasCopEstimate
+                    ? SquatSupportGeometry.Measure(plantar, new Vector2(Balance.CopEstimate.x, Balance.CopEstimate.z))
+                    : SquatSupportGeometry.Measure(plantar, new Vector2(float.NaN, float.NaN));
+                Capture = SquatSupportGeometry.Measure(plantar, new Vector2(Balance.CaptureMl, Balance.CaptureAp));
+
+                owner._probes.TryGetValue("left_foot", out GAM13GroundContactProbe leftProbe);
+                owner._probes.TryGetValue("right_foot", out GAM13GroundContactProbe rightProbe);
+                LeftProbeContacts = leftProbe == null ? 0 : leftProbe.CompletedPlatformCount;
+                RightProbeContacts = rightProbe == null ? 0 : rightProbe.CompletedPlatformCount;
+                float normal = 0f;
+                Vector3 tangential = Vector3.zero;
+                AccumulateProbe(leftProbe, ref normal, ref tangential);
+                AccumulateProbe(rightProbe, ref normal, ref tangential);
+                PlantarProbeNormalImpulse = normal;
+                PlantarProbeTangentialImpulse = tangential.magnitude;
+
+                var nonPlantar = new List<string>();
+                int barGround = 0;
+                var barAthlete = new List<string>();
+                int barAthleteContacts = 0;
+                Vector3 barAthleteImpulse = Vector3.zero;
+                foreach (KeyValuePair<string, GAM13GroundContactProbe> pair in owner._probes)
+                {
+                    GAM13GroundContactProbe probe = pair.Value;
+                    if (probe.CompletedCount == 0)
+                        continue;
+                    if (pair.Key == "barbell")
+                    {
+                        barGround = probe.CompletedPlatformCount;
+                        for (int index = 0; index < probe.CompletedCount; index++)
+                        {
+                            GAM13GroundContactProbe.Sample contact = probe.Completed(index);
+                            if (contact.IsPlatform)
+                                continue;
+                            barAthleteContacts++;
+                            barAthleteImpulse += contact.Impulse;
+                            if (!barAthlete.Contains(contact.Other))
+                                barAthlete.Add(contact.Other);
+                        }
+                    }
+                    else if (pair.Key != "left_foot" && pair.Key != "right_foot" && probe.CompletedPlatformCount > 0)
+                    {
+                        nonPlantar.Add(pair.Key);
+                    }
+                }
+                nonPlantar.Sort(StringComparer.Ordinal);
+                barAthlete.Sort(StringComparer.Ordinal);
+                NonPlantarGroundBodies = string.Join("|", nonPlantar);
+                BarGroundContacts = barGround;
+                BarAthleteBodies = string.Join("|", barAthlete);
+                BarAthleteContacts = barAthleteContacts;
+                BarAthleteImpulse = barAthleteImpulse;
+
+                SquatBarThoraxContactDetector barContact = saddle.ThoraxContact;
+                BarThoraxCallbacks = barContact == null ? 0 : barContact.CompletedCollisionCallbackCount;
+                MeasureBarThoraxGeometry(saddle, barBody, out float penetration, out float gap);
+                BarThoraxPenetrationM = penetration;
+                BarThoraxGapM = gap;
+
+                Finite = snapshot.Bar.IsAvailable &&
+                    float.IsFinite(snapshot.Bar.PositionWorldMeters.X) &&
+                    float.IsFinite(snapshot.Bar.PositionWorldMeters.Y) &&
+                    float.IsFinite(snapshot.Bar.PositionWorldMeters.Z) &&
+                    float.IsFinite(Balance.SystemCom.x) && float.IsFinite(Balance.SystemCom.y) &&
+                    float.IsFinite(Balance.SystemCom.z) && float.IsFinite(saddle.SaddleSeparationMeters) &&
+                    PoweredJointController.IsFinite(saddle.CurrentForceEngine) &&
+                    PoweredJointController.IsFinite(saddle.CurrentTorqueEngine);
+            }
+
+            public SquatBalanceObserver Balance { get; }
+            public SquatPredictiveBalanceController Control { get; }
+            public float MaxLoadBearingDemand { get; }
+            public string MaxLoadBearingDemandJoint { get; }
+            public float MaxLoadBearingErrorRad { get; }
+            public string MaxLoadBearingErrorJoint { get; }
+            public int LeftContacts { get; }
+            public int RightContacts { get; }
+            public float LeftSlip { get; }
+            public float RightSlip { get; }
+            public float LeftNormalImpulse { get; }
+            public float RightNormalImpulse { get; }
+            public SquatSupportGeometry.Measurement Com { get; }
+            public SquatSupportGeometry.Measurement Cop { get; }
+            public SquatSupportGeometry.Measurement Capture { get; }
+            public int LeftProbeContacts { get; }
+            public int RightProbeContacts { get; }
+            public float PlantarProbeNormalImpulse { get; }
+            public float PlantarProbeTangentialImpulse { get; }
+            public string NonPlantarGroundBodies { get; }
+            public int BarGroundContacts { get; }
+            public string BarAthleteBodies { get; }
+            public int BarAthleteContacts { get; }
+            public Vector3 BarAthleteImpulse { get; }
+            public int BarThoraxCallbacks { get; }
+            public float BarThoraxPenetrationM { get; }
+            public float BarThoraxGapM { get; }
+            public bool Finite { get; }
+
+            private static float SumNormal(PhysicalFootContactDetector detector)
+            {
+                if (detector == null)
+                    return 0f;
+                float sum = 0f;
+                for (int index = 0; index < detector.CompletedContactCount; index++)
+                    sum += detector.CompletedNormalImpulse(index);
+                return sum;
+            }
+
+            private static void AddContacts(PhysicalFootContactDetector detector, List<Vector3> contacts)
+            {
+                if (detector == null)
+                    return;
+                for (int index = 0; index < detector.CompletedContactCount; index++)
+                    contacts.Add(detector.CompletedContactPoint(index));
+            }
+
+            private static void AccumulateProbe(GAM13GroundContactProbe probe, ref float normal, ref Vector3 tangential)
+            {
+                if (probe == null)
+                    return;
+                for (int index = 0; index < probe.CompletedCount; index++)
+                {
+                    GAM13GroundContactProbe.Sample sample = probe.Completed(index);
+                    if (!sample.IsPlatform)
+                        continue;
+                    float along = Vector3.Dot(sample.Impulse, sample.Normal);
+                    normal += Mathf.Abs(along);
+                    tangential += sample.Impulse - along * sample.Normal;
+                }
+            }
+
+            /// <summary>
+            /// Read-only geometric query between the bar shaft and the thorax
+            /// box. Penetration is PhysX's own depenetration distance; the gap
+            /// is the distance from the shaft axis point nearest the thorax to
+            /// the box surface, minus the shaft radius.
+            /// </summary>
+            private static void MeasureBarThoraxGeometry(
+                SquatBarSaddle saddle,
+                Rigidbody barBody,
+                out float penetration,
+                out float gap)
+            {
+                penetration = float.NaN;
+                gap = float.NaN;
+                CapsuleCollider shaft = barBody.GetComponent<CapsuleCollider>();
+                BoxCollider thoraxBox = saddle.ThoraxBody.GetComponent<BoxCollider>();
+                if (shaft == null || thoraxBox == null)
+                    return;
+
+                Transform shaftTransform = shaft.transform;
+                Transform thoraxTransform = thoraxBox.transform;
+                bool overlapping = Physics.ComputePenetration(
+                    shaft, shaftTransform.position, shaftTransform.rotation,
+                    thoraxBox, thoraxTransform.position, thoraxTransform.rotation,
+                    out _, out float distance);
+                penetration = overlapping ? distance : 0f;
+
+                Vector3 thoraxCenterWorld = thoraxTransform.TransformPoint(thoraxBox.center);
+                Vector3 local = shaftTransform.InverseTransformPoint(thoraxCenterWorld);
+                float halfSegment = Mathf.Max(0f, 0.5f * shaft.height - shaft.radius);
+                Vector3 axisPoint = shaftTransform.TransformPoint(
+                    shaft.center + new Vector3(Mathf.Clamp(local.x - shaft.center.x, -halfSegment, halfSegment), 0f, 0f));
+                Vector3 closest = Physics.ClosestPoint(axisPoint, thoraxBox, thoraxTransform.position, thoraxTransform.rotation);
+                float axisDistance = Vector3.Distance(closest, axisPoint);
+                gap = overlapping ? -distance : axisDistance - shaft.radius;
+            }
+        }
+
+        private sealed class ContactModeReference
+        {
+            private bool _hasReference;
+            private int _left;
+            private int _right;
+
+            public string LastReason { get; private set; } = "NONE";
+
+            public void Observe(TickSample sample)
+            {
+                if (_hasReference || sample.LeftContacts == 0 || sample.RightContacts == 0)
+                    return;
+                _left = sample.LeftContacts;
+                _right = sample.RightContacts;
+                _hasReference = true;
+            }
+
+            public string ChangeReason(TickSample sample)
+            {
+                var reasons = new List<string>(4);
+                if (_hasReference && (sample.LeftContacts != _left || sample.RightContacts != _right))
+                    reasons.Add($"PLANTAR_COUNT_{sample.LeftContacts}_{sample.RightContacts}_FROM_{_left}_{_right}");
+                if (sample.LeftSlip > FootSlipMps || sample.RightSlip > FootSlipMps)
+                    reasons.Add("FOOT_SLIP");
+                if (sample.BarThoraxCallbacks > 0)
+                    reasons.Add("BAR_THORAX_CONTACT");
+                if (sample.BarAthleteBodies.Length > 0)
+                    reasons.Add("BAR_ATHLETE:" + sample.BarAthleteBodies);
+                if (sample.NonPlantarGroundBodies.Length > 0)
+                    reasons.Add("NONPLANTAR_GROUND:" + sample.NonPlantarGroundBodies);
+                string reason = reasons.Count == 0 ? "NONE" : string.Join("+", reasons);
+                if (reason != "NONE")
+                    LastReason = reason;
+                return reason;
+            }
+        }
+
+        private sealed class StageAAccumulator
+        {
+            private int _measured;
+            private int _saturated;
+            private float _settlePelvis = float.NaN;
+            private float _minPelvis = float.PositiveInfinity;
+            private float _maxTrunk;
+            private float _maxFootPitch;
+            private float _minCapture = float.PositiveInfinity;
+            private float _maxComSpeed;
+            private float _maxPostureDeg;
+            private float _maxLimit;
+            private float _minGuard = 1f;
+            private float _maxAnkleDeg;
+            private float _maxSaddle;
+            private int _minContacts = int.MaxValue;
+            private bool _supportLost;
+            private bool _saddleUnstable;
+
+            public bool Upright { get; private set; }
+            public bool Pass { get; private set; }
+
+            public void Observe(
+                int tick,
+                TickSample sample,
+                SquatPhysicalAdapter adapter,
+                SquatBarSaddle saddle,
+                float footPitchDeg,
+                float pelvisY,
+                float trunkPitchRad)
+            {
+                if (tick < StageASettleTicks)
+                    return;
+                SquatBalanceObserver balance = sample.Balance;
+                _measured++;
+                if (tick == StageASettleTicks)
+                    _settlePelvis = pelvisY;
+                _minPelvis = Mathf.Min(_minPelvis, pelvisY);
+                _maxTrunk = Mathf.Max(_maxTrunk, Mathf.Abs(trunkPitchRad));
+                _maxFootPitch = Mathf.Max(_maxFootPitch, Mathf.Abs(footPitchDeg));
+                _minCapture = Mathf.Min(_minCapture, Mathf.Min(balance.CaptureMarginFront, balance.CaptureMarginRear));
+                _maxComSpeed = Mathf.Max(_maxComSpeed,
+                    new Vector2(balance.SystemComVelocity.x, balance.SystemComVelocity.z).magnitude);
+                _maxPostureDeg = Mathf.Max(_maxPostureDeg, adapter.CanonicalPostureErrorRad * Mathf.Rad2Deg);
+                _maxLimit = Mathf.Max(_maxLimit, adapter.CanonicalPostureLimitProximity);
+                _minGuard = Mathf.Min(_minGuard, sample.Control.PostureGuardScale);
+                _maxAnkleDeg = Mathf.Max(_maxAnkleDeg, Mathf.Abs(sample.Control.AnkleSagittalOffsetRad) * Mathf.Rad2Deg);
+                _maxSaddle = Mathf.Max(_maxSaddle, saddle.SaddleSeparationMeters);
+                _minContacts = Mathf.Min(_minContacts, balance.SupportContactCount);
+                _supportLost |= !balance.HasSupport;
+                _saddleUnstable |= saddle.IsBroken || !saddle.IsAttached;
+                if (adapter.MaxDriveSaturation >= 1f)
+                    _saturated++;
+                Upright = _minPelvis > PosturePelvisHeightM && _maxTrunk < PostureTrunkPitchRad;
+                Pass = _measured == AuditTicks - StageASettleTicks && !_supportLost && !_saddleUnstable && Upright &&
+                    _minCapture > CaptureMarginM && _maxComSpeed < StageAMaxComSpeedMps &&
+                    _maxFootPitch < StageAMaxFootPitchDeg &&
+                    _saturated / (float)_measured < StageAMaxSaturationFraction &&
+                    _maxPostureDeg < StageAMaxPostureErrorDeg && _maxLimit < StageAMaxLimitProximity &&
+                    _maxSaddle < StageAMaxSaddleSeparationM;
+            }
+
+            public string Summary(float loadKg) => string.Format(
+                CultureInfo.InvariantCulture,
+                "load={0:F0} measured={1} settlePelvis={2:F4} minPelvis={3:F4} maxTrunk={4:F4} " +
+                "capture={5:F4} comSpeed={6:F4} posture={7:F3} limit={8:F3} guard={9:F3} " +
+                "ankle={10:F3} saddle={11:F4} contacts={12} sat={13:F3} supportLost={14} " +
+                "saddleUnstable={15} upright={16} pass={17}",
+                loadKg, _measured, _settlePelvis, _minPelvis, _maxTrunk, _minCapture, _maxComSpeed,
+                _maxPostureDeg, _maxLimit, _minGuard, _maxAnkleDeg, _maxSaddle, _minContacts,
+                _measured == 0 ? 1f : _saturated / (float)_measured, _supportLost, _saddleUnstable, Upright, Pass);
+        }
 
         private sealed class OnsetTracker
         {
@@ -456,71 +1260,98 @@ namespace PowerliftingSimulator.Tests
             }
         }
 
-        private readonly struct AuditResult
+        private sealed class AuditResult
         {
-            public AuditResult(
-                float loadKg,
-                int positionIterations,
-                int velocityIterations,
-                ulong? authorityOnset,
-                ulong? trackingOnset,
-                ulong? postureOnset,
-                ulong? captureSupportOnset,
-                ulong? saddleOnset,
-                ulong? footSlipOnset,
-                bool callbackSeen,
-                bool connectedBodyCollisionEnabled,
-                int barThoraxPairs,
-                int barThoraxIgnoredPairs,
-                string wrenchFeasibility,
-                string firstOnsetOrder)
+            public float LoadKg;
+            public int PositionIterations;
+            public int VelocityIterations;
+            public int IslandPositionIterations;
+            public int IslandVelocityIterations;
+            public string Intervention;
+            public string ContactModeReason;
+            public int BarThoraxCallbackTicks;
+            public float MaxBarThoraxPenetrationM;
+            public bool ConnectedBodyCollisionEnabled;
+            public float BarToThoraxMassRatio;
+            public bool NonFinite;
+            public string StageASummary;
+            public bool StageAPass;
+            public bool Upright;
+            public readonly Dictionary<string, ulong?> Onsets = new Dictionary<string, ulong?>(StringComparer.Ordinal);
+
+            public static string Header
             {
-                LoadKg = loadKg;
-                PositionIterations = positionIterations;
-                VelocityIterations = velocityIterations;
-                AuthorityOnset = authorityOnset;
-                TrackingOnset = trackingOnset;
-                PostureOnset = postureOnset;
-                CaptureSupportOnset = captureSupportOnset;
-                SaddleOnset = saddleOnset;
-                FootSlipOnset = footSlipOnset;
-                CallbackSeen = callbackSeen;
-                ConnectedBodyCollisionEnabled = connectedBodyCollisionEnabled;
-                BarThoraxPairs = barThoraxPairs;
-                BarThoraxIgnoredPairs = barThoraxIgnoredPairs;
-                WrenchFeasibility = wrenchFeasibility;
-                FirstOnsetOrder = firstOnsetOrder;
+                get
+                {
+                    var columns = new List<string>
+                    {
+                        "load_kg", "athlete_position_iterations", "athlete_velocity_iterations",
+                        "island_position_iterations", "island_velocity_iterations", "intervention"
+                    };
+                    foreach (string name in CanonicalEvents)
+                        columns.Add(name.ToLowerInvariant() + "_onset_tick");
+                    foreach (string name in SupplementaryEvents)
+                        columns.Add(name.ToLowerInvariant() + "_onset_tick");
+                    columns.AddRange(new[]
+                    {
+                        "canonical_first_onset_order", "contact_mode_reason", "bar_thorax_callback_ticks",
+                        "max_bar_thorax_penetration_m", "connected_body_collision_enabled", "bar_to_thorax_mass_ratio",
+                        "non_finite", "stage_a_pass", "upright", "stage_a_summary"
+                    });
+                    return string.Join(",", columns);
+                }
             }
 
-            public float LoadKg { get; }
-            public int PositionIterations { get; }
-            public int VelocityIterations { get; }
-            public ulong? AuthorityOnset { get; }
-            public ulong? TrackingOnset { get; }
-            public ulong? PostureOnset { get; }
-            public ulong? CaptureSupportOnset { get; }
-            public ulong? SaddleOnset { get; }
-            public ulong? FootSlipOnset { get; }
-            public bool CallbackSeen { get; }
-            public bool ConnectedBodyCollisionEnabled { get; }
-            public int BarThoraxPairs { get; }
-            public int BarThoraxIgnoredPairs { get; }
-            public string WrenchFeasibility { get; }
-            public string FirstOnsetOrder { get; }
+            public string CanonicalOrder()
+            {
+                var events = new List<KeyValuePair<string, ulong>>();
+                foreach (string name in CanonicalEvents)
+                {
+                    if (Onsets.TryGetValue(name, out ulong? tick) && tick.HasValue)
+                        events.Add(new KeyValuePair<string, ulong>(name, tick.Value));
+                }
+                events.Sort((left, right) =>
+                {
+                    int byTick = left.Value.CompareTo(right.Value);
+                    return byTick != 0
+                        ? byTick
+                        : Array.IndexOf(CanonicalEvents, left.Key).CompareTo(Array.IndexOf(CanonicalEvents, right.Key));
+                });
+                if (events.Count == 0)
+                    return "NONE";
+                var parts = new List<string>(events.Count);
+                foreach (KeyValuePair<string, ulong> item in events)
+                    parts.Add(item.Key + "@" + item.Value.ToString(CultureInfo.InvariantCulture));
+                return string.Join(">", parts);
+            }
 
-            public string ToCsv() => string.Join(",",
-                Format(LoadKg),
-                PositionIterations.ToString(CultureInfo.InvariantCulture),
-                VelocityIterations.ToString(CultureInfo.InvariantCulture),
-                FormatTick(AuthorityOnset), FormatTick(TrackingOnset), FormatTick(PostureOnset),
-                FormatTick(CaptureSupportOnset), FormatTick(SaddleOnset), FormatTick(FootSlipOnset),
-                Format(CallbackSeen), Format(ConnectedBodyCollisionEnabled),
-                BarThoraxPairs.ToString(CultureInfo.InvariantCulture),
-                BarThoraxIgnoredPairs.ToString(CultureInfo.InvariantCulture),
-                WrenchFeasibility, FirstOnsetOrder);
-
-            private static string FormatTick(ulong? tick) =>
-                tick.HasValue ? tick.Value.ToString(CultureInfo.InvariantCulture) : "NA";
+            public string ToCsv()
+            {
+                var values = new List<string>
+                {
+                    Format(LoadKg),
+                    PositionIterations.ToString(CultureInfo.InvariantCulture),
+                    VelocityIterations.ToString(CultureInfo.InvariantCulture),
+                    IslandPositionIterations.ToString(CultureInfo.InvariantCulture),
+                    IslandVelocityIterations.ToString(CultureInfo.InvariantCulture),
+                    Format(Intervention)
+                };
+                foreach (string name in CanonicalEvents)
+                    values.Add(OnsetText(Onsets.TryGetValue(name, out ulong? tick) ? tick : null));
+                foreach (string name in SupplementaryEvents)
+                    values.Add(OnsetText(Onsets.TryGetValue(name, out ulong? tick) ? tick : null));
+                values.Add(CanonicalOrder());
+                values.Add(Format(ContactModeReason));
+                values.Add(BarThoraxCallbackTicks.ToString(CultureInfo.InvariantCulture));
+                values.Add(Format(MaxBarThoraxPenetrationM));
+                values.Add(Format(ConnectedBodyCollisionEnabled));
+                values.Add(Format(BarToThoraxMassRatio));
+                values.Add(Format(NonFinite));
+                values.Add(Format(StageAPass));
+                values.Add(Format(Upright));
+                values.Add("\"" + StageASummary + "\"");
+                return string.Join(",", values);
+            }
         }
     }
 }
