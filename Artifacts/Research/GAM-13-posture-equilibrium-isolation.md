@@ -90,3 +90,45 @@ no load-bearing modeled demand >= 0.95 **and** saddle linear-limit occupancy
    300 kg), so K3 is expected to hold 140 and 170 kg. 300 kg is uncertain:
    its system COM sits near the rear of the support polygon and the
    feed-forward was identified on the 1x plant.
+
+## Amendment V1.1 — 300 kg on the 3x plant (committed before these arms ran)
+
+Executed so far (evidence under `Artifacts/Measurements/GAM-13/posture-equilibrium/`):
+A0 bit-identical to the baseline bodies; G1 = NO_CHANGE at 25/60/300,
+DELAYS at 140/170, gross posture onset unmoved; E1 fails 60/140/170/300 on
+1x; K3 passes and qualifies 25/60/140/170 and fails 300. On K3 the 300 kg
+chain is guard withdrawal @19 > capture exit (rear) @43 > gross posture @144 >
+support loss @196: posture now holds, and the first event is the guard
+removing ankle authority while the system COM, latched as the balance
+reference at the first supported tick, sits 3 cm in front of the heel edge.
+
+Two findings shape the remaining arms:
+
+- The canonical posture error (Stage-A contract and guard input) is taken
+  against `Nominal x GravityBias`. At static equilibrium it therefore reads the
+  spring deflection `tau/k`, not the deviation from the canonical pose; the
+  fixture now also reports the true canonical deviation (diagnostic only,
+  not a pass criterion).
+- On K3 the 1x-identified spine table flexes the spine 2.8, 5.7, 8.2 and 7.7
+  deg off canonical at 25/60/140/170 kg (Stage-A still passes).
+
+Added arms, all on the fixed 3x plant, all five loads:
+
+| Arm | Property changed on K3 |
+|---|---|
+| K3G | `balance.posture_guard=false` |
+| T3  | offline: the unchanged `GAM13_STATIC_TRIM_SOLVER_V1` run from scratch on the V2 plant at 3x (`GAM13_TRIM_IMPEDANCE=3`), +/-12 deg, same grid |
+| C3  | `equilibrium.target=v2_trim_3x` — the five T3 canonical biases, diagnostic per-load values |
+
+Rules: a load is fixed by an arm if it qualifies under the contract above.
+Equilibrium compensation is independently necessary at 300 kg if K3 fails
+there and C3 qualifies; the guard change is necessary if K3 fails and K3G
+qualifies. Only a necessary change may reach production, and only as one
+smooth bounded law of physical system mass (equilibrium) or one fixed
+behaviour (guard).
+
+Predictions: K3G delays the 300 kg capture exit but does not fix it (the
+latched COM reference leaves about 0.3 cm between the COM and the rearmost
+admissible COP). T3 converges at 25–170 kg with biases well inside the bound
+and needs a forward ankle bias at 300 kg. C3 at 300 kg is uncertain: the
+trim's ankle lean is opposed by the latched COM reference once balance is on.
