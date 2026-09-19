@@ -125,6 +125,9 @@ namespace PowerliftingSimulator.Tests
         private const string V2TrimSolutionPath =
             "Artifacts/Measurements/GAM-13/causal-audit/v2-trim/trim-canonical-solutions.csv";
 
+        private const string V2Trim3xSolutionPath =
+            "Artifacts/Measurements/GAM-13/posture-equilibrium/t3/trim-canonical-solutions-impedance-3x.csv";
+
         [UnityTest]
         [Explicit("GAM-13 production-profile causal baseline and bar/back topology at the canonical loads.")]
         public IEnumerator GAM13_CAUSAL_AUDIT_BASELINE_AND_TOPOLOGY()
@@ -232,6 +235,75 @@ namespace PowerliftingSimulator.Tests
             _plantPrefix = string.Empty;
             WriteSummary("causal-summary-intervention-" + tag + ".csv", summaries);
             WriteText("equilibrium-audit-" + tag + ".csv", EquilibriumAuditHeader + "\n" + _equilibriumAudit);
+            yield return null;
+        }
+
+        /// <summary>
+        /// Diagnostic only: the unchanged GAM-12 25 kg attempt lifecycle, run
+        /// three times on the plant GAM13_CAUSAL_IMPEDANCE names, so a
+        /// candidate plant can be judged against the accepted 25 kg outcome
+        /// before it is ever promoted. Nothing is asserted about the outcome;
+        /// the event table is logged and written for comparison.
+        /// </summary>
+        [UnityTest]
+        [Explicit("GAM-13 candidate-plant 25 kg lifecycle diagnostic selected by GAM13_CAUSAL_IMPEDANCE.")]
+        public IEnumerator GAM13_CANDIDATE_PLANT_25KG_LIFECYCLE()
+        {
+            LogAssert.ignoreFailingMessages = true;
+            var csv = new StringBuilder();
+            csv.AppendLine("plant,run,start_window_begin,start_window_end,squat,descent,bottom,ascent,lockout,rack,rerack," +
+                "trace_count,p2_status,p2_outcome,p2_violations,p3_status,p3_outcome,p3_primary,terminal,terminal_tick");
+            JointFamilyProfile[] originalProfiles = SnapshotProfiles();
+            string plant;
+            try
+            {
+                plant = ApplyImpedancePlant();
+                plant = plant.Length == 0 ? "production" : plant.TrimEnd('-');
+                for (int repeat = 1; repeat <= 3; repeat++)
+                {
+                    yield return LoadFreshScene();
+                    _controller.SetLoad(25f);
+                    _controller.BeginAttempt();
+                    int ticks = 0;
+                    while (_controller.AttemptRecord == null && ticks < 1600)
+                    {
+                        Assert.That(_bootstrap.Runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds), Is.EqualTo(1));
+                        ticks++;
+                        if (ticks % 40 == 0)
+                            yield return null;
+                    }
+
+                    SquatAttemptRecord record = _controller.AttemptRecord;
+                    Assert.That(record, Is.Not.Null, "The 25 kg lifecycle did not finalize within 1600 ticks on " + plant + ".");
+                    string violations = record.Judgment.Violations.Count == 0 ? "NONE" : string.Empty;
+                    for (int index = 0; index < record.Judgment.Violations.Count; index++)
+                        violations += (index > 0 ? "|" : string.Empty) + record.Judgment.Violations[index].Kind;
+                    AppendRow(csv, plant, repeat,
+                        record.EventTicks.StartWindowBeginTick, record.EventTicks.StartWindowEndTick,
+                        record.EventTicks.SquatCommandTick, record.EventTicks.PhysicalDescentOnsetTick,
+                        record.EventTicks.BottomTick, record.EventTicks.AscentEstablishmentTick,
+                        record.EventTicks.LockoutTick, record.EventTicks.RackCommandTick,
+                        record.EventTicks.RerackStartedTick, record.TraceSampleCount,
+                        record.Judgment.EvidenceStatus.ToString(), record.RuleOutcome.ToString(), violations,
+                        record.FailureResult.EvidenceStatus.ToString(), record.PhysicalFailureOutcome.ToString(),
+                        record.FailureResult.PrimaryFailureKind.ToString(), record.TerminalReason.ToString(),
+                        record.TerminalTick);
+                    Debug.Log("GAM13_CANDIDATE_LIFECYCLE " + plant + " run=" + repeat + " terminal=" + record.TerminalReason +
+                        " p2=" + record.Judgment.EvidenceStatus + "/" + record.RuleOutcome + " (" + violations + ")" +
+                        " p3=" + record.FailureResult.EvidenceStatus + "/" + record.PhysicalFailureOutcome +
+                        " squat=" + record.EventTicks.SquatCommandTick + " descent=" + record.EventTicks.PhysicalDescentOnsetTick +
+                        " bottom=" + record.EventTicks.BottomTick + " ascent=" + record.EventTicks.AscentEstablishmentTick +
+                        " lockout=" + record.EventTicks.LockoutTick + " traceCount=" + record.TraceSampleCount);
+                    yield return null;
+                }
+            }
+            finally
+            {
+                RestoreProfiles(originalProfiles);
+                LogAssert.ignoreFailingMessages = false;
+            }
+
+            WriteText("lifecycle-25kg-" + plant + ".csv", csv.ToString());
             yield return null;
         }
 
@@ -478,8 +550,10 @@ namespace PowerliftingSimulator.Tests
                     _controller.Adapter.BalanceController.PostureGuardEnabled = ParseBool(value);
                     break;
                 case "equilibrium.target":
-                    Assert.That(value, Is.EqualTo("v2_trim"), "The only diagnostic equilibrium target is v2_trim.");
-                    ApplyTrimTarget(V2TrimSolutionPath, _controller.CurrentLoadKg);
+                    Assert.That(value == "v2_trim" || value == "v2_trim_3x", Is.True,
+                        "The diagnostic equilibrium targets are v2_trim (1x) and v2_trim_3x.");
+                    ApplyTrimTarget(value == "v2_trim" ? V2TrimSolutionPath : V2Trim3xSolutionPath,
+                        _controller.CurrentLoadKg);
                     break;
                 default:
                     Assert.Fail("Unknown GAM-13 causal intervention key: " + key);
