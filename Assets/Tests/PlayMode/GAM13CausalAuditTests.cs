@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using NUnit.Framework;
 using PowerliftingSimulator.Athlete;
@@ -101,6 +102,28 @@ namespace PowerliftingSimulator.Tests
         private SquatPhysicalPrototypeController _controller;
         private readonly Dictionary<string, GAM13GroundContactProbe> _probes =
             new Dictionary<string, GAM13GroundContactProbe>(StringComparer.Ordinal);
+        private readonly StringBuilder _equilibriumAudit = new StringBuilder();
+        private string _plantPrefix = string.Empty;
+
+        // GAM13_POSTURE_EQUILIBRIUM_ISOLATION_V1: the standing families in
+        // canonical order, and the joints that carry each one's bias.
+        private static readonly SquatJointFamily[] StandingFamilies =
+        {
+            SquatJointFamily.Ankle, SquatJointFamily.Knee, SquatJointFamily.Hip,
+            SquatJointFamily.Abdomen, SquatJointFamily.Thorax
+        };
+
+        private static readonly string[][] StandingFamilyJoints =
+        {
+            new[] { "left_foot", "right_foot" },
+            new[] { "left_shank", "right_shank" },
+            new[] { "left_thigh", "right_thigh" },
+            new[] { "abdomen", "abdomen" },
+            new[] { "thorax", "thorax" }
+        };
+
+        private const string V2TrimSolutionPath =
+            "Artifacts/Measurements/GAM-13/causal-audit/v2-trim/trim-canonical-solutions.csv";
 
         [UnityTest]
         [Explicit("GAM-13 production-profile causal baseline and bar/back topology at the canonical loads.")]
@@ -166,28 +189,49 @@ namespace PowerliftingSimulator.Tests
             yield return null;
         }
 
+        /// <summary>
+        /// One single-property intervention on one named plant. The plant is
+        /// production unless GAM13_CAUSAL_IMPEDANCE names a fixed load-bearing
+        /// impedance factor, which applies to every load of the run;
+        /// GAM13_CAUSAL_INTERVENTION=none runs that plant unmodified.
+        /// </summary>
         [UnityTest]
         [Explicit("GAM-13 single-property causal intervention selected by GAM13_CAUSAL_INTERVENTION.")]
         public IEnumerator GAM13_CAUSAL_AUDIT_INTERVENTION()
         {
             string intervention = Environment.GetEnvironmentVariable("GAM13_CAUSAL_INTERVENTION");
             Assert.That(string.IsNullOrWhiteSpace(intervention), Is.False,
-                "GAM13_CAUSAL_INTERVENTION must name exactly one key=value intervention.");
+                "GAM13_CAUSAL_INTERVENTION must name exactly one key=value intervention, or none.");
             Assert.That(intervention.IndexOf(';') < 0 && intervention.IndexOf(',') < 0, Is.True,
                 "Only one intervention property may change at a time.");
+            if (string.Equals(intervention.Trim(), "none", StringComparison.OrdinalIgnoreCase))
+                intervention = null;
             float[] loads = RequestedLoads();
             var summaries = new List<AuditResult>();
-            foreach (float loadKg in loads)
+            _equilibriumAudit.Clear();
+            JointFamilyProfile[] originalProfiles = SnapshotProfiles();
+            try
             {
-                yield return LoadFreshScene();
-                summaries.Add(RunAudit(loadKg,
-                    PhysicalAthleteSolverProfile.PositionIterations,
-                    PhysicalAthleteSolverProfile.VelocityIterations,
-                    intervention, null));
-                yield return null;
+                _plantPrefix = ApplyImpedancePlant();
+                foreach (float loadKg in loads)
+                {
+                    yield return LoadFreshScene();
+                    summaries.Add(RunAudit(loadKg,
+                        PhysicalAthleteSolverProfile.PositionIterations,
+                        PhysicalAthleteSolverProfile.VelocityIterations,
+                        intervention, null));
+                    yield return null;
+                }
+            }
+            finally
+            {
+                RestoreProfiles(originalProfiles);
             }
 
-            WriteSummary("causal-summary-intervention-" + SafeLabel(intervention) + ".csv", summaries);
+            string tag = _plantPrefix + (intervention == null ? "production" : SafeLabel(intervention));
+            _plantPrefix = string.Empty;
+            WriteSummary("causal-summary-intervention-" + tag + ".csv", summaries);
+            WriteText("equilibrium-audit-" + tag + ".csv", EquilibriumAuditHeader + "\n" + _equilibriumAudit);
             yield return null;
         }
 
@@ -228,7 +272,7 @@ namespace PowerliftingSimulator.Tests
             Rigidbody barBody = saddle.Barbell.Body;
             Assert.That(barBody.solverIterations, Is.EqualTo(ProductionBarPositionIterations), "Bar solver position budget changed.");
             Assert.That(barBody.solverVelocityIterations, Is.EqualTo(ProductionBarVelocityIterations), "Bar solver velocity budget changed.");
-            string interventionLabel = ApplyIntervention(intervention);
+            string interventionLabel = _plantPrefix + ApplyIntervention(intervention);
             AttachProbes(barBody);
 
             string profile = $"p{positionIterations}-v{velocityIterations}";
@@ -254,6 +298,7 @@ namespace PowerliftingSimulator.Tests
             contacts.AppendLine("tick,body,other,point_x,point_y,point_z,normal_x,normal_y,normal_z,impulse_x,impulse_y,impulse_z,separation_m");
 
             var stageA = new StageAAccumulator();
+            var equilibrium = new EquilibriumAuditor();
             var reference = new ContactModeReference();
             string contactModeReason = "NONE";
             bool nonFinite = false;
@@ -270,6 +315,10 @@ namespace PowerliftingSimulator.Tests
                 SquatObservationSnapshot snapshot = _controller.ObservationCollector.LastSnapshot;
                 var sample = new TickSample(this, snapshot, adapter, saddle, barBody);
                 nonFinite |= !sample.Finite;
+                if (tick == 0)
+                    WriteText("joints-" + runId + ".csv", JointGeometry(barBody));
+                equilibrium.Observe(adapter);
+                equilibrium.ObserveDeviation(tick, adapter, _rig);
                 if (sample.BarThoraxCallbacks > 0)
                     barThoraxCallbackTicks++;
                 maxPenetration = Mathf.Max(maxPenetration, sample.BarThoraxPenetrationM);
@@ -341,8 +390,14 @@ namespace PowerliftingSimulator.Tests
                 NonFinite = nonFinite,
                 StageASummary = stageA.Summary(loadKg),
                 StageAPass = stageA.Pass,
-                Upright = stageA.Upright
+                Upright = stageA.Upright,
+                MinHullCaptureMarginM = stageA.MinHullCaptureMarginM,
+                MaxLoadBearingDemand = stageA.MaxLoadBearingDemand,
+                MaxSaddleLinearOccupancy = stageA.MaxSaddleLinearOccupancy,
+                Qualified = stageA.Qualified && !nonFinite
             };
+            _equilibriumAudit.Append(equilibrium.Rows(runId, loadKg, SystemMassKg(barBody), barBody.mass,
+                adapter.EquilibriumLoadKg, adapter.Preload));
             foreach (string name in CanonicalEvents)
                 result.Onsets[name] = OnsetTick(trackers[name]);
             foreach (string name in SupplementaryEvents)
@@ -350,6 +405,10 @@ namespace PowerliftingSimulator.Tests
 
             Debug.Log("GAM13_CAUSAL " + result.ToCsv());
             Debug.Log("GAM13_CAUSAL_STAGE_A " + result.StageASummary);
+            Debug.Log(string.Format(CultureInfo.InvariantCulture,
+                "GAM13_CAUSAL_QUALIFICATION run={0} hullCapture={1:F4} lbDemand={2:F3} saddleLinear={3:F3} qualified={4}",
+                runId, result.MinHullCaptureMarginM, result.MaxLoadBearingDemand, result.MaxSaddleLinearOccupancy,
+                result.Qualified));
             Assert.That(nonFinite, Is.False, $"GAM-13 causal audit produced non-finite telemetry for {runId}.");
             return result;
         }
@@ -418,6 +477,10 @@ namespace PowerliftingSimulator.Tests
                 case "balance.posture_guard":
                     _controller.Adapter.BalanceController.PostureGuardEnabled = ParseBool(value);
                     break;
+                case "equilibrium.target":
+                    Assert.That(value, Is.EqualTo("v2_trim"), "The only diagnostic equilibrium target is v2_trim.");
+                    ApplyTrimTarget(V2TrimSolutionPath, _controller.CurrentLoadKg);
+                    break;
                 default:
                     Assert.Fail("Unknown GAM-13 causal intervention key: " + key);
                     break;
@@ -452,6 +515,260 @@ namespace PowerliftingSimulator.Tests
             maximumForce = drive.maximumForce,
             useAcceleration = drive.useAcceleration
         };
+
+        /// <summary>
+        /// Diagnostic only: a committed V2 static-trim solution for this
+        /// load, as the five standing biases. Lower-chain families take the
+        /// value directly; the spine families get the flat term that makes
+        /// flat + standing surface equal the trim at s_q = 0, which is exactly
+        /// how the trim fixture applied its candidates.
+        /// </summary>
+        private void ApplyTrimTarget(string solutionPath, float loadKg)
+        {
+            float[] trim = TrimSolution(solutionPath, loadKg);
+            Assert.That(trim, Is.Not.Null, $"No trim solution in {solutionPath} for {loadKg:F0} kg.");
+            SquatPhysicalAdapter adapter = _controller.Adapter;
+            SquatEquilibriumPreload preload = adapter.Preload;
+            for (int index = 0; index < StandingFamilies.Length; index++)
+            {
+                SquatJointFamily family = StandingFamilies[index];
+                float surface = preload.SpineBiasDegrees(family, 0f, adapter.EquilibriumLoadKg);
+                preload.SetAnatomicalFlexionBiasDegrees(family, trim[index] - surface);
+            }
+        }
+
+        private static float[] V2TrimSolution(float loadKg) => TrimSolution(V2TrimSolutionPath, loadKg);
+
+        private static float[] TrimSolution(string solutionPath, float loadKg)
+        {
+            string path = Path.GetFullPath(Path.Combine(Application.dataPath, "..", solutionPath));
+            if (!File.Exists(path))
+                return null;
+            string[] lines = File.ReadAllLines(path);
+            string[] header = lines[0].Split(',');
+            int load = Array.IndexOf(header, "load_kg");
+            int ankle = Array.IndexOf(header, "ankle_bias_deg");
+            for (int row = 1; row < lines.Length; row++)
+            {
+                string[] cells = lines[row].Split(',');
+                if (cells.Length <= ankle + 4 || !Mathf.Approximately(ParseFloat(cells[load]), loadKg))
+                    continue;
+                var values = new float[StandingFamilies.Length];
+                for (int index = 0; index < values.Length; index++)
+                    values[index] = (float)double.Parse(cells[ankle + index], CultureInfo.InvariantCulture);
+                return values;
+            }
+            return null;
+        }
+
+        private static JointFamilyProfile[] ProfileArray() =>
+            (JointFamilyProfile[])typeof(PoweredJointController)
+                .GetField("Profiles", BindingFlags.NonPublic | BindingFlags.Static)
+                .GetValue(null);
+
+        private static JointFamilyProfile[] SnapshotProfiles() => (JointFamilyProfile[])ProfileArray().Clone();
+
+        private static void RestoreProfiles(JointFamilyProfile[] original)
+        {
+            JointFamilyProfile[] live = ProfileArray();
+            for (int index = 0; index < live.Length; index++)
+                live[index] = original[index];
+        }
+
+        /// <summary>
+        /// One fixed load-bearing impedance for the whole run: ankle, knee,
+        /// hip and trunk springs times the factor and dampers times its square
+        /// root, so each joint keeps its damping ratio. Applied before any
+        /// scene loads so every rig is built on it; returns the run-label
+        /// prefix, empty for production.
+        /// </summary>
+        private static string ApplyImpedancePlant()
+        {
+            string text = Environment.GetEnvironmentVariable("GAM13_CAUSAL_IMPEDANCE");
+            if (string.IsNullOrWhiteSpace(text))
+                return string.Empty;
+            float factor = ParseFloat(text);
+            Assert.That(float.IsFinite(factor) && factor > 0f && factor <= 8f, Is.True,
+                "GAM13_CAUSAL_IMPEDANCE must be a finite factor in (0,8].");
+            if (Mathf.Abs(factor - 1f) <= 1e-6f)
+                return string.Empty;
+
+            JointFamilyProfile[] live = ProfileArray();
+            for (int index = 0; index < live.Length; index++)
+            {
+                JointFamilyProfile profile = live[index];
+                if (profile.Id != "ankle" && profile.Id != "knee" && profile.Id != "hip" && profile.Id != "trunk")
+                    continue;
+                live[index] = new JointFamilyProfile(
+                    profile.Id,
+                    profile.Spring * factor,
+                    profile.Damper * Mathf.Sqrt(factor),
+                    profile.BaseCapacityNm,
+                    profile.MaxTargetRateRadS);
+            }
+            return "k" + text.Trim() + "x-";
+        }
+
+        private float SystemMassKg(Rigidbody barBody)
+        {
+            float mass = barBody.mass;
+            foreach (PhysicalAthleteRig.SegmentRuntime segment in _rig.Segments.Values)
+            {
+                if (segment.Body != null)
+                    mass += segment.Body.mass;
+            }
+            return mass;
+        }
+
+        /// <summary>
+        /// Spawn-pose geometry for the offline static-stability check: the
+        /// segment tree, each joint's world anchor and axis, and the drive the
+        /// joint is actually running. Masses and centres of mass are in the
+        /// bodymeta and bodies files of the same run.
+        /// </summary>
+        private string JointGeometry(Rigidbody barBody)
+        {
+            var csv = new StringBuilder();
+            csv.AppendLine("segment,parent,family,anchor_x,anchor_y,anchor_z,axis_x,axis_y,axis_z,spring,damper,max_force_nm");
+            foreach (PhysicalSegmentRecipe recipe in PhysicalAthleteDefinition.Segments)
+            {
+                PoweredJointController.PoweredJointRuntime joint = recipe.ParentId == null
+                    ? null
+                    : _rig.PoweredController.GetJoint(recipe.Id);
+                if (joint == null)
+                {
+                    AppendRow(csv, recipe.Id, recipe.ParentId ?? "NONE", "root",
+                        float.NaN, float.NaN, float.NaN, float.NaN, float.NaN, float.NaN, 0f, 0f, 0f);
+                    continue;
+                }
+                ConfigurableJoint configurable = joint.Joint;
+                Vector3 anchor = configurable.transform.TransformPoint(configurable.anchor);
+                Vector3 axis = configurable.transform.TransformDirection(configurable.axis).normalized;
+                AppendRow(csv, recipe.Id, recipe.ParentId, joint.Recipe.Family,
+                    anchor.x, anchor.y, anchor.z, axis.x, axis.y, axis.z,
+                    configurable.angularXDrive.positionSpring, configurable.angularXDrive.positionDamper,
+                    configurable.angularXDrive.maximumForce);
+            }
+            ConfigurableJoint saddle = _controller.Saddle.Joint;
+            Vector3 barAnchor = barBody.transform.TransformPoint(saddle.anchor);
+            AppendRow(csv, "barbell", "thorax", "saddle",
+                barAnchor.x, barAnchor.y, barAnchor.z, float.NaN, float.NaN, float.NaN,
+                saddle.yDrive.positionSpring, saddle.yDrive.positionDamper, saddle.yDrive.maximumForce);
+            return csv.ToString();
+        }
+
+        private const string EquilibriumAuditHeader =
+            "run_id,load_kg,system_mass_kg,bar_mass_kg,equilibrium_load_kg,family,flat_bias_deg," +
+            "standing_surface_deg,total_anatomical_deg,composed_logical_deg_a,composed_logical_deg_b," +
+            "composed_matches_total,max_composed_drift_deg,hard_bound_deg,at_hard_bound,v2_trim_deg," +
+            "runtime_minus_trim_deg,max_canonical_deviation_deg,tail_signed_logical_deviation_deg";
+
+        /// <summary>
+        /// What the standing equilibrium term actually is at run time: the
+        /// flat family bias, the phase-0 spine surface at the configured
+        /// load, their anatomical total, and the gravity-bias rotation the
+        /// adapter really composed into each joint target (logical space,
+        /// sagittal angle). Drift is the largest change of that composed
+        /// rotation over the run, which a SETUP hold should keep at zero.
+        /// </summary>
+        private sealed class EquilibriumAuditor
+        {
+            private const int TailTicks = 100;
+
+            private readonly float[,] _first = new float[5, 2];
+            private readonly float[] _drift = new float[5];
+            private readonly float[] _maxDeviation = new float[5];
+            private readonly float[] _tailDeviationSum = new float[5];
+            private int _tailSamples;
+            private bool _hasFirst;
+
+            public void Observe(SquatPhysicalAdapter adapter)
+            {
+                for (int family = 0; family < StandingFamilies.Length; family++)
+                {
+                    for (int side = 0; side < 2; side++)
+                    {
+                        float angle = ComposedDegrees(adapter, StandingFamilyJoints[family][side]);
+                        if (!_hasFirst)
+                            _first[family, side] = angle;
+                        else
+                            _drift[family] = Mathf.Max(_drift[family], Mathf.Abs(angle - _first[family, side]));
+                    }
+                }
+                _hasFirst = true;
+            }
+
+            /// <summary>
+            /// How far each joint actually is from the canonical GAM-10
+            /// standing pose, which the canonical posture error does not
+            /// measure: that error is taken against nominal x gravity bias, so
+            /// at static equilibrium it reads the spring deflection tau/k, not
+            /// the pose. Measured window only; the signed tail mean is the
+            /// logical sagittal component averaged over both sides.
+            /// </summary>
+            public void ObserveDeviation(int tick, SquatPhysicalAdapter adapter, PhysicalAthleteRig rig)
+            {
+                if (tick < StageASettleTicks)
+                    return;
+                bool tail = tick >= AuditTicks - TailTicks;
+                for (int family = 0; family < StandingFamilies.Length; family++)
+                {
+                    for (int side = 0; side < 2; side++)
+                    {
+                        string jointId = StandingFamilyJoints[family][side];
+                        PoweredJointController.PoweredJointRuntime joint = rig.PoweredController.GetJoint(jointId);
+                        if (joint == null || !joint.HasPostPhysicsDiagnostic ||
+                            !adapter.TryGetTargetComposition(jointId, out SquatPhysicalAdapter.JointTargetComposition composition))
+                            continue;
+                        Quaternion actual = joint.PostPhysicsDiagnostic.ActualRelative;
+                        _maxDeviation[family] = Mathf.Max(_maxDeviation[family], Quaternion.Angle(composition.Nominal, actual));
+                        if (tail)
+                            _tailDeviationSum[family] += 0.5f *
+                                RotationVector(Quaternion.Inverse(composition.Nominal) * actual).x * Mathf.Rad2Deg;
+                    }
+                }
+                if (tail)
+                    _tailSamples++;
+            }
+
+            public string Rows(
+                string runId,
+                float loadKg,
+                float systemMassKg,
+                float barMassKg,
+                float equilibriumLoadKg,
+                SquatEquilibriumPreload preload)
+            {
+                float[] trim = V2TrimSolution(loadKg);
+                float bound = SquatEquilibriumPreload.HardBoundRad * Mathf.Rad2Deg;
+                var csv = new StringBuilder();
+                for (int index = 0; index < StandingFamilies.Length; index++)
+                {
+                    SquatJointFamily family = StandingFamilies[index];
+                    float flat = preload.AnatomicalFlexionBiasDegrees(family);
+                    float surface = preload.SpineBiasDegrees(family, 0f, equilibriumLoadKg);
+                    float total = flat + surface;
+                    bool matches = Mathf.Abs(Mathf.Abs(_first[index, 0]) - Mathf.Abs(total)) < 1e-2f &&
+                        Mathf.Abs(Mathf.Abs(_first[index, 1]) - Mathf.Abs(total)) < 1e-2f;
+                    float trimValue = trim == null ? float.NaN : trim[index];
+                    AppendRow(csv, runId, loadKg, systemMassKg, barMassKg, equilibriumLoadKg, family.ToString(),
+                        flat, surface, total, _first[index, 0], _first[index, 1], matches, _drift[index], bound,
+                        Mathf.Abs(total) >= bound - 0.1f, trimValue, total - trimValue, _maxDeviation[index],
+                        _tailSamples == 0 ? float.NaN : _tailDeviationSum[index] / _tailSamples);
+                }
+                return csv.ToString();
+            }
+
+            private static float ComposedDegrees(SquatPhysicalAdapter adapter, string jointId)
+            {
+                if (!adapter.TryGetTargetComposition(jointId, out SquatPhysicalAdapter.JointTargetComposition composition))
+                    return float.NaN;
+                Quaternion bias = composition.GravityBias;
+                if (bias.w < 0f)
+                    bias = new Quaternion(-bias.x, -bias.y, -bias.z, -bias.w);
+                return 2f * Mathf.Atan2(bias.x, bias.w) * Mathf.Rad2Deg;
+            }
+        }
 
         private void AttachProbes(Rigidbody barBody)
         {
@@ -1184,6 +1501,15 @@ namespace PowerliftingSimulator.Tests
             public bool Upright { get; private set; }
             public bool Pass { get; private set; }
 
+            // GAM13_POSTURE_EQUILIBRIUM_ISOLATION_V1 qualification checks over
+            // the same measured window. They extend Stage-A, never relax it.
+            public float MinHullCaptureMarginM { get; private set; } = float.PositiveInfinity;
+            public float MaxLoadBearingDemand { get; private set; }
+            public float MaxSaddleLinearOccupancy { get; private set; }
+
+            public bool Qualified => Pass && MinHullCaptureMarginM > CaptureMarginM &&
+                MaxLoadBearingDemand < DriveSaturationDemand && MaxSaddleLinearOccupancy < SaddleLinearOccupancy;
+
             public void Observe(
                 int tick,
                 TickSample sample,
@@ -1213,6 +1539,13 @@ namespace PowerliftingSimulator.Tests
                 _minContacts = Mathf.Min(_minContacts, balance.SupportContactCount);
                 _supportLost |= !balance.HasSupport;
                 _saddleUnstable |= saddle.IsBroken || !saddle.IsAttached;
+                float hullCapture = sample.Capture.ContactCount > 0 && float.IsFinite(sample.Capture.HullSignedMarginM)
+                    ? sample.Capture.HullSignedMarginM
+                    : -1f;
+                MinHullCaptureMarginM = Mathf.Min(MinHullCaptureMarginM, hullCapture);
+                MaxLoadBearingDemand = Mathf.Max(MaxLoadBearingDemand, sample.MaxLoadBearingDemand);
+                MaxSaddleLinearOccupancy = Mathf.Max(MaxSaddleLinearOccupancy,
+                    saddle.IsAttached ? saddle.CurrentLinearLimitOccupancy : 1f);
                 if (adapter.MaxDriveSaturation >= 1f)
                     _saturated++;
                 Upright = _minPelvis > PosturePelvisHeightM && _maxTrunk < PostureTrunkPitchRad;
@@ -1278,6 +1611,10 @@ namespace PowerliftingSimulator.Tests
             public string StageASummary;
             public bool StageAPass;
             public bool Upright;
+            public float MinHullCaptureMarginM;
+            public float MaxLoadBearingDemand;
+            public float MaxSaddleLinearOccupancy;
+            public bool Qualified;
             public readonly Dictionary<string, ulong?> Onsets = new Dictionary<string, ulong?>(StringComparer.Ordinal);
 
             public static string Header
@@ -1297,7 +1634,9 @@ namespace PowerliftingSimulator.Tests
                     {
                         "canonical_first_onset_order", "contact_mode_reason", "bar_thorax_callback_ticks",
                         "max_bar_thorax_penetration_m", "connected_body_collision_enabled", "bar_to_thorax_mass_ratio",
-                        "non_finite", "stage_a_pass", "upright", "stage_a_summary"
+                        "non_finite", "stage_a_pass", "upright", "stage_a_summary",
+                        "min_hull_capture_margin_m", "max_load_bearing_demand", "max_saddle_linear_occupancy",
+                        "qualified"
                     });
                     return string.Join(",", columns);
                 }
@@ -1351,6 +1690,10 @@ namespace PowerliftingSimulator.Tests
                 values.Add(Format(StageAPass));
                 values.Add(Format(Upright));
                 values.Add("\"" + StageASummary + "\"");
+                values.Add(Format(MinHullCaptureMarginM));
+                values.Add(Format(MaxLoadBearingDemand));
+                values.Add(Format(MaxSaddleLinearOccupancy));
+                values.Add(Format(Qualified));
                 return string.Join(",", values);
             }
         }

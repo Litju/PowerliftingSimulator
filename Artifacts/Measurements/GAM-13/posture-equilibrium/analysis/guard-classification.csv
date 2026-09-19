@@ -1,0 +1,6 @@
+load_kg,reference_first_capture_onset,guard_off_first_capture_onset,reference_posture_gross_onset,guard_off_posture_gross_onset,reference_support_loss_onset,guard_off_support_loss_onset,reference_stage_a_pass,guard_off_stage_a_pass,classification
+25,NA,NA,NA,NA,NA,NA,true,true,NO_CHANGE
+60,NA,NA,NA,NA,NA,NA,false,false,NO_CHANGE
+140,76,100,51,53,NA,NA,false,false,DELAYS
+170,73,85,45,45,192,210,false,false,DELAYS
+300,63,68,34,33,139,143,false,false,NO_CHANGE
