@@ -31,7 +31,7 @@ namespace PowerliftingSimulator.Tests
                 .ToArray();
 
         [UnityTest]
-        [Explicit("GAM-45 fresh-process start-window probe; set GAM45_PROBE to P0, P1, P2, or P2_NO_LOWER_CHAIN.")]
+        [Explicit("GAM-45/GAM-46 fresh-process start-window probe; set GAM45_PROBE to P0, P1, P2, P2_NO_LOWER_CHAIN, or LC1.")]
         public IEnumerator GAM45_START_WINDOW_PROBE()
         {
             ProbeArm arm = ParseArm(Environment.GetEnvironmentVariable("GAM45_PROBE"));
@@ -116,6 +116,9 @@ namespace PowerliftingSimulator.Tests
                     break;
                 case ProbeArm.P2:
                     controller.Adapter.Preload.ExperimentalBiasOverride = GAM43FeedForward.ForVariant("F2");
+                    break;
+                case ProbeArm.LC1:
+                    controller.Adapter.Preload.ExperimentalBiasOverride = GAM43FeedForward.ForVariant("LC1");
                     break;
                 case ProbeArm.P2NoLowerChain:
                     controller.Adapter.Preload.ExperimentalBiasOverride = F2WithoutLowerChainStanding;
@@ -451,7 +454,8 @@ namespace PowerliftingSimulator.Tests
                 case "P1": return ProbeArm.P1;
                 case "P2": return ProbeArm.P2;
                 case "P2_NO_LOWER_CHAIN": return ProbeArm.P2NoLowerChain;
-                default: throw new ArgumentException("GAM45_PROBE must be P0, P1, P2, or P2_NO_LOWER_CHAIN.");
+                case "LC1": return ProbeArm.LC1;
+                default: throw new ArgumentException("GAM45_PROBE must be P0, P1, P2, P2_NO_LOWER_CHAIN, or LC1.");
             }
         }
 
@@ -495,7 +499,8 @@ namespace PowerliftingSimulator.Tests
             P0,
             P1,
             P2,
-            P2NoLowerChain
+            P2NoLowerChain,
+            LC1
         }
     }
 }
