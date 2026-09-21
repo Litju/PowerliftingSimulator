@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-21 04:16:14Z" end-time="2026-09-21 04:16:19Z" duration="4.8663484">
+  <test-suite type="TestSuite" id="1273" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="202" result="Passed" start-time="2026-09-21 04:16:14Z" end-time="2026-09-21 04:16:19Z" duration="4.866348" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1267" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="E:/Data/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="202" result="Passed" start-time="2026-09-21 04:16:14Z" end-time="2026-09-21 04:16:19Z" duration="4.841020" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="20092" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1268" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="202" result="Passed" start-time="2026-09-21 04:16:14Z" end-time="2026-09-21 04:16:19Z" duration="4.834904" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1269" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="202" result="Passed" start-time="2026-09-21 04:16:14Z" end-time="2026-09-21 04:16:19Z" duration="4.829127" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1092" name="GAM43LoadedStandingBenchmarkTests" fullname="PowerliftingSimulator.Tests.GAM43LoadedStandingBenchmarkTests" classname="PowerliftingSimulator.Tests.GAM43LoadedStandingBenchmarkTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-21 04:16:14Z" end-time="2026-09-21 04:16:19Z" duration="4.811298" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1093" name="GAM43_LOADED_STANDING_BENCHMARK" fullname="PowerliftingSimulator.Tests.GAM43LoadedStandingBenchmarkTests.GAM43_LOADED_STANDING_BENCHMARK" methodname="GAM43_LOADED_STANDING_BENCHMARK" classname="PowerliftingSimulator.Tests.GAM43LoadedStandingBenchmarkTests" runstate="Explicit" seed="1965749864" result="Passed" start-time="2026-09-21 04:16:14Z" end-time="2026-09-21 04:16:19Z" duration="4.786156" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="_SKIPREASON" value="GAM-43 frozen loaded-standing experiment; run with GAM43_MODE and candidate environment variables." />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[GAM43_STANDING phase=phase2 feed=F1 saddle=S0 repeat=1 load=25 ticks=500 upright=True hull=0.1060 pose=2.809 deflection=0.967 jointLimit=0.059 drive=0.119 sat=0.000 rearCop=0.0763 frontCop=0.1537 saddleSep=0.0053 saddleLimit=0.106 supportLost=False pass=True
+GAM43_STANDING phase=phase2 feed=F1 saddle=S0 repeat=1 load=60 ticks=500 upright=True hull=0.0916 pose=2.872 deflection=2.136 jointLimit=0.063 drive=0.113 sat=0.000 rearCop=0.0619 frontCop=0.1685 saddleSep=0.0123 saddleLimit=0.246 supportLost=False pass=True
+GAM43_STANDING phase=phase2 feed=F1 saddle=S0 repeat=1 load=140 ticks=500 upright=True hull=0.0715 pose=3.063 deflection=5.712 jointLimit=0.061 drive=0.238 sat=0.000 rearCop=0.0452 frontCop=0.1864 saddleSep=0.0282 saddleLimit=0.564 supportLost=False pass=True
+GAM43_STANDING phase=phase2 feed=F1 saddle=S0 repeat=1 load=170 ticks=500 upright=True hull=0.0696 pose=2.737 deflection=6.642 jointLimit=0.055 drive=0.286 sat=0.000 rearCop=0.0414 frontCop=0.1903 saddleSep=0.0340 saddleLimit=0.680 supportLost=False pass=True
+GAM43_STANDING phase=phase2 feed=F1 saddle=S0 repeat=1 load=300 ticks=500 upright=False hull=-1.7182 pose=17.965 deflection=22.845 jointLimit=0.697 drive=1.010 sat=0.004 rearCop=-Infinity frontCop=-Infinity saddleSep=0.0512 saddleLimit=1.044 supportLost=True pass=True
+Saving results to: C:/Users/Usuario/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
