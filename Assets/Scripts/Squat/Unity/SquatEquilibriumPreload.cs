@@ -30,6 +30,11 @@ namespace PowerliftingSimulator.Squat.Unity
     /// </summary>
     public sealed class SquatEquilibriumPreload
     {
+        public delegate float ExperimentalBiasEvaluator(
+            SquatJointFamily family,
+            float phase,
+            float loadKg);
+
         public const string ClaimClass = "OFFLINE_GAME_CALIBRATION";
         public const string CalibrationVersion = "GAM13_SQUAT_EQUILIBRIUM_FEEDFORWARD_V1";
 
@@ -172,6 +177,13 @@ namespace PowerliftingSimulator.Squat.Unity
         public bool SpineCalibrationEnabled { get; set; } = true;
 
         /// <summary>
+        /// Reversible GAM-43 experiment seam. Null preserves the qualified
+        /// production surface below; experiment code may inject one smooth,
+        /// load/phase-driven candidate law without changing the default path.
+        /// </summary>
+        public ExperimentalBiasEvaluator ExperimentalBiasOverride { get; set; }
+
+        /// <summary>
         /// Qualified spine bias for a phase and bar load, in degrees of
         /// anatomical flexion. The representation is one bounded, smooth
         /// phase x load feed-forward surface over the Stage-A knots. Values at
@@ -236,6 +248,31 @@ namespace PowerliftingSimulator.Squat.Unity
             const float phaseStep = 0.0005f;
             float lower = SpineBiasDegrees(family, Mathf.Max(0f, phase - phaseStep), loadKg);
             float upper = SpineBiasDegrees(family, Mathf.Min(1f, phase + phaseStep), loadKg);
+            float span = Mathf.Min(1f, phase + phaseStep) - Mathf.Max(0f, phase - phaseStep);
+            return span <= 1e-6f ? 0f : (upper - lower) / span;
+        }
+
+        public float BiasDegrees(SquatJointFamily family, float phase, float loadKg)
+        {
+            if (ExperimentalBiasOverride != null)
+            {
+                float value = ExperimentalBiasOverride(family, phase, loadKg);
+                if (!float.IsFinite(value))
+                    throw new InvalidOperationException("The experimental feed-forward returned a non-finite bias.");
+                return Mathf.Clamp(value, -HardBoundRad * Mathf.Rad2Deg, HardBoundRad * Mathf.Rad2Deg);
+            }
+
+            return AnatomicalFlexionBiasDegrees(family) + SpineBiasDegrees(family, phase, loadKg);
+        }
+
+        public float BiasRateDegreesPerPhase(SquatJointFamily family, float phase, float loadKg)
+        {
+            if (ExperimentalBiasOverride == null)
+                return SpineBiasRateDegreesPerPhase(family, phase, loadKg);
+
+            const float phaseStep = 0.0005f;
+            float lower = BiasDegrees(family, Mathf.Max(0f, phase - phaseStep), loadKg);
+            float upper = BiasDegrees(family, Mathf.Min(1f, phase + phaseStep), loadKg);
             float span = Mathf.Min(1f, phase + phaseStep) - Mathf.Max(0f, phase - phaseStep);
             return span <= 1e-6f ? 0f : (upper - lower) / span;
         }

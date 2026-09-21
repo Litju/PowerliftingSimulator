@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Failed(Child)" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-21 03:44:43Z" end-time="2026-09-21 03:45:16Z" duration="33.156849">
+  <test-suite type="TestSuite" id="1271" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="201" result="Failed" site="Child" start-time="2026-09-21 03:44:43Z" end-time="2026-09-21 03:45:16Z" duration="33.156849" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1265" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="E:/Data/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="201" result="Failed" site="Child" start-time="2026-09-21 03:44:43Z" end-time="2026-09-21 03:45:16Z" duration="33.108022" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="19296" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1266" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="201" result="Failed" site="Child" start-time="2026-09-21 03:44:43Z" end-time="2026-09-21 03:45:16Z" duration="33.093049" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1267" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="201" result="Failed" site="Child" start-time="2026-09-21 03:44:43Z" end-time="2026-09-21 03:45:16Z" duration="33.067408" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestFixture" id="1081" name="GAM13StageAStandingQualificationTests" fullname="PowerliftingSimulator.Tests.GAM13StageAStandingQualificationTests" classname="PowerliftingSimulator.Tests.GAM13StageAStandingQualificationTests" runstate="Runnable" testcasecount="6" result="Failed" site="Child" start-time="2026-09-21 03:44:43Z" end-time="2026-09-21 03:45:16Z" duration="33.040756" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1083" name="GAM13_STAGE_A_FIXED_5X_PLANT_STANDING_QUALIFICATION" fullname="PowerliftingSimulator.Tests.GAM13StageAStandingQualificationTests.GAM13_STAGE_A_FIXED_5X_PLANT_STANDING_QUALIFICATION" methodname="GAM13_STAGE_A_FIXED_5X_PLANT_STANDING_QUALIFICATION" classname="PowerliftingSimulator.Tests.GAM13StageAStandingQualificationTests" runstate="Explicit" seed="130109155" result="Failed" start-time="2026-09-21 03:44:43Z" end-time="2026-09-21 03:45:16Z" duration="32.969289" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="_SKIPREASON" value="GAM-13 fixed 5x plant standing qualification; one candidate plant across all canonical loads." />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  repeat=1 load=170 measured=500 settlePelvis=0.9751 minPelvis=0.9750 maxTrunk=0.1513 captureAp=0.0728 captureHull=0.0716 comSpeed=0.0210 canonical=10.046 deflection=2.304 limit=0.222 guard=0.803 ankle=5.163 rearCopAtSettle=0.0431 rearCopAuthority=0.0431 saddle=0.0343 contacts=8 sat=0.000 supportLost=False saddleUnstable=False nonFinite=False upright=True pass=False
+  Expected: True
+  But was:  False
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.Tests.GAM13StageAStandingQualificationTests+<GAM13_STAGE_A_FIXED_PLANT_STANDING_QUALIFICATION>d__17.MoveNext () [0x00190] in E:\Data\Projects\PowerliftingSimulator\Assets\Tests\PlayMode\GAM13StageAStandingQualificationTests.cs:84
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[GAM13_STAGE_A repeat=0 load=25 measured=500 settlePelvis=0.9792 minPelvis=0.9791 maxTrunk=0.0388 captureAp=0.1059 captureHull=0.1059 comSpeed=0.0041 canonical=3.195 deflection=0.894 limit=0.071 guard=0.996 ankle=5.201 rearCopAtSettle=0.0763 rearCopAuthority=0.0763 saddle=0.0053 contacts=8 sat=0.000 supportLost=False saddleUnstable=False nonFinite=False upright=True pass=True
+GAM13_STAGE_A repeat=0 load=25 measured=500 settlePelvis=0.9792 minPelvis=0.9791 maxTrunk=0.0388 captureAp=0.1059 captureHull=0.1059 comSpeed=0.0041 canonical=3.195 deflection=0.894 limit=0.071 guard=0.996 ankle=5.201 rearCopAtSettle=0.0763 rearCopAuthority=0.0763 saddle=0.0053 contacts=8 sat=0.000 supportLost=False saddleUnstable=False nonFinite=False upright=True pass=True
+GAM13_STAGE_A repeat=0 load=25 measured=500 settlePelvis=0.9792 minPelvis=0.9791 maxTrunk=0.0388 captureAp=0.1059 captureHull=0.1059 comSpeed=0.0041 canonical=3.195 deflection=0.894 limit=0.071 guard=0.996 ankle=5.201 rearCopAtSettle=0.0763 rearCopAuthority=0.0763 saddle=0.0053 contacts=8 sat=0.000 supportLost=False saddleUnstable=False nonFinite=False upright=True pass=True
+GAM13_STAGE_A repeat=0 load=60 measured=500 settlePelvis=0.9784 minPelvis=0.9783 maxTrunk=0.0524 captureAp=0.0919 captureHull=0.0918 comSpeed=0.0039 canonical=6.365 deflection=1.227 limit=0.141 guard=0.954 ankle=5.360 rearCopAtSettle=0.0621 rearCopAuthority=0.0621 saddle=0.0123 contacts=8 sat=0.000 supportLost=False saddleUnstable=False nonFinite=False upright=True pass=True
+GAM13_STAGE_A repeat=0 load=60 measured=500 settlePelvis=0.9784 minPelvis=0.9783 maxTrunk=0.0524 captureAp=0.0919 captureHull=0.0918 comSpeed=0.0039 canonical=6.365 deflection=1.227 limit=0.141 guard=0.954 ankle=5.360 rearCopAtSettle=0.0621 rearCopAuthority=0.0621 saddle=0.0123 contacts=8 sat=0.000 supportLost=False saddleUnstable=False nonFinite=False upright=True pass=True
+GAM13_STAGE_A repeat=0 load=60 measured=500 settlePelvis=0.9784 minPelvis=0.9783 maxTrunk=0.0524 captureAp=0.0919 captureHull=0.0918 comSpeed=0.0039 canonical=6.365 deflection=1.227 limit=0.141 guard=0.954 ankle=5.360 rearCopAtSettle=0.0621 rearCopAuthority=0.0621 saddle=0.0123 contacts=8 sat=0.000 supportLost=False saddleUnstable=False nonFinite=False upright=True pass=True
+GAM13_STAGE_A repeat=0 load=140 measured=500 settlePelvis=0.9760 minPelvis=0.9760 maxTrunk=0.1440 captureAp=0.0771 captureHull=0.0761 comSpeed=0.0176 canonical=9.747 deflection=1.877 limit=0.216 guard=0.934 ankle=5.450 rearCopAtSettle=0.0466 rearCopAuthority=0.0466 saddle=0.0283 contacts=8 sat=0.000 supportLost=False saddleUnstable=False nonFinite=False upright=True pass=True
+GAM13_STAGE_A repeat=0 load=140 measured=500 settlePelvis=0.9760 minPelvis=0.9760 maxTrunk=0.1440 captureAp=0.0771 captureHull=0.0761 comSpeed=0.0176 canonical=9.747 deflection=1.877 limit=0.216 guard=0.934 ankle=5.450 rearCopAtSettle=0.0466 rearCopAuthority=0.0466 saddle=0.0283 contacts=8 sat=0.000 supportLost=False saddleUnstable=False nonFinite=False upright=True pass=True
+GAM13_STAGE_A repeat=0 load=140 measured=500 settlePelvis=0.9760 minPelvis=0.9760 maxTrunk=0.1440 captureAp=0.0771 captureHull=0.0761 comSpeed=0.0176 canonical=9.747 deflection=1.877 limit=0.216 guard=0.934 ankle=5.450 rearCopAtSettle=0.0466 rearCopAuthority=0.0466 saddle=0.0283 contacts=8 sat=0.000 supportLost=False saddleUnstable=False nonFinite=False upright=True pass=True
+GAM13_STAGE_A repeat=0 load=170 measured=500 settlePelvis=0.9751 minPelvis=0.9750 maxTrunk=0.1513 captureAp=0.0728 captureHull=0.0716 comSpeed=0.0210 canonical=10.046 deflection=2.304 limit=0.222 guard=0.803 ankle=5.163 rearCopAtSettle=0.0431 rearCopAuthority=0.0431 saddle=0.0343 contacts=8 sat=0.000 supportLost=False saddleUnstable=False nonFinite=False upright=True pass=False
+GAM13_STAGE_A repeat=0 load=170 measured=500 settlePelvis=0.9751 minPelvis=0.9750 maxTrunk=0.1513 captureAp=0.0728 captureHull=0.0716 comSpeed=0.0210 canonical=10.046 deflection=2.304 limit=0.222 guard=0.803 ankle=5.163 rearCopAtSettle=0.0431 rearCopAuthority=0.0431 saddle=0.0343 contacts=8 sat=0.000 supportLost=False saddleUnstable=False nonFinite=False upright=True pass=False
+GAM13_STAGE_A repeat=0 load=170 measured=500 settlePelvis=0.9751 minPelvis=0.9750 maxTrunk=0.1513 captureAp=0.0728 captureHull=0.0716 comSpeed=0.0210 canonical=10.046 deflection=2.304 limit=0.222 guard=0.803 ankle=5.163 rearCopAtSettle=0.0431 rearCopAuthority=0.0431 saddle=0.0343 contacts=8 sat=0.000 supportLost=False saddleUnstable=False nonFinite=False upright=True pass=False
+GAM13_STAGE_A repeat=0 load=300 measured=500 settlePelvis=0.9681 minPelvis=0.0920 maxTrunk=1.5832 captureAp=-1.6947 captureHull=-1.6956 comSpeed=2.0968 canonical=23.833 deflection=15.095 limit=0.528 guard=0.000 ankle=15.000 rearCopAtSettle=0.0334 rearCopAuthority=-0.1236 saddle=0.0509 contacts=0 sat=0.000 supportLost=True saddleUnstable=False nonFinite=False upright=False pass=False
+GAM13_STAGE_A repeat=0 load=300 measured=500 settlePelvis=0.9681 minPelvis=0.0920 maxTrunk=1.5832 captureAp=-1.6947 captureHull=-1.6956 comSpeed=2.0968 canonical=23.833 deflection=15.095 limit=0.528 guard=0.000 ankle=15.000 rearCopAtSettle=0.0334 rearCopAuthority=-0.1236 saddle=0.0509 contacts=0 sat=0.000 supportLost=True saddleUnstable=False nonFinite=False upright=False pass=False
+GAM13_STAGE_A repeat=0 load=300 measured=500 settlePelvis=0.9681 minPelvis=0.0920 maxTrunk=1.5832 captureAp=-1.6947 captureHull=-1.6956 comSpeed=2.0968 canonical=23.833 deflection=15.095 limit=0.528 guard=0.000 ankle=15.000 rearCopAtSettle=0.0334 rearCopAuthority=-0.1236 saddle=0.0509 contacts=0 sat=0.000 supportLost=True saddleUnstable=False nonFinite=False upright=False pass=False
+Saving results to: C:/Users/Usuario/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -166,6 +166,13 @@ namespace PowerliftingSimulator.Squat.Unity
         public bool BalanceCorrectionsEnabled { get; set; } = true;
 
         /// <summary>
+        /// Reversible GAM-43 diagnostic seam. Production uses the canonical
+        /// pose error; the historical target-deflection input is available
+        /// only for the one requested semantics comparison.
+        /// </summary>
+        public bool ExperimentalUseTargetDeflectionForPostureGuard { get; set; }
+
+        /// <summary>
         /// Diagnostic override. When set, the ankle sagittal target offset is
         /// held at this value instead of being solved, so the achievable
         /// centre-of-pressure travel can be measured against a known command.
@@ -253,6 +260,7 @@ namespace PowerliftingSimulator.Squat.Unity
             _canonicalPoseErrorRad = 0f;
             _canonicalPoseErrorRateRadPerS = 0f;
             _targetActualDeflectionRad = 0f;
+            _targetActualDeflectionRateRadPerS = 0f;
             _postureLimitProximity = 0f;
             _postureUnexpectedMarginConsumed = 0f;
             _postureWorstJoint = "NONE";
@@ -713,8 +721,7 @@ namespace PowerliftingSimulator.Squat.Unity
         /// right at both ends.
         /// </summary>
         private float PreloadLogicalRad(SquatJointFamily family) =>
-            (_preload.AnatomicalFlexionBiasRad(family) +
-             UnitContract.DegreesToRadians(_preload.SpineBiasDegrees(family, _sq, EquilibriumLoadKg))) *
+            UnitContract.DegreesToRadians(_preload.BiasDegrees(family, _sq, EquilibriumLoadKg)) *
             _familyFlexionSign[(int)family];
 
         private Quaternion Compose(string jointId, Quaternion nominal, Quaternion gravityBias, Quaternion balanceOffset)
@@ -765,7 +772,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 return nominalRate;
 
             float biasRateRadPerPhase = UnitContract.DegreesToRadians(
-                _preload.SpineBiasRateDegreesPerPhase(family, _sq, EquilibriumLoadKg)) *
+                _preload.BiasRateDegreesPerPhase(family, _sq, EquilibriumLoadKg)) *
                 _familyFlexionSign[(int)family];
             Vector3 biasRate = nominalTarget * (Vector3.right * (biasRateRadPerPhase * phaseVelocity));
             return nominalRate + biasRate;
@@ -1244,6 +1251,7 @@ namespace PowerliftingSimulator.Squat.Unity
         private float _canonicalPoseErrorRad;
         private float _canonicalPoseErrorRateRadPerS;
         private float _targetActualDeflectionRad;
+        private float _targetActualDeflectionRateRadPerS;
         private float _postureLimitProximity;
         private float _postureUnexpectedMarginConsumed;
         private string _postureWorstJoint = "NONE";
@@ -1285,6 +1293,9 @@ namespace PowerliftingSimulator.Squat.Unity
             _canonicalPoseErrorRateRadPerS = _hasPostureHistory && dt > 0f
                 ? (worstCanonicalError - _canonicalPoseErrorRad) / dt
                 : 0f;
+            _targetActualDeflectionRateRadPerS = _hasPostureHistory && dt > 0f
+                ? (worstTargetDeflection - _targetActualDeflectionRad) / dt
+                : 0f;
             _canonicalPoseErrorRad = worstCanonicalError;
             _targetActualDeflectionRad = worstTargetDeflection;
             _postureLimitProximity = worstLimit;
@@ -1293,8 +1304,8 @@ namespace PowerliftingSimulator.Squat.Unity
             _hasPostureHistory = true;
 
             _balanceController.ObservePosture(
-                _canonicalPoseErrorRad,
-                _canonicalPoseErrorRateRadPerS,
+                ExperimentalUseTargetDeflectionForPostureGuard ? _targetActualDeflectionRad : _canonicalPoseErrorRad,
+                ExperimentalUseTargetDeflectionForPostureGuard ? _targetActualDeflectionRateRadPerS : _canonicalPoseErrorRateRadPerS,
                 _postureLimitProximity,
                 _postureUnexpectedMarginConsumed);
         }

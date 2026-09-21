@@ -9,6 +9,23 @@ namespace PowerliftingSimulator.Squat.Unity
     {
         public const string SaddleType = "ConfigurableJoint_UpperBack_Thorax_V1";
 
+        public readonly struct ExperimentalConfiguration
+        {
+            public ExperimentalConfiguration(float linearSpring, float linearDamper, float linearLimitM)
+            {
+                LinearSpring = linearSpring;
+                LinearDamper = linearDamper;
+                LinearLimitM = linearLimitM;
+            }
+
+            public float LinearSpring { get; }
+            public float LinearDamper { get; }
+            public float LinearLimitM { get; }
+        }
+
+        /// <summary>Null preserves current Saddle V2 defaults.</summary>
+        public static ExperimentalConfiguration? ExperimentalOverride { get; set; }
+
         /// <summary>
         /// Bar/athlete collision topology. V2 applies the bar/non-thorax limb
         /// filter to the bar Rigidbody's own colliders; V1 enumerated the
@@ -191,12 +208,14 @@ namespace PowerliftingSimulator.Squat.Unity
             _joint.xMotion = ConfigurableJointMotion.Limited;
             _joint.yMotion = ConfigurableJointMotion.Limited;
             _joint.zMotion = ConfigurableJointMotion.Limited;
-            _joint.linearLimit = new SoftJointLimit { limit = DefaultLinearLimitM };
+            ExperimentalConfiguration configuration = ExperimentalOverride ??
+                new ExperimentalConfiguration(DefaultLinearSpring, DefaultLinearDamper, DefaultLinearLimitM);
+            _joint.linearLimit = new SoftJointLimit { limit = configuration.LinearLimitM };
 
             JointDrive linearDrive = new JointDrive
             {
-                positionSpring = DefaultLinearSpring,
-                positionDamper = DefaultLinearDamper,
+                positionSpring = configuration.LinearSpring,
+                positionDamper = configuration.LinearDamper,
                 maximumForce = DefaultLinearMaxForce,
                 useAcceleration = false
             };
