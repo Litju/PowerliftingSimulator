@@ -48,7 +48,8 @@ namespace PowerliftingSimulator.Tests
                 case "F0": return null;
                 case "F1": return EvaluateF1;
                 case "F2": return EvaluateF2;
-                default: throw new ArgumentException("GAM43_FEED_FORWARD must be F0, F1, or F2.", nameof(variant));
+                case "LC1": return EvaluateLC1;
+                default: throw new ArgumentException("GAM43_FEED_FORWARD must be F0, F1, F2, or LC1.", nameof(variant));
             }
         }
 
@@ -74,6 +75,17 @@ namespace PowerliftingSimulator.Tests
                 return FadeStanding(F2KneeStanding, phase, loadKg);
             if (family == SquatJointFamily.Hip)
                 return FadeStanding(F2HipStanding, phase, loadKg);
+            return EvaluateF1(family, phase, loadKg);
+        }
+
+        private static float EvaluateLC1(SquatJointFamily family, float phase, float loadKg)
+        {
+            if (family == SquatJointFamily.Ankle)
+                return GAM46LoadConditionedLowerChain.Apply(FadeStanding(F2AnkleStanding, phase, loadKg), loadKg);
+            if (family == SquatJointFamily.Knee)
+                return GAM46LoadConditionedLowerChain.Apply(FadeStanding(F2KneeStanding, phase, loadKg), loadKg);
+            if (family == SquatJointFamily.Hip)
+                return GAM46LoadConditionedLowerChain.Apply(FadeStanding(F2HipStanding, phase, loadKg), loadKg);
             return EvaluateF1(family, phase, loadKg);
         }
 
@@ -132,5 +144,20 @@ namespace PowerliftingSimulator.Tests
             float t = Mathf.Clamp01(value);
             return t * t * (3f - 2f * t);
         }
+    }
+
+    internal static class GAM46LoadConditionedLowerChain
+    {
+        public const float LowerAnchorKg = 170f;
+        public const float UpperAnchorKg = 230f;
+
+        public static float Alpha(float loadKg)
+        {
+            float u = Mathf.Clamp01((loadKg - LowerAnchorKg) / (UpperAnchorKg - LowerAnchorKg));
+            return u * u * (3f - 2f * u);
+        }
+
+        public static float Apply(float existingF2Contribution, float loadKg) =>
+            Alpha(loadKg) * existingF2Contribution;
     }
 }
