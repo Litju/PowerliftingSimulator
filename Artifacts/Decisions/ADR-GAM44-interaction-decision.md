@@ -1,7 +1,7 @@
 # ADR-GAM44 — feed-forward × saddle interaction decision
 
-Date: 2026-09-21  
-Authority: Linear `GAM-44`  
+Date: 2026-09-21
+Authority: Linear `GAM-44`
 Base: `4ce3c4eea056d5f989a4b4276f13059edd05685d`
 
 ## Decision

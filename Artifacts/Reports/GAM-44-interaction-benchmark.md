@@ -1,7 +1,7 @@
 # GAM-44 interaction benchmark
 
-Authority: Linear `GAM-44`  
-Branch: `work/gam-13-squat-load-calibration`  
+Authority: Linear `GAM-44`
+Branch: `work/gam-13-squat-load-calibration`
 Unity: `6000.3.22f1`
 
 ## Harness correction

@@ -1,8 +1,8 @@
 # GAM-44 — F2 × saddle interaction benchmark
 
-Authority: Linear `GAM-44`  
-Branch: `work/gam-13-squat-load-calibration`  
-Start head: `4ce3c4eea056d5f989a4b4276f13059edd05685d`  
+Authority: Linear `GAM-44`
+Branch: `work/gam-13-squat-load-calibration`
+Start head: `4ce3c4eea056d5f989a4b4276f13059edd05685d`
 Unity: `6000.3.22f1`
 
 ## Frozen candidates

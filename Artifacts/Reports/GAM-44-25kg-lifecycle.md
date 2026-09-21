@@ -1,6 +1,6 @@
 # GAM-44 canonical 25 kg lifecycle
 
-Candidate: `F2+S1`  
+Candidate: `F2+S1`
 Result: `NOT_ELIGIBLE`
 
 The standing pre-window passed, but the canonical lifecycle did not finalize after the harness limit of 2200 authoritative ticks. The final observed state was:

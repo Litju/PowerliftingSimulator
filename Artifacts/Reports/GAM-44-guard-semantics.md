@@ -1,6 +1,6 @@
 # GAM-44 guard semantics diagnostic
 
-Candidate: `F2+S1`  
+Candidate: `F2+S1`
 Load: `170 kg`
 
 | Guard input | Standing gate | Max canonical pose error | Max target/actual deflection | Min guard scale |
