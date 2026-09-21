@@ -250,8 +250,9 @@ namespace PowerliftingSimulator.Squat.Unity
             _isCorrectionSaturated = false;
             _isDriveSaturated = false;
             _maxDriveSaturation = 0f;
-            _postureErrorRad = 0f;
-            _postureErrorRateRadPerS = 0f;
+            _canonicalPoseErrorRad = 0f;
+            _canonicalPoseErrorRateRadPerS = 0f;
+            _targetActualDeflectionRad = 0f;
             _postureLimitProximity = 0f;
             _postureUnexpectedMarginConsumed = 0f;
             _postureWorstJoint = "NONE";
@@ -1200,13 +1201,15 @@ namespace PowerliftingSimulator.Squat.Unity
         }
 
         /// <summary>
-        /// Canonical posture error for the joints standing depends on, read
-        /// from the previous post-physics state in logical joint coordinates
-        /// rather than from world-space appearance, plus how close any of them
-        /// is to its anatomical limit.
+        /// Standing posture diagnostics for the previous post-physics state
+        /// in logical joint coordinates. Canonical pose error compares actual
+        /// pose with the canonical reference; target deflection compares
+        /// actual pose with the composed target and is an elastic tracking
+        /// diagnostic, not posture error. Limit proximity is independent.
         ///
-        /// This is what stops balance from spending posture: the controller
-        /// cannot withdraw authority from a cost it cannot see.
+        /// The canonical pose error is what stops balance from spending
+        /// posture: the controller cannot withdraw authority from a cost it
+        /// cannot see.
         /// </summary>
         /// <summary>
         /// The joints the balance strategy spends, which deliberately
@@ -1224,8 +1227,9 @@ namespace PowerliftingSimulator.Squat.Unity
             "left_shank", "right_shank"
         };
 
-        public float CanonicalPostureErrorRad => _postureErrorRad;
-        public float CanonicalPostureErrorRateRadPerS => _postureErrorRateRadPerS;
+        public float CanonicalPostureErrorRad => _canonicalPoseErrorRad;
+        public float CanonicalPostureErrorRateRadPerS => _canonicalPoseErrorRateRadPerS;
+        public float TargetActualDeflectionRad => _targetActualDeflectionRad;
         public float CanonicalPostureLimitProximity => _postureLimitProximity;
         public float CanonicalPostureUnexpectedMarginConsumed => _postureUnexpectedMarginConsumed;
 
@@ -1237,8 +1241,9 @@ namespace PowerliftingSimulator.Squat.Unity
         public float EquilibriumLoadKg { get; set; }
         public string CanonicalPostureWorstJoint => _postureWorstJoint;
 
-        private float _postureErrorRad;
-        private float _postureErrorRateRadPerS;
+        private float _canonicalPoseErrorRad;
+        private float _canonicalPoseErrorRateRadPerS;
+        private float _targetActualDeflectionRad;
         private float _postureLimitProximity;
         private float _postureUnexpectedMarginConsumed;
         private string _postureWorstJoint = "NONE";
@@ -1246,7 +1251,8 @@ namespace PowerliftingSimulator.Squat.Unity
 
         private void ObserveCanonicalPosture(float dt)
         {
-            float worstError = 0f;
+            float worstCanonicalError = 0f;
+            float worstTargetDeflection = 0f;
             float worstLimit = 0f;
             float worstConsumed = 0f;
             string worstJoint = "NONE";
@@ -1260,29 +1266,35 @@ namespace PowerliftingSimulator.Squat.Unity
                 if (joint == null)
                     continue;
 
-                Quaternion expected = composition.Nominal * composition.GravityBias;
-                float errorRad = Quaternion.Angle(expected, joint.Diagnostic.ActualRelative) * Mathf.Deg2Rad;
-                if (errorRad > worstError)
+                float canonicalErrorRad = Quaternion.Angle(
+                    composition.Nominal,
+                    joint.Diagnostic.ActualRelative) * Mathf.Deg2Rad;
+                float targetDeflectionRad = Quaternion.Angle(
+                    composition.Final,
+                    joint.Diagnostic.ActualRelative) * Mathf.Deg2Rad;
+                if (canonicalErrorRad > worstCanonicalError)
                 {
-                    worstError = errorRad;
+                    worstCanonicalError = canonicalErrorRad;
                     worstJoint = jointId;
                 }
+                worstTargetDeflection = Mathf.Max(worstTargetDeflection, targetDeflectionRad);
                 worstLimit = Mathf.Max(worstLimit, joint.Diagnostic.LimitProximity);
                 worstConsumed = Mathf.Max(worstConsumed, ConsumedMarginFraction(joint, composition));
             }
 
-            _postureErrorRateRadPerS = _hasPostureHistory && dt > 0f
-                ? (worstError - _postureErrorRad) / dt
+            _canonicalPoseErrorRateRadPerS = _hasPostureHistory && dt > 0f
+                ? (worstCanonicalError - _canonicalPoseErrorRad) / dt
                 : 0f;
-            _postureErrorRad = worstError;
+            _canonicalPoseErrorRad = worstCanonicalError;
+            _targetActualDeflectionRad = worstTargetDeflection;
             _postureLimitProximity = worstLimit;
             _postureUnexpectedMarginConsumed = worstConsumed;
             _postureWorstJoint = worstJoint;
             _hasPostureHistory = true;
 
             _balanceController.ObservePosture(
-                _postureErrorRad,
-                _postureErrorRateRadPerS,
+                _canonicalPoseErrorRad,
+                _canonicalPoseErrorRateRadPerS,
                 _postureLimitProximity,
                 _postureUnexpectedMarginConsumed);
         }
