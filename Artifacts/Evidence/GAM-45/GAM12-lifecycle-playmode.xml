@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-21 08:49:50Z" end-time="2026-09-21 08:49:53Z" duration="2.7591471">
+  <test-suite type="TestSuite" id="1275" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="203" result="Passed" start-time="2026-09-21 08:49:50Z" end-time="2026-09-21 08:49:53Z" duration="2.759147" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1269" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="E:/Data/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="203" result="Passed" start-time="2026-09-21 08:49:50Z" end-time="2026-09-21 08:49:53Z" duration="2.747052" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="3388" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1270" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="203" result="Passed" start-time="2026-09-21 08:49:50Z" end-time="2026-09-21 08:49:53Z" duration="2.741770" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1271" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="203" result="Passed" start-time="2026-09-21 08:49:50Z" end-time="2026-09-21 08:49:53Z" duration="2.738322" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1061" name="GAM12SquatAttemptLifecycleIntegrationTests" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleIntegrationTests" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleIntegrationTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-21 08:49:50Z" end-time="2026-09-21 08:49:53Z" duration="2.726489" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1062" name="COMPLETE_25KG_ATTEMPT_RECORD_IS_DETERMINISTIC" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleIntegrationTests.COMPLETE_25KG_ATTEMPT_RECORD_IS_DETERMINISTIC" methodname="COMPLETE_25KG_ATTEMPT_RECORD_IS_DETERMINISTIC" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleIntegrationTests" runstate="Runnable" seed="942619388" result="Passed" start-time="2026-09-21 08:49:50Z" end-time="2026-09-21 08:49:53Z" duration="2.707587" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[
+IgnoreFailingMessages:true
+25KG_RUN=1 START_WINDOW=49-51 SQUAT=52 DESCENT=80 BOTTOM=427 ASCENT=447 LOCKOUT=791 RACK=794 RERACK=795 TRACE_FREEZE=795 TRACE_COUNT=747 P2=EVALUABLE/NO_LIFT VIOLATIONS=FAILED_START_POSITION,SUPPORT_VIOLATION P3=EVALUABLE/NO_PHYSICAL_FAILURE PRIMARY=NONE FAILURE_ONSET=18446744073709551615 FAILURE_LATCH=18446744073709551615 TERMINAL=PHYSICAL_LOCKOUT@791 TERMINAL_CONTEXT=TRACE_COVERED
+25KG_RUN=2 START_WINDOW=49-51 SQUAT=52 DESCENT=80 BOTTOM=427 ASCENT=447 LOCKOUT=791 RACK=794 RERACK=795 TRACE_FREEZE=795 TRACE_COUNT=747 P2=EVALUABLE/NO_LIFT VIOLATIONS=FAILED_START_POSITION,SUPPORT_VIOLATION P3=EVALUABLE/NO_PHYSICAL_FAILURE PRIMARY=NONE FAILURE_ONSET=18446744073709551615 FAILURE_LATCH=18446744073709551615 TERMINAL=PHYSICAL_LOCKOUT@791 TERMINAL_CONTEXT=TRACE_COVERED
+25KG_RUN=3 START_WINDOW=49-51 SQUAT=52 DESCENT=80 BOTTOM=427 ASCENT=447 LOCKOUT=791 RACK=794 RERACK=795 TRACE_FREEZE=795 TRACE_COUNT=747 P2=EVALUABLE/NO_LIFT VIOLATIONS=FAILED_START_POSITION,SUPPORT_VIOLATION P3=EVALUABLE/NO_PHYSICAL_FAILURE PRIMARY=NONE FAILURE_ONSET=18446744073709551615 FAILURE_LATCH=18446744073709551615 TERMINAL=PHYSICAL_LOCKOUT@791 TERMINAL_CONTEXT=TRACE_COVERED
+Saving results to: C:/Users/Usuario/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
