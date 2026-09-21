@@ -36,6 +36,7 @@ namespace PowerliftingSimulator.Tests
         private const float MaximumLimitProximity = 0.95f;
         private const float MaximumSaddleLimitOccupancy = 0.95f;
         private const float MaximumSaddleSeparationM = SquatBarSaddle.MaxPlausibleSeparationM;
+        private const int OnsetPersistenceTicks = 3;
 
         private FoundationBootstrap _bootstrap;
         private PhysicalAthleteRig _rig;
@@ -210,8 +211,15 @@ namespace PowerliftingSimulator.Tests
                 MinPelvisY = float.PositiveInfinity,
                 MinSupportContacts = int.MaxValue,
                 MaxSaddleSeparationM = 0f,
-                MaxSaddleLimitOccupancy = 0f
+                MaxSaddleLimitOccupancy = 0f,
+                MaxSaddleLinearLimitOccupancy = 0f,
+                MaxSaddleAngularLimitOccupancy = 0f,
+                MaxSaddleAngularXLimitOccupancy = 0f,
+                MaxSaddleAngularYLimitOccupancy = 0f,
+                MaxSaddleAngularZLimitOccupancy = 0f,
+                MinPostureGuardScale = 1f
             };
+            var onsets = new StandingOnsets();
             var supportPoints = new List<Vector3>(32);
             StringBuilder rawRows = writeRaw ? new StringBuilder() : null;
             if (writeRaw)
@@ -219,8 +227,11 @@ namespace PowerliftingSimulator.Tests
                 rawRows.AppendLine(
                     "phase,feed_forward,saddle,repeat,load_kg,tick,pelvis_y,trunk_pitch_rad,canonical_pose_error_deg," +
                     "target_actual_deflection_deg,capture_hull_margin_m,capture_front_m,capture_rear_m,com_speed_mps," +
-                    "ankle_usage,hip_usage,trunk_usage,drive_demand,drive_saturated,joint_limit,saddle_separation_m," +
-                    "saddle_limit_occupancy,saddle_force_n,saddle_torque_nm,support_contacts,support_lost");
+                    "raw_ankle_authority_fraction,applied_ankle_authority_fraction,posture_guard_scale,hip_strategy_blend," +
+                    "hip_authority_usage,trunk_authority_usage,drive_demand,drive_saturated,joint_limit,saddle_separation_m," +
+                    "saddle_linear_limit_occupancy,saddle_angular_x_limit_occupancy,saddle_angular_y_limit_occupancy," +
+                    "saddle_angular_z_limit_occupancy,saddle_force_n,saddle_torque_nm,support_contacts,support_retained," +
+                    "tracking_failure,capture_failure,posture_failure,support_loss,saddle_linear_limit,saddle_angular_limit");
             }
 
             for (int tick = 0; tick < TotalTicks; tick++)
@@ -272,6 +283,19 @@ namespace PowerliftingSimulator.Tests
                 float saddleLimit = _controller.Saddle == null
                     ? float.PositiveInfinity
                     : _controller.Saddle.MaximumLimitOccupancy;
+                float saddleLinearLimit = _controller.Saddle == null
+                    ? float.PositiveInfinity
+                    : _controller.Saddle.CurrentLinearLimitOccupancy;
+                float saddleAngularXLimit = _controller.Saddle == null
+                    ? float.PositiveInfinity
+                    : _controller.Saddle.CurrentAngularXLimitOccupancy;
+                float saddleAngularYLimit = _controller.Saddle == null
+                    ? float.PositiveInfinity
+                    : _controller.Saddle.CurrentAngularYLimitOccupancy;
+                float saddleAngularZLimit = _controller.Saddle == null
+                    ? float.PositiveInfinity
+                    : _controller.Saddle.CurrentAngularZLimitOccupancy;
+                float saddleAngularLimit = MaxFinite(saddleAngularXLimit, saddleAngularYLimit, saddleAngularZLimit);
                 float saddleForce = _controller.Saddle == null
                     ? float.PositiveInfinity
                     : _controller.Saddle.CurrentForceEngine.magnitude;
@@ -280,6 +304,7 @@ namespace PowerliftingSimulator.Tests
                     : _controller.Saddle.CurrentTorqueEngine.magnitude;
                 bool finite = float.IsFinite(pelvisY) && float.IsFinite(trunkPitch) &&
                     float.IsFinite(saddleSeparation) && float.IsFinite(saddleLimit) &&
+                    float.IsFinite(saddleLinearLimit) && float.IsFinite(saddleAngularLimit) &&
                     float.IsFinite(saddleForce) && float.IsFinite(saddleTorque) &&
                     IsFinite(balance.SystemCom) && IsFinite(balance.SystemComVelocity) &&
                     float.IsFinite(adapter.CanonicalPostureErrorRad) &&
@@ -287,6 +312,21 @@ namespace PowerliftingSimulator.Tests
                     float.IsFinite(maxJointLimit) && float.IsFinite(maxDriveDemand) &&
                     (!balance.HasSupport || float.IsFinite(capture.HullSignedMarginM));
                 result.NonFinite |= !finite;
+
+                bool trackingFailure = finite && adapter.TargetActualDeflectionRad >= MaximumCanonicalPoseErrorDeg * Mathf.Deg2Rad;
+                bool captureFailure = finite && balance.HasSupport &&
+                    Mathf.Min(balance.CaptureMarginFront, balance.CaptureMarginRear) <= MinimumCaptureHullMarginM;
+                bool postureFailure = finite && (
+                    adapter.CanonicalPostureErrorRad >= MaximumCanonicalPoseErrorDeg * Mathf.Deg2Rad ||
+                    Mathf.Abs(trunkPitch) >= MaximumTrunkPitchRad || pelvisY <= MinimumPelvisHeightM);
+                bool supportLoss = finite && !balance.HasSupport;
+                bool saddleLinearLimitSignal = finite && _controller.Saddle != null && _controller.Saddle.IsAttached &&
+                    saddleLinearLimit >= MaximumSaddleLimitOccupancy;
+                bool saddleAngularLimitSignal = finite && _controller.Saddle != null && _controller.Saddle.IsAttached &&
+                    saddleAngularLimit >= MaximumSaddleLimitOccupancy;
+                onsets.Observe(
+                    trackingFailure, captureFailure, postureFailure, supportLoss,
+                    saddleLinearLimitSignal, saddleAngularLimitSignal, tick);
 
                 if (tick == 0)
                     result.InitialPelvisY = pelvisY;
@@ -312,6 +352,11 @@ namespace PowerliftingSimulator.Tests
                     result.MaxBalanceAnkleUsage = Mathf.Max(
                         result.MaxBalanceAnkleUsage,
                         control.RawAnkleAuthorityFraction);
+                    result.MaxAppliedBalanceAnkleUsage = Mathf.Max(
+                        result.MaxAppliedBalanceAnkleUsage,
+                        control.AnkleAuthorityFraction);
+                    result.MinPostureGuardScale = Mathf.Min(result.MinPostureGuardScale, control.PostureGuardScale);
+                    result.MaxHipStrategyBlend = Mathf.Max(result.MaxHipStrategyBlend, control.HipStrategyBlend);
                     result.MaxBalanceHipUsage = Mathf.Max(
                         result.MaxBalanceHipUsage,
                         Mathf.Abs(control.HipSagittalOffsetRad) / SquatPredictiveBalanceController.MaxHipSagittalOffsetRad);
@@ -330,6 +375,11 @@ namespace PowerliftingSimulator.Tests
                             : float.NegativeInfinity);
                     result.MaxSaddleSeparationM = Mathf.Max(result.MaxSaddleSeparationM, saddleSeparation);
                     result.MaxSaddleLimitOccupancy = Mathf.Max(result.MaxSaddleLimitOccupancy, saddleLimit);
+                    result.MaxSaddleLinearLimitOccupancy = Mathf.Max(result.MaxSaddleLinearLimitOccupancy, saddleLinearLimit);
+                    result.MaxSaddleAngularLimitOccupancy = Mathf.Max(result.MaxSaddleAngularLimitOccupancy, saddleAngularLimit);
+                    result.MaxSaddleAngularXLimitOccupancy = Mathf.Max(result.MaxSaddleAngularXLimitOccupancy, saddleAngularXLimit);
+                    result.MaxSaddleAngularYLimitOccupancy = Mathf.Max(result.MaxSaddleAngularYLimitOccupancy, saddleAngularYLimit);
+                    result.MaxSaddleAngularZLimitOccupancy = Mathf.Max(result.MaxSaddleAngularZLimitOccupancy, saddleAngularZLimit);
                     result.MaxSaddleForceN = Mathf.Max(result.MaxSaddleForceN, saddleForce);
                     result.MaxSaddleTorqueNm = Mathf.Max(result.MaxSaddleTorqueNm, saddleTorque);
                     result.MinSupportContacts = Mathf.Min(result.MinSupportContacts, balance.SupportContactCount);
@@ -351,11 +401,16 @@ namespace PowerliftingSimulator.Tests
                         Csv(adapter.TargetActualDeflectionRad * Mathf.Rad2Deg), Csv(capture.HullSignedMarginM),
                         Csv(balance.CaptureMarginFront), Csv(balance.CaptureMarginRear), Csv(comSpeed),
                         Csv(control.RawAnkleAuthorityFraction),
+                        Csv(control.AnkleAuthorityFraction), Csv(control.PostureGuardScale), Csv(control.HipStrategyBlend),
                         Csv(Mathf.Abs(control.HipSagittalOffsetRad) / SquatPredictiveBalanceController.MaxHipSagittalOffsetRad),
                         Csv(Mathf.Abs(control.TrunkSagittalOffsetRad) / SquatPredictiveBalanceController.MaxTrunkSagittalOffsetRad),
                         Csv(maxDriveDemand), snapshot.DriveSaturated ? "true" : "false", Csv(maxJointLimit),
-                        Csv(saddleSeparation), Csv(saddleLimit), Csv(saddleForce), Csv(saddleTorque),
-                        balance.SupportContactCount.ToString(CultureInfo.InvariantCulture), result.SupportLost ? "true" : "false"
+                        Csv(saddleSeparation), Csv(saddleLinearLimit), Csv(saddleAngularXLimit), Csv(saddleAngularYLimit),
+                        Csv(saddleAngularZLimit), Csv(saddleForce), Csv(saddleTorque),
+                        balance.SupportContactCount.ToString(CultureInfo.InvariantCulture), balance.HasSupport ? "true" : "false",
+                        trackingFailure ? "true" : "false", captureFailure ? "true" : "false",
+                        postureFailure ? "true" : "false", supportLoss ? "true" : "false",
+                        saddleLinearLimitSignal ? "true" : "false", saddleAngularLimitSignal ? "true" : "false"
                     }));
                 }
             }
@@ -364,13 +419,21 @@ namespace PowerliftingSimulator.Tests
             result.Upright = result.MinPelvisY > MinimumPelvisHeightM &&
                 result.MaxAbsTrunkPitchRad < MaximumTrunkPitchRad;
             result.SupportRetained = !result.SupportLost && result.MinSupportContacts > 0;
-            result.SaddleValid = !result.SaddleInvalid && result.MaxSaddleLimitOccupancy < MaximumSaddleLimitOccupancy &&
+            result.SaddleValid = !result.SaddleInvalid &&
+                result.MaxSaddleLinearLimitOccupancy < MaximumSaddleLimitOccupancy &&
+                result.MaxSaddleAngularLimitOccupancy < MaximumSaddleLimitOccupancy &&
                 result.MaxSaddleSeparationM < MaximumSaddleSeparationM;
             result.LoadedSetupValid = result.MeasuredTicks > 0 && !result.NonFinite &&
                 _controller.Saddle != null && _controller.Saddle.IsAttached && !_controller.Saddle.IsBroken;
             result.SaturationFraction = result.MeasuredTicks == 0
                 ? float.PositiveInfinity
                 : result.SaturatedTicks / (float)result.MeasuredTicks;
+            result.TrackingFailureOnsetTick = onsets.TrackingFailure;
+            result.CaptureFailureOnsetTick = onsets.CaptureFailure;
+            result.PostureFailureOnsetTick = onsets.PostureFailure;
+            result.SupportLossOnsetTick = onsets.SupportLoss;
+            result.SaddleLinearLimitOnsetTick = onsets.SaddleLinearLimit;
+            result.SaddleAngularLimitOnsetTick = onsets.SaddleAngularLimit;
             bool standingGates = result.MeasuredTicks == TotalTicks - SettleTicks &&
                 !result.NonFinite && result.Upright && result.SupportRetained && result.SaddleValid &&
                 result.MinCaptureHullMarginM > MinimumCaptureHullMarginM &&
@@ -480,7 +543,8 @@ namespace PowerliftingSimulator.Tests
 
         private static string OutputPath(string fileName)
         {
-            string explicitPath = Environment.GetEnvironmentVariable("GAM43_OUTPUT");
+            string explicitPath = Environment.GetEnvironmentVariable("GAM44_OUTPUT") ??
+                Environment.GetEnvironmentVariable("GAM43_OUTPUT");
             if (!string.IsNullOrWhiteSpace(explicitPath))
                 return Path.GetFullPath(explicitPath);
             string directory = Path.Combine(Directory.GetCurrentDirectory(), "Artifacts", "Measurements", "GAM-13", "GAM43");
@@ -527,16 +591,74 @@ namespace PowerliftingSimulator.Tests
         private static string Csv(string value) =>
             "\"" + (value ?? string.Empty).Replace("\"", "\"\"") + "\"";
 
+        private sealed class StandingOnsets
+        {
+            private readonly OnsetTracker _trackingFailure = new OnsetTracker();
+            private readonly OnsetTracker _captureFailure = new OnsetTracker();
+            private readonly OnsetTracker _postureFailure = new OnsetTracker();
+            private readonly OnsetTracker _supportLoss = new OnsetTracker();
+            private readonly OnsetTracker _saddleLinearLimit = new OnsetTracker();
+            private readonly OnsetTracker _saddleAngularLimit = new OnsetTracker();
+
+            public int TrackingFailure => _trackingFailure.FirstOnsetTick;
+            public int CaptureFailure => _captureFailure.FirstOnsetTick;
+            public int PostureFailure => _postureFailure.FirstOnsetTick;
+            public int SupportLoss => _supportLoss.FirstOnsetTick;
+            public int SaddleLinearLimit => _saddleLinearLimit.FirstOnsetTick;
+            public int SaddleAngularLimit => _saddleAngularLimit.FirstOnsetTick;
+
+            public void Observe(
+                bool trackingFailure,
+                bool captureFailure,
+                bool postureFailure,
+                bool supportLoss,
+                bool saddleLinearLimit,
+                bool saddleAngularLimit,
+                int tick)
+            {
+                _trackingFailure.Update(trackingFailure, tick);
+                _captureFailure.Update(captureFailure, tick);
+                _postureFailure.Update(postureFailure, tick);
+                _supportLoss.Update(supportLoss, tick);
+                _saddleLinearLimit.Update(saddleLinearLimit, tick);
+                _saddleAngularLimit.Update(saddleAngularLimit, tick);
+            }
+        }
+
+        private sealed class OnsetTracker
+        {
+            private int _consecutive;
+
+            public int FirstOnsetTick { get; private set; } = -1;
+
+            public void Update(bool signal, int tick)
+            {
+                if (!signal)
+                {
+                    _consecutive = 0;
+                    return;
+                }
+
+                _consecutive++;
+                if (FirstOnsetTick < 0 && _consecutive >= OnsetPersistenceTicks)
+                    FirstOnsetTick = tick - (OnsetPersistenceTicks - 1);
+            }
+        }
+
         private sealed class StandingResult
         {
             public const string Header =
                 "phase,feed_forward,saddle,repeat,load_kg,measured_ticks,initial_pelvis_y,final_pelvis_y,min_pelvis_y," +
                 "max_trunk_pitch_rad,upright,min_capture_hull_margin_m,min_capture_ap_margin_m,max_com_speed_mps," +
                 "max_canonical_pose_error_deg,max_target_actual_deflection_deg,max_joint_limit_proximity," +
-                "max_balance_ankle_usage,max_balance_hip_usage,max_balance_trunk_usage,max_drive_demand,saturation_fraction," +
+                "max_raw_ankle_authority_fraction,max_applied_ankle_authority_fraction,min_posture_guard_scale,max_hip_strategy_blend," +
+                "max_hip_authority_usage,max_trunk_authority_usage,max_drive_demand,saturation_fraction," +
                 "min_rearward_cop_authority_m,min_forward_cop_authority_m,max_saddle_separation_m,max_saddle_limit_occupancy," +
-                "max_saddle_force_n,max_saddle_torque_nm,min_support_contacts,support_lost,saddle_invalid,non_finite," +
-                "support_retained,saddle_valid,loaded_setup_valid,standing_gates_pass,pass";
+                "max_saddle_linear_limit_occupancy,max_saddle_angular_limit_occupancy,max_saddle_angular_x_limit_occupancy," +
+                "max_saddle_angular_y_limit_occupancy,max_saddle_angular_z_limit_occupancy,max_saddle_force_n,max_saddle_torque_nm," +
+                "min_support_contacts,support_lost,saddle_invalid,non_finite,support_retained,saddle_valid,loaded_setup_valid," +
+                "tracking_failure_onset_tick,capture_failure_onset_tick,posture_failure_onset_tick,support_loss_onset_tick," +
+                "saddle_linear_limit_onset_tick,saddle_angular_limit_onset_tick,standing_gates_pass,pass";
 
             public string Phase;
             public string FeedForward;
@@ -555,6 +677,9 @@ namespace PowerliftingSimulator.Tests
             public float MaxTargetActualDeflectionDeg;
             public float MaxJointLimitProximity;
             public float MaxBalanceAnkleUsage;
+            public float MaxAppliedBalanceAnkleUsage;
+            public float MinPostureGuardScale;
+            public float MaxHipStrategyBlend;
             public float MaxBalanceHipUsage;
             public float MaxBalanceTrunkUsage;
             public float MaxDriveDemand;
@@ -563,6 +688,11 @@ namespace PowerliftingSimulator.Tests
             public float MinForwardCopAuthorityM;
             public float MaxSaddleSeparationM;
             public float MaxSaddleLimitOccupancy;
+            public float MaxSaddleLinearLimitOccupancy;
+            public float MaxSaddleAngularLimitOccupancy;
+            public float MaxSaddleAngularXLimitOccupancy;
+            public float MaxSaddleAngularYLimitOccupancy;
+            public float MaxSaddleAngularZLimitOccupancy;
             public float MaxSaddleForceN;
             public float MaxSaddleTorqueNm;
             public int MinSupportContacts;
@@ -574,6 +704,12 @@ namespace PowerliftingSimulator.Tests
             public bool SupportRetained;
             public bool SaddleValid;
             public bool LoadedSetupValid;
+            public int TrackingFailureOnsetTick = -1;
+            public int CaptureFailureOnsetTick = -1;
+            public int PostureFailureOnsetTick = -1;
+            public int SupportLossOnsetTick = -1;
+            public int SaddleLinearLimitOnsetTick = -1;
+            public int SaddleAngularLimitOnsetTick = -1;
             public bool IsPass;
 
             public string Summary => string.Format(
@@ -593,10 +729,15 @@ namespace PowerliftingSimulator.Tests
                 MeasuredTicks.ToString(CultureInfo.InvariantCulture), Csv(InitialPelvisY), Csv(FinalPelvisY), Csv(MinPelvisY),
                 Csv(MaxAbsTrunkPitchRad), Bool(Upright), Csv(MinCaptureHullMarginM), Csv(MinCaptureApMarginM), Csv(MaxComSpeedMps),
                 Csv(MaxCanonicalPoseErrorDeg), Csv(MaxTargetActualDeflectionDeg), Csv(MaxJointLimitProximity),
-                Csv(MaxBalanceAnkleUsage), Csv(MaxBalanceHipUsage), Csv(MaxBalanceTrunkUsage), Csv(MaxDriveDemand), Csv(SaturationFraction),
+                Csv(MaxBalanceAnkleUsage), Csv(MaxAppliedBalanceAnkleUsage), Csv(MinPostureGuardScale), Csv(MaxHipStrategyBlend),
+                Csv(MaxBalanceHipUsage), Csv(MaxBalanceTrunkUsage), Csv(MaxDriveDemand), Csv(SaturationFraction),
                 Csv(MinRearwardCopAuthorityM), Csv(MinForwardCopAuthorityM), Csv(MaxSaddleSeparationM), Csv(MaxSaddleLimitOccupancy),
+                Csv(MaxSaddleLinearLimitOccupancy), Csv(MaxSaddleAngularLimitOccupancy),
+                Csv(MaxSaddleAngularXLimitOccupancy), Csv(MaxSaddleAngularYLimitOccupancy), Csv(MaxSaddleAngularZLimitOccupancy),
                 Csv(MaxSaddleForceN), Csv(MaxSaddleTorqueNm), MinSupportContacts.ToString(CultureInfo.InvariantCulture),
                 Bool(SupportLost), Bool(SaddleInvalid), Bool(NonFinite), Bool(SupportRetained), Bool(SaddleValid), Bool(LoadedSetupValid),
+                Tick(TrackingFailureOnsetTick), Tick(CaptureFailureOnsetTick), Tick(PostureFailureOnsetTick), Tick(SupportLossOnsetTick),
+                Tick(SaddleLinearLimitOnsetTick), Tick(SaddleAngularLimitOnsetTick),
                 Bool(IsStandingGatesPass), Bool(IsPass)
             });
 
@@ -607,6 +748,8 @@ namespace PowerliftingSimulator.Tests
                 SaturationFraction < MaximumSustainedSaturationFraction;
 
             private static string Bool(bool value) => value ? "true" : "false";
+
+            private static string Tick(int value) => value < 0 ? "NA" : value.ToString(CultureInfo.InvariantCulture);
         }
     }
 }
