@@ -108,12 +108,15 @@ namespace PowerliftingSimulator.Tests
 
             FoundationRuntime runtime = bootstrap.Runtime;
             SquatPhysicalAdapter adapter = controller.Adapter;
+            float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
             ulong squatCommandTick = SquatAttemptEventTicks.NotAvailable;
             ulong driveTick = SquatAttemptEventTicks.NotAvailable;
             int ticks = 0;
             while (controller.AttemptRecord == null && ticks < MaximumHarnessTicks)
             {
                 Assert.That(runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds), Is.EqualTo(1));
+                controller.LeftFootContact?.PhysicsTickUpdate(dt);
+                controller.RightFootContact?.PhysicsTickUpdate(dt);
                 ticks++;
 
                 if (squatCommandTick == SquatAttemptEventTicks.NotAvailable &&

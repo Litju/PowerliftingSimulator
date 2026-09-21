@@ -543,6 +543,14 @@ namespace PowerliftingSimulator.Tests
 
         private static string OutputPath(string fileName)
         {
+            string explicitDirectory = Environment.GetEnvironmentVariable("GAM44_OUTPUT_DIR");
+            if (!string.IsNullOrWhiteSpace(explicitDirectory))
+            {
+                string outputDirectory = Path.GetFullPath(explicitDirectory);
+                Directory.CreateDirectory(outputDirectory);
+                return Path.Combine(outputDirectory, fileName);
+            }
+
             string explicitPath = Environment.GetEnvironmentVariable("GAM44_OUTPUT") ??
                 Environment.GetEnvironmentVariable("GAM43_OUTPUT");
             if (!string.IsNullOrWhiteSpace(explicitPath))

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-21 06:14:10Z" end-time="2026-09-21 06:14:19Z" duration="8.7156781">
+  <test-suite type="TestSuite" id="1273" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="202" result="Passed" start-time="2026-09-21 06:14:10Z" end-time="2026-09-21 06:14:19Z" duration="8.715678" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1267" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="E:/Data/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="202" result="Passed" start-time="2026-09-21 06:14:10Z" end-time="2026-09-21 06:14:19Z" duration="8.689419" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="3280" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1268" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="202" result="Passed" start-time="2026-09-21 06:14:10Z" end-time="2026-09-21 06:14:19Z" duration="8.684028" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1269" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="202" result="Passed" start-time="2026-09-21 06:14:10Z" end-time="2026-09-21 06:14:19Z" duration="8.678666" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1092" name="GAM43LoadedStandingBenchmarkTests" fullname="PowerliftingSimulator.Tests.GAM43LoadedStandingBenchmarkTests" classname="PowerliftingSimulator.Tests.GAM43LoadedStandingBenchmarkTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-21 06:14:10Z" end-time="2026-09-21 06:14:19Z" duration="8.659125" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1093" name="GAM43_LOADED_STANDING_BENCHMARK" fullname="PowerliftingSimulator.Tests.GAM43LoadedStandingBenchmarkTests.GAM43_LOADED_STANDING_BENCHMARK" methodname="GAM43_LOADED_STANDING_BENCHMARK" classname="PowerliftingSimulator.Tests.GAM43LoadedStandingBenchmarkTests" runstate="Explicit" seed="1553237408" result="Passed" start-time="2026-09-21 06:14:10Z" end-time="2026-09-21 06:14:19Z" duration="8.629332" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="_SKIPREASON" value="GAM-43 frozen loaded-standing experiment; run with GAM43_MODE and candidate environment variables." />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[GAM43_STANDING phase=qualification feed=F2 saddle=S1 repeat=1 load=25 ticks=500 upright=True hull=0.0828 pose=3.292 deflection=2.432 jointLimit=0.073 drive=0.356 sat=0.000 rearCop=0.0763 frontCop=0.1537 saddleSep=0.0057 saddleLimit=0.057 supportLost=False pass=True
+GAM43_STANDING phase=qualification feed=F2 saddle=S1 repeat=1 load=60 ticks=500 upright=True hull=0.0902 pose=2.916 deflection=2.075 jointLimit=0.064 drive=0.099 sat=0.000 rearCop=0.0617 frontCop=0.1683 saddleSep=0.0123 saddleLimit=0.123 supportLost=False pass=True
+GAM43_STANDING phase=qualification feed=F2 saddle=S1 repeat=1 load=100 ticks=500 upright=True hull=0.0812 pose=2.216 deflection=3.295 jointLimit=0.044 drive=0.141 sat=0.000 rearCop=0.0520 frontCop=0.1795 saddleSep=0.0202 saddleLimit=0.202 supportLost=False pass=True
+GAM43_STANDING phase=qualification feed=F2 saddle=S1 repeat=1 load=140 ticks=500 upright=True hull=0.0752 pose=3.364 deflection=4.528 jointLimit=0.067 drive=0.193 sat=0.000 rearCop=0.0456 frontCop=0.1868 saddleSep=0.0282 saddleLimit=0.282 supportLost=False pass=True
+GAM43_STANDING phase=qualification feed=F2 saddle=S1 repeat=1 load=155 ticks=500 upright=True hull=0.0734 pose=3.340 deflection=4.725 jointLimit=0.067 drive=0.202 sat=0.000 rearCop=0.0431 frontCop=0.1885 saddleSep=0.0312 saddleLimit=0.312 supportLost=False pass=True
+GAM43_STANDING phase=qualification feed=F2 saddle=S1 repeat=1 load=170 ticks=500 upright=True hull=0.0720 pose=3.357 deflection=4.911 jointLimit=0.067 drive=0.209 sat=0.000 rearCop=0.0418 frontCop=0.1908 saddleSep=0.0342 saddleLimit=0.342 supportLost=False pass=True
+GAM43_STANDING phase=qualification feed=F2 saddle=S1 repeat=1 load=230 ticks=500 upright=True hull=0.0675 pose=3.144 deflection=7.097 jointLimit=0.171 drive=0.303 sat=0.000 rearCop=0.0370 frontCop=0.1972 saddleSep=0.0460 saddleLimit=0.460 supportLost=False pass=True
+GAM43_STANDING phase=qualification feed=F2 saddle=S1 repeat=1 load=270 ticks=500 upright=True hull=0.0655 pose=3.644 deflection=8.547 jointLimit=0.323 drive=0.356 sat=0.000 rearCop=0.0358 frontCop=0.2016 saddleSep=0.0540 saddleLimit=0.540 supportLost=False pass=True
+GAM43_STANDING phase=qualification feed=F2 saddle=S1 repeat=1 load=300 ticks=500 upright=True hull=0.0636 pose=3.537 deflection=11.042 jointLimit=0.346 drive=0.461 sat=0.000 rearCop=0.0346 frontCop=0.2036 saddleSep=0.0599 saddleLimit=0.599 supportLost=False pass=True
+Saving results to: C:/Users/Usuario/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
