@@ -34,9 +34,10 @@ namespace PowerliftingSimulator.Tests
         private const float MaximumComSpeedMps = 0.25f;
         private const float MaximumFootPitchDeg = 12f;
         private const float MaximumSustainedSaturationFraction = 0.05f;
-        private const float MaximumPostureErrorDeg = 10f;
+        private const float MaximumCanonicalPoseErrorDeg = 10f;
         private const float MaximumLimitProximity = 0.95f;
         private const float MaximumSaddleSeparationM = 0.05f;
+        private const float FixedCandidateImpedanceFactor = 5f;
 
         public static readonly float[] CanonicalStageALoadsKg = { 25f, 60f, 140f, 170f, 300f };
 
@@ -51,13 +52,19 @@ namespace PowerliftingSimulator.Tests
             JointFamilyProfile[] originalProfiles = SnapshotProfiles();
             ApplyImpedanceExperiment();
             float[] loads = RequestedStageALoads();
-            var results = new List<StandingResult>(loads.Length);
+            int repeats = RequestedStageARepeats();
+            var results = new List<StandingResult>(loads.Length * repeats);
             try
             {
                 foreach (float loadKg in loads)
                 {
-                    yield return LoadFreshScene();
-                    results.Add(RunStanding(loadKg));
+                    for (int repeat = 1; repeat <= repeats; repeat++)
+                    {
+                        yield return LoadFreshScene();
+                        StandingResult result = RunStanding(loadKg);
+                        result.Repeat = repeat;
+                        results.Add(result);
+                    }
                 }
             }
             finally
@@ -65,13 +72,40 @@ namespace PowerliftingSimulator.Tests
                 RestoreProfiles(originalProfiles);
             }
 
-            WriteArtifact(results);
+            string artifact = string.Equals(
+                Environment.GetEnvironmentVariable("GAM13_STAGE_A_IMPEDANCE"),
+                FixedCandidateImpedanceFactor.ToString("R", CultureInfo.InvariantCulture),
+                StringComparison.Ordinal)
+                ? "stage-a-standing-5x.csv"
+                : "stage-a-standing-qualification.csv";
+            WriteArtifact(results, artifact);
             foreach (StandingResult result in results)
             {
                 Assert.That(result.IsPass, Is.True, result.Summary);
             }
 
             yield return null;
+        }
+
+        [UnityTest]
+        [Explicit("GAM-13 fixed 5x plant standing qualification; one candidate plant across all canonical loads.")]
+        public IEnumerator GAM13_STAGE_A_FIXED_5X_PLANT_STANDING_QUALIFICATION()
+        {
+            string previous = Environment.GetEnvironmentVariable("GAM13_STAGE_A_IMPEDANCE");
+            string previousRepeats = Environment.GetEnvironmentVariable("GAM13_STAGE_A_REPEATS");
+            try
+            {
+                Environment.SetEnvironmentVariable(
+                    "GAM13_STAGE_A_IMPEDANCE",
+                    FixedCandidateImpedanceFactor.ToString("R", CultureInfo.InvariantCulture));
+                Environment.SetEnvironmentVariable("GAM13_STAGE_A_REPEATS", "3");
+                yield return GAM13_STAGE_A_FIXED_PLANT_STANDING_QUALIFICATION();
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("GAM13_STAGE_A_IMPEDANCE", previous);
+                Environment.SetEnvironmentVariable("GAM13_STAGE_A_REPEATS", previousRepeats);
+            }
         }
 
         [UnityTest]
@@ -320,6 +354,7 @@ namespace PowerliftingSimulator.Tests
                 SquatState.SETUP);
 
             var result = new StandingResult { LoadKg = loadKg };
+            var supportPoints = new List<Vector3>(32);
             for (int tick = 0; tick < TotalTicks; tick++)
             {
                 adapter.HoldReferencePhaseForQualification(
@@ -341,9 +376,18 @@ namespace PowerliftingSimulator.Tests
                 float saddleSeparation = _controller.Saddle == null
                     ? float.PositiveInfinity
                     : _controller.Saddle.SaddleSeparationMeters;
+                supportPoints.Clear();
+                AddCompletedContacts(_controller.LeftFootContact, supportPoints);
+                AddCompletedContacts(_controller.RightFootContact, supportPoints);
+                SquatSupportGeometry.Measurement capture = SquatSupportGeometry.Measure(
+                    supportPoints,
+                    new Vector2(balance.CaptureMl, balance.CaptureAp));
 
                 if (!float.IsFinite(pelvisY) || !float.IsFinite(trunkPitch) || !float.IsFinite(saddleSeparation) ||
-                    !IsFinite(balance.SystemCom) || !IsFinite(balance.SystemComVelocity))
+                    !IsFinite(balance.SystemCom) || !IsFinite(balance.SystemComVelocity) ||
+                    !float.IsFinite(adapter.CanonicalPostureErrorRad) ||
+                    !float.IsFinite(adapter.TargetActualDeflectionRad) ||
+                    (balance.HasSupport && !float.IsFinite(capture.HullSignedMarginM)))
                     result.NonFinite = true;
 
                 if (tick >= SettleTicks)
@@ -352,15 +396,22 @@ namespace PowerliftingSimulator.Tests
                     result.MinPelvisY = Mathf.Min(result.MinPelvisY, pelvisY);
                     result.MaxAbsTrunkPitchRad = Mathf.Max(result.MaxAbsTrunkPitchRad, Mathf.Abs(trunkPitch));
                     result.MaxAbsFootPitchDeg = Mathf.Max(result.MaxAbsFootPitchDeg, Mathf.Abs(footPitch));
-                    result.MinCaptureMarginM = Mathf.Min(
-                        result.MinCaptureMarginM,
+                    result.MinCaptureApMarginM = Mathf.Min(
+                        result.MinCaptureApMarginM,
                         Mathf.Min(balance.CaptureMarginFront, balance.CaptureMarginRear));
+                    if (float.IsFinite(capture.HullSignedMarginM))
+                        result.MinCaptureHullMarginM = Mathf.Min(
+                            result.MinCaptureHullMarginM,
+                            capture.HullSignedMarginM);
                     result.MaxComSpeedMps = Mathf.Max(
                         result.MaxComSpeedMps,
                         new Vector2(balance.SystemComVelocity.x, balance.SystemComVelocity.z).magnitude);
-                    result.MaxPostureErrorDeg = Mathf.Max(
-                        result.MaxPostureErrorDeg,
+                    result.MaxCanonicalPoseErrorDeg = Mathf.Max(
+                        result.MaxCanonicalPoseErrorDeg,
                         adapter.CanonicalPostureErrorRad * Mathf.Rad2Deg);
+                    result.MaxTargetActualDeflectionDeg = Mathf.Max(
+                        result.MaxTargetActualDeflectionDeg,
+                        adapter.TargetActualDeflectionRad * Mathf.Rad2Deg);
                     result.MaxLimitProximity = Mathf.Max(
                         result.MaxLimitProximity,
                         adapter.CanonicalPostureLimitProximity);
@@ -369,6 +420,16 @@ namespace PowerliftingSimulator.Tests
                         result.MaxAnkleOffsetDeg,
                         Mathf.Abs(control.AnkleSagittalOffsetRad) * Mathf.Rad2Deg);
                     result.MaxSaddleSeparationM = Mathf.Max(result.MaxSaddleSeparationM, saddleSeparation);
+                    if (balance.HasSupport && float.IsFinite(control.ComRefAp))
+                    {
+                        float rearCopLimit = balance.SupportApMin +
+                            SquatPredictiveBalanceController.SupportInteriorMarginM;
+                        float rearCopAuthority = control.ComRefAp - rearCopLimit;
+                        if (tick == SettleTicks)
+                            result.RearwardCopAuthorityAtSettleM = rearCopAuthority;
+                        result.MinRearwardCopAuthorityM = Mathf.Min(
+                            result.MinRearwardCopAuthorityM, rearCopAuthority);
+                    }
                     result.MinSupportContacts = Mathf.Min(result.MinSupportContacts, balance.SupportContactCount);
                     result.MinPelvisHeightAtSettle = tick == SettleTicks
                         ? pelvisY
@@ -391,11 +452,11 @@ namespace PowerliftingSimulator.Tests
                 !result.SupportLost &&
                 !result.SaddleUnstable &&
                 result.Upright &&
-                result.MinCaptureMarginM > MinimumCaptureMarginM &&
+                result.MinCaptureHullMarginM > MinimumCaptureMarginM &&
                 result.MaxComSpeedMps < MaximumComSpeedMps &&
                 result.MaxAbsFootPitchDeg < MaximumFootPitchDeg &&
                 result.SaturatedTicks / (float)result.MeasuredTicks < MaximumSustainedSaturationFraction &&
-                result.MaxPostureErrorDeg < MaximumPostureErrorDeg &&
+                result.MaxCanonicalPoseErrorDeg < MaximumCanonicalPoseErrorDeg &&
                 result.MaxLimitProximity < MaximumLimitProximity &&
                 result.MaxSaddleSeparationM < MaximumSaddleSeparationM;
 
@@ -409,6 +470,16 @@ namespace PowerliftingSimulator.Tests
                 _controller.LeftFootContact.PhysicsTickUpdate(dt);
             if (_controller.RightFootContact != null)
                 _controller.RightFootContact.PhysicsTickUpdate(dt);
+        }
+
+        private static void AddCompletedContacts(
+            PhysicalFootContactDetector detector,
+            List<Vector3> contacts)
+        {
+            if (detector == null)
+                return;
+            for (int index = 0; index < detector.CompletedContactCount; index++)
+                contacts.Add(detector.CompletedContactPoint(index));
         }
 
         private float FootPitchDegrees(string segmentId)
@@ -440,6 +511,16 @@ namespace PowerliftingSimulator.Tests
             for (int index = 0; index < tokens.Length; index++)
                 loads[index] = float.Parse(tokens[index], CultureInfo.InvariantCulture);
             return loads;
+        }
+
+        private static int RequestedStageARepeats()
+        {
+            string text = Environment.GetEnvironmentVariable("GAM13_STAGE_A_REPEATS");
+            if (string.IsNullOrWhiteSpace(text))
+                return 1;
+            int repeats = int.Parse(text, CultureInfo.InvariantCulture);
+            Assert.That(repeats, Is.InRange(1, 3));
+            return repeats;
         }
 
         private static void RestoreProfiles(JointFamilyProfile[] original)
@@ -606,23 +687,26 @@ namespace PowerliftingSimulator.Tests
             Array.Copy(original, live, live.Length);
         }
 
-        private static void WriteArtifact(IReadOnlyList<StandingResult> results)
+        private static void WriteArtifact(IReadOnlyList<StandingResult> results, string fileName)
         {
             string directory = Path.Combine(Directory.GetCurrentDirectory(), "Artifacts/Measurements/GAM-13");
             Directory.CreateDirectory(directory);
             var csv = new StringBuilder();
             csv.AppendLine(
-                "load_kg,measured_ticks,settle_pelvis_y,min_pelvis_y,final_pelvis_y,max_trunk_pitch_rad," +
-                "max_foot_pitch_deg,min_capture_margin_m,max_com_speed_mps,max_posture_error_deg," +
-                "max_limit_proximity,min_guard_scale,max_ankle_offset_deg,max_saddle_separation_m," +
+                "repeat,load_kg,measured_ticks,settle_pelvis_y,min_pelvis_y,final_pelvis_y,max_trunk_pitch_rad," +
+                "max_foot_pitch_deg,min_capture_ap_margin_m,min_capture_hull_margin_m,max_com_speed_mps," +
+                "max_canonical_pose_error_deg,max_target_actual_deflection_deg,max_limit_proximity," +
+                "min_guard_scale,max_ankle_offset_deg,rearward_cop_authority_at_settle_m," +
+                "min_rearward_cop_authority_m,max_saddle_separation_m," +
                 "min_support_contacts,support_lost,saddle_unstable,non_finite,upright,pass");
             foreach (StandingResult result in results)
                 csv.AppendLine(result.CsvRow);
-            File.WriteAllText(Path.Combine(directory, "stage-a-standing-final.csv"), csv.ToString());
+            File.WriteAllText(Path.Combine(directory, fileName), csv.ToString());
         }
 
         private sealed class StandingResult
         {
+            public int Repeat;
             public float LoadKg;
             public int MeasuredTicks;
             public float InitialPelvisY = float.NaN;
@@ -631,12 +715,16 @@ namespace PowerliftingSimulator.Tests
             public float FinalPelvisY = float.NaN;
             public float MaxAbsTrunkPitchRad;
             public float MaxAbsFootPitchDeg;
-            public float MinCaptureMarginM = float.PositiveInfinity;
+            public float MinCaptureApMarginM = float.PositiveInfinity;
+            public float MinCaptureHullMarginM = float.PositiveInfinity;
             public float MaxComSpeedMps;
-            public float MaxPostureErrorDeg;
+            public float MaxCanonicalPoseErrorDeg;
+            public float MaxTargetActualDeflectionDeg;
             public float MaxLimitProximity;
             public float MinGuardScale = 1f;
             public float MaxAnkleOffsetDeg;
+            public float RearwardCopAuthorityAtSettleM = float.NaN;
+            public float MinRearwardCopAuthorityM = float.PositiveInfinity;
             public float MaxSaddleSeparationM;
             public int MinSupportContacts = int.MaxValue;
             public int SaturatedTicks;
@@ -648,23 +736,29 @@ namespace PowerliftingSimulator.Tests
 
             public string Summary => string.Format(
                 CultureInfo.InvariantCulture,
-                "load={0:F0} measured={1} settlePelvis={2:F4} minPelvis={3:F4} maxTrunk={4:F4} " +
-                "capture={5:F4} comSpeed={6:F4} posture={7:F3} limit={8:F3} guard={9:F3} " +
-                "ankle={10:F3} saddle={11:F4} contacts={12} sat={13:F3} supportLost={14} " +
-                "saddleUnstable={15} nonFinite={16} upright={17} pass={18}",
-                LoadKg, MeasuredTicks, MinPelvisHeightAtSettle, MinPelvisY, MaxAbsTrunkPitchRad,
-                MinCaptureMarginM, MaxComSpeedMps, MaxPostureErrorDeg, MaxLimitProximity,
-                MinGuardScale, MaxAnkleOffsetDeg, MaxSaddleSeparationM, MinSupportContacts,
+                "repeat={0} load={1:F0} measured={2} settlePelvis={3:F4} minPelvis={4:F4} maxTrunk={5:F4} " +
+                "captureAp={6:F4} captureHull={7:F4} comSpeed={8:F4} canonical={9:F3} " +
+                "deflection={10:F3} limit={11:F3} guard={12:F3} ankle={13:F3} " +
+                "rearCopAtSettle={14:F4} rearCopAuthority={15:F4} saddle={16:F4} " +
+                "contacts={17} sat={18:F3} supportLost={19} saddleUnstable={20} " +
+                "nonFinite={21} upright={22} pass={23}",
+                Repeat, LoadKg, MeasuredTicks, MinPelvisHeightAtSettle, MinPelvisY, MaxAbsTrunkPitchRad,
+                MinCaptureApMarginM, MinCaptureHullMarginM, MaxComSpeedMps, MaxCanonicalPoseErrorDeg,
+                MaxTargetActualDeflectionDeg, MaxLimitProximity, MinGuardScale, MaxAnkleOffsetDeg,
+                RearwardCopAuthorityAtSettleM, MinRearwardCopAuthorityM, MaxSaddleSeparationM,
+                MinSupportContacts,
                 MeasuredTicks == 0 ? 1f : SaturatedTicks / (float)MeasuredTicks,
                 SupportLost, SaddleUnstable, NonFinite, Upright, IsPass);
 
             public string CsvRow => string.Format(
                 CultureInfo.InvariantCulture,
-                "{0:R},{1},{2:R},{3:R},{4:R},{5:R},{6:R},{7:R},{8:R},{9:R},{10:R},{11:R},{12:R},{13:R},{14},{15},{16},{17},{18},{19}",
-                LoadKg, MeasuredTicks, MinPelvisHeightAtSettle, MinPelvisY, FinalPelvisY,
-                MaxAbsTrunkPitchRad, MaxAbsFootPitchDeg, MinCaptureMarginM, MaxComSpeedMps,
-                MaxPostureErrorDeg, MaxLimitProximity, MinGuardScale, MaxAnkleOffsetDeg,
-                MaxSaddleSeparationM, MinSupportContacts, SupportLost, SaddleUnstable,
+                "{0},{1:R},{2},{3:R},{4:R},{5:R},{6:R},{7:R},{8:R},{9:R},{10:R},{11:R},{12:R},{13:R},{14:R},{15:R},{16:R},{17:R},{18},{19},{20},{21},{22},{23},{24}",
+                Repeat, LoadKg, MeasuredTicks, MinPelvisHeightAtSettle, MinPelvisY, FinalPelvisY,
+                MaxAbsTrunkPitchRad, MaxAbsFootPitchDeg, MinCaptureApMarginM, MinCaptureHullMarginM,
+                MaxComSpeedMps, MaxCanonicalPoseErrorDeg, MaxTargetActualDeflectionDeg,
+                MaxLimitProximity, MinGuardScale, MaxAnkleOffsetDeg, RearwardCopAuthorityAtSettleM,
+                MinRearwardCopAuthorityM, MaxSaddleSeparationM, MinSupportContacts,
+                SupportLost, SaddleUnstable,
                 NonFinite, Upright, IsPass);
         }
     }

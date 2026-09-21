@@ -1564,6 +1564,7 @@ namespace PowerliftingSimulator.Tests
             private float _minCapture = float.PositiveInfinity;
             private float _maxComSpeed;
             private float _maxPostureDeg;
+            private float _maxTargetDeflectionDeg;
             private float _maxLimit;
             private float _minGuard = 1f;
             private float _maxAnkleDeg;
@@ -1606,6 +1607,9 @@ namespace PowerliftingSimulator.Tests
                 _maxComSpeed = Mathf.Max(_maxComSpeed,
                     new Vector2(balance.SystemComVelocity.x, balance.SystemComVelocity.z).magnitude);
                 _maxPostureDeg = Mathf.Max(_maxPostureDeg, adapter.CanonicalPostureErrorRad * Mathf.Rad2Deg);
+                _maxTargetDeflectionDeg = Mathf.Max(
+                    _maxTargetDeflectionDeg,
+                    adapter.TargetActualDeflectionRad * Mathf.Rad2Deg);
                 _maxLimit = Mathf.Max(_maxLimit, adapter.CanonicalPostureLimitProximity);
                 _minGuard = Mathf.Min(_minGuard, sample.Control.PostureGuardScale);
                 _maxAnkleDeg = Mathf.Max(_maxAnkleDeg, Mathf.Abs(sample.Control.AnkleSagittalOffsetRad) * Mathf.Rad2Deg);
@@ -1624,7 +1628,7 @@ namespace PowerliftingSimulator.Tests
                     _saturated++;
                 Upright = _minPelvis > PosturePelvisHeightM && _maxTrunk < PostureTrunkPitchRad;
                 Pass = _measured == AuditTicks - StageASettleTicks && !_supportLost && !_saddleUnstable && Upright &&
-                    _minCapture > CaptureMarginM && _maxComSpeed < StageAMaxComSpeedMps &&
+                    MinHullCaptureMarginM > CaptureMarginM && _maxComSpeed < StageAMaxComSpeedMps &&
                     _maxFootPitch < StageAMaxFootPitchDeg &&
                     _saturated / (float)_measured < StageAMaxSaturationFraction &&
                     _maxPostureDeg < StageAMaxPostureErrorDeg && _maxLimit < StageAMaxLimitProximity &&
@@ -1634,11 +1638,12 @@ namespace PowerliftingSimulator.Tests
             public string Summary(float loadKg) => string.Format(
                 CultureInfo.InvariantCulture,
                 "load={0:F0} measured={1} settlePelvis={2:F4} minPelvis={3:F4} maxTrunk={4:F4} " +
-                "capture={5:F4} comSpeed={6:F4} posture={7:F3} limit={8:F3} guard={9:F3} " +
-                "ankle={10:F3} saddle={11:F4} contacts={12} sat={13:F3} supportLost={14} " +
-                "saddleUnstable={15} upright={16} pass={17}",
-                loadKg, _measured, _settlePelvis, _minPelvis, _maxTrunk, _minCapture, _maxComSpeed,
-                _maxPostureDeg, _maxLimit, _minGuard, _maxAnkleDeg, _maxSaddle, _minContacts,
+                "captureAp={5:F4} captureHull={6:F4} comSpeed={7:F4} canonical={8:F3} " +
+                "deflection={9:F3} limit={10:F3} guard={11:F3} ankle={12:F3} saddle={13:F4} " +
+                "contacts={14} sat={15:F3} supportLost={16} saddleUnstable={17} upright={18} pass={19}",
+                loadKg, _measured, _settlePelvis, _minPelvis, _maxTrunk, _minCapture,
+                MinHullCaptureMarginM, _maxComSpeed, _maxPostureDeg, _maxTargetDeflectionDeg,
+                _maxLimit, _minGuard, _maxAnkleDeg, _maxSaddle, _minContacts,
                 _measured == 0 ? 1f : _saturated / (float)_measured, _supportLost, _saddleUnstable, Upright, Pass);
         }
 
