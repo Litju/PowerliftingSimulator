@@ -200,6 +200,44 @@ namespace PowerliftingSimulator.Tests
             Append(builder, "terminal_reason", controller.AttemptRecord == null
                 ? "NOT_FINALIZED"
                 : controller.AttemptRecord.TerminalReason);
+            AppendRange(builder, "bar_linear_speed_magnitude_mps", diagnostics,
+                diagnostic => diagnostic.BarLinearSpeedMagnitudeMps);
+            AppendRange(builder, "bar_angular_speed_magnitude_rad_s", diagnostics,
+                diagnostic => diagnostic.BarAngularSpeedMagnitudeRadS);
+            AppendRange(builder, "bar_vertical_speed_mps", diagnostics,
+                diagnostic => diagnostic.BarVerticalSpeedMps);
+            AppendRange(builder, "bar_angular_velocity_x_rad_s", diagnostics,
+                diagnostic => diagnostic.BarAngularVelocityBarXRadS);
+            AppendRange(builder, "bar_angular_velocity_y_rad_s", diagnostics,
+                diagnostic => diagnostic.BarAngularVelocityBarYRadS);
+            AppendRange(builder, "bar_angular_velocity_z_rad_s", diagnostics,
+                diagnostic => diagnostic.BarAngularVelocityBarZRadS);
+            AppendRange(builder, "raw_ankle_demand_rad", diagnostics,
+                diagnostic => diagnostic.RawAnkleDemandRad);
+            AppendRange(builder, "guarded_ankle_demand_rad", diagnostics,
+                diagnostic => diagnostic.GuardedAnkleDemandRad);
+            AppendRange(builder, "applied_ankle_demand_rad", diagnostics,
+                diagnostic => diagnostic.AppliedAnkleDemandRad);
+            AppendRange(builder, "hip_strategy_blend", diagnostics,
+                diagnostic => diagnostic.HipStrategyBlend);
+            AppendRange(builder, "com_ap_m", diagnostics, diagnostic => diagnostic.ComApM);
+            AppendRange(builder, "com_ml_m", diagnostics, diagnostic => diagnostic.ComMlM);
+            AppendRange(builder, "cop_measured_ap_m", diagnostics, diagnostic => diagnostic.CopMeasuredApM);
+            AppendRange(builder, "cop_measured_ml_m", diagnostics, diagnostic => diagnostic.CopMeasuredMlM);
+            AppendRange(builder, "capture_ap_m", diagnostics, diagnostic => diagnostic.CaptureApM);
+            AppendRange(builder, "capture_ml_m", diagnostics, diagnostic => diagnostic.CaptureMlM);
+            AppendRange(builder, "com_speed_mps", diagnostics, diagnostic => diagnostic.ComSpeedMps);
+            AppendRange(builder, "capture_margin_2d_m", diagnostics, diagnostic => diagnostic.CaptureMargin2DM);
+            Append(builder, "bar_vertical_zero_crossings", ZeroCrossings(diagnostics, diagnostic => diagnostic.BarVerticalSpeedMps));
+            Append(builder, "bar_angular_x_zero_crossings", ZeroCrossings(diagnostics, diagnostic => diagnostic.BarAngularVelocityBarXRadS));
+            Append(builder, "bar_angular_y_zero_crossings", ZeroCrossings(diagnostics, diagnostic => diagnostic.BarAngularVelocityBarYRadS));
+            Append(builder, "bar_angular_z_zero_crossings", ZeroCrossings(diagnostics, diagnostic => diagnostic.BarAngularVelocityBarZRadS));
+            Append(builder, "com_ap_zero_crossings", ZeroCrossings(diagnostics, diagnostic => diagnostic.ComApM));
+            Append(builder, "com_ml_zero_crossings", ZeroCrossings(diagnostics, diagnostic => diagnostic.ComMlM));
+            Append(builder, "cop_ap_zero_crossings", ZeroCrossings(diagnostics, diagnostic => diagnostic.CopMeasuredApM));
+            Append(builder, "cop_ml_zero_crossings", ZeroCrossings(diagnostics, diagnostic => diagnostic.CopMeasuredMlM));
+            Append(builder, "capture_ap_zero_crossings", ZeroCrossings(diagnostics, diagnostic => diagnostic.CaptureApM));
+            Append(builder, "capture_ml_zero_crossings", ZeroCrossings(diagnostics, diagnostic => diagnostic.CaptureMlM));
             foreach (PropertyInfo property in DiagnosticProperties.Where(IsMarginProperty))
             {
                 float firstValue = FirstFinite(diagnostics, property);
@@ -220,6 +258,36 @@ namespace PowerliftingSimulator.Tests
                 Append(builder, property.Name + "_max", maximum);
             }
             return builder.ToString();
+        }
+
+        private static void AppendRange(
+            StringBuilder builder,
+            string name,
+            IReadOnlyList<SquatStartPredicateDiagnostic> diagnostics,
+            Func<SquatStartPredicateDiagnostic, float> value)
+        {
+            float[] finite = diagnostics.Select(value).Where(float.IsFinite).ToArray();
+            Append(builder, name + "_min", finite.Length == 0 ? float.NaN : finite.Min());
+            Append(builder, name + "_max", finite.Length == 0 ? float.NaN : finite.Max());
+        }
+
+        private static int ZeroCrossings(
+            IReadOnlyList<SquatStartPredicateDiagnostic> diagnostics,
+            Func<SquatStartPredicateDiagnostic, float> value)
+        {
+            float previous = float.NaN;
+            int crossings = 0;
+            for (int index = 0; index < diagnostics.Count; index++)
+            {
+                float current = value(diagnostics[index]);
+                if (!float.IsFinite(current))
+                    continue;
+                if (float.IsFinite(previous) &&
+                    ((previous < 0f && current >= 0f) || (previous >= 0f && current < 0f)))
+                    crossings++;
+                previous = current;
+            }
+            return crossings;
         }
 
         private static IEnumerable<string> FailureLabels(IReadOnlyList<SquatStartPredicateDiagnostic> diagnostics)

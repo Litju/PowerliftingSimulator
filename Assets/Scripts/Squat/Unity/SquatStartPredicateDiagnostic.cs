@@ -27,6 +27,9 @@ namespace PowerliftingSimulator.Squat.Unity
             bool barAngularSpeedPass,
             float barAngularSpeedMarginRadS,
             float barAngularSpeedThresholdRadS,
+            float barAngularVelocityBarXRadS,
+            float barAngularVelocityBarYRadS,
+            float barAngularVelocityBarZRadS,
             bool supportAvailable,
             bool supportPresent,
             bool leftFootAvailable,
@@ -52,6 +55,7 @@ namespace PowerliftingSimulator.Squat.Unity
             bool thoraxPass,
             float thoraxMarginRad,
             float rawAnkleAuthorityFraction,
+            float rawAnkleDemandRad,
             float guardedAnkleDemandRad,
             float appliedAnkleDemandRad,
             float postureGuardScale,
@@ -64,7 +68,13 @@ namespace PowerliftingSimulator.Squat.Unity
             float abdomenStandingBiasDegrees,
             float thoraxStandingBiasDegrees,
             float comSpeedMps,
-            float captureMargin2DM)
+            float captureMargin2DM,
+            float comApM,
+            float comMlM,
+            float copMeasuredApM,
+            float copMeasuredMlM,
+            float captureApM,
+            float captureMlM)
         {
             SimulationTick = simulationTick;
             SimulationTimeSeconds = simulationTimeSeconds;
@@ -84,6 +94,9 @@ namespace PowerliftingSimulator.Squat.Unity
             BarAngularSpeedPass = barAngularSpeedPass;
             BarAngularSpeedMarginRadS = barAngularSpeedMarginRadS;
             BarAngularSpeedThresholdRadS = barAngularSpeedThresholdRadS;
+            BarAngularVelocityBarXRadS = barAngularVelocityBarXRadS;
+            BarAngularVelocityBarYRadS = barAngularVelocityBarYRadS;
+            BarAngularVelocityBarZRadS = barAngularVelocityBarZRadS;
             SupportAvailable = supportAvailable;
             SupportPresent = supportPresent;
             LeftFootAvailable = leftFootAvailable;
@@ -109,6 +122,7 @@ namespace PowerliftingSimulator.Squat.Unity
             ThoraxPass = thoraxPass;
             ThoraxMarginRad = thoraxMarginRad;
             RawAnkleAuthorityFraction = rawAnkleAuthorityFraction;
+            RawAnkleDemandRad = rawAnkleDemandRad;
             GuardedAnkleDemandRad = guardedAnkleDemandRad;
             AppliedAnkleDemandRad = appliedAnkleDemandRad;
             PostureGuardScale = postureGuardScale;
@@ -122,6 +136,12 @@ namespace PowerliftingSimulator.Squat.Unity
             ThoraxStandingBiasDegrees = thoraxStandingBiasDegrees;
             ComSpeedMps = comSpeedMps;
             CaptureMargin2DM = captureMargin2DM;
+            ComApM = comApM;
+            ComMlM = comMlM;
+            CopMeasuredApM = copMeasuredApM;
+            CopMeasuredMlM = copMeasuredMlM;
+            CaptureApM = captureApM;
+            CaptureMlM = captureMlM;
         }
 
         public ulong SimulationTick { get; }
@@ -143,6 +163,9 @@ namespace PowerliftingSimulator.Squat.Unity
         public bool BarAngularSpeedPass { get; }
         public float BarAngularSpeedMarginRadS { get; }
         public float BarAngularSpeedThresholdRadS { get; }
+        public float BarAngularVelocityBarXRadS { get; }
+        public float BarAngularVelocityBarYRadS { get; }
+        public float BarAngularVelocityBarZRadS { get; }
 
         public bool SupportAvailable { get; }
         public bool SupportPresent { get; }
@@ -171,6 +194,7 @@ namespace PowerliftingSimulator.Squat.Unity
         public float ThoraxMarginRad { get; }
 
         public float RawAnkleAuthorityFraction { get; }
+        public float RawAnkleDemandRad { get; }
         public float GuardedAnkleDemandRad { get; }
         public float AppliedAnkleDemandRad { get; }
         public float PostureGuardScale { get; }
@@ -186,6 +210,12 @@ namespace PowerliftingSimulator.Squat.Unity
 
         public float ComSpeedMps { get; }
         public float CaptureMargin2DM { get; }
+        public float ComApM { get; }
+        public float ComMlM { get; }
+        public float CopMeasuredApM { get; }
+        public float CopMeasuredMlM { get; }
+        public float CaptureApM { get; }
+        public float CaptureMlM { get; }
 
         internal SquatStartPredicateDiagnostic WithConsecutiveValidRun(int runLength)
         {
@@ -208,6 +238,9 @@ namespace PowerliftingSimulator.Squat.Unity
                 BarAngularSpeedPass,
                 BarAngularSpeedMarginRadS,
                 BarAngularSpeedThresholdRadS,
+                BarAngularVelocityBarXRadS,
+                BarAngularVelocityBarYRadS,
+                BarAngularVelocityBarZRadS,
                 SupportAvailable,
                 SupportPresent,
                 LeftFootAvailable,
@@ -233,6 +266,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 ThoraxPass,
                 ThoraxMarginRad,
                 RawAnkleAuthorityFraction,
+                RawAnkleDemandRad,
                 GuardedAnkleDemandRad,
                 AppliedAnkleDemandRad,
                 PostureGuardScale,
@@ -245,7 +279,13 @@ namespace PowerliftingSimulator.Squat.Unity
                 AbdomenStandingBiasDegrees,
                 ThoraxStandingBiasDegrees,
                 ComSpeedMps,
-                CaptureMargin2DM);
+                CaptureMargin2DM,
+                ComApM,
+                ComMlM,
+                CopMeasuredApM,
+                CopMeasuredMlM,
+                CaptureApM,
+                CaptureMlM);
         }
     }
 }

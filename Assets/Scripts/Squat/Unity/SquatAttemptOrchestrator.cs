@@ -362,6 +362,17 @@ namespace PowerliftingSimulator.Squat.Unity
             SquatBalanceObserver balance = _adapter.Balance;
             Vector3 comVelocity = balance.SystemComVelocity;
             float comSpeed = Mathf.Sqrt(comVelocity.x * comVelocity.x + comVelocity.z * comVelocity.z);
+            float barAngularVelocityX = barAvailable
+                ? snapshot.Bar.AngularVelocityBarRadiansPerSecond.X
+                : float.NaN;
+            float barAngularVelocityY = barAvailable
+                ? snapshot.Bar.AngularVelocityBarRadiansPerSecond.Y
+                : float.NaN;
+            float barAngularVelocityZ = barAvailable
+                ? snapshot.Bar.AngularVelocityBarRadiansPerSecond.Z
+                : float.NaN;
+            float copMeasuredAp = control.HasCopMeasurement ? control.CopMeasuredAp : float.NaN;
+            float copMeasuredMl = balance.HasCopEstimate ? balance.CopEstimate.x : float.NaN;
 
             return new SquatStartPredicateDiagnostic(
                 snapshot.SimulationTick,
@@ -382,6 +393,9 @@ namespace PowerliftingSimulator.Squat.Unity
                 barAngularPass,
                 barAvailable ? _ruleTolerances.MotionlessBarAngularVelocityRadS - barAngularSpeed : float.NaN,
                 _ruleTolerances.MotionlessBarAngularVelocityRadS,
+                barAngularVelocityX,
+                barAngularVelocityY,
+                barAngularVelocityZ,
                 supportAvailable,
                 supportPresent,
                 leftFootAvailable,
@@ -407,6 +421,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 thoraxPass,
                 JointMargin(snapshot.Joints.Thorax, _ruleTolerances.TrunkErectToleranceRad),
                 control.RawAnkleAuthorityFraction,
+                control.RawAnkleSagittalOffsetRad,
                 control.RawAnkleSagittalOffsetRad * control.PostureGuardScale,
                 control.AnkleSagittalOffsetRad,
                 control.PostureGuardScale,
@@ -419,7 +434,13 @@ namespace PowerliftingSimulator.Squat.Unity
                 _adapter.StandingEquilibriumBiasDegrees(SquatJointFamily.Abdomen),
                 _adapter.StandingEquilibriumBiasDegrees(SquatJointFamily.Thorax),
                 comSpeed,
-                balance.CaptureMargin2D);
+                balance.CaptureMargin2D,
+                balance.SystemCom.z,
+                balance.SystemCom.x,
+                copMeasuredAp,
+                copMeasuredMl,
+                balance.CaptureAp,
+                balance.CaptureMl);
         }
 
         private static bool IsAvailableAndWithin(SquatJointObservation joint, float tolerance)
