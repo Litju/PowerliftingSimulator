@@ -80,7 +80,7 @@ namespace PowerliftingSimulator.Tests
                 Assert.That(runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds), Is.EqualTo(1));
                 controller.LeftFootContact?.PhysicsTickUpdate(dt);
                 controller.RightFootContact?.PhysicsTickUpdate(dt);
-                enteredStartWindow |= controller.AttemptLifecycle.State == SquatAttemptLifecycleState.START_WINDOW;
+                enteredStartWindow |= controller.ObservationCollector.IsRecording;
                 ticks++;
                 if (ticks % TicksPerYield == 0)
                     yield return null;
@@ -176,7 +176,8 @@ namespace PowerliftingSimulator.Tests
             int longestRun = diagnostics.Max(diagnostic => diagnostic.ConsecutiveValidRunLength);
             bool qualified = longestRun >= first.RequiredRunLength;
             string[] observedFailures = FailureLabels(diagnostics).ToArray();
-            string classification = Classify(diagnostics);
+            SquatStartPredicateDiagnostic blockingDiagnostic = BlockingDiagnostic(diagnostics, longestRun);
+            string classification = qualified ? "NONE" : Classify(blockingDiagnostic);
             var builder = new StringBuilder();
             builder.AppendLine("field,value");
             Append(builder, "arm", ArmName(arm));
@@ -191,6 +192,7 @@ namespace PowerliftingSimulator.Tests
             Append(builder, "adapter_state_at_end", controller.Adapter.State);
             Append(builder, "classification", classification);
             Append(builder, "observed_failure_predicates", string.Join("|", observedFailures));
+            Append(builder, "blocking_failure_predicates", string.Join("|", FailureLabels(blockingDiagnostic)));
             Append(builder, "terminal_failure_predicates", string.Join("|", FailureLabels(last)));
             Append(builder, "squat_command_tick", controller.AttemptRecord == null
                 ? SquatAttemptEventTicks.NotAvailable
@@ -264,9 +266,22 @@ namespace PowerliftingSimulator.Tests
                 yield return float.IsNaN(actual) ? name + "_availability" : name + "_angle";
         }
 
-        private static string Classify(IReadOnlyList<SquatStartPredicateDiagnostic> diagnostics)
+        private static SquatStartPredicateDiagnostic BlockingDiagnostic(
+            IReadOnlyList<SquatStartPredicateDiagnostic> diagnostics,
+            int longestRun)
         {
-            SquatStartPredicateDiagnostic diagnostic = diagnostics[diagnostics.Count - 1];
+            for (int index = 0; index + 1 < diagnostics.Count; index++)
+            {
+                if (diagnostics[index].ConsecutiveValidRunLength == longestRun &&
+                    diagnostics[index].OverallStartCandidate &&
+                    !diagnostics[index + 1].OverallStartCandidate)
+                    return diagnostics[index + 1];
+            }
+            return diagnostics[diagnostics.Count - 1];
+        }
+
+        private static string Classify(SquatStartPredicateDiagnostic diagnostic)
+        {
             var groups = new HashSet<string>();
             if (!diagnostic.BarAvailable || !diagnostic.BarLinearSpeedPass ||
                 !diagnostic.BarVerticalSpeedPass || !diagnostic.BarAngularSpeedPass)
@@ -329,7 +344,11 @@ namespace PowerliftingSimulator.Tests
                 diagnostics.Max(diagnostic => diagnostic.ConsecutiveValidRunLength) >= diagnostics[0].RequiredRunLength,
                 diagnostics.Max(diagnostic => diagnostic.ConsecutiveValidRunLength),
                 enteredStartWindow,
-                Classify(diagnostics),
+                diagnostics.Max(diagnostic => diagnostic.ConsecutiveValidRunLength) >= diagnostics[0].RequiredRunLength
+                    ? "NONE"
+                    : Classify(BlockingDiagnostic(
+                        diagnostics,
+                        diagnostics.Max(diagnostic => diagnostic.ConsecutiveValidRunLength))),
                 controller.AttemptLifecycle.State,
                 controller.AttemptRecord == null ? "NOT_FINALIZED" : controller.AttemptRecord.TerminalReason.ToString());
         }
