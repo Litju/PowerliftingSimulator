@@ -72,6 +72,13 @@ namespace PowerliftingSimulator.Squat.Unity
         public float CaptureMl { get; private set; }
         public float CaptureMarginFront => SupportApMax - CaptureAp;
         public float CaptureMarginRear => CaptureAp - SupportApMin;
+        public float CaptureMargin2D => !HasSupport
+            ? float.NaN
+            : Mathf.Min(
+                CaptureMarginFront,
+                CaptureMarginRear,
+                SupportMlMax - CaptureMl,
+                CaptureMl - SupportMlMin);
         public float ComApMarginFront => SupportApMax - SystemCom.z;
         public float ComApMarginRear => SystemCom.z - SupportApMin;
 

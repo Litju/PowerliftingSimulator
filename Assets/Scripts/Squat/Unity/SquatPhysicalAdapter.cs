@@ -119,6 +119,9 @@ namespace PowerliftingSimulator.Squat.Unity
         public SquatPredictiveBalanceController BalanceController => _balanceController;
         public SquatEquilibriumPreload Preload => _preload;
 
+        public float StandingEquilibriumBiasDegrees(SquatJointFamily family) =>
+            _preload.BiasDegrees(family, 0f, EquilibriumLoadKg);
+
         /// <summary>
         /// Where the owner-accepted GAM-10 reference puts the sole of the foot
         /// in the standing pose. The physical foot collider is supposed to

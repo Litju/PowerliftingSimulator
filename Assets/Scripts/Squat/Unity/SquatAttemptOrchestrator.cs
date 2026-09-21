@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using PowerliftingSimulator.Foundation;
+using UnityEngine;
 
 namespace PowerliftingSimulator.Squat.Unity
 {
@@ -20,10 +23,14 @@ namespace PowerliftingSimulator.Squat.Unity
         private readonly int _requiredStartSamples;
         private readonly int _requiredLockoutSamples;
         private readonly SquatAttemptLifecycle _lifecycle = new SquatAttemptLifecycle();
+        private readonly List<SquatStartPredicateDiagnostic> _startWindowDiagnostics =
+            new List<SquatStartPredicateDiagnostic>();
+        private readonly ReadOnlyCollection<SquatStartPredicateDiagnostic> _readOnlyStartWindowDiagnostics;
 
         private bool _started;
         private bool _recordingStarted;
         private int _stableCandidateRun;
+        private int _startPredicateRun;
         private int _startWindowSamples;
         private int _lockoutSamples;
         private ulong _squatCommandTick;
@@ -51,6 +58,7 @@ namespace PowerliftingSimulator.Squat.Unity
             _maximumAttemptTicks = maximumAttemptTicks;
             _requiredStartSamples = _ruleTolerances.StartPositionPersistenceTicks;
             _requiredLockoutSamples = _ruleTolerances.FinalPositionPersistenceTicks;
+            _readOnlyStartWindowDiagnostics = _startWindowDiagnostics.AsReadOnly();
             _collector.RegisterSnapshotObserver(HandleSnapshot);
         }
 
@@ -62,6 +70,7 @@ namespace PowerliftingSimulator.Squat.Unity
         public int MaximumAttemptTicks => _maximumAttemptTicks;
         public int RequiredStartSamples => _requiredStartSamples;
         public int RequiredLockoutSamples => _requiredLockoutSamples;
+        public IReadOnlyList<SquatStartPredicateDiagnostic> StartWindowDiagnostics => _readOnlyStartWindowDiagnostics;
 
         /// <summary>
         /// Arms one attempt. The trace does not begin until a qualified
@@ -79,6 +88,8 @@ namespace PowerliftingSimulator.Squat.Unity
             _started = true;
             _recordingStarted = false;
             _stableCandidateRun = 0;
+            _startPredicateRun = 0;
+            _startWindowDiagnostics.Clear();
             _startWindowSamples = 0;
             _lockoutSamples = 0;
             _squatCommandTick = SquatAttemptEventTicks.NotAvailable;
@@ -148,7 +159,8 @@ namespace PowerliftingSimulator.Squat.Unity
 
         private void HandleStartQualification(SquatObservationSnapshot snapshot)
         {
-            if (IsStartPositionCandidate(snapshot))
+            SquatStartPredicateDiagnostic predicate = ObserveStartPredicate(snapshot);
+            if (predicate.OverallStartCandidate)
                 _stableCandidateRun++;
             else
                 _stableCandidateRun = 0;
@@ -163,6 +175,7 @@ namespace PowerliftingSimulator.Squat.Unity
 
         private void HandleStartWindow(SquatObservationSnapshot snapshot)
         {
+            SquatStartPredicateDiagnostic predicate = ObserveStartPredicate(snapshot);
             if (_startWindowSamples < _requiredStartSamples)
             {
                 _lifecycle.ObserveStartWindowSample(snapshot.SimulationTick);
@@ -173,7 +186,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 // degrade, and an unqualified reference would shift the whole
                 // lockout height comparison. The sealed rule processor remains
                 // the authority on start legality.
-                if (!_hasStandingReference && IsStartPositionCandidate(snapshot))
+                if (!_hasStandingReference && predicate.OverallStartCandidate)
                 {
                     _standingReference = snapshot;
                     _hasStandingReference = true;
@@ -297,30 +310,129 @@ namespace PowerliftingSimulator.Squat.Unity
                 _hasAscent = true;
         }
 
-        private bool IsStartPositionCandidate(SquatObservationSnapshot snapshot)
+        private SquatStartPredicateDiagnostic ObserveStartPredicate(SquatObservationSnapshot snapshot)
         {
-            if (!snapshot.Bar.IsAvailable ||
-                snapshot.Bar.LinearVelocityWorldMetersPerSecond.Length > _ruleTolerances.MotionlessBarVelocityMps ||
-                snapshot.Bar.AngularVelocityBarRadiansPerSecond.Length > _ruleTolerances.MotionlessBarAngularVelocityRadS ||
-                Math.Abs(snapshot.Bar.LinearVelocityWorldMetersPerSecond.Y) > _failureCalibration.PhysicalMotionVelocityMps ||
-                snapshot.Support.SupportAvailability != SquatTelemetryAvailability.AVAILABLE ||
-                !snapshot.Support.HasSupport ||
-                snapshot.LeftFoot.Availability != SquatTelemetryAvailability.AVAILABLE ||
-                snapshot.RightFoot.Availability != SquatTelemetryAvailability.AVAILABLE)
-                return false;
+            SquatStartPredicateDiagnostic predicate = EvaluateStartPredicate(snapshot);
+            _startPredicateRun = predicate.OverallStartCandidate
+                ? _startPredicateRun + 1
+                : 0;
+            predicate = predicate.WithConsecutiveValidRun(_startPredicateRun);
+            _startWindowDiagnostics.Add(predicate);
+            return predicate;
+        }
 
-            return IsAvailableAndWithin(snapshot.Joints.LeftKnee, _ruleTolerances.KneeLockoutToleranceRad) &&
-                IsAvailableAndWithin(snapshot.Joints.RightKnee, _ruleTolerances.KneeLockoutToleranceRad) &&
-                IsAvailableAndWithin(snapshot.Joints.LeftHip, _ruleTolerances.HipErectToleranceRad) &&
-                IsAvailableAndWithin(snapshot.Joints.RightHip, _ruleTolerances.HipErectToleranceRad) &&
-                IsAvailableAndWithin(snapshot.Joints.Abdomen, _ruleTolerances.TrunkErectToleranceRad) &&
-                IsAvailableAndWithin(snapshot.Joints.Thorax, _ruleTolerances.TrunkErectToleranceRad);
+        /// <summary>
+        /// Evaluates the exact production start-position predicate and exposes
+        /// the observed margins without creating a second test rule.
+        /// </summary>
+        public SquatStartPredicateDiagnostic EvaluateStartPredicate(SquatObservationSnapshot snapshot)
+        {
+            bool barAvailable = snapshot.Bar.IsAvailable;
+            float barLinearSpeed = barAvailable
+                ? snapshot.Bar.LinearVelocityWorldMetersPerSecond.Length
+                : float.NaN;
+            float barVerticalSpeed = barAvailable
+                ? snapshot.Bar.LinearVelocityWorldMetersPerSecond.Y
+                : float.NaN;
+            float barAngularSpeed = barAvailable
+                ? snapshot.Bar.AngularVelocityBarRadiansPerSecond.Length
+                : float.NaN;
+            bool barLinearPass = barAvailable && barLinearSpeed <= _ruleTolerances.MotionlessBarVelocityMps;
+            bool barVerticalPass = barAvailable &&
+                Math.Abs(barVerticalSpeed) <= _failureCalibration.PhysicalMotionVelocityMps;
+            bool barAngularPass = barAvailable && barAngularSpeed <= _ruleTolerances.MotionlessBarAngularVelocityRadS;
+
+            bool supportAvailable = snapshot.Support.SupportAvailability == SquatTelemetryAvailability.AVAILABLE;
+            bool supportPresent = snapshot.Support.HasSupport;
+            bool leftFootAvailable = snapshot.LeftFoot.Availability == SquatTelemetryAvailability.AVAILABLE;
+            bool rightFootAvailable = snapshot.RightFoot.Availability == SquatTelemetryAvailability.AVAILABLE;
+
+            bool leftKneePass = IsAvailableAndWithin(snapshot.Joints.LeftKnee, _ruleTolerances.KneeLockoutToleranceRad);
+            bool rightKneePass = IsAvailableAndWithin(snapshot.Joints.RightKnee, _ruleTolerances.KneeLockoutToleranceRad);
+            bool leftHipPass = IsAvailableAndWithin(snapshot.Joints.LeftHip, _ruleTolerances.HipErectToleranceRad);
+            bool rightHipPass = IsAvailableAndWithin(snapshot.Joints.RightHip, _ruleTolerances.HipErectToleranceRad);
+            bool abdomenPass = IsAvailableAndWithin(snapshot.Joints.Abdomen, _ruleTolerances.TrunkErectToleranceRad);
+            bool thoraxPass = IsAvailableAndWithin(snapshot.Joints.Thorax, _ruleTolerances.TrunkErectToleranceRad);
+
+            bool overall = barAvailable && barLinearPass && barVerticalPass && barAngularPass &&
+                supportAvailable && supportPresent && leftFootAvailable && rightFootAvailable &&
+                leftKneePass && rightKneePass && leftHipPass && rightHipPass && abdomenPass && thoraxPass;
+
+            SquatPredictiveBalanceController control = _adapter.BalanceController;
+            SquatBalanceObserver balance = _adapter.Balance;
+            Vector3 comVelocity = balance.SystemComVelocity;
+            float comSpeed = Mathf.Sqrt(comVelocity.x * comVelocity.x + comVelocity.z * comVelocity.z);
+
+            return new SquatStartPredicateDiagnostic(
+                snapshot.SimulationTick,
+                snapshot.SimulationTimeSeconds,
+                overall,
+                _startPredicateRun,
+                _requiredStartSamples,
+                barAvailable,
+                barLinearSpeed,
+                barLinearPass,
+                barAvailable ? _ruleTolerances.MotionlessBarVelocityMps - barLinearSpeed : float.NaN,
+                _ruleTolerances.MotionlessBarVelocityMps,
+                barVerticalSpeed,
+                barVerticalPass,
+                barAvailable ? _failureCalibration.PhysicalMotionVelocityMps - Math.Abs(barVerticalSpeed) : float.NaN,
+                _failureCalibration.PhysicalMotionVelocityMps,
+                barAngularSpeed,
+                barAngularPass,
+                barAvailable ? _ruleTolerances.MotionlessBarAngularVelocityRadS - barAngularSpeed : float.NaN,
+                _ruleTolerances.MotionlessBarAngularVelocityRadS,
+                supportAvailable,
+                supportPresent,
+                leftFootAvailable,
+                snapshot.LeftFoot.IsInContact,
+                rightFootAvailable,
+                snapshot.RightFoot.IsInContact,
+                snapshot.Joints.LeftKnee.ActualAngleRadians,
+                leftKneePass,
+                JointMargin(snapshot.Joints.LeftKnee, _ruleTolerances.KneeLockoutToleranceRad),
+                snapshot.Joints.RightKnee.ActualAngleRadians,
+                rightKneePass,
+                JointMargin(snapshot.Joints.RightKnee, _ruleTolerances.KneeLockoutToleranceRad),
+                snapshot.Joints.LeftHip.ActualAngleRadians,
+                leftHipPass,
+                JointMargin(snapshot.Joints.LeftHip, _ruleTolerances.HipErectToleranceRad),
+                snapshot.Joints.RightHip.ActualAngleRadians,
+                rightHipPass,
+                JointMargin(snapshot.Joints.RightHip, _ruleTolerances.HipErectToleranceRad),
+                snapshot.Joints.Abdomen.ActualAngleRadians,
+                abdomenPass,
+                JointMargin(snapshot.Joints.Abdomen, _ruleTolerances.TrunkErectToleranceRad),
+                snapshot.Joints.Thorax.ActualAngleRadians,
+                thoraxPass,
+                JointMargin(snapshot.Joints.Thorax, _ruleTolerances.TrunkErectToleranceRad),
+                control.RawAnkleAuthorityFraction,
+                control.RawAnkleSagittalOffsetRad * control.PostureGuardScale,
+                control.AnkleSagittalOffsetRad,
+                control.PostureGuardScale,
+                control.HipStrategyBlend,
+                Mathf.Abs(control.HipSagittalOffsetRad) / SquatPredictiveBalanceController.MaxHipSagittalOffsetRad,
+                Mathf.Abs(control.TrunkSagittalOffsetRad) / SquatPredictiveBalanceController.MaxTrunkSagittalOffsetRad,
+                _adapter.StandingEquilibriumBiasDegrees(SquatJointFamily.Ankle),
+                _adapter.StandingEquilibriumBiasDegrees(SquatJointFamily.Knee),
+                _adapter.StandingEquilibriumBiasDegrees(SquatJointFamily.Hip),
+                _adapter.StandingEquilibriumBiasDegrees(SquatJointFamily.Abdomen),
+                _adapter.StandingEquilibriumBiasDegrees(SquatJointFamily.Thorax),
+                comSpeed,
+                balance.CaptureMargin2D);
         }
 
         private static bool IsAvailableAndWithin(SquatJointObservation joint, float tolerance)
         {
             return joint.JointAvailability == SquatTelemetryAvailability.AVAILABLE &&
                 Math.Abs(joint.ActualAngleRadians) <= tolerance;
+        }
+
+        private static float JointMargin(SquatJointObservation joint, float tolerance)
+        {
+            return joint.JointAvailability == SquatTelemetryAvailability.AVAILABLE
+                ? tolerance - Mathf.Abs(joint.ActualAngleRadians)
+                : float.NaN;
         }
     }
 }
