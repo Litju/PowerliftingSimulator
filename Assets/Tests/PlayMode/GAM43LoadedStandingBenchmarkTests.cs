@@ -378,7 +378,7 @@ namespace PowerliftingSimulator.Tests
                 result.MaxCanonicalPoseErrorDeg < MaximumCanonicalPoseErrorDeg &&
                 result.MaxJointLimitProximity < MaximumLimitProximity &&
                 result.SaturationFraction < MaximumSustainedSaturationFraction;
-            result.IsPass = Mathf.Abs(loadKg - 300f) <= 1e-4f ? result.LoadedSetupValid : standingGates;
+            result.IsPass = standingGates;
 
             if (writeRaw)
             {
