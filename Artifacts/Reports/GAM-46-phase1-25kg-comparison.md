@@ -1,9 +1,9 @@
 # GAM-46 Phase 1 — LC1 25 kg comparison
 
-Date: 2026-09-21  
-Authority: Linear `GAM-46`  
-Candidate: `LC1`  
-Load: `25 kg`  
+Date: 2026-09-21
+Authority: Linear `GAM-46`
+Candidate: `LC1`
+Load: `25 kg`
 Architecture: `5x + LC1 + S1`
 
 ## Start-window result

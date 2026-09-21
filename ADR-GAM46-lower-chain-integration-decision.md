@@ -1,8 +1,8 @@
 # ADR-GAM46 — lower-chain integration decision
 
-Date: 2026-09-21  
-Authority: Linear `GAM-46`  
-Base head: `4a308cf3e590580d4eb6e3155aaab70bbb99d859`  
+Date: 2026-09-21
+Authority: Linear `GAM-46`
+Base head: `4a308cf3e590580d4eb6e3155aaab70bbb99d859`
 Candidate: `LC1` only
 
 ## Decision
