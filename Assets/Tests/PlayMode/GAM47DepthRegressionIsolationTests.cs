@@ -244,6 +244,71 @@ namespace PowerliftingSimulator.Tests
             }
         }
 
+        [UnityTest]
+        [Explicit("GAM-48 Gate 3 fresh-process dynamic baseline.")]
+        public IEnumerator GAM48_DYNAMIC_BASELINE_FRESH_PROCESS() => GAM47_DYNAMIC_BASELINE();
+
+        [UnityTest]
+        [Explicit("GAM-48 Gate 3 fresh-process HOLD s_q=0.00.")]
+        public IEnumerator GAM48_HOLD_0_00_FRESH_PROCESS() =>
+            RunStandaloneHeldCase("HOLD_0.00_FULL", 0f, CompositionArm.Full);
+
+        [UnityTest]
+        [Explicit("GAM-48 Gate 3 fresh-process HOLD s_q=0.25.")]
+        public IEnumerator GAM48_HOLD_0_25_FRESH_PROCESS() =>
+            RunStandaloneHeldCase("HOLD_0.25_FULL", 0.25f, CompositionArm.Full);
+
+        [UnityTest]
+        [Explicit("GAM-48 Gate 3 fresh-process HOLD s_q=0.55.")]
+        public IEnumerator GAM48_HOLD_0_55_FRESH_PROCESS() =>
+            RunStandaloneHeldCase("HOLD_0.55_FULL", 0.55f, CompositionArm.Full);
+
+        [UnityTest]
+        [Explicit("GAM-48 Gate 3 fresh-process HOLD s_q=0.80.")]
+        public IEnumerator GAM48_HOLD_0_80_FRESH_PROCESS() =>
+            RunStandaloneHeldCase("HOLD_0.80_FULL", 0.80f, CompositionArm.Full);
+
+        [UnityTest]
+        [Explicit("GAM-48 Gate 3 fresh-process HOLD s_q=1.00.")]
+        public IEnumerator GAM48_HOLD_1_00_FULL_FRESH_PROCESS() =>
+            RunStandaloneHeldCase("HOLD_1.00_FULL", 1f, CompositionArm.Full);
+
+        [UnityTest]
+        [Explicit("GAM-48 Gate 3 fresh-process C0.")]
+        public IEnumerator GAM48_C0_FULL_FRESH_PROCESS() =>
+            RunStandaloneHeldCase("C0_FULL", 1f, CompositionArm.Full);
+
+        [UnityTest]
+        [Explicit("GAM-48 Gate 3 fresh-process C1.")]
+        public IEnumerator GAM48_C1_NO_DYNAMIC_BALANCE_FRESH_PROCESS() =>
+            RunStandaloneHeldCase("C1_NO_DYNAMIC_BALANCE", 1f, CompositionArm.NoDynamicBalance);
+
+        [UnityTest]
+        [Explicit("GAM-48 Gate 3 fresh-process C2.")]
+        public IEnumerator GAM48_C2_NOMINAL_ONLY_FRESH_PROCESS() =>
+            RunStandaloneHeldCase("C2_NOMINAL_ONLY", 1f, CompositionArm.NominalOnly);
+
+        private IEnumerator RunStandaloneHeldCase(
+            string label,
+            float phase,
+            CompositionArm arm)
+        {
+            _originalProfiles = SnapshotProfiles();
+            try
+            {
+                var csv = new StringBuilder();
+                AppendDiagnosticHeader(csv);
+                var results = new List<HeldResult>();
+                yield return RunHeldCase(label, phase, arm, csv, results);
+                Assert.That(results.Count, Is.EqualTo(1));
+                WriteFreshProcessHeldEvidence(label, csv.ToString(), results[0]);
+            }
+            finally
+            {
+                RestorePlant();
+            }
+        }
+
         private IEnumerator LoadFreshScene(Action<SquatPhysicalPrototypeController> configure)
         {
             AsyncOperation load = SceneManager.LoadSceneAsync(QualificationScene, LoadSceneMode.Single);
@@ -938,6 +1003,42 @@ namespace PowerliftingSimulator.Tests
             string directory = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Artifacts", "Measurements", "GAM-47"));
             Directory.CreateDirectory(directory);
             File.WriteAllText(Path.Combine(directory, fileName), content);
+        }
+
+        private static void WriteFreshProcessHeldEvidence(
+            string label,
+            string trace,
+            HeldResult result)
+        {
+            string directory = Path.GetFullPath(Path.Combine(
+                Application.dataPath,
+                "..",
+                "Artifacts",
+                "Measurements",
+                "GAM-48",
+                "fresh-process"));
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(Path.Combine(directory, label + "-trace.csv"), trace);
+            var summary = new StringBuilder();
+            summary.AppendLine("MISSION=GAM48_GATE3_FRESH_PROCESS_DEPTH_ISOLATION");
+            summary.AppendLine("ARM=" + label);
+            summary.AppendLine("FRESH_UNITY_PROCESS_REQUIRED=true");
+            summary.AppendLine("SETTLE_WINDOW_TICKS=200");
+            summary.AppendLine("SETTLED_REPORT_TICKS=50");
+            summary.AppendLine("PHASE=" + F(result.Phase));
+            summary.AppendLine("SETTLED_MEAN_WORST_DEPTH_M=" + F(result.SettledMeanWorstSideDepth));
+            summary.AppendLine("SETTLED_MIN_WORST_DEPTH_M=" + F(result.SettledMinimumWorstSideDepth));
+            summary.AppendLine("SETTLED_MAX_WORST_DEPTH_M=" + F(result.SettledMaximumWorstSideDepth));
+            summary.AppendLine("SUPPORT_RETAINED=" + B(result.SupportRetained));
+            summary.AppendLine("FINITE_VALID_CONTROL=" + B(result.FiniteValidControl));
+            summary.AppendLine("LEGAL=" + B(result.Legal));
+            summary.AppendLine("DEEPEST_WORST_DEPTH_M=" + F(result.DeepestWorstSideDepth));
+            summary.AppendLine("DEEPEST_TICK=" + result.DeepestTick.ToString(CultureInfo.InvariantCulture));
+            summary.AppendLine("DEEPEST_SQ=" + F(result.DeepestSq));
+            summary.AppendLine("BOTTOM_BAR_VELOCITY_MPS=" + F(result.BottomBarVelocityMps));
+            summary.AppendLine("BOTTOM_PELVIS_VELOCITY_MPS=" + F(result.BottomPelvisVelocityMps));
+            summary.AppendLine("CLAIM_CEILING=ENGINE_RUNTIME_OBSERVATION_AND_GAME_DERIVED_PROXY");
+            File.WriteAllText(Path.Combine(directory, label + "-summary.md"), summary.ToString());
         }
 
         private static string PhaseLabel(float phase) =>
