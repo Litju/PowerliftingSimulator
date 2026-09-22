@@ -127,6 +127,7 @@ namespace PowerliftingSimulator.Squat
             ulong terminalTick,
             double terminalTimeSeconds,
             SquatAttemptQualityMetadata quality,
+            SquatFailureAttemptContext failureAttemptContext,
             SquatAttemptJudgment judgment,
             SquatFailureResult failureResult,
             ulong traceFreezeTick,
@@ -157,6 +158,7 @@ namespace PowerliftingSimulator.Squat
             TerminalTick = terminalTick;
             TerminalTimeSeconds = terminalTimeSeconds;
             Quality = quality;
+            FailureAttemptContext = failureAttemptContext;
             Judgment = judgment;
             FailureResult = failureResult;
             TraceFreezeTick = traceFreezeTick;
@@ -181,6 +183,7 @@ namespace PowerliftingSimulator.Squat
         public double TerminalTimeSeconds { get; }
         public SquatAttemptQualityMetadata Quality { get; }
         public SquatAttemptQualityMetadata ClaimQuality => Quality;
+        public SquatFailureAttemptContext FailureAttemptContext { get; }
         public SquatAttemptJudgment Judgment { get; }
         public SquatFailureResult FailureResult { get; }
 
@@ -383,7 +386,8 @@ namespace PowerliftingSimulator.Squat
         public SquatAttemptRecord FinalizeAttempt(
             SquatTrace trace,
             SquatRuleProcessor ruleProcessor = null,
-            SquatFailureDetector failureDetector = null)
+            SquatFailureDetector failureDetector = null,
+            SquatFailureAttemptContext failureAttemptContext = default(SquatFailureAttemptContext))
         {
             if (_record != null)
             {
@@ -415,8 +419,12 @@ namespace PowerliftingSimulator.Squat
             // remains the physical-failure authority: terminality only allows
             // the FAILED_LOCKOUT postcondition to be decided, and never
             // selects a failure class.
-            SquatFailureResult failure = (failureDetector ?? new SquatFailureDetector())
-                .Evaluate(trace, BuildFailureCompletionContext());
+            if (failureAttemptContext.IsSpecified && !failureAttemptContext.IsWellFormed)
+                throw new InvalidOperationException("An explicit P3 attempt context must contain a covered boundary and standing reference order.");
+            SquatFailureDetector detector = failureDetector ?? new SquatFailureDetector();
+            SquatFailureResult failure = failureAttemptContext.IsSpecified
+                ? detector.Evaluate(trace, BuildFailureCompletionContext(), failureAttemptContext)
+                : detector.Evaluate(trace, BuildFailureCompletionContext());
             _state = SquatAttemptLifecycleState.FAILURE_EVALUATED;
 
             SquatAttemptEventTicks eventTicks = BuildEventTicks(judgment, failure, traceFreezeTick);
@@ -435,6 +443,7 @@ namespace PowerliftingSimulator.Squat
                 _terminalTick,
                 _terminalTimeSeconds,
                 quality,
+                failureAttemptContext,
                 judgment,
                 failure,
                 traceFreezeTick,
@@ -450,8 +459,9 @@ namespace PowerliftingSimulator.Squat
         public SquatAttemptRecord Finalize(
             SquatTrace trace,
             SquatRuleProcessor ruleProcessor = null,
-            SquatFailureDetector failureDetector = null) =>
-            FinalizeAttempt(trace, ruleProcessor, failureDetector);
+            SquatFailureDetector failureDetector = null,
+            SquatFailureAttemptContext failureAttemptContext = default(SquatFailureAttemptContext)) =>
+            FinalizeAttempt(trace, ruleProcessor, failureDetector, failureAttemptContext);
 
         /// <summary>
         /// Immutable terminal evidence for the physical failure detector. An

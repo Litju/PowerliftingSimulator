@@ -565,6 +565,39 @@ namespace PowerliftingSimulator.Squat
              TerminalTimeSeconds >= 0d);
     }
 
+    /// <summary>
+    /// Explicit P3 attempt boundary and standing reference. The physical
+    /// detector must not infer either from pre-command settling history.
+    /// </summary>
+    public readonly struct SquatFailureAttemptContext
+    {
+        private SquatFailureAttemptContext(
+            bool isSpecified,
+            ulong attemptStartTick,
+            ulong standingReferenceTick)
+        {
+            IsSpecified = isSpecified;
+            AttemptStartTick = attemptStartTick;
+            StandingReferenceTick = standingReferenceTick;
+        }
+
+        public static SquatFailureAttemptContext Unspecified =>
+            new SquatFailureAttemptContext(false, SquatAttemptEventTicks.NotAvailable, SquatAttemptEventTicks.NotAvailable);
+
+        public static SquatFailureAttemptContext ForAttempt(
+            ulong attemptStartTick,
+            ulong standingReferenceTick) =>
+            new SquatFailureAttemptContext(true, attemptStartTick, standingReferenceTick);
+
+        public bool IsSpecified { get; }
+        public ulong AttemptStartTick { get; }
+        public ulong StandingReferenceTick { get; }
+        public bool IsWellFormed => !IsSpecified ||
+            (AttemptStartTick != SquatAttemptEventTicks.NotAvailable &&
+             StandingReferenceTick != SquatAttemptEventTicks.NotAvailable &&
+             StandingReferenceTick <= AttemptStartTick);
+    }
+
     public readonly struct SquatFailureContext
     {
         public SquatFailureContext(
@@ -1312,13 +1345,41 @@ namespace PowerliftingSimulator.Squat
         /// frozen trace is unchanged; the authoritative terminal context only
         /// permits the FAILED_LOCKOUT terminal postcondition to be decided.
         /// </summary>
-        public SquatFailureResult Evaluate(SquatTrace trace, SquatFailureCompletionContext completion)
+        public SquatFailureResult Evaluate(SquatTrace trace, SquatFailureCompletionContext completion) =>
+            Evaluate(trace, completion, SquatFailureAttemptContext.Unspecified);
+
+        /// <summary>
+        /// Evaluates physical evidence from an explicit attempt boundary. The
+        /// full frozen trace remains available to the caller, but samples before
+        /// <paramref name="attemptContext"/>.AttemptStartTick cannot establish
+        /// P3 descent, bottom, ascent, or lockout.
+        /// </summary>
+        public SquatFailureResult Evaluate(
+            SquatTrace trace,
+            SquatFailureCompletionContext completion,
+            SquatFailureAttemptContext attemptContext)
         {
             Reset();
             if (!IsValidTrace(trace))
                 return InvalidResult(trace);
 
-            for (int index = 0; index < trace.Count; index++)
+            if (!attemptContext.IsWellFormed)
+                return InvalidResult(trace);
+
+            int attemptStartIndex = 0;
+            if (attemptContext.IsSpecified)
+            {
+                attemptStartIndex = FindIndexAtTick(trace, attemptContext.AttemptStartTick);
+                int standingReferenceIndex = FindIndexAtTick(trace, attemptContext.StandingReferenceTick);
+                if (attemptStartIndex < 0 || standingReferenceIndex < 0 || standingReferenceIndex > attemptStartIndex ||
+                    !TryGetPreferredVertical(trace[standingReferenceIndex], out float standingY, out _, out _))
+                    return InvalidResult(trace);
+
+                _hasStandingReference = true;
+                _standingReferenceY = standingY;
+            }
+
+            for (int index = attemptStartIndex; index < trace.Count; index++)
             {
                 if (!TryProcess(trace[index]))
                     return InvalidResult(trace);
@@ -1332,6 +1393,11 @@ namespace PowerliftingSimulator.Squat
                 ApplyTerminalLockoutPostcondition(terminalSample);
             return Complete(trace.Schema);
         }
+
+        public SquatFailureResult Evaluate(
+            SquatTrace trace,
+            SquatFailureAttemptContext attemptContext) =>
+            Evaluate(trace, SquatFailureCompletionContext.NonTerminal, attemptContext);
 
         public SquatFailureResult Detect(SquatTrace trace) => Evaluate(trace);
 
@@ -1504,6 +1570,14 @@ namespace PowerliftingSimulator.Squat
                 prior = current;
             }
             return true;
+        }
+
+        private static int FindIndexAtTick(SquatTrace trace, ulong tick)
+        {
+            for (int index = 0; index < trace.Count; index++)
+                if (trace[index].SimulationTick == tick)
+                    return index;
+            return -1;
         }
 
         private SquatFailureResult InvalidResult(SquatTrace trace) => new SquatFailureResult(

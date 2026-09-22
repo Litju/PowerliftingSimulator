@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using PowerliftingSimulator.Athlete;
 using PowerliftingSimulator.Equipment;
 using PowerliftingSimulator.Foundation;
@@ -73,6 +74,24 @@ namespace PowerliftingSimulator.Squat.Unity
             _trace.BeginRecording();
             _hasAttemptStart = false;
             _hasLastSnapshot = false;
+        }
+
+        public void BeginRecording(IReadOnlyList<SquatObservationSnapshot> initialSnapshots)
+        {
+            if (initialSnapshots == null)
+                throw new ArgumentNullException(nameof(initialSnapshots));
+            if (initialSnapshots.Count == 0)
+                throw new ArgumentException("An initial squat recording window is required.", nameof(initialSnapshots));
+
+            _trace.BeginRecording();
+            _attemptStartTick = initialSnapshots[0].SimulationTick;
+            _hasAttemptStart = true;
+            for (int index = 0; index < initialSnapshots.Count; index++)
+            {
+                _trace.Append(initialSnapshots[index]);
+                _lastSnapshot = initialSnapshots[index];
+            }
+            _hasLastSnapshot = true;
         }
 
         public void EndRecording() => _trace.EndRecording();

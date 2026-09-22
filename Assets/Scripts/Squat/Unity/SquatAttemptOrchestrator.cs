@@ -25,6 +25,8 @@ namespace PowerliftingSimulator.Squat.Unity
         private readonly SquatAttemptLifecycle _lifecycle = new SquatAttemptLifecycle();
         private readonly List<SquatStartPredicateDiagnostic> _startWindowDiagnostics =
             new List<SquatStartPredicateDiagnostic>();
+        private readonly List<SquatObservationSnapshot> _qualificationSnapshots =
+            new List<SquatObservationSnapshot>();
         private readonly ReadOnlyCollection<SquatStartPredicateDiagnostic> _readOnlyStartWindowDiagnostics;
 
         private bool _started;
@@ -90,6 +92,7 @@ namespace PowerliftingSimulator.Squat.Unity
             _stableCandidateRun = 0;
             _startPredicateRun = 0;
             _startWindowDiagnostics.Clear();
+            _qualificationSnapshots.Clear();
             _startWindowSamples = 0;
             _lockoutSamples = 0;
             _squatCommandTick = SquatAttemptEventTicks.NotAvailable;
@@ -161,15 +164,34 @@ namespace PowerliftingSimulator.Squat.Unity
         {
             SquatStartPredicateDiagnostic predicate = ObserveStartPredicate(snapshot);
             if (predicate.OverallStartCandidate)
+            {
                 _stableCandidateRun++;
+                _qualificationSnapshots.Add(snapshot);
+            }
             else
+            {
                 _stableCandidateRun = 0;
+                _qualificationSnapshots.Clear();
+            }
 
             if (_stableCandidateRun < _requiredStartSamples)
                 return;
 
-            _collector.BeginRecording();
+            _collector.BeginRecording(_qualificationSnapshots);
             _recordingStarted = true;
+            _startWindowSamples = 0;
+            for (int index = 0; index < _qualificationSnapshots.Count; index++)
+            {
+                SquatObservationSnapshot qualified = _qualificationSnapshots[index];
+                _lifecycle.ObserveStartWindowSample(qualified.SimulationTick);
+                _startWindowSamples++;
+                if (!_hasStandingReference)
+                {
+                    _standingReference = qualified;
+                    _hasStandingReference = true;
+                }
+            }
+            _qualificationSnapshots.Clear();
             _stableCandidateRun = 0;
         }
 
@@ -281,7 +303,17 @@ namespace PowerliftingSimulator.Squat.Unity
         {
             if (_record != null)
                 return _record;
-            _record = _lifecycle.FinalizeAttempt(_collector.Trace);
+            if (!_hasStandingReference || _squatCommandTick == SquatAttemptEventTicks.NotAvailable)
+                throw new InvalidOperationException("A frozen squat attempt requires an explicit standing reference and Squat boundary.");
+
+            SquatFailureAttemptContext failureContext = SquatFailureAttemptContext.ForAttempt(
+                _squatCommandTick,
+                _standingReference.SimulationTick);
+            _record = _lifecycle.FinalizeAttempt(
+                _collector.Trace,
+                null,
+                null,
+                failureContext);
             return _record;
         }
 

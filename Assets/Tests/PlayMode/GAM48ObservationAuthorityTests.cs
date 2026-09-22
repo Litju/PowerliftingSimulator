@@ -3,6 +3,7 @@ using NUnit.Framework;
 using PowerliftingSimulator.Athlete;
 using PowerliftingSimulator.Foundation;
 using PowerliftingSimulator.Foundation.Unity;
+using PowerliftingSimulator.Squat;
 using PowerliftingSimulator.Squat.Unity;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -122,6 +123,65 @@ namespace PowerliftingSimulator.Tests
                 "Bilateral support did not recover after contact re-entry.");
             yield return null;
         }
+
+        [UnityTest]
+        public IEnumerator GAM48_GATE2_QUALIFIER_WINDOW_IS_THE_P2_WINDOW()
+        {
+            _controller.SetLoad(25f);
+            _controller.BeginAttempt();
+
+            ulong driveTick = SquatAttemptEventTicks.NotAvailable;
+            int ticks = 0;
+            while (_controller.AttemptRecord == null && ticks < 2200)
+            {
+                AdvanceTicks(1);
+                ticks++;
+                if (driveTick == SquatAttemptEventTicks.NotAvailable && IsAscentReferenceState(_controller.Adapter.State))
+                {
+                    _bootstrap.Runtime.InputBuffer.SetContinuous(
+                        IntentAction.Drive,
+                        1f,
+                        _bootstrap.Runtime.CurrentTime.SimulationTimeSeconds +
+                        0.25d * SimulationConstants.FixedDeltaTimeSeconds);
+                    driveTick = _bootstrap.Runtime.CurrentTime.Tick + 1ul;
+                }
+            }
+
+            SquatAttemptRecord record = _controller.AttemptRecord;
+            Assert.That(record, Is.Not.Null, "The canonical Gate 2 attempt did not finalize.");
+            Assert.That(record.StartWindowBeginTick, Is.EqualTo(record.FirstTraceTick));
+            Assert.That(record.StartWindowEndTick, Is.EqualTo(record.EventTicks.SquatCommandTick - 1ul));
+
+            ulong firstQualifiedTick = SquatAttemptEventTicks.NotAvailable;
+            for (int index = 0; index < _controller.AttemptOrchestrator.StartWindowDiagnostics.Count; index++)
+            {
+                SquatStartPredicateDiagnostic diagnostic =
+                    _controller.AttemptOrchestrator.StartWindowDiagnostics[index];
+                if (diagnostic.OverallStartCandidate && diagnostic.ConsecutiveValidRunLength == 1)
+                {
+                    firstQualifiedTick = diagnostic.SimulationTick;
+                    break;
+                }
+            }
+
+            Assert.That(firstQualifiedTick, Is.Not.EqualTo(SquatAttemptEventTicks.NotAvailable));
+            Assert.That(record.StartWindowBeginTick, Is.EqualTo(firstQualifiedTick),
+                "P2 must evaluate the same qualified start context that authorized recording.");
+            Assert.That(record.FailureAttemptContext.IsSpecified, Is.True);
+            Assert.That(record.FailureAttemptContext.AttemptStartTick,
+                Is.EqualTo(record.EventTicks.SquatCommandTick));
+            Assert.That(record.FailureAttemptContext.StandingReferenceTick,
+                Is.EqualTo(record.StartWindowBeginTick));
+            yield return null;
+        }
+
+        private static bool IsAscentReferenceState(SquatState state) =>
+            state == SquatState.REVERSAL ||
+            state == SquatState.ASCENT ||
+            state == SquatState.STICKING ||
+            state == SquatState.LOCKOUT ||
+            state == SquatState.RACK_COMMAND ||
+            state == SquatState.RERACK;
 
         private void AssertSupportObservation(string boundary)
         {

@@ -234,6 +234,23 @@ namespace PowerliftingSimulator.Tests
         }
 
         [Test]
+        public void P3_EXPLICIT_ATTEMPT_CONTEXT_EXCLUDES_PRE_COMMAND_SETTLING()
+        {
+            SquatTrace trace = BuildPreCommandSettlingTrace();
+            trace.EndRecording();
+
+            SquatFailureDetector detector = new SquatFailureDetector();
+            SquatFailureResult result = detector.Evaluate(
+                trace,
+                SquatFailureCompletionContext.NonTerminal,
+                SquatFailureAttemptContext.ForAttempt(3ul, 0ul));
+
+            Assert.That(detector.PhysicalDescentSeen, Is.False);
+            Assert.That(detector.PhysicalBottomSeen, Is.False);
+            Assert.That(result.EvidenceStatus, Is.EqualTo(SquatFailureEvidenceStatus.INCOMPLETE_ATTEMPT));
+        }
+
+        [Test]
         public void TERMINAL_FAILED_LOCKOUT_LATCHES_AT_THE_LIFECYCLE_TERMINAL_TICK()
         {
             SquatTrace trace = BuildNoLockoutTrace();
@@ -338,6 +355,21 @@ namespace PowerliftingSimulator.Tests
             trace.Append(Snapshot(4ul, 0.70f, -0.80f, 0f, 0f, 0.60f, true, false, false));
             trace.Append(Snapshot(5ul, 0.50f, -0.80f, 0f, 0f, 0.90f, true, false, false));
             trace.EndRecording();
+            return trace;
+        }
+
+        private static SquatTrace BuildPreCommandSettlingTrace()
+        {
+            SquatTrace trace = new SquatTrace(8);
+            trace.BeginRecording();
+            trace.Append(Snapshot(0ul, 1.00f, 0f, 0f, 0f, 0f));
+            trace.Append(Snapshot(1ul, 0.90f, -0.12f, 0f, 0f, 0.30f));
+            trace.Append(Snapshot(2ul, 0.80f, -0.12f, 0f, 0f, 0.60f));
+            trace.Append(Snapshot(3ul, 0.80f, 0f, 0f, 0f, 0.60f));
+            trace.Append(Snapshot(4ul, 0.80f, 0f, 0f, 0f, 0.60f));
+            trace.Append(Snapshot(5ul, 0.80f, 0f, 0f, 0f, 0.60f));
+            trace.Append(Snapshot(6ul, 0.80f, 0f, 0f, 0f, 0.60f));
+            trace.Append(Snapshot(7ul, 0.80f, 0f, 0f, 0f, 0.60f));
             return trace;
         }
 
