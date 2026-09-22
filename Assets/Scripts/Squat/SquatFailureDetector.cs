@@ -1169,6 +1169,19 @@ namespace PowerliftingSimulator.Squat
         public bool HasLatchedFailure => _hasPrimary;
         public SquatFailureCandidate PrimaryCandidate => _primaryCandidate;
 
+        // GAM-47 read-only P3 stage diagnostics. These expose the detector's
+        // existing physical-context state without changing classification.
+        public bool PhysicalDescentSeen => _hasPhysicalDescent;
+        public bool PhysicalBottomSeen => _hasPhysicalBottom;
+        public bool LegalBottomSeen => _hasLegalBottom;
+        public bool AscentEstablished => _hasAscentEstablished;
+        public bool PhysicalLockoutSeen => _physicalLockoutReached;
+        public bool CompletionRegionEntered => _hasCompletionRegionEntry;
+        public int MaximumCompletionRegionDwellTicks => _maximumCompletionRegionDwellTicks;
+        public SquatFailureTerminalContextStatus TerminalContextStatus => _terminalContextStatus;
+        public bool TerminalContextCovered =>
+            _terminalContextStatus == SquatFailureTerminalContextStatus.TRACE_COVERED;
+
         public void Reset()
         {
             _candidateCount = 0;
