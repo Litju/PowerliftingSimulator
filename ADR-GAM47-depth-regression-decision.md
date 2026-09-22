@@ -125,6 +125,16 @@ engine-runtime observations and bounded game-derived depth/support proxies; it
 does not establish biological torque, GRF/COP, or a universal biomechanical
 cause.
 
+## Repeatability boundary
+
+The ladder and composition evidence committed here came from separate Unity
+invocations, with each arm entering a fresh scene. A single Unity process that
+ran all three explicit GAM-47 tests in one ordered batch produced the same
+categorical decisions but different transient settled numbers; those combined
+batch values were not used for the evidence or classification. This is a test
+teardown/order boundary for future hardening, not a physics or production
+change.
+
 ## Evidence
 
 - `Artifacts/Measurements/GAM-47/dynamic-baseline-trace.csv`
