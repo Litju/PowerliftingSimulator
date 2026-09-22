@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace PowerliftingSimulator.Squat.Unity
@@ -10,10 +11,12 @@ namespace PowerliftingSimulator.Squat.Unity
         private const float ContactSolverNoiseFloorMps = 0.01f;
         private const int MaxTrackedContacts = 16;
         private Rigidbody _rigidbody;
-        private int _contactCount;
+        private readonly HashSet<int> _activeSupportPairs = new HashSet<int>();
         private readonly ContactPoint[] _supportContacts = new ContactPoint[8];
         private Vector3 _supportContactPoint;
-        private bool _hasSupportContact;
+        private readonly Vector3[] _persistentPoints = new Vector3[MaxTrackedContacts];
+        private int _persistentPointCount;
+        private bool _hasPersistentContactGeometry;
         private float _slipAccumulator;
         private float _lastSlipSpeed;
 
@@ -30,10 +33,15 @@ namespace PowerliftingSimulator.Squat.Unity
         private bool _postPhysicsStepCompleted;
         private bool _hasSlipUpdate;
 
-        public bool IsInContact => _contactCount > 0;
-        public int ContactCount => _contactCount;
+        public bool IsInContact => _activeSupportPairs.Count > 0;
+        public int ContactCount => _activeSupportPairs.Count;
         public float SlipSpeed => _lastSlipSpeed;
         public float SlipAccumulatedM => _slipAccumulator;
+
+        /// <summary>Latest valid contact geometry for active persistent pairs.</summary>
+        public int PersistentContactPointCount => _persistentPointCount;
+
+        public Vector3 PersistentContactPoint(int index) => _persistentPoints[index];
 
         /// <summary>Plantar contact points recorded during the previous simulated step.</summary>
         public int CompletedContactCount => _completedCount;
@@ -92,31 +100,44 @@ namespace PowerliftingSimulator.Squat.Unity
 
         private void OnCollisionEnter(Collision collision)
         {
-            if (!IsSupportCollision(collision))
+            if (!TryGetSupportPairId(collision, out int pairId))
                 return;
-            _contactCount++;
+            _activeSupportPairs.Add(pairId);
             UpdateSupportContact(collision);
         }
 
         private void OnCollisionStay(Collision collision)
         {
-            if (!IsSupportCollision(collision))
+            if (!TryGetSupportPairId(collision, out int pairId))
                 return;
+            _activeSupportPairs.Add(pairId);
             UpdateSupportContact(collision);
         }
 
         private void OnCollisionExit(Collision collision)
         {
-            if (!IsSupportCollision(collision))
+            if (!TryGetSupportPairId(collision, out int pairId))
                 return;
-            _contactCount = Mathf.Max(0, _contactCount - 1);
-            if (_contactCount == 0)
-                _hasSupportContact = false;
+            _activeSupportPairs.Remove(pairId);
+            if (_activeSupportPairs.Count == 0)
+                ClearPersistentContactGeometry();
         }
 
         private static bool IsSupportCollision(Collision collision) =>
             collision != null && collision.collider != null &&
             collision.collider.gameObject.name == SupportObjectName;
+
+        private static bool TryGetSupportPairId(Collision collision, out int pairId)
+        {
+            if (!IsSupportCollision(collision))
+            {
+                pairId = 0;
+                return false;
+            }
+
+            pairId = collision.collider.GetInstanceID();
+            return true;
+        }
 
         private void UpdateSupportContact(Collision collision)
         {
@@ -140,8 +161,11 @@ namespace PowerliftingSimulator.Squat.Unity
                 _pendingCount++;
             }
 
+            _persistentPointCount = Mathf.Min(written, _persistentPoints.Length);
+            for (int index = 0; index < _persistentPointCount; index++)
+                _persistentPoints[index] = _supportContacts[index].point;
             _supportContactPoint = pointSum / written;
-            _hasSupportContact = true;
+            _hasPersistentContactGeometry = true;
         }
 
         public void PhysicsTickUpdate(float dt)
@@ -152,7 +176,7 @@ namespace PowerliftingSimulator.Squat.Unity
             if (_rigidbody == null)
                 return;
 
-            if (!IsInContact || !_hasSupportContact || dt <= 0.0001f)
+            if (!IsInContact || !_hasPersistentContactGeometry || dt <= 0.0001f)
             {
                 _lastSlipSpeed = 0f;
                 _hasSlipUpdate = true;
@@ -176,14 +200,21 @@ namespace PowerliftingSimulator.Squat.Unity
 
         public void ResetContact()
         {
-            _contactCount = 0;
-            _hasSupportContact = false;
             _slipAccumulator = 0f;
             _lastSlipSpeed = 0f;
             _pendingCount = 0;
             _completedCount = 0;
             _postPhysicsStepCompleted = false;
             _hasSlipUpdate = false;
+            if (_activeSupportPairs.Count == 0)
+                ClearPersistentContactGeometry();
+        }
+
+        private void ClearPersistentContactGeometry()
+        {
+            _persistentPointCount = 0;
+            _supportContactPoint = Vector3.zero;
+            _hasPersistentContactGeometry = false;
         }
     }
 }

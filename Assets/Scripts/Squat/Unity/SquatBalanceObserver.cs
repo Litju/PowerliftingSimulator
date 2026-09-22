@@ -249,11 +249,19 @@ namespace PowerliftingSimulator.Squat.Unity
             if (detector == null)
                 return;
 
-            int contacts = detector.CompletedContactCount;
+            int completedContacts = detector.CompletedContactCount;
+            bool useCompletedManifold = completedContacts > 0;
+            int contacts = useCompletedManifold
+                ? completedContacts
+                : detector.IsInContact ? detector.PersistentContactPointCount : 0;
             for (int index = 0; index < contacts; index++)
             {
-                Vector3 point = detector.CompletedContactPoint(index);
-                float normalImpulse = detector.CompletedNormalImpulse(index);
+                Vector3 point = useCompletedManifold
+                    ? detector.CompletedContactPoint(index)
+                    : detector.PersistentContactPoint(index);
+                float normalImpulse = useCompletedManifold
+                    ? detector.CompletedNormalImpulse(index)
+                    : 0f;
                 apMin = Mathf.Min(apMin, point.z);
                 apMax = Mathf.Max(apMax, point.z);
                 mlMin = Mathf.Min(mlMin, point.x);
