@@ -1,0 +1,10 @@
+GAM47_HELD_PHASE_RESULT
+ROOT_DOMAIN=DEEP_PHASE_EQUILIBRIUM_COMPOSITION
+settle_window_ticks=200
+settled_report_ticks=50
+phase,label,settled_mean_worst_depth_m,settled_min_worst_depth_m,settled_max_worst_depth_m,support_retained,finite_valid_control,legal,deepest_worst_depth_m,deepest_tick,deepest_sq,bar_velocity_near_bottom_mps,pelvis_velocity_near_bottom_mps
+0,HOLD_0_00,0.428775221,0.428774476,0.428776741,false,true,false,0.428774476,231,0,0.006262578,0.005854033
+0.25,HOLD_0_25,0.397956252,0.397843838,0.39813,false,true,false,0.3978303,283,0.25,0.006140843,0.0126763657
+0.55,HOLD_0_55,-0.407490134,-0.407490134,-0.407490134,false,true,false,-0.4247322,245,0.55,0,0
+0.8,HOLD_0_80,-0.4287507,-0.4287507,-0.4287507,false,true,false,-0.428752542,350,0.8,0,0
+1,HOLD_1_00,-0.4128773,-0.4128773,-0.4128773,false,true,false,-0.412896961,419,1,0,0
