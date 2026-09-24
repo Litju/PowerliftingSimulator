@@ -10,8 +10,8 @@ $runDirectory = Join-Path $outputDirectory ('run-' + $runId)
 New-Item -ItemType Directory -Force -Path $runDirectory | Out-Null
 
 $cases = @(
-    @{ Name = 'BASELINE_R1'; Filter = 'PowerliftingSimulator.Tests.GAM47DepthRegressionIsolationTests.GAM48_DYNAMIC_BASELINE_FRESH_PROCESS'; Copy = 'Artifacts\Measurements\GAM-47\dynamic-baseline-summary.md' },
-    @{ Name = 'BASELINE_R2'; Filter = 'PowerliftingSimulator.Tests.GAM47DepthRegressionIsolationTests.GAM48_DYNAMIC_BASELINE_FRESH_PROCESS'; Copy = 'Artifacts\Measurements\GAM-47\dynamic-baseline-summary.md' },
+    @{ Name = 'BASELINE_R1'; Filter = 'PowerliftingSimulator.Tests.GAM47DepthRegressionIsolationTests.GAM49_CANONICAL_25KG_LIFECYCLE_FRESH_PROCESS'; Copy = 'Artifacts\Measurements\GAM-49\gate4-fresh-process\dynamic-baseline-summary.md' },
+    @{ Name = 'BASELINE_R2'; Filter = 'PowerliftingSimulator.Tests.GAM47DepthRegressionIsolationTests.GAM49_CANONICAL_25KG_LIFECYCLE_FRESH_PROCESS'; Copy = 'Artifacts\Measurements\GAM-49\gate4-fresh-process\dynamic-baseline-summary.md' },
     @{ Name = 'HOLD_0.00_FULL'; Filter = 'PowerliftingSimulator.Tests.GAM47DepthRegressionIsolationTests.GAM48_HOLD_0_00_FRESH_PROCESS'; Copy = 'Artifacts\Measurements\GAM-48\fresh-process\HOLD_0.00_FULL-summary.md' },
     @{ Name = 'HOLD_0.25_FULL'; Filter = 'PowerliftingSimulator.Tests.GAM47DepthRegressionIsolationTests.GAM48_HOLD_0_25_FRESH_PROCESS'; Copy = 'Artifacts\Measurements\GAM-48\fresh-process\HOLD_0.25_FULL-summary.md' },
     @{ Name = 'HOLD_0.55_FULL'; Filter = 'PowerliftingSimulator.Tests.GAM47DepthRegressionIsolationTests.GAM48_HOLD_0_55_FRESH_PROCESS'; Copy = 'Artifacts\Measurements\GAM-48\fresh-process\HOLD_0.55_FULL-summary.md' },
@@ -151,11 +151,19 @@ foreach ($key in @('PHASE', 'SUPPORT_RETAINED', 'FINITE_VALID_CONTROL', 'LEGAL',
 
 $baseline1 = Read-KeyValues (Join-Path $runDirectory 'BASELINE_R1-summary.md')
 $baseline2 = Read-KeyValues (Join-Path $runDirectory 'BASELINE_R2-summary.md')
-foreach ($key in @('DYNAMIC_DEEPEST_LEFT_DEPTH', 'DYNAMIC_DEEPEST_RIGHT_DEPTH', 'DYNAMIC_DEEPEST_DEPTH', 'DYNAMIC_DEPTH_DEFICIT', 'DYNAMIC_SQ_AT_DEEPEST'))
+foreach ($key in @(
+    'DYNAMIC_DEEPEST_SURFACE_RULE_PROXY_LEFT_DEPTH_M',
+    'DYNAMIC_DEEPEST_SURFACE_RULE_PROXY_RIGHT_DEPTH_M',
+    'DYNAMIC_DEEPEST_SURFACE_RULE_PROXY_WORST_DEPTH_M',
+    'DYNAMIC_SURFACE_RULE_DEFICIT_MM',
+    'DYNAMIC_DEEPEST_JOINT_CENTER_DIAGNOSTIC_LEFT_DEPTH_M',
+    'DYNAMIC_DEEPEST_JOINT_CENTER_DIAGNOSTIC_RIGHT_DEPTH_M',
+    'DYNAMIC_SQ_AT_DEEPEST'
+))
 {
     Assert-Near $baseline1 $baseline2 $key $tolerance
 }
-foreach ($key in @('DYNAMIC_DEEPEST_TICK', 'P2_START_RESULT', 'P2_VIOLATIONS', 'P3_PHYSICAL_DESCENT', 'P3_PHYSICAL_BOTTOM', 'P3_LEGAL_BOTTOM_SEEN', 'P3_ASCENT_ESTABLISHED', 'P3_PHYSICAL_LOCKOUT', 'P3_COMPLETION_PREREQUISITES_MISSING', 'P3_TERMINAL_CONTEXT_COVERAGE'))
+foreach ($key in @('DYNAMIC_DEEPEST_TICK', 'DYNAMIC_SURFACE_RULE_GAME_JUDGMENT_QUALIFIED', 'P2_START_RESULT', 'P2_VIOLATIONS', 'P2_INSUFFICIENT_DEPTH_PRESENT', 'P2_FAILED_START_POSITION_PRESENT', 'P2_SUPPORT_VIOLATION_PRESENT', 'P3_PHYSICAL_DESCENT', 'P3_PHYSICAL_BOTTOM', 'P3_LEGAL_BOTTOM_SEEN', 'P3_ASCENT_ESTABLISHED', 'P3_PHYSICAL_LOCKOUT', 'P3_COMPLETION_PREREQUISITES_MISSING', 'P3_TERMINAL_CONTEXT_COVERAGE'))
 {
     if ($baseline1[$key] -ne $baseline2[$key])
     {

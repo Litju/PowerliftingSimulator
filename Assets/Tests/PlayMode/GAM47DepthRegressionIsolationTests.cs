@@ -27,7 +27,7 @@ namespace PowerliftingSimulator.Tests
     {
         private const string QualificationScene = "SquatPhysicalPrototype";
         private const float LoadKg = 25f;
-        private const float LegalDepth = -0.005f;
+        private const float LegalDepth = -SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M;
         private const float ApproachRate = 0.30f;
         private const int StandingSettleTicks = 60;
         private const int HeldSettleTicks = 200;
@@ -107,11 +107,15 @@ namespace PowerliftingSimulator.Tests
         }
 
         [UnityTest]
-        [Explicit("GAM-47 dynamic baseline; run after the frozen plan commit.")]
-        public IEnumerator GAM47_DYNAMIC_BASELINE()
+        [Explicit("GAM-49 Gate 4 canonical dynamic 25 kg lifecycle; fresh process required.")]
+        public IEnumerator GAM49_CANONICAL_25KG_LIFECYCLE_FRESH_PROCESS() =>
+            RunCanonicalDynamicLifecycle("GAM-49/gate4-fresh-process");
+
+        private IEnumerator RunCanonicalDynamicLifecycle(string evidenceDirectory)
         {
             var traceCsv = new StringBuilder();
             AppendDiagnosticHeader(traceCsv);
+            var jointCentersByTick = new Dictionary<ulong, SquatJointCenterDepthDiagnostic>();
             _originalProfiles = SnapshotProfiles();
             try
             {
@@ -126,7 +130,12 @@ namespace PowerliftingSimulator.Tests
                 int ticks = 0;
                 while (_controller.AttemptRecord == null && ticks < MaximumAttemptTicks)
                 {
-                    Step(traceCsv, "DYNAMIC_BASELINE", "LIFECYCLE", ticks);
+                    SquatObservationSnapshot snapshot = Step(traceCsv, "GAM49_DYNAMIC_25KG", "LIFECYCLE", ticks);
+                    Assert.That(_controller.Adapter.TryGetSurfaceRuleLandmarks(out SquatRuleLandmarkSet landmarks), Is.True);
+                    Assert.That(snapshot.Depth.Availability, Is.EqualTo(SquatTelemetryAvailability.AVAILABLE));
+                    Assert.That(snapshot.Depth.LeftDepthM, Is.EqualTo(landmarks.Depth.LeftDepthM).Within(1e-5f));
+                    Assert.That(snapshot.Depth.RightDepthM, Is.EqualTo(landmarks.Depth.RightDepthM).Within(1e-5f));
+                    jointCentersByTick[snapshot.SimulationTick] = landmarks.JointCenterDepthDiagnostic;
                     ticks++;
 
                     if (driveTick == SquatAttemptEventTicks.NotAvailable && IsAscentReferenceState(_controller.Adapter.State))
@@ -145,37 +154,44 @@ namespace PowerliftingSimulator.Tests
 
                 SquatAttemptRecord record = _controller.AttemptRecord;
                 Assert.That(record, Is.Not.Null,
-                    $"GAM-47 baseline did not finalize within {MaximumAttemptTicks} ticks " +
+                    $"GAM-49 canonical lifecycle did not finalize within {MaximumAttemptTicks} ticks " +
                     $"(lifecycle={_controller.AttemptLifecycle.State}, adapter={_controller.Adapter.State}, sq={_controller.Adapter.Sq:F3}).");
 
-                WriteEvidence("dynamic-baseline-trace.csv", traceCsv.ToString());
-                WriteStartWindowComparison(record);
-
                 DeepestDepth deepest = FindDeepest(record.Trace, record.EventTicks.SquatCommandTick);
+                Assert.That(jointCentersByTick.TryGetValue(deepest.Tick, out SquatJointCenterDepthDiagnostic centerAtDeepest), Is.True,
+                    "The surface-depth bottom sample has no separately captured joint-center diagnostic.");
                 P3Stages p3 = EvaluateP3(record);
+                bool surfaceLegal = deepest.Worst <= LegalDepth;
+                bool insufficientDepth = HasViolation(record, SquatRuleViolationKind.INSUFFICIENT_DEPTH);
+                Assert.That(insufficientDepth, Is.EqualTo(!surfaceLegal),
+                    "P2 depth judgment must match the shared surface-proxy observation and fixed game margin.");
+                Assert.That(HasViolation(record, SquatRuleViolationKind.FAILED_START_POSITION), Is.False);
+                Assert.That(HasViolation(record, SquatRuleViolationKind.SUPPORT_VIOLATION), Is.False);
                 Assert.That(p3.CompletionPrerequisitesMissing, Is.EqualTo("NONE"));
-                Assert.That(p3.LegalBottom, Is.False,
-                    "The canonical shallow physical attempt should complete P3 without a legal bottom.");
-                WriteSupportReport(record);
-                WriteP3Report(record, p3);
-                WriteDynamicBaselineSummary(record, deepest, p3, driveTick);
+                Assert.That(p3.PhysicalDescent, Is.True);
+                Assert.That(p3.PhysicalBottom, Is.True);
+                Assert.That(p3.AscentEstablished, Is.True);
+                Assert.That(p3.PhysicalLockout, Is.True);
+                Assert.That(p3.LegalBottom, Is.EqualTo(surfaceLegal),
+                    "P3 legal-bottom evidence must use the same surface-proxy samples as P2.");
 
-                Assert.That(deepest.Worst, Is.GreaterThan(LegalDepth),
-                    "The GAM-47 canonical dynamic baseline no longer reproduces the insufficient-depth symptom.");
-                Assert.That(HasViolation(record, SquatRuleViolationKind.INSUFFICIENT_DEPTH), Is.True);
+                WriteEvidence("dynamic-baseline-trace.csv", traceCsv.ToString(), evidenceDirectory);
+                WriteStartWindowComparison(record, evidenceDirectory);
+                WriteSupportReport(record, evidenceDirectory);
+                WriteP3Report(record, p3, evidenceDirectory);
+                WriteDynamicBaselineSummary(record, deepest, p3, driveTick, centerAtDeepest, evidenceDirectory);
 
                 Debug.Log(string.Format(
                     CultureInfo.InvariantCulture,
-                    "GAM47_DYNAMIC_BASELINE deepest={0:R} deficit={1:R} tick={2} sq={3:R} p2={4}/{5} p3={6}/{7} missing={8}",
+                    "GAM49_DYNAMIC_25KG deepest_surface={0:R} center_diagnostic={1:R}/{2:R} p2={3}/{4} p3={5}/{6} legal={7}",
                     deepest.Worst,
-                    Mathf.Max(0f, deepest.Worst - LegalDepth),
-                    deepest.Tick,
-                    deepest.Sq,
+                    centerAtDeepest.LeftDepthM,
+                    centerAtDeepest.RightDepthM,
                     record.Judgment.EvidenceStatus,
                     record.RuleOutcome,
                     record.FailureResult.EvidenceStatus,
                     record.PhysicalFailureOutcome,
-                    p3.CompletionPrerequisitesMissing));
+                    surfaceLegal));
                 yield return null;
             }
             finally
@@ -249,7 +265,7 @@ namespace PowerliftingSimulator.Tests
 
         [UnityTest]
         [Explicit("GAM-48 Gate 3 fresh-process dynamic baseline.")]
-        public IEnumerator GAM48_DYNAMIC_BASELINE_FRESH_PROCESS() => GAM47_DYNAMIC_BASELINE();
+        public IEnumerator GAM48_DYNAMIC_BASELINE_FRESH_PROCESS() => GAM49_CANONICAL_25KG_LIFECYCLE_FRESH_PROCESS();
 
         [UnityTest]
         [Explicit("GAM-48 Gate 3 fresh-process HOLD s_q=0.00.")]
@@ -314,6 +330,30 @@ namespace PowerliftingSimulator.Tests
                 heldEvidenceDirectory: "GAM-49/gate3-fresh-process",
                 decompositionEvidenceDirectory: "GAM-49/gate3-fresh-process",
                 decompositionFilePrefix: "gate3-");
+
+        [UnityTest]
+        [Explicit("GAM-49 Gate 4 fresh-process C0 requalification.")]
+        public IEnumerator GAM49_GATE4_C0_SURFACE_RULE_FRESH_PROCESS() =>
+            RunStandaloneHeldCase(
+                "C0_FULL",
+                1f,
+                CompositionArm.Full,
+                captureGate4b: true,
+                heldEvidenceDirectory: "GAM-49/gate4-fresh-process",
+                decompositionEvidenceDirectory: "GAM-49/gate4-fresh-process",
+                decompositionFilePrefix: "gate4-");
+
+        [UnityTest]
+        [Explicit("GAM-49 Gate 4 fresh-process HOLD_1.00 requalification.")]
+        public IEnumerator GAM49_GATE4_HOLD_1_00_SURFACE_RULE_FRESH_PROCESS() =>
+            RunStandaloneHeldCase(
+                "HOLD_1.00_FULL",
+                1f,
+                CompositionArm.Full,
+                captureGate4b: true,
+                heldEvidenceDirectory: "GAM-49/gate4-fresh-process",
+                decompositionEvidenceDirectory: "GAM-49/gate4-fresh-process",
+                decompositionFilePrefix: "gate4-");
 
         [UnityTest]
         [Explicit("GAM-48 Gate 3 fresh-process C1.")]
@@ -899,21 +939,34 @@ namespace PowerliftingSimulator.Tests
             SquatAttemptRecord record,
             DeepestDepth deepest,
             P3Stages p3,
-            ulong driveTick)
+            ulong driveTick,
+            SquatJointCenterDepthDiagnostic jointCenterAtDeepest,
+            string evidenceDirectory)
         {
             var builder = new StringBuilder();
-            builder.AppendLine("MISSION=GAM47_25KG_DEPTH_REGRESSION_ISOLATION");
-            builder.AppendLine("PHASE=1_DYNAMIC_BASELINE");
+            builder.AppendLine("MISSION=GAM49_CANONICAL_25KG_LIFECYCLE");
+            builder.AppendLine("DEPTH_AUTHORITY=GAM49_SHARED_SURFACE_RULE_LANDMARK_PROVIDER");
+            builder.AppendLine("PHASE=1_DYNAMIC_BOTTOM");
             builder.AppendLine("ARCHITECTURE=5x+LC1+F2_spine+S1");
             builder.AppendLine("LOAD_KG=25");
-            builder.AppendLine("DYNAMIC_DEEPEST_LEFT_DEPTH=" + F(deepest.Left));
-            builder.AppendLine("DYNAMIC_DEEPEST_RIGHT_DEPTH=" + F(deepest.Right));
-            builder.AppendLine("DYNAMIC_DEEPEST_DEPTH=" + F(deepest.Worst));
-            builder.AppendLine("DYNAMIC_DEPTH_DEFICIT=" + F(Mathf.Max(0f, deepest.Worst - LegalDepth)));
+            builder.AppendLine("GAME_JUDGMENT_MARGIN_M=" + F(SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M));
+            builder.AppendLine("DYNAMIC_DEEPEST_SURFACE_RULE_PROXY_LEFT_DEPTH_M=" + F(deepest.Left));
+            builder.AppendLine("DYNAMIC_DEEPEST_SURFACE_RULE_PROXY_RIGHT_DEPTH_M=" + F(deepest.Right));
+            builder.AppendLine("DYNAMIC_DEEPEST_SURFACE_RULE_PROXY_WORST_DEPTH_M=" + F(deepest.Worst));
+            builder.AppendLine("DYNAMIC_SURFACE_RULE_GAME_JUDGMENT_QUALIFIED=" + B(deepest.Worst <= LegalDepth));
+            builder.AppendLine("DYNAMIC_SURFACE_RULE_IPF_PREDICATE=" + B(deepest.Left < 0f && deepest.Right < 0f));
+            builder.AppendLine("DYNAMIC_SURFACE_RULE_DEFICIT_MM=" + F(Mathf.Max(0f, deepest.Worst - LegalDepth) * 1000f));
+            builder.AppendLine("DYNAMIC_DEEPEST_JOINT_CENTER_DIAGNOSTIC_LEFT_DEPTH_M=" + F(jointCenterAtDeepest.LeftDepthM));
+            builder.AppendLine("DYNAMIC_DEEPEST_JOINT_CENTER_DIAGNOSTIC_RIGHT_DEPTH_M=" + F(jointCenterAtDeepest.RightDepthM));
+            builder.AppendLine("SURFACE_SNAPSHOT_PROVIDER_PARITY=PASS");
+            builder.AppendLine("JOINT_CENTER_DIAGNOSTIC_USED_FOR_P2_P3_RULE_TRUTH=false");
             builder.AppendLine("DYNAMIC_DEEPEST_TICK=" + deepest.Tick.ToString(CultureInfo.InvariantCulture));
             builder.AppendLine("DYNAMIC_SQ_AT_DEEPEST=" + F(deepest.Sq));
             builder.AppendLine("P2_START_RESULT=" + record.Judgment.EvidenceStatus + "/" + record.RuleOutcome);
             builder.AppendLine("P2_VIOLATIONS=" + Violations(record));
+            builder.AppendLine("P2_INSUFFICIENT_DEPTH_PRESENT=" + B(HasViolation(record, SquatRuleViolationKind.INSUFFICIENT_DEPTH)));
+            builder.AppendLine("P2_FAILED_START_POSITION_PRESENT=" + B(HasViolation(record, SquatRuleViolationKind.FAILED_START_POSITION)));
+            builder.AppendLine("P2_SUPPORT_VIOLATION_PRESENT=" + B(HasViolation(record, SquatRuleViolationKind.SUPPORT_VIOLATION)));
             ulong startSamples = record.StartWindowBeginTick == SquatAttemptEventTicks.NotAvailable ||
                 record.StartWindowEndTick == SquatAttemptEventTicks.NotAvailable
                 ? 0ul
@@ -925,16 +978,17 @@ namespace PowerliftingSimulator.Tests
             builder.AppendLine("P3_LEGAL_BOTTOM_SEEN=" + B(p3.LegalBottom));
             builder.AppendLine("P3_ASCENT_ESTABLISHED=" + B(p3.AscentEstablished));
             builder.AppendLine("P3_PHYSICAL_LOCKOUT=" + B(p3.PhysicalLockout));
+            builder.AppendLine("P3_RESULT=" + record.FailureResult.EvidenceStatus + "/" + record.PhysicalFailureOutcome);
             builder.AppendLine("P3_TERMINAL_CONTEXT=" + p3.TerminalContextStatus);
             builder.AppendLine("P3_TERMINAL_CONTEXT_COVERAGE=" + B(p3.TerminalContextCoverage));
             builder.AppendLine("P3_TERMINAL_CONTEXT_MISSING=" + B(!p3.TerminalContextCoverage));
             builder.AppendLine("P3_COMPLETION_PREREQUISITES_MISSING=" + p3.CompletionPrerequisitesMissing);
             builder.AppendLine("DRIVE_INTENT_TICK=" + driveTick.ToString(CultureInfo.InvariantCulture));
-            builder.AppendLine("CLAIM_CEILING=ENGINE_RUNTIME_OBSERVATION_AND_GAME_DERIVED_PROXY");
-            WriteEvidence("dynamic-baseline-summary.md", builder.ToString());
+            builder.AppendLine("CLAIM_CEILING=GAM10_CALIBRATED_SURFACE_PROXY_AND_ENGINE_RUNTIME_OBSERVATION");
+            WriteEvidence("dynamic-baseline-summary.md", builder.ToString(), evidenceDirectory);
         }
 
-        private static void WriteStartWindowComparison(SquatAttemptRecord record)
+        private static void WriteStartWindowComparison(SquatAttemptRecord record, string evidenceDirectory)
         {
             var builder = new StringBuilder();
             var columns = new List<string> { "recorded_pre_squat", "p2_evaluated" };
@@ -953,7 +1007,7 @@ namespace PowerliftingSimulator.Tests
                 values.AddRange(StartDiagnosticProperties.Select(property => Format(property.GetValue(diagnostic))));
                 builder.AppendLine(string.Join(",", values));
             }
-            WriteEvidence("p2-start-window-comparison.csv", builder.ToString());
+            WriteEvidence("p2-start-window-comparison.csv", builder.ToString(), evidenceDirectory);
         }
 
         private static IReadOnlyList<SquatStartPredicateDiagnostic> FindStartDiagnostics(SquatAttemptRecord record)
@@ -965,7 +1019,7 @@ namespace PowerliftingSimulator.Tests
                 .AttemptOrchestrator.StartWindowDiagnostics;
         }
 
-        private static void WriteSupportReport(SquatAttemptRecord record)
+        private static void WriteSupportReport(SquatAttemptRecord record, string evidenceDirectory)
         {
             int commandIndex = FindIndexAtTick(record.Trace, record.EventTicks.SquatCommandTick);
             float leftBaseline = record.Trace[commandIndex].LeftFoot.SlipAccumulatedMeters;
@@ -1019,10 +1073,10 @@ namespace PowerliftingSimulator.Tests
             builder.AppendLine("SUPPORT_SLIP_SPEED_TOLERANCE_MPS=" + F(tolerances.SupportSlipSpeedMps));
             builder.AppendLine("RULE_RECORD=" + ViolationDetails(record, SquatRuleViolationKind.SUPPORT_VIOLATION));
             builder.AppendLine("CLAIM_CEILING=SUPPORT_SLIP_GAME_PROXY_NOT_FORCE_PLATE_BIOMECHANICS");
-            WriteEvidence("support-violation-source.md", builder.ToString());
+            WriteEvidence("support-violation-source.md", builder.ToString(), evidenceDirectory);
         }
 
-        private static void WriteP3Report(SquatAttemptRecord record, P3Stages p3)
+        private static void WriteP3Report(SquatAttemptRecord record, P3Stages p3, string evidenceDirectory)
         {
             var builder = new StringBuilder();
             builder.AppendLine("P3_PHYSICAL_DESCENT=" + B(p3.PhysicalDescent));
@@ -1035,8 +1089,9 @@ namespace PowerliftingSimulator.Tests
             builder.AppendLine("P3_TERMINAL_CONTEXT_MISSING=" + B(!p3.TerminalContextCoverage));
             builder.AppendLine("P3_COMPLETION_PREREQUISITES_MISSING=" + p3.CompletionPrerequisitesMissing);
             builder.AppendLine("P3_RESULT=" + record.FailureResult.EvidenceStatus + "/" + record.PhysicalFailureOutcome);
+            builder.AppendLine("P3_DEPTH_AUTHORITY=GAM49_SHARED_SURFACE_RULE_LANDMARK_PROVIDER");
             builder.AppendLine("P2_RESULT_NOT_USED_FOR_P3=true");
-            WriteEvidence("p3-physical-stage-report.md", builder.ToString());
+            WriteEvidence("p3-physical-stage-report.md", builder.ToString(), evidenceDirectory);
         }
 
         private static string Violations(SquatAttemptRecord record)
@@ -1070,9 +1125,9 @@ namespace PowerliftingSimulator.Tests
 
         private static bool ContainsTick(SquatTrace trace, ulong tick) => FindIndexAtTick(trace, tick) >= 0;
 
-        private static void WriteEvidence(string fileName, string content)
+        private static void WriteEvidence(string fileName, string content, string evidenceDirectory = "GAM-47")
         {
-            string directory = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Artifacts", "Measurements", "GAM-47"));
+            string directory = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Artifacts", "Measurements", evidenceDirectory));
             Directory.CreateDirectory(directory);
             File.WriteAllText(Path.Combine(directory, fileName), content);
         }

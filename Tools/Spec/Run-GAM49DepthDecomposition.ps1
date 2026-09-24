@@ -1,18 +1,31 @@
 param(
     [string]$UnityPath = 'D:\Dev\Unity\6000.3.22f1\Editor\Unity.exe',
-    [string]$ProjectPath = (Get-Location).Path
+    [string]$ProjectPath = (Get-Location).Path,
+    [string]$EvidenceSubdirectory = 'gate3-fresh-process',
+    [switch]$IncludeCanonicalLifecycle
 )
 
 $ErrorActionPreference = 'Stop'
-$evidenceDirectory = Join-Path $ProjectPath 'Artifacts\Measurements\GAM-49\gate3-fresh-process'
+$evidenceDirectory = Join-Path $ProjectPath (Join-Path 'Artifacts\Measurements\GAM-49' $EvidenceSubdirectory)
 $runId = Get-Date -Format 'yyyyMMdd-HHmmss'
 $runDirectory = Join-Path $evidenceDirectory ('run-' + $runId)
 New-Item -ItemType Directory -Force -Path $runDirectory | Out-Null
 
-$cases = @(
-    @{ Name = 'C0_FULL'; Filter = 'PowerliftingSimulator.Tests.GAM47DepthRegressionIsolationTests.GAM49_GATE3_C0_SURFACE_RULE_PARITY_FRESH_PROCESS' },
-    @{ Name = 'HOLD_1.00_FULL'; Filter = 'PowerliftingSimulator.Tests.GAM47DepthRegressionIsolationTests.GAM49_GATE3_HOLD_1_00_SURFACE_RULE_PARITY_FRESH_PROCESS' }
-)
+if ($IncludeCanonicalLifecycle)
+{
+    $cases = @(
+        @{ Name = 'C0_FULL'; Filter = 'PowerliftingSimulator.Tests.GAM47DepthRegressionIsolationTests.GAM49_GATE4_C0_SURFACE_RULE_FRESH_PROCESS' },
+        @{ Name = 'HOLD_1.00_FULL'; Filter = 'PowerliftingSimulator.Tests.GAM47DepthRegressionIsolationTests.GAM49_GATE4_HOLD_1_00_SURFACE_RULE_FRESH_PROCESS' },
+        @{ Name = 'CANONICAL_25KG'; Filter = 'PowerliftingSimulator.Tests.GAM47DepthRegressionIsolationTests.GAM49_CANONICAL_25KG_LIFECYCLE_FRESH_PROCESS' }
+    )
+}
+else
+{
+    $cases = @(
+        @{ Name = 'C0_FULL'; Filter = 'PowerliftingSimulator.Tests.GAM47DepthRegressionIsolationTests.GAM49_GATE3_C0_SURFACE_RULE_PARITY_FRESH_PROCESS' },
+        @{ Name = 'HOLD_1.00_FULL'; Filter = 'PowerliftingSimulator.Tests.GAM47DepthRegressionIsolationTests.GAM49_GATE3_HOLD_1_00_SURFACE_RULE_PARITY_FRESH_PROCESS' }
+    )
+}
 
 function Quote-Argument([string]$value)
 {
@@ -99,8 +112,9 @@ foreach ($case in $cases)
     Invoke-FreshUnity $case
 }
 
-$c0 = Read-KeyValues (Join-Path $evidenceDirectory 'gate3-C0_FULL-decomposition.md')
-$hold = Read-KeyValues (Join-Path $evidenceDirectory 'gate3-HOLD_1.00_FULL-decomposition.md')
+$decompositionPrefix = if ($IncludeCanonicalLifecycle) { 'gate4-' } else { 'gate3-' }
+$c0 = Read-KeyValues (Join-Path $evidenceDirectory ($decompositionPrefix + 'C0_FULL-decomposition.md'))
+$hold = Read-KeyValues (Join-Path $evidenceDirectory ($decompositionPrefix + 'HOLD_1.00_FULL-decomposition.md'))
 $numericKeys = @()
 foreach ($stage in @(
     'D_REF_SURFACE_RULE_PROXY',
@@ -170,7 +184,69 @@ foreach ($key in @(
 $worstActual = [double]::Parse($c0['D_ACTUAL_WORST_DEPTH_M'], [Globalization.CultureInfo]::InvariantCulture)
 $margin = 0.005
 $deficitMm = [Math]::Max(0.0, $worstActual + $margin) * 1000.0
-$receipt = @"
+$receiptName = 'GAM49-gate3-c0-hold-depth-decomposition-receipt.md'
+if ($IncludeCanonicalLifecycle)
+{
+    $dynamic = Read-KeyValues (Join-Path $evidenceDirectory 'dynamic-baseline-summary.md')
+    $surfaceLegal = $dynamic['DYNAMIC_SURFACE_RULE_GAME_JUDGMENT_QUALIFIED'] -eq 'true'
+    $p2Insufficient = $dynamic['P2_INSUFFICIENT_DEPTH_PRESENT'] -eq 'true'
+    $p3LegalBottom = $dynamic['P3_LEGAL_BOTTOM_SEEN'] -eq 'true'
+    if ($dynamic['SURFACE_SNAPSHOT_PROVIDER_PARITY'] -ne 'PASS' -or
+        $p2Insufficient -eq $surfaceLegal -or
+        $p3LegalBottom -ne $surfaceLegal -or
+        $dynamic['P2_FAILED_START_POSITION_PRESENT'] -ne 'false' -or
+        $dynamic['P2_SUPPORT_VIOLATION_PRESENT'] -ne 'false' -or
+        $dynamic['P3_COMPLETION_PREREQUISITES_MISSING'] -ne 'NONE' -or
+        $dynamic['P3_PHYSICAL_DESCENT'] -ne 'true' -or
+        $dynamic['P3_PHYSICAL_BOTTOM'] -ne 'true' -or
+        $dynamic['P3_ASCENT_ESTABLISHED'] -ne 'true' -or
+        $dynamic['P3_PHYSICAL_LOCKOUT'] -ne 'true' -or
+        $dynamic['JOINT_CENTER_DIAGNOSTIC_USED_FOR_P2_P3_RULE_TRUTH'] -ne 'false')
+    {
+        throw 'Gate 4 P2/P3 depth authority or canonical lifecycle predicates did not agree with the shared surface provider.'
+    }
+
+    if ($surfaceLegal)
+    {
+        $depthDisposition = 'OBSERVATION_CONTRACT_DEFECT'
+        $lowLoadNeeded = 'false'
+        $nextAuthorizedGate = 'GAM-13_ORDERED_LOAD_CALIBRATION'
+    }
+    else
+    {
+        $depthDisposition = 'INSUFFICIENT_DEPTH_SURVIVES'
+        $lowLoadNeeded = 'true'
+        $nextAuthorizedGate = 'SEPARATE_LOW_LOAD_REALIZATION_DISCRIMINATION'
+    }
+
+    $receiptName = 'GAM49-gate4-requalification-receipt.md'
+    $receipt = @"
+# GAM-49 Gate 4 — fresh C0/HOLD and canonical 25 kg requalification
+
+Run: $runId
+Unity: $UnityPath
+Process isolation: fresh Unity process for C0_FULL, HOLD_1.00_FULL, and the canonical 25 kg lifecycle.
+
+Result: PASS
+
+C0/HOLD: surface and joint-center diagnostic values matched within `1e-5 m`; both retained support and finite control.
+Canonical P2/P3: provider/snapshot parity passed every tick, P2 start/support authority passed, and P3 physical completion prerequisites were all established. P2 and P3 consumed surface-proxy depth; joint-center diagnostics did not feed rule truth.
+
+Dynamic surface worst side: $($dynamic['DYNAMIC_DEEPEST_SURFACE_RULE_PROXY_WORST_DEPTH_M']) m. Game judgment threshold: `-0.005 m`. Residual deficit: $($dynamic['DYNAMIC_SURFACE_RULE_DEFICIT_MM']) mm.
+Joint-center diagnostic at the same surface-deepest sample: left $($dynamic['DYNAMIC_DEEPEST_JOINT_CENTER_DIAGNOSTIC_LEFT_DEPTH_M']) m, right $($dynamic['DYNAMIC_DEEPEST_JOINT_CENTER_DIAGNOSTIC_RIGHT_DEPTH_M']) m.
+P2 result: $($dynamic['P2_START_RESULT']); violations: $($dynamic['P2_VIOLATIONS']). P3 legal-bottom seen: $($dynamic['P3_LEGAL_BOTTOM_SEEN']); physical prerequisites: $($dynamic['P3_COMPLETION_PREREQUISITES_MISSING']).
+
+PRIOR_INSUFFICIENT_DEPTH_DISPOSITION=$depthDisposition
+LOW_LOAD_REALIZATION_DISCRIMINATION_NEEDED=$lowLoadNeeded
+NEXT_AUTHORIZED_GATE=$nextAuthorizedGate
+CLAIM_CEILING=GAM10_CALIBRATED_RULE_DERIVED_GAME_PROXY_AND_UNITY_RUNTIME_OBSERVATION
+
+Raw XML/logs and this receipt are in $runDirectory. Per-arm depth decompositions, traces, summaries, and CSVs are in $evidenceDirectory.
+"@
+}
+else
+{
+    $receipt = @"
 # GAM-49 Gate 3 — fresh-process C0/HOLD depth decomposition
 
 Run: $runId
@@ -188,9 +264,19 @@ Joint-center values are diagnostic only. C0/HOLD equivalence does not determine 
 
 Raw XML/logs and this receipt are in $runDirectory. The per-arm traces, summaries, decompositions, target-composition CSVs, and applied-target CSVs are in $evidenceDirectory.
 "@
-$receiptPath = Join-Path $runDirectory 'GAM49-gate3-c0-hold-depth-decomposition-receipt.md'
+}
+$receiptPath = Join-Path $runDirectory $receiptName
 Set-Content -LiteralPath $receiptPath -Value $receipt -NoNewline
-Write-Output "GATE3_C0_HOLD_EQUIVALENCE=PASS"
-Write-Output "C0_ACTUAL_SURFACE_WORST_M=$($c0['D_ACTUAL_WORST_DEPTH_M'])"
-Write-Output "C0_SURFACE_DEFICIT_MM=$([Math]::Round($deficitMm, 6))"
+if ($IncludeCanonicalLifecycle)
+{
+    Write-Output "GATE4_REQUALIFICATION=PASS"
+    Write-Output "PRIOR_INSUFFICIENT_DEPTH_DISPOSITION=$depthDisposition"
+    Write-Output "NEXT_AUTHORIZED_GATE=$nextAuthorizedGate"
+}
+else
+{
+    Write-Output "GATE3_C0_HOLD_EQUIVALENCE=PASS"
+    Write-Output "C0_ACTUAL_SURFACE_WORST_M=$($c0['D_ACTUAL_WORST_DEPTH_M'])"
+    Write-Output "C0_SURFACE_DEFICIT_MM=$([Math]::Round($deficitMm, 6))"
+}
 Write-Output "RECEIPT=$receiptPath"
