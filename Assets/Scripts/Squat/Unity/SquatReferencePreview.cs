@@ -771,8 +771,8 @@ namespace PowerliftingSimulator.Squat.Unity
 
         private void CreateOverlay()
         {
-            _landmarkMarkers[0] = CreateLandmarkMarker("LEFT_HIP_CREASE_PROXY", Color.yellow);
-            _landmarkMarkers[1] = CreateLandmarkMarker("RIGHT_HIP_CREASE_PROXY", Color.yellow);
+            _landmarkMarkers[0] = CreateLandmarkMarker("LEFT_HIP_CREASE_PROXY", Color.magenta);
+            _landmarkMarkers[1] = CreateLandmarkMarker("RIGHT_HIP_CREASE_PROXY", Color.magenta);
             _landmarkMarkers[2] = CreateLandmarkMarker("LEFT_KNEE_TOP_PROXY", Color.cyan);
             _landmarkMarkers[3] = CreateLandmarkMarker("RIGHT_KNEE_TOP_PROXY", Color.cyan);
             _leftDepthLine = CreateLine("LEFT_DEPTH_GEOMETRY", Color.yellow, 0.006f);
@@ -1084,9 +1084,12 @@ namespace PowerliftingSimulator.Squat.Unity
             GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             marker.name = markerName;
             marker.transform.SetParent(transform, true);
-            marker.transform.localScale = Vector3.one * 0.034f;
+            // Display size only; the marker transform remains at the rule-proxy point.
+            marker.transform.localScale = Vector3.one * 0.05f;
             DestroyImmediate(marker.GetComponent<Collider>());
             Renderer renderer = marker.GetComponent<Renderer>();
+            renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
             if (landmarkMaterial != null)
                 renderer.sharedMaterial = landmarkMaterial;
             renderer.material.color = color;

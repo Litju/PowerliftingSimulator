@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
+using System.Globalization;
 using System.IO;
+using System.Text;
 using NUnit.Framework;
 using PowerliftingSimulator.Foundation;
 using PowerliftingSimulator.Squat;
@@ -18,6 +20,7 @@ namespace PowerliftingSimulator.Tests
         private const string EvidenceDirectory = "Artifacts/Evidence/GAM-10/V2-closed-chain";
         private const string MeasurementPath = "Artifacts/Measurements/GAM-10-squat-reference-v2.json";
         private const string CalibrationPath = "Artifacts/Measurements/GAM-10-squat-joint-frame-calibration-v2.json";
+        private const float GAM49ReferenceParityToleranceM = 0.00001f;
 
         [UnityTest]
         public IEnumerator GAM10_CLOSED_CHAIN_REFERENCE_VISUAL_QUALIFICATION()
@@ -103,6 +106,93 @@ namespace PowerliftingSimulator.Tests
             Assert.That(measurement, Does.Not.Contain("referenceRootCorrection"));
             Assert.That(measurement, Does.Not.Contain("renderer bounds min.y"));
             Assert.That(measurement, Does.Contain("physicalAuthorityTouched"));
+        }
+
+        [UnityTest]
+        public IEnumerator GAM49_SHARED_PROVIDER_PHASE_LADDER_AND_SIDE_VIEW_QUALIFICATION()
+        {
+            yield return LoadQualificationScene();
+            SquatReferencePreview preview = FindPreview();
+            Assert.That(SystemInfo.graphicsDeviceType, Is.Not.EqualTo(GraphicsDeviceType.Null),
+                "GAM-49 side-view evidence requires a graphics device.");
+            AssertReferenceOnlyTopology(preview);
+
+            Camera camera = Camera.main;
+            PositionExactSideReviewCamera(camera);
+            preview.SetShowReferenceBarGhost(false);
+            preview.SetShowLandmarks(true);
+
+            float[] phases = { 0f, 0.25f, 0.55f, 0.80f, 1f, 0.64f };
+            SquatPhaseDirection[] directions =
+            {
+                SquatPhaseDirection.None,
+                SquatPhaseDirection.Descent,
+                SquatPhaseDirection.Descent,
+                SquatPhaseDirection.Descent,
+                SquatPhaseDirection.Descent,
+                SquatPhaseDirection.Ascent
+            };
+            SquatState[] states =
+            {
+                SquatState.LOCKOUT,
+                SquatState.DESCENT,
+                SquatState.DESCENT,
+                SquatState.DESCENT,
+                SquatState.BOTTOM,
+                SquatState.STICKING
+            };
+            string[] labels = { "standing", "phase_0_25", "phase_0_55", "phase_0_80", "bottom", "ascent_0_64" };
+            var receipt = new StringBuilder();
+            receipt.AppendLine("MISSION=GAM49_SHARED_PROVIDER_REFERENCE_PHASE_LADDER");
+            receipt.AppendLine("UNITY=6000.3.22f1");
+            receipt.AppendLine("CALIBRATION_ID=" + SquatReferenceRigCalibration.CalibrationId);
+            receipt.AppendLine("TOLERANCE_M=" + GAM49ReferenceParityToleranceM.ToString("R", CultureInfo.InvariantCulture));
+            receipt.AppendLine("GAME_JUDGMENT_MARGIN_M=" + SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M.ToString("R", CultureInfo.InvariantCulture));
+            receipt.AppendLine("IPF_RULE_PREDICATE=both hip-crease proxies below their corresponding knee-top proxies");
+            receipt.AppendLine("GAME_MARGIN_PROVENANCE=GAME_JUDGMENT_MARGIN_M; not IPF-prescribed");
+
+            for (int index = 0; index < phases.Length; index++)
+            {
+                preview.SetReviewPose(phases[index], directions[index], states[index]);
+                AssertValidReference(preview);
+                SquatReferenceKinematicSolution solution = preview.CurrentSolution;
+                SquatReferenceRigCalibration calibration = preview.Calibration;
+                SquatRuleLandmarkSet current = preview.CurrentRuleLandmarks;
+                SquatRuleLandmarkSet repeated = EvaluateProvider(solution, calibration);
+                SquatDepthObservation legacy = EvaluateExistingGAM10Depth(solution, calibration);
+                AssertDepthParity(labels[index], legacy, current.Depth);
+                AssertDepthParity(labels[index] + "_REPEAT", current.Depth, repeated.Depth, 1e-7f);
+                AssertLandmarkSetFinite(current);
+                AssertLandmarkSetMatches(current, repeated, 1e-7f);
+
+                receipt.Append("STATE=").Append(labels[index]);
+                receipt.Append(" PHASE=").Append(phases[index].ToString("R", CultureInfo.InvariantCulture));
+                receipt.Append(" D_LEGACY_L_M=").Append(F(legacy.LeftDepthM));
+                receipt.Append(" D_PROVIDER_L_M=").Append(F(current.Depth.LeftDepthM));
+                receipt.Append(" D_LEGACY_R_M=").Append(F(legacy.RightDepthM));
+                receipt.Append(" D_PROVIDER_R_M=").Append(F(current.Depth.RightDepthM));
+                receipt.Append(" WORST_SIDE_M=").Append(F(current.Depth.WorstSideDepthM));
+                receipt.Append(" IPF_RULE_PREDICATE=").Append(current.Depth.IPFRulePredicateSatisfied ? "true" : "false");
+                receipt.Append(" GAME_JUDGMENT_QUALIFIED=").Append(current.Depth.BilateralGameJudgmentQualified ? "true" : "false");
+                receipt.AppendLine(" POINTS_FINITE=true DETERMINISTIC=true");
+
+                if (states[index] == SquatState.BOTTOM)
+                {
+                    Assert.That(current.Depth.BilateralGameJudgmentQualified, Is.True,
+                        $"GAM-10 bottom lost the fixed game margin: L={current.Depth.LeftDepthM:R}, R={current.Depth.RightDepthM:R}");
+                    Assert.That(current.Depth.IPFRulePredicateSatisfied, Is.True);
+                    yield return null;
+                    CaptureEvidenceAt("Artifacts/Evidence/GAM-49", "GAM49-depth-landmarks-side.png");
+                }
+            }
+
+            receipt.AppendLine("VISUAL_EVIDENCE=Artifacts/Evidence/GAM-49/GAM49-depth-landmarks-side.png");
+            receipt.AppendLine("CLAIM_CEILING=CALIBRATED_BONE_FRAME_PROXY_ON_CANONICAL_HUMANOID");
+            string receiptPath = Path.GetFullPath("Artifacts/Measurements/GAM-49/gate2-reference-parity.md");
+            Directory.CreateDirectory(Path.GetDirectoryName(receiptPath));
+            File.WriteAllText(receiptPath, receipt.ToString());
+            Assert.That(File.Exists(receiptPath), Is.True);
+            Assert.That(new FileInfo(receiptPath).Length, Is.GreaterThan(1024L));
         }
 
         [UnityTest]
@@ -260,11 +350,24 @@ namespace PowerliftingSimulator.Tests
             camera.transform.LookAt(new Vector3(0f, 0.96f, 0f), Vector3.up);
         }
 
+        private static void PositionExactSideReviewCamera(Camera camera)
+        {
+            Assert.That(camera, Is.Not.Null);
+            camera.fieldOfView = 34f;
+            camera.transform.position = new Vector3(3.60f, 1.04f, 0f);
+            camera.transform.LookAt(new Vector3(0f, 0.96f, 0f), Vector3.up);
+        }
+
         private static void CaptureEvidence(string filename)
+        {
+            CaptureEvidenceAt(EvidenceDirectory, filename);
+        }
+
+        private static void CaptureEvidenceAt(string evidenceDirectory, string filename)
         {
             Camera camera = Camera.main;
             Assert.That(camera, Is.Not.Null);
-            string directory = Path.GetFullPath(EvidenceDirectory);
+            string directory = Path.GetFullPath(evidenceDirectory);
             Directory.CreateDirectory(directory);
             string path = Path.Combine(directory, filename);
             RenderTexture texture = RenderTexture.GetTemporary(
@@ -292,6 +395,97 @@ namespace PowerliftingSimulator.Tests
             Assert.That(File.Exists(path), Is.True, path);
             Assert.That(new FileInfo(path).Length, Is.GreaterThan(1024L), path);
         }
+
+        private static SquatRuleLandmarkSet EvaluateProvider(
+            SquatReferenceKinematicSolution solution,
+            SquatReferenceRigCalibration calibration)
+        {
+            var provider = new SquatDepthLandmarkProvider(calibration);
+            Assert.That(provider.TryEvaluate(
+                solution.LeftLeg.HipCenter,
+                solution.RightLeg.HipCenter,
+                solution.PelvisFrameRotation,
+                solution.LeftLeg.KneeCenter,
+                solution.LeftLeg.ShankFrameRotation,
+                solution.RightLeg.KneeCenter,
+                solution.RightLeg.ShankFrameRotation,
+                out SquatRuleLandmarkSet landmarks), Is.True);
+            return landmarks;
+        }
+
+        private static SquatDepthObservation EvaluateExistingGAM10Depth(
+            SquatReferenceKinematicSolution solution,
+            SquatReferenceRigCalibration calibration)
+        {
+            Vector3 leftHipCrease = solution.PelvisCenter +
+                solution.PelvisFrameRotation * calibration.LeftHipCreaseOffsetInPelvisFrame;
+            Vector3 rightHipCrease = solution.PelvisCenter +
+                solution.PelvisFrameRotation * calibration.RightHipCreaseOffsetInPelvisFrame;
+            Vector3 leftKneeTop = solution.LeftLeg.KneeCenter +
+                solution.LeftLeg.ShankFrameRotation * calibration.LeftKneeTopOffsetInShankFrame;
+            Vector3 rightKneeTop = solution.RightLeg.KneeCenter +
+                solution.RightLeg.ShankFrameRotation * calibration.RightKneeTopOffsetInShankFrame;
+            return SquatDepthGeometry.Evaluate(
+                new SquatPoint3(leftHipCrease.x, leftHipCrease.y, leftHipCrease.z),
+                new SquatPoint3(rightHipCrease.x, rightHipCrease.y, rightHipCrease.z),
+                new SquatPoint3(leftKneeTop.x, leftKneeTop.y, leftKneeTop.z),
+                new SquatPoint3(rightKneeTop.x, rightKneeTop.y, rightKneeTop.z),
+                SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M);
+        }
+
+        private static void AssertDepthParity(
+            string state,
+            SquatDepthObservation expected,
+            SquatDepthObservation actual) =>
+            AssertDepthParity(state, expected, actual, GAM49ReferenceParityToleranceM);
+
+        private static void AssertDepthParity(
+            string state,
+            SquatDepthObservation expected,
+            SquatDepthObservation actual,
+            float toleranceM)
+        {
+            Assert.That(Mathf.Abs(actual.LeftDepthM - expected.LeftDepthM), Is.LessThanOrEqualTo(toleranceM),
+                state + " left reference/provider parity");
+            Assert.That(Mathf.Abs(actual.RightDepthM - expected.RightDepthM), Is.LessThanOrEqualTo(toleranceM),
+                state + " right reference/provider parity");
+        }
+
+        private static void AssertLandmarkSetFinite(SquatRuleLandmarkSet landmarks)
+        {
+            AssertVectorFinite(landmarks.LeftHipCreaseWorld);
+            AssertVectorFinite(landmarks.RightHipCreaseWorld);
+            AssertVectorFinite(landmarks.LeftKneeTopWorld);
+            AssertVectorFinite(landmarks.RightKneeTopWorld);
+        }
+
+        private static void AssertLandmarkSetMatches(
+            SquatRuleLandmarkSet expected,
+            SquatRuleLandmarkSet actual,
+            float toleranceM)
+        {
+            AssertVectorMatches(expected.LeftHipCreaseWorld, actual.LeftHipCreaseWorld, toleranceM);
+            AssertVectorMatches(expected.RightHipCreaseWorld, actual.RightHipCreaseWorld, toleranceM);
+            AssertVectorMatches(expected.LeftKneeTopWorld, actual.LeftKneeTopWorld, toleranceM);
+            AssertVectorMatches(expected.RightKneeTopWorld, actual.RightKneeTopWorld, toleranceM);
+            AssertDepthParity("repeat", expected.Depth, actual.Depth, toleranceM);
+        }
+
+        private static void AssertVectorFinite(Vector3 value)
+        {
+            Assert.That(float.IsNaN(value.x) || float.IsInfinity(value.x), Is.False);
+            Assert.That(float.IsNaN(value.y) || float.IsInfinity(value.y), Is.False);
+            Assert.That(float.IsNaN(value.z) || float.IsInfinity(value.z), Is.False);
+        }
+
+        private static void AssertVectorMatches(Vector3 expected, Vector3 actual, float toleranceM)
+        {
+            Assert.That(actual.x, Is.EqualTo(expected.x).Within(toleranceM));
+            Assert.That(actual.y, Is.EqualTo(expected.y).Within(toleranceM));
+            Assert.That(actual.z, Is.EqualTo(expected.z).Within(toleranceM));
+        }
+
+        private static string F(float value) => value.ToString("R", CultureInfo.InvariantCulture);
 
         private static void AssertArtifact(string relativePath, params string[] fragments)
         {
