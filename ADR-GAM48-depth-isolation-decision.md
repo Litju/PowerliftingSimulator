@@ -1,112 +1,63 @@
-# ADR-GAM48 — squat observation authority and depth-isolation decision
+# ADR-GAM48 — Gate 4b depth isolation
 
-Date: 2026-09-22
-Authority: Linear `GAM-48`
-Qualified branch: `work/gam-13-squat-load-calibration`
+Date: 2026-09-23
+Authority: Linear GAM-48 Gate 4b owner review
+Run: 20260923-221554
+Branch: work/gam-13-squat-load-calibration
 
-## Decision
-
-```text
-GAM48_STATUS=COMPLETE
-ROOT_DOMAIN=TRACKING_CONTACT_ACTUATION_REALIZATION
-CAUSAL_CLASSIFICATION=SUPPORTED_BUT_NOT_UNIQUE
-NEXT_AUTHORIZED_PHYSICS_GATE=GAM48-FOLLOWUP-LOW-LOAD-REALIZATION-DISCRIMINATION
-```
-
-The canonical GAM-10 reference is legal, and the same current-head FK path
-maps its nominal bottom to the same legal depth. The actual 25 kg physical
-realization remains shallow. This establishes a realization-domain blocker but
-does not identify a unique subcause among tracking, contact coordination, and
-finite actuation/control realization. No physics tuning is authorized by this
-ADR.
+GATE4B_STATUS=COMPLETE_WITH_NON_UNIQUE_CAUSAL_CLASSIFICATION
+ROOT_DOMAIN=NON_IDENTIFYING
+ROOT_SUBDOMAIN=REFERENCE_RULE_LANDMARK_BASIS_AND_PHYSICAL_REALIZATION
+NEXT_AUTHORIZED_GATE=GAM48-FOLLOWUP-LOW-LOAD-REALIZATION-DISCRIMINATION
 
 ## ESTABLISHED
 
-- Persistent foot authority is coherent: active platform collision pairs are
-  idempotent through Enter/Stay/Exit, reset/load clears per-step buffers without
-  manufacturing no-contact, and aggregate support can use the latest persistent
-  geometry when a sleeping/static step has no new manifold.
-- The qualified start run is copied into the trace before Squat. P2 evaluates
-  that same contiguous start context; P3 receives the explicit Squat boundary
-  and standing reference and ignores pre-command settling motion.
-- Gate 3 fresh-process isolation passed. `HOLD_1.00_FULL == C0_FULL` passed at
-  absolute tolerance `1e-5`; both arms matched numeric and categorical fields.
-  Two fresh canonical baseline processes also matched at `1e-5` and in P2/P3
-  classification.
-- Current-head GAM-10 reference qualification passed. Reference bottom depth
-  was `-0.07631308 m` on both sides, with bilateral legal depth and planted
-  feet.
-- FK-only mapping reproduced `-0.07631308 m` on both sides within `1e-5 m`,
-  with no dynamics or PhysX step in the decomposition.
-- Corrected full-composition held bottom remained shallow:
-  `0.04317536 m` settled worst-side depth, support retained, finite control,
-  not legal. C0 and HOLD were numerically equivalent.
-- The corrected dynamic 25 kg lifecycle reached physical descent, physical
-  bottom, ascent, and physical lockout; P3 was `NO_PHYSICAL_FAILURE` with
-  `LEGAL_BOTTOM` missing. P2 was `EVALUABLE/NO_LIFT` with
-  `INSUFFICIENT_DEPTH` only.
+- The current-head GAM-10 reference qualification passed 4/4. Its calibrated crease/top-offset depth is left -0.07631308 m, right -0.07631314 m, worst -0.07631308 m, and legal.
+- The production squat rule measures physical hip and knee ConfigurableJoint anchors. On that same rule-proxy metric, the canonical reference joint centers are +0.0225417614 m on both sides and shallow. The reference preview and production rule-proxy measurements differ by 0.0988549 m.
+- Runtime physical-target FK consumed the adapter's exact phase-1 nominal/composition quaternions, the real physical rig's neutral parent-child orientations and joint-space bases, production anchors, and production joint ownership. It did not call the reference solver to construct any physical target. Read-only and repeatability checks passed.
+- Fresh-process C0_FULL and HOLD_1.00_FULL passed support/finite-control checks and matched across every reported side, stage, and layer delta at the frozen 1e-5 m tolerance.
+
+| State / delta | Left (m) | Right (m) | Worst side (m) |
+|---|---:|---:|---:|
+| D_REF, rule-anchor proxy | 0.0225417614 | 0.0225417614 | 0.0225417614 |
+| D_NOMINAL_TARGET | 0.02254184 | 0.02254184 | 0.02254184 |
+| D_NOMINAL_TARGET - D_REF_GAM10_CALIBRATED_LANDMARKS | +0.09885492 | +0.09885498 | +0.09885492 |
+| D_GRAVITY_TARGET | 0.02254184 | 0.02254184 | 0.02254184 |
+| D_BALANCE_TARGET | 0.02226769 | 0.0222676918 | 0.0222676918 |
+| D_FINAL_TARGET | 0.02226769 | 0.0222676918 | 0.0222676918 |
+| D_APPLIED_TARGET | 0.02226769 | 0.0222676918 | 0.0222676918 |
+| D_ACTUAL | 0.0431753546 | 0.0401087478 | 0.0431753546 |
+| Nominal mapping error, D_NOMINAL_TARGET - D_REF | 0.0000000782 | 0.0000000782 | 0.0000000782 |
+| Gravity composition displacement | 0 | 0 | 0 |
+| Balance composition displacement | -0.0002741497 | -0.0002741478 | -0.0002741478 |
+| Full composition displacement | -0.0002741497 | -0.0002741478 | -0.0002741478 |
+| Rate-limit displacement | 0 | 0 | 0 |
+| Physical realization error, D_ACTUAL - D_APPLIED_TARGET | +0.0209076647 | +0.0178410560 | +0.0209076647 |
+
+The depth rule threshold is -0.005 m. D_ACTUAL is 48.175 mm shallower than that threshold. The applied target is already 27.268 mm shallower than the threshold under the production rule-proxy metric.
+
+- Settled maximum MODELED_DRIVE_DEMAND was 0.266502559 in both arms; MODELED_DRIVE_DEMAND_HIGH was false at the existing 0.95 threshold. This does not measure the internal PhysX drive-force clamp.
+- The maximum final-to-applied angular error was 0.0200017449 rad on each foot target. The rule depth uses hip/knee anchors, so their settled angular lag produced 0 m rate-limit depth displacement.
+- The dynamic 25 kg attempt had physical descent, physical bottom, ascent, and physical lockout. Its corrected P3 receipt reports P3_COMPLETION_PREREQUISITES_MISSING=NONE and P3_LEGAL_BOTTOM_SEEN=false; P3 was EVALUABLE/NO_PHYSICAL_FAILURE while P2 reported INSUFFICIENT_DEPTH.
 
 ## SUPPORTED
 
-- The remaining blocker is physical target realization: the legal FK target is
-  not realized by the dynamic physical athlete at the canonical bottom.
-- Control-state evidence is consistent with, but does not uniquely identify,
-  target tracking error, contact coordination, and finite actuation/realization
-  as competing sublayers. The dynamic baseline reached balance saturation on
-  55 samples and drive saturation on 11 samples; C0/HOLD settled control was
-  finite with no saturation ticks.
-- C1 and C2 are diagnostic composition arms only. C1 settled at `0.420322478
-  m` and C2 at `0.428600818 m`; both lost support throughout the settled
-  report, so neither establishes a balance or preload causal winner.
+- The physical athlete realizes a depth 20.908 mm shallower on the worst side than its applied-target FK geometry. Physical realization materially contributes under the production rule-proxy metric.
+- The current canonical reference legality and production rule legality use different landmark bases. The canonical reference is legal under the calibrated crease/top offsets and shallow under the joint-anchor rule proxy. This reference-to-rule landmark contract changes the bottom depth before gravity/balance composition.
 
 ## REJECTED
 
-- Observation false-no-contact as the canonical dynamic cause: corrected
-  dynamic support was retained and the P2 support violation disappeared.
-- Pre-command settling as P3 descent: the bounded detector regression rejects
-  it.
-- `ROOT_DOMAIN=DYNAMIC_TRACKING_TIMING`: the held full bottom remained shallow
-  after the fixed settle window.
-- `ESTABLISHED_CAUSE=DYNAMIC_BALANCE_DEPTH_BIAS`: C1 was not a supported/legal
-  held bottom.
-- `ESTABLISHED_CAUSE=EQUILIBRIUM_PRELOAD_DEPTH_BIAS`: C2 remained shallow and
-  unsupported.
-- `SUPPORTED_BLOCKER=NOMINAL_REFERENCE_OR_TRACKING_MAPPING`: the independent
-  reference and FK mapping are legal.
-- Any biological GRF/COP, muscle, internal-force, or clinical claim.
+- A material nominal joint-space mapping error under the matched joint-anchor metric: measured worst-side error is 0.000078 mm.
+- Gravity, balance, or full target composition as a material depth cause: each measured displacement is below the predeclared 5 mm threshold.
+- Rate limiting as a material depth cause: D_APPLIED_TARGET equals D_FINAL_TARGET in the rule depth metric.
+- The previous unique ROOT_DOMAIN=TRACKING_CONTACT_ACTUATION_REALIZATION conclusion. Gate 4b shows a reference/rule landmark-basis mismatch plus a material physical-realization gap.
+- Legal bottom as a P3 physical-completion prerequisite.
+- MODELED_DRIVE_DEMAND_HIGH as evidence that the PhysX drive-force clamp was reached.
+- Joint.currentTorque / solver constraint torque as direct drive torque.
 
 ## UNRESOLVED
 
-The evidence cannot distinguish a unique cause within the realization domain:
-
-- nominal joint target tracking/closed-chain reconciliation;
-- contact realization and support coordination under the physical target;
-- finite actuator authority/timing and its interaction with the target.
-
-These remain an explicit hypothesis set. Correlated depth, support, demand, and
-saturation observations are not treated as causal evidence.
-
-## Exact next authorized physics gate
-
-`GAM48-FOLLOWUP-LOW-LOAD-REALIZATION-DISCRIMINATION` is the only next authorized
-physics gate. It is limited to the canonical 25 kg case and must keep the 5x
-plant, LC1, S1, F2 spine law, solver, capacity, bar model, balance bounds,
-rules, tolerances, and direct-assistance prohibition frozen. It may add
-read-only target/actual, contact, and finite-authority diagnostics and
-predeclared low-load discriminating fixtures; it may not tune parameters,
-introduce support, write transforms/velocities/forces, or begin heavy-load
-calibration. GAM-13 is not started or merged by this ADR.
-
-## Claim ceiling and evidence
-
-Claims are limited to deterministic Unity/PhysX engine observations, FK
-geometry, and game-derived support/depth/control proxies. No real-world
-biomechanical or causal control claim is made.
-
-- Gate 1: commit `735e034`, support-authority regressions 3/3 PASS.
-- Gate 2: commit `bd34a5f`, lifecycle EditMode 18/18 PASS and fresh-process
-  qualifier/P2/P3 PlayMode PASS.
-- Gate 3: commit `f259ddd`, ten isolated Unity processes and equivalence receipt.
-- Gate 4: current-head GAM-10 qualification XML, FK decomposition, corrected
-  C0/C1/C2 summaries/traces, and corrected dynamic baseline artifacts under
-  `Artifacts/Measurements/GAM-48/`.
+- A unique ROOT_SUBDOMAIN cannot be assigned from this evidence. The canonical reference and production rule proxy disagree by 98.855 mm, the nominal target is already shallow under the production rule metric, and physical realization adds a further 20.908 mm worst-side error.
+- The measured realization gap does not distinguish target tracking, contact coordination, finite actuation, or their interaction. Modeled demand and solver constraint torque do not identify an internal drive-force clamp.
+- The exact next authorized gate is GAM48-FOLLOWUP-LOW-LOAD-REALIZATION-DISCRIMINATION. It must keep physics and rules frozen, first use a matched landmark contract, and add only predeclared read-only discriminators. No tuning, heavy-load calibration, GAM-14 work, or GAM-13 merge is authorized by this ADR.
+- Claim ceiling: deterministic Unity/PhysX observations and calibrated game rule-proxy geometry; no validated biological or universal biomechanics claim.

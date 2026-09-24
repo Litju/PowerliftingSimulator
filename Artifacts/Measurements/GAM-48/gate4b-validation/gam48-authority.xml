@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="4" result="Passed" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-24 01:09:06Z" end-time="2026-09-24 01:09:09Z" duration="3.6056986">
+  <test-suite type="TestSuite" id="1301" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="225" result="Passed" start-time="2026-09-24 01:09:06Z" end-time="2026-09-24 01:09:09Z" duration="3.605699" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1295" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="E:/Data/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="225" result="Passed" start-time="2026-09-24 01:09:06Z" end-time="2026-09-24 01:09:09Z" duration="3.583522" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="17680" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1296" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="225" result="Passed" start-time="2026-09-24 01:09:06Z" end-time="2026-09-24 01:09:09Z" duration="3.574633" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1297" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="225" result="Passed" start-time="2026-09-24 01:09:06Z" end-time="2026-09-24 01:09:09Z" duration="3.567359" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1117" name="GAM48ObservationAuthorityTests" fullname="PowerliftingSimulator.Tests.GAM48ObservationAuthorityTests" classname="PowerliftingSimulator.Tests.GAM48ObservationAuthorityTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-09-24 01:09:06Z" end-time="2026-09-24 01:09:09Z" duration="3.544020" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1120" name="GAM48_GATE1_CONTACT_LOSS_AND_REENTRY_UPDATE_PERSISTENT_AUTHORITY" fullname="PowerliftingSimulator.Tests.GAM48ObservationAuthorityTests.GAM48_GATE1_CONTACT_LOSS_AND_REENTRY_UPDATE_PERSISTENT_AUTHORITY" methodname="GAM48_GATE1_CONTACT_LOSS_AND_REENTRY_UPDATE_PERSISTENT_AUTHORITY" classname="PowerliftingSimulator.Tests.GAM48ObservationAuthorityTests" runstate="Runnable" seed="566852143" result="Passed" start-time="2026-09-24 01:09:06Z" end-time="2026-09-24 01:09:07Z" duration="0.906341" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1118" name="GAM48_GATE1_LOAD_RESET_PRESERVES_PLANTED_CONTACT" fullname="PowerliftingSimulator.Tests.GAM48ObservationAuthorityTests.GAM48_GATE1_LOAD_RESET_PRESERVES_PLANTED_CONTACT" methodname="GAM48_GATE1_LOAD_RESET_PRESERVES_PLANTED_CONTACT" classname="PowerliftingSimulator.Tests.GAM48ObservationAuthorityTests" runstate="Runnable" seed="1251936148" result="Passed" start-time="2026-09-24 01:09:07Z" end-time="2026-09-24 01:09:07Z" duration="0.891948" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1119" name="GAM48_GATE1_STATIC_CONTACT_SURVIVES_BUFFER_CLEAR" fullname="PowerliftingSimulator.Tests.GAM48ObservationAuthorityTests.GAM48_GATE1_STATIC_CONTACT_SURVIVES_BUFFER_CLEAR" methodname="GAM48_GATE1_STATIC_CONTACT_SURVIVES_BUFFER_CLEAR" classname="PowerliftingSimulator.Tests.GAM48ObservationAuthorityTests" runstate="Runnable" seed="1244322459" result="Passed" start-time="2026-09-24 01:09:07Z" end-time="2026-09-24 01:09:08Z" duration="0.707088" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+]]></output>
+            </test-case>
+            <test-case id="1121" name="GAM48_GATE2_QUALIFIER_WINDOW_IS_THE_P2_WINDOW" fullname="PowerliftingSimulator.Tests.GAM48ObservationAuthorityTests.GAM48_GATE2_QUALIFIER_WINDOW_IS_THE_P2_WINDOW" methodname="GAM48_GATE2_QUALIFIER_WINDOW_IS_THE_P2_WINDOW" classname="PowerliftingSimulator.Tests.GAM48ObservationAuthorityTests" runstate="Runnable" seed="1265635316" result="Passed" start-time="2026-09-24 01:09:08Z" end-time="2026-09-24 01:09:09Z" duration="1.003438" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[
+IgnoreFailingMessages:true
+
+IgnoreFailingMessages:false
+Saving results to: C:/Users/Usuario/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

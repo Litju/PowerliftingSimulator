@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="4" result="Passed" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-24 01:24:02Z" end-time="2026-09-24 01:24:05Z" duration="2.9642731">
+  <test-suite type="TestSuite" id="1301" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="225" result="Passed" start-time="2026-09-24 01:24:02Z" end-time="2026-09-24 01:24:05Z" duration="2.964273" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1295" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="E:/Data/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="225" result="Passed" start-time="2026-09-24 01:24:02Z" end-time="2026-09-24 01:24:05Z" duration="2.951890" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="25944" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1296" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="225" result="Passed" start-time="2026-09-24 01:24:02Z" end-time="2026-09-24 01:24:05Z" duration="2.948177" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1297" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="225" result="Passed" start-time="2026-09-24 01:24:02Z" end-time="2026-09-24 01:24:05Z" duration="2.945191" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1043" name="GAM10SquatReferencePreviewQualificationTests" fullname="PowerliftingSimulator.Tests.GAM10SquatReferencePreviewQualificationTests" classname="PowerliftingSimulator.Tests.GAM10SquatReferencePreviewQualificationTests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-09-24 01:24:02Z" end-time="2026-09-24 01:24:05Z" duration="2.937542" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1044" name="GAM10_CLOSED_CHAIN_REFERENCE_VISUAL_QUALIFICATION" fullname="PowerliftingSimulator.Tests.GAM10SquatReferencePreviewQualificationTests.GAM10_CLOSED_CHAIN_REFERENCE_VISUAL_QUALIFICATION" methodname="GAM10_CLOSED_CHAIN_REFERENCE_VISUAL_QUALIFICATION" classname="PowerliftingSimulator.Tests.GAM10SquatReferencePreviewQualificationTests" runstate="Runnable" seed="749592773" result="Passed" start-time="2026-09-24 01:24:02Z" end-time="2026-09-24 01:24:03Z" duration="1.467529" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1045" name="GAM10_REFERENCE_TICK_IS_FIXED_AND_REFERENCE_STATE_IS_SAFE" fullname="PowerliftingSimulator.Tests.GAM10SquatReferencePreviewQualificationTests.GAM10_REFERENCE_TICK_IS_FIXED_AND_REFERENCE_STATE_IS_SAFE" methodname="GAM10_REFERENCE_TICK_IS_FIXED_AND_REFERENCE_STATE_IS_SAFE" classname="PowerliftingSimulator.Tests.GAM10SquatReferencePreviewQualificationTests" runstate="Runnable" seed="185531257" result="Passed" start-time="2026-09-24 01:24:03Z" end-time="2026-09-24 01:24:04Z" duration="0.461657" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1046" name="GAM10_RENDER_RATE_INDEPENDENCE_AND_ROOT_AUTHORITY_GATES_PASS" fullname="PowerliftingSimulator.Tests.GAM10SquatReferencePreviewQualificationTests.GAM10_RENDER_RATE_INDEPENDENCE_AND_ROOT_AUTHORITY_GATES_PASS" methodname="GAM10_RENDER_RATE_INDEPENDENCE_AND_ROOT_AUTHORITY_GATES_PASS" classname="PowerliftingSimulator.Tests.GAM10SquatReferencePreviewQualificationTests" runstate="Runnable" seed="1892619918" result="Passed" start-time="2026-09-24 01:24:04Z" end-time="2026-09-24 01:24:04Z" duration="0.479953" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1047" name="GAM10_SOURCE_GATES_REJECT_PHYSICAL_AND_BOUNDS_AUTHORITY" fullname="PowerliftingSimulator.Tests.GAM10SquatReferencePreviewQualificationTests.GAM10_SOURCE_GATES_REJECT_PHYSICAL_AND_BOUNDS_AUTHORITY" methodname="GAM10_SOURCE_GATES_REJECT_PHYSICAL_AND_BOUNDS_AUTHORITY" classname="PowerliftingSimulator.Tests.GAM10SquatReferencePreviewQualificationTests" runstate="Runnable" seed="110451732" result="Passed" start-time="2026-09-24 01:24:04Z" end-time="2026-09-24 01:24:05Z" duration="0.503842" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: C:/Users/Usuario/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

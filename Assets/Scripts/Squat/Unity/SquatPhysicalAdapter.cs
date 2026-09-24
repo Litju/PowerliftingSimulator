@@ -43,6 +43,7 @@ namespace PowerliftingSimulator.Squat.Unity
         private readonly SquatReferenceProfile _profile;
         private readonly ReferenceTargetFrame[] _descentTargets;
         private readonly ReferenceTargetFrame[] _ascentTargets;
+        private SquatReferenceRigCalibration _referenceCalibration;
         private const int ReferenceTargetSampleCount = 101;
         private const float LockoutTransitionSq = 0.001f;
         private const float MinimumTrunkParticipationRad = 0.0017f; // 0.1 deg
@@ -121,6 +122,11 @@ namespace PowerliftingSimulator.Squat.Unity
 
         public float StandingEquilibriumBiasDegrees(SquatJointFamily family) =>
             _preload.BiasDegrees(family, 0f, EquilibriumLoadKg);
+
+        public SquatReferenceRigCalibration ReferenceCalibration => _referenceCalibration;
+
+        public Quaternion ReferencePelvisBodyRotation(float phase, SquatPhaseDirection direction) =>
+            EvaluateReferenceTarget(phase, direction).PelvisBodyRotation;
 
         /// <summary>
         /// Where the owner-accepted GAM-10 reference puts the sole of the foot
@@ -863,6 +869,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 referenceAnimator,
                 referenceAnimator.transform.root,
                 "Assets/Scenes/Prototype/SquatPhysicalPrototype.unity");
+            _referenceCalibration = calibration;
 
             Vector3 leftStandingFootAnchor = calibration.LeftFoot.PlantarAnchorWorld;
             Vector3 rightStandingFootAnchor = calibration.RightFoot.PlantarAnchorWorld;
@@ -937,6 +944,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 _rig, calibration, arms.Right, thorax, isLeft: false);
 
             return new ReferenceTargetFrame(
+                pelvis,
                 ToLogicalJointTarget("left_foot", leftShank, leftFoot),
                 ToLogicalJointTarget("right_foot", rightShank, rightFoot),
                 ToLogicalJointTarget("left_shank", leftThigh, leftShank),
@@ -1009,8 +1017,10 @@ namespace PowerliftingSimulator.Squat.Unity
         {
             PoweredJointController.PoweredJointRuntime joint = _rig.PoweredController.GetJoint(childId);
             Quaternion desiredRelative = Quaternion.Inverse(desiredParentRotation) * desiredChildRotation;
-            Quaternion neutralDelta = Quaternion.Inverse(joint.NeutralParentToChild) * desiredRelative;
-            return Quaternion.Inverse(joint.JointSpace) * neutralDelta * joint.JointSpace;
+            return PoweredJointController.ToLogicalTargetRotation(
+                joint.NeutralParentToChild,
+                joint.JointSpace,
+                desiredRelative);
         }
 
         private ReferenceTargetFrame EvaluateReferenceTarget() => EvaluateReferenceTarget(_sq, _direction);
@@ -1119,6 +1129,7 @@ namespace PowerliftingSimulator.Squat.Unity
         private readonly struct ReferenceTargetFrame
         {
             public ReferenceTargetFrame(
+                Quaternion pelvisBodyRotation,
                 Quaternion leftFoot,
                 Quaternion rightFoot,
                 Quaternion leftShank,
@@ -1134,6 +1145,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 Quaternion leftHand,
                 Quaternion rightHand)
             {
+                PelvisBodyRotation = pelvisBodyRotation;
                 LeftFoot = leftFoot;
                 RightFoot = rightFoot;
                 LeftShank = leftShank;
@@ -1150,6 +1162,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 RightHand = rightHand;
             }
 
+            public Quaternion PelvisBodyRotation { get; }
             public Quaternion LeftFoot { get; }
             public Quaternion RightFoot { get; }
             public Quaternion LeftShank { get; }
@@ -1193,6 +1206,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 float interpolation)
             {
                 return new ReferenceTargetFrame(
+                    Quaternion.Slerp(from.PelvisBodyRotation, to.PelvisBodyRotation, interpolation),
                     Quaternion.Slerp(from.LeftFoot, to.LeftFoot, interpolation),
                     Quaternion.Slerp(from.RightFoot, to.RightFoot, interpolation),
                     Quaternion.Slerp(from.LeftShank, to.LeftShank, interpolation),

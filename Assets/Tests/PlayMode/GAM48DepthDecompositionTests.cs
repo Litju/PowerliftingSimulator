@@ -13,7 +13,7 @@ namespace PowerliftingSimulator.Tests
     public sealed class GAM48DepthDecompositionTests
     {
         [UnityTest]
-        public IEnumerator GAM48_REFERENCE_AND_FK_MAPPING_DEPTH_DECOMPOSITION()
+        public IEnumerator GAM48_REFERENCE_SOLVER_PARITY_ONLY()
         {
             AsyncOperation load = SceneManager.LoadSceneAsync("SquatReferencePreview", LoadSceneMode.Single);
             Assert.That(load, Is.Not.Null);
@@ -29,32 +29,33 @@ namespace PowerliftingSimulator.Tests
             SquatReferenceRigCalibration calibration = preview.Calibration;
             SquatReferencePose pose = SquatReferenceProfile.CanonicalPowerliftingSquatV1
                 .Evaluate(1f, SquatPhaseDirection.Descent);
-            SquatReferenceKinematicSolution mappedSolution = SquatReferenceKinematics.Solve(
+            SquatReferenceKinematicSolution reconstructedSolution = SquatReferenceKinematics.Solve(
                 calibration,
                 pose,
                 calibration.LeftFoot.PlantarAnchorWorld,
                 calibration.RightFoot.PlantarAnchorWorld);
-            Assert.That(mappedSolution.IsValid, Is.True, mappedSolution.RejectionReason);
+            Assert.That(reconstructedSolution.IsValid, Is.True, reconstructedSolution.RejectionReason);
 
-            SquatDepthObservation mapped = DepthFromSolution(mappedSolution, calibration);
-            Assert.That(mapped.LeftDepthM, Is.EqualTo(reference.LeftDepthM).Within(1e-5f));
-            Assert.That(mapped.RightDepthM, Is.EqualTo(reference.RightDepthM).Within(1e-5f));
+            SquatDepthObservation reconstructed = DepthFromSolution(reconstructedSolution, calibration);
+            Assert.That(reconstructed.LeftDepthM, Is.EqualTo(reference.LeftDepthM).Within(1e-5f));
+            Assert.That(reconstructed.RightDepthM, Is.EqualTo(reference.RightDepthM).Within(1e-5f));
             Assert.That(reference.BilateralLegalReference, Is.True);
-            Assert.That(mapped.BilateralLegalReference, Is.True);
+            Assert.That(reconstructed.BilateralLegalReference, Is.True);
 
-            string path = Path.GetFullPath("Artifacts/Measurements/GAM-48/gate4-reference-fk-decomposition.md");
+            string path = Path.GetFullPath("Artifacts/Measurements/GAM-48/gate4-reference-solver-parity.md");
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             File.WriteAllText(path,
-                "MISSION=GAM48_GATE4_DEPTH_DECOMPOSITION\n" +
+                "MISSION=GAM48_REFERENCE_SOLVER_PARITY_ONLY\n" +
                 "REFERENCE_PREVIEW_LEFT_DEPTH_M=" + reference.LeftDepthM.ToString("R") + "\n" +
                 "REFERENCE_PREVIEW_RIGHT_DEPTH_M=" + reference.RightDepthM.ToString("R") + "\n" +
                 "REFERENCE_PREVIEW_LEGAL=true\n" +
-                "MAPPED_FK_LEFT_DEPTH_M=" + mapped.LeftDepthM.ToString("R") + "\n" +
-                "MAPPED_FK_RIGHT_DEPTH_M=" + mapped.RightDepthM.ToString("R") + "\n" +
-                "MAPPED_FK_LEGAL=true\n" +
+                "REFERENCE_SOLVER_RECONSTRUCTION_LEFT_DEPTH_M=" + reconstructed.LeftDepthM.ToString("R") + "\n" +
+                "REFERENCE_SOLVER_RECONSTRUCTION_RIGHT_DEPTH_M=" + reconstructed.RightDepthM.ToString("R") + "\n" +
+                "REFERENCE_SOLVER_RECONSTRUCTION_LEGAL=true\n" +
                 "DYNAMICS_INCLUDED=false\n" +
+                "PHYSICAL_ADAPTER_MAPPING_INCLUDED=false\n" +
                 "TOLERANCE_M=1e-5\n" +
-                "CLAIM_CEILING=REFERENCE_AND_FK_GAME_CALIBRATION_ONLY\n");
+                "CLAIM_CEILING=REFERENCE_SOLVER_RECONSTRUCTION_PARITY_ONLY\n");
             yield return null;
         }
 

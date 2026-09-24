@@ -1,6 +1,6 @@
 # GAM-48 Gate 3 — fresh-process equivalence receipt
 
-Run: 20260922-034036
+Run: 20260923-221554
 Unity: D:\Dev\Unity\6000.3.22f1\Editor\Unity.exe
 Process isolation: one Unity process per arm; no scene-reload substitution.
 
@@ -17,4 +17,4 @@ Canonical baseline fresh-process repeatability: PASS for two independent
 processes, including numeric tolerance 1e-5 and categorical lifecycle/P3
 classification equality.
 
-The raw XML, logs, and per-arm summaries are retained in `run-20260922-034036`.
+The raw XML, logs, and per-arm summaries are retained in E:\Data\Projects\PowerliftingSimulator\Artifacts\Measurements\GAM-48\fresh-process\run-20260923-221554.

@@ -103,7 +103,7 @@ namespace PowerliftingSimulator.Tests
             public bool PhysicalLockout;
             public bool TerminalContextCoverage;
             public SquatFailureTerminalContextStatus TerminalContextStatus;
-            public string Missing;
+            public string CompletionPrerequisitesMissing;
         }
 
         [UnityTest]
@@ -153,6 +153,9 @@ namespace PowerliftingSimulator.Tests
 
                 DeepestDepth deepest = FindDeepest(record.Trace, record.EventTicks.SquatCommandTick);
                 P3Stages p3 = EvaluateP3(record);
+                Assert.That(p3.CompletionPrerequisitesMissing, Is.EqualTo("NONE"));
+                Assert.That(p3.LegalBottom, Is.False,
+                    "The canonical shallow physical attempt should complete P3 without a legal bottom.");
                 WriteSupportReport(record);
                 WriteP3Report(record, p3);
                 WriteDynamicBaselineSummary(record, deepest, p3, driveTick);
@@ -172,7 +175,7 @@ namespace PowerliftingSimulator.Tests
                     record.RuleOutcome,
                     record.FailureResult.EvidenceStatus,
                     record.PhysicalFailureOutcome,
-                    p3.Missing));
+                    p3.CompletionPrerequisitesMissing));
                 yield return null;
             }
             finally
@@ -279,6 +282,16 @@ namespace PowerliftingSimulator.Tests
             RunStandaloneHeldCase("C0_FULL", 1f, CompositionArm.Full);
 
         [UnityTest]
+        [Explicit("GAM-48 Gate 4b C0 runtime command-space decomposition; fresh process required.")]
+        public IEnumerator GAM48_GATE4B_C0_RUNTIME_COMMAND_SPACE_FRESH_PROCESS() =>
+            RunStandaloneHeldCase("C0_FULL", 1f, CompositionArm.Full, captureGate4b: true);
+
+        [UnityTest]
+        [Explicit("GAM-48 Gate 4b HOLD_1.00 runtime command-space decomposition; fresh process required.")]
+        public IEnumerator GAM48_GATE4B_HOLD_1_00_RUNTIME_COMMAND_SPACE_FRESH_PROCESS() =>
+            RunStandaloneHeldCase("HOLD_1.00_FULL", 1f, CompositionArm.Full, captureGate4b: true);
+
+        [UnityTest]
         [Explicit("GAM-48 Gate 3 fresh-process C1.")]
         public IEnumerator GAM48_C1_NO_DYNAMIC_BALANCE_FRESH_PROCESS() =>
             RunStandaloneHeldCase("C1_NO_DYNAMIC_BALANCE", 1f, CompositionArm.NoDynamicBalance);
@@ -291,7 +304,8 @@ namespace PowerliftingSimulator.Tests
         private IEnumerator RunStandaloneHeldCase(
             string label,
             float phase,
-            CompositionArm arm)
+            CompositionArm arm,
+            bool captureGate4b = false)
         {
             _originalProfiles = SnapshotProfiles();
             try
@@ -299,7 +313,7 @@ namespace PowerliftingSimulator.Tests
                 var csv = new StringBuilder();
                 AppendDiagnosticHeader(csv);
                 var results = new List<HeldResult>();
-                yield return RunHeldCase(label, phase, arm, csv, results);
+                yield return RunHeldCase(label, phase, arm, csv, results, captureGate4b);
                 Assert.That(results.Count, Is.EqualTo(1));
                 WriteFreshProcessHeldEvidence(label, csv.ToString(), results[0]);
             }
@@ -337,7 +351,8 @@ namespace PowerliftingSimulator.Tests
             float phase,
             CompositionArm arm,
             StringBuilder csv,
-            List<HeldResult> results)
+            List<HeldResult> results,
+            bool captureGate4b = false)
         {
             ConfigurePlant();
             yield return LoadFreshScene(controller => ConfigureComposition(controller, arm));
@@ -368,17 +383,37 @@ namespace PowerliftingSimulator.Tests
             }
 
             adapter.HoldReferencePhaseForQualification(phase, direction, state, 0f);
+            GAM48Gate4bRecorder gate4b = captureGate4b
+                ? new GAM48Gate4bRecorder(adapter)
+                : null;
             var held = new List<SquatObservationSnapshot>(HeldSettleTicks);
             for (int tick = 0; tick < HeldSettleTicks; tick++)
             {
                 SquatObservationSnapshot snapshot = Step(csv, label, "HOLD", tick);
                 held.Add(snapshot);
+                if (gate4b != null && tick >= HeldSettleTicks - SettledReportTicks)
+                {
+                    gate4b.Capture(
+                        tick - (HeldSettleTicks - SettledReportTicks),
+                        adapter,
+                        _rig,
+                        snapshot,
+                        snapshot.MaximumModeledDemand);
+                }
                 if (tick % TicksPerYield == 0)
                     yield return null;
             }
 
             HeldResult result = SummarizeHeld(label, phase, held);
             results.Add(result);
+            if (gate4b != null)
+            {
+                Assert.That(result.SupportRetained, Is.True,
+                    "Gate 4b requires supported physical C0/HOLD samples throughout the settled report window.");
+                Assert.That(result.FiniteValidControl, Is.True,
+                    "Gate 4b requires finite valid control throughout the settled report window.");
+                gate4b.Write(label, result.SupportRetained, result.FiniteValidControl);
+            }
             yield return null;
         }
 
@@ -470,7 +505,7 @@ namespace PowerliftingSimulator.Tests
                 "left_knee_top_y_m", "right_knee_top_y_m", "left_depth_m", "right_depth_m",
                 "worst_side_depth_m", "legal_depth", "raw_ankle_authority", "applied_ankle_authority",
                 "hip_strategy_blend", "hip_balance_offset_rad", "trunk_balance_offset_rad", "balance_saturated",
-                "drive_saturated", "maximum_modeled_demand", "canonical_posture_error_rad",
+                "modeled_drive_demand_high", "maximum_modeled_drive_demand", "canonical_posture_error_rad",
                 "target_actual_deflection_rad", "canonical_posture_worst_joint", "saddle_attached",
                 "saddle_broken", "saddle_separation_m"
             };
@@ -504,7 +539,7 @@ namespace PowerliftingSimulator.Tests
                 columns.Add(joint + "_target_actual_deflection_rad");
                 columns.Add(joint + "_actual_canonical_error_rad");
                 columns.Add(joint + "_solver_error_x_rad");
-                columns.Add(joint + "_modeled_demand");
+                columns.Add(joint + "_modeled_drive_demand");
                 columns.Add(joint + "_maximum_force_nm");
                 columns.Add(joint + "_limit_proximity");
                 columns.Add(joint + "_activation");
@@ -777,10 +812,8 @@ namespace PowerliftingSimulator.Tests
             var missing = new List<string>();
             if (!detector.PhysicalDescentSeen) missing.Add("PHYSICAL_DESCENT");
             if (!detector.PhysicalBottomSeen) missing.Add("PHYSICAL_BOTTOM");
-            if (!detector.LegalBottomSeen) missing.Add("LEGAL_BOTTOM");
             if (!detector.AscentEstablished) missing.Add("ASCENT_ESTABLISHED");
             if (!detector.PhysicalLockoutSeen) missing.Add("PHYSICAL_LOCKOUT");
-            if (!detector.TerminalContextCovered) missing.Add("TERMINAL_CONTEXT_COVERAGE");
 
             return new P3Stages
             {
@@ -791,7 +824,7 @@ namespace PowerliftingSimulator.Tests
                 PhysicalLockout = detector.PhysicalLockoutSeen,
                 TerminalContextCoverage = detector.TerminalContextCovered,
                 TerminalContextStatus = detector.TerminalContextStatus,
-                Missing = missing.Count == 0 ? "NONE" : string.Join("|", missing)
+                CompletionPrerequisitesMissing = missing.Count == 0 ? "NONE" : string.Join("|", missing)
             };
         }
 
@@ -852,12 +885,13 @@ namespace PowerliftingSimulator.Tests
             builder.AppendLine("SUPPORT_VIOLATION_SOURCE_FILE=support-violation-source.md");
             builder.AppendLine("P3_PHYSICAL_DESCENT=" + B(p3.PhysicalDescent));
             builder.AppendLine("P3_PHYSICAL_BOTTOM=" + B(p3.PhysicalBottom));
-            builder.AppendLine("P3_LEGAL_BOTTOM=" + B(p3.LegalBottom));
+            builder.AppendLine("P3_LEGAL_BOTTOM_SEEN=" + B(p3.LegalBottom));
             builder.AppendLine("P3_ASCENT_ESTABLISHED=" + B(p3.AscentEstablished));
             builder.AppendLine("P3_PHYSICAL_LOCKOUT=" + B(p3.PhysicalLockout));
             builder.AppendLine("P3_TERMINAL_CONTEXT=" + p3.TerminalContextStatus);
             builder.AppendLine("P3_TERMINAL_CONTEXT_COVERAGE=" + B(p3.TerminalContextCoverage));
-            builder.AppendLine("P3_MISSING_STAGE=" + p3.Missing);
+            builder.AppendLine("P3_TERMINAL_CONTEXT_MISSING=" + B(!p3.TerminalContextCoverage));
+            builder.AppendLine("P3_COMPLETION_PREREQUISITES_MISSING=" + p3.CompletionPrerequisitesMissing);
             builder.AppendLine("DRIVE_INTENT_TICK=" + driveTick.ToString(CultureInfo.InvariantCulture));
             builder.AppendLine("CLAIM_CEILING=ENGINE_RUNTIME_OBSERVATION_AND_GAME_DERIVED_PROXY");
             WriteEvidence("dynamic-baseline-summary.md", builder.ToString());
@@ -956,12 +990,13 @@ namespace PowerliftingSimulator.Tests
             var builder = new StringBuilder();
             builder.AppendLine("P3_PHYSICAL_DESCENT=" + B(p3.PhysicalDescent));
             builder.AppendLine("P3_PHYSICAL_BOTTOM=" + B(p3.PhysicalBottom));
-            builder.AppendLine("P3_LEGAL_BOTTOM=" + B(p3.LegalBottom));
+            builder.AppendLine("P3_LEGAL_BOTTOM_SEEN=" + B(p3.LegalBottom));
             builder.AppendLine("P3_ASCENT_ESTABLISHED=" + B(p3.AscentEstablished));
             builder.AppendLine("P3_PHYSICAL_LOCKOUT=" + B(p3.PhysicalLockout));
             builder.AppendLine("P3_TERMINAL_CONTEXT=" + p3.TerminalContextStatus);
             builder.AppendLine("P3_TERMINAL_CONTEXT_COVERAGE=" + B(p3.TerminalContextCoverage));
-            builder.AppendLine("P3_MISSING_STAGE=" + p3.Missing);
+            builder.AppendLine("P3_TERMINAL_CONTEXT_MISSING=" + B(!p3.TerminalContextCoverage));
+            builder.AppendLine("P3_COMPLETION_PREREQUISITES_MISSING=" + p3.CompletionPrerequisitesMissing);
             builder.AppendLine("P3_RESULT=" + record.FailureResult.EvidenceStatus + "/" + record.PhysicalFailureOutcome);
             builder.AppendLine("P2_RESULT_NOT_USED_FOR_P3=true");
             WriteEvidence("p3-physical-stage-report.md", builder.ToString());

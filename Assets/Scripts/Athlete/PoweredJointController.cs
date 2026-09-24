@@ -341,6 +341,24 @@ namespace PowerliftingSimulator.Athlete
         public static Quaternion ToUnityTargetRotation(Quaternion targetRelativeInJointFrame) =>
             NormalizeCanonical(Quaternion.Inverse(NormalizeCanonical(targetRelativeInJointFrame)));
 
+        public static Quaternion ToLogicalTargetRotation(
+            Quaternion neutralParentToChild,
+            Quaternion jointSpace,
+            Quaternion desiredParentToChild)
+        {
+            Quaternion neutralDelta = Quaternion.Inverse(neutralParentToChild) * desiredParentToChild;
+            return Quaternion.Inverse(jointSpace) * neutralDelta * jointSpace;
+        }
+
+        public static Quaternion ToParentChildRelativeRotation(
+            Quaternion neutralParentToChild,
+            Quaternion jointSpace,
+            Quaternion logicalTarget)
+        {
+            Quaternion jointSpaceDelta = jointSpace * logicalTarget * Quaternion.Inverse(jointSpace);
+            return neutralParentToChild * jointSpaceDelta;
+        }
+
         public static Quaternion RateLimitShortestArc(Quaternion previous, Quaternion requested, float maxDeltaRadians)
         {
             previous = NormalizeCanonical(previous);

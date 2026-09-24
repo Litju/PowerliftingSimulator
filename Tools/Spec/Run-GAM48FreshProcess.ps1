@@ -19,7 +19,9 @@ $cases = @(
     @{ Name = 'HOLD_1.00_FULL'; Filter = 'PowerliftingSimulator.Tests.GAM47DepthRegressionIsolationTests.GAM48_HOLD_1_00_FULL_FRESH_PROCESS'; Copy = 'Artifacts\Measurements\GAM-48\fresh-process\HOLD_1.00_FULL-summary.md' },
     @{ Name = 'C0_FULL'; Filter = 'PowerliftingSimulator.Tests.GAM47DepthRegressionIsolationTests.GAM48_C0_FULL_FRESH_PROCESS'; Copy = 'Artifacts\Measurements\GAM-48\fresh-process\C0_FULL-summary.md' },
     @{ Name = 'C1_NO_DYNAMIC_BALANCE'; Filter = 'PowerliftingSimulator.Tests.GAM47DepthRegressionIsolationTests.GAM48_C1_NO_DYNAMIC_BALANCE_FRESH_PROCESS'; Copy = 'Artifacts\Measurements\GAM-48\fresh-process\C1_NO_DYNAMIC_BALANCE-summary.md' },
-    @{ Name = 'C2_NOMINAL_ONLY'; Filter = 'PowerliftingSimulator.Tests.GAM47DepthRegressionIsolationTests.GAM48_C2_NOMINAL_ONLY_FRESH_PROCESS'; Copy = 'Artifacts\Measurements\GAM-48\fresh-process\C2_NOMINAL_ONLY-summary.md' }
+    @{ Name = 'C2_NOMINAL_ONLY'; Filter = 'PowerliftingSimulator.Tests.GAM47DepthRegressionIsolationTests.GAM48_C2_NOMINAL_ONLY_FRESH_PROCESS'; Copy = 'Artifacts\Measurements\GAM-48\fresh-process\C2_NOMINAL_ONLY-summary.md' },
+    @{ Name = 'GATE4B_C0_FULL'; Filter = 'PowerliftingSimulator.Tests.GAM47DepthRegressionIsolationTests.GAM48_GATE4B_C0_RUNTIME_COMMAND_SPACE_FRESH_PROCESS'; Copy = 'Artifacts\Measurements\GAM-48\fresh-process\C0_FULL-summary.md'; Gate4bLabel = 'C0_FULL' },
+    @{ Name = 'GATE4B_HOLD_1.00_FULL'; Filter = 'PowerliftingSimulator.Tests.GAM47DepthRegressionIsolationTests.GAM48_GATE4B_HOLD_1_00_RUNTIME_COMMAND_SPACE_FRESH_PROCESS'; Copy = 'Artifacts\Measurements\GAM-48\fresh-process\HOLD_1.00_FULL-summary.md'; Gate4bLabel = 'HOLD_1.00_FULL' }
 )
 
 function Quote-Argument([string]$value)
@@ -74,6 +76,24 @@ function Invoke-FreshUnity($case)
         throw "Expected evidence for $($case.Name) was not written: $sourcePath"
     }
     Copy-Item -LiteralPath $sourcePath -Destination (Join-Path $runDirectory ($case.Name + '-summary.md'))
+
+    if ($case.ContainsKey('Gate4bLabel'))
+    {
+        $gate4bPrefix = Join-Path $ProjectPath ('Artifacts\Measurements\GAM-48\gate4b-runtime-' + $case.Gate4bLabel)
+        foreach ($artifact in @(
+            @{ Suffix = '-decomposition.md'; Output = '-decomposition.md' },
+            @{ Suffix = '-target-composition.csv'; Output = '-target-composition.csv' },
+            @{ Suffix = '-applied-target.csv'; Output = '-applied-target.csv' }
+        ))
+        {
+            $artifactPath = $gate4bPrefix + $artifact.Suffix
+            if (-not (Test-Path -LiteralPath $artifactPath))
+            {
+                throw "Expected Gate 4b evidence was not written: $artifactPath"
+            }
+            Copy-Item -LiteralPath $artifactPath -Destination (Join-Path $runDirectory ($case.Name + $artifact.Output))
+        }
+    }
 }
 
 function Read-KeyValues([string]$path)
@@ -135,13 +155,76 @@ foreach ($key in @('DYNAMIC_DEEPEST_LEFT_DEPTH', 'DYNAMIC_DEEPEST_RIGHT_DEPTH', 
 {
     Assert-Near $baseline1 $baseline2 $key $tolerance
 }
-foreach ($key in @('DYNAMIC_DEEPEST_TICK', 'P2_START_RESULT', 'P2_VIOLATIONS', 'P3_PHYSICAL_DESCENT', 'P3_PHYSICAL_BOTTOM', 'P3_LEGAL_BOTTOM', 'P3_ASCENT_ESTABLISHED', 'P3_PHYSICAL_LOCKOUT', 'P3_MISSING_STAGE'))
+foreach ($key in @('DYNAMIC_DEEPEST_TICK', 'P2_START_RESULT', 'P2_VIOLATIONS', 'P3_PHYSICAL_DESCENT', 'P3_PHYSICAL_BOTTOM', 'P3_LEGAL_BOTTOM_SEEN', 'P3_ASCENT_ESTABLISHED', 'P3_PHYSICAL_LOCKOUT', 'P3_COMPLETION_PREREQUISITES_MISSING', 'P3_TERMINAL_CONTEXT_COVERAGE'))
 {
     if ($baseline1[$key] -ne $baseline2[$key])
     {
         throw "Fresh baseline repeats differ for ${key}: $($baseline1[$key]) vs $($baseline2[$key])"
     }
 }
+
+$gate4bC0 = Read-KeyValues (Join-Path $runDirectory 'GATE4B_C0_FULL-decomposition.md')
+$gate4bHold = Read-KeyValues (Join-Path $runDirectory 'GATE4B_HOLD_1.00_FULL-decomposition.md')
+$gate4bDepthStages = @(
+    'D_REF',
+    'D_REF_GAM10_CALIBRATED_LANDMARKS',
+    'D_NOMINAL_TARGET',
+    'D_GRAVITY_TARGET',
+    'D_BALANCE_TARGET',
+    'D_FINAL_TARGET',
+    'D_APPLIED_TARGET',
+    'D_ACTUAL'
+)
+$gate4bNumericKeys = @()
+foreach ($stage in $gate4bDepthStages)
+{
+    foreach ($side in @('LEFT_DEPTH_M', 'RIGHT_DEPTH_M', 'WORST_DEPTH_M'))
+    {
+        $gate4bNumericKeys += ($stage + '_' + $side)
+    }
+}
+foreach ($layer in @(
+    'NOMINAL_MAPPING_ERROR',
+    'GRAVITY_COMPOSITION_DISPLACEMENT',
+    'BALANCE_COMPOSITION_DISPLACEMENT',
+    'FULL_COMPOSITION_DISPLACEMENT',
+    'RATE_LIMIT_DISPLACEMENT',
+    'PHYSICAL_REALIZATION_ERROR'
+))
+{
+    foreach ($side in @('LEFT_M', 'RIGHT_M', 'WORST_M'))
+    {
+        $gate4bNumericKeys += ($layer + '_' + $side)
+    }
+}
+foreach ($key in $gate4bNumericKeys)
+{
+    Assert-Near $gate4bC0 $gate4bHold $key 1e-5
+}
+Assert-Near $gate4bC0 $gate4bHold 'MODELED_DRIVE_DEMAND' 1e-5
+foreach ($key in @('SUPPORT_RETAINED', 'FINITE_VALID_CONTROL', 'MODELED_DRIVE_DEMAND_HIGH', 'REFERENCE_LANDMARK_METRIC_PARITY'))
+{
+    if ($gate4bC0[$key] -ne $gate4bHold[$key])
+    {
+        throw ('Gate 4b C0 and HOLD_1.00_FULL differ for ' + $key + ': ' + $gate4bC0[$key] + ' vs ' + $gate4bHold[$key])
+    }
+}
+
+$gate4bReceiptPath = Join-Path $outputDirectory 'GAM48-gate4b-c0-hold-equivalence-receipt.md'
+$gate4bReceipt = @"
+# GAM-48 Gate 4b — fresh-process C0/HOLD equivalence
+
+Run: $runId
+Unity: $UnityPath
+Process isolation: one C0 run and one HOLD_1.00_FULL run, each in a new Unity process.
+
+Result: PASS
+
+Compared left, right, and worst-side values for the reference, all four composition targets, the applied target, actual depth, and all six layer deltas at absolute tolerance 1e-5 m. Modeled drive demand matched at 1e-5; support, finite-control validity, modeled-demand-high flag, and reference landmark parity also matched.
+
+The per-arm decomposition, target-composition, and applied-target CSV files are retained in $runDirectory.
+"@
+Set-Content -LiteralPath $gate4bReceiptPath -Value $gate4bReceipt -NoNewline
 
 $receiptPath = Join-Path $outputDirectory 'GAM48-gate3-equivalence-receipt.md'
 $receipt = @"
