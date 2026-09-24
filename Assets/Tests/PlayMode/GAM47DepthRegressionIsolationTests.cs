@@ -292,6 +292,30 @@ namespace PowerliftingSimulator.Tests
             RunStandaloneHeldCase("HOLD_1.00_FULL", 1f, CompositionArm.Full, captureGate4b: true);
 
         [UnityTest]
+        [Explicit("GAM-49 Gate 3 C0 surface-rule and joint-center decomposition; fresh process required.")]
+        public IEnumerator GAM49_GATE3_C0_SURFACE_RULE_PARITY_FRESH_PROCESS() =>
+            RunStandaloneHeldCase(
+                "C0_FULL",
+                1f,
+                CompositionArm.Full,
+                captureGate4b: true,
+                heldEvidenceDirectory: "GAM-49/gate3-fresh-process",
+                decompositionEvidenceDirectory: "GAM-49/gate3-fresh-process",
+                decompositionFilePrefix: "gate3-");
+
+        [UnityTest]
+        [Explicit("GAM-49 Gate 3 HOLD_1.00 surface-rule and joint-center decomposition; fresh process required.")]
+        public IEnumerator GAM49_GATE3_HOLD_1_00_SURFACE_RULE_PARITY_FRESH_PROCESS() =>
+            RunStandaloneHeldCase(
+                "HOLD_1.00_FULL",
+                1f,
+                CompositionArm.Full,
+                captureGate4b: true,
+                heldEvidenceDirectory: "GAM-49/gate3-fresh-process",
+                decompositionEvidenceDirectory: "GAM-49/gate3-fresh-process",
+                decompositionFilePrefix: "gate3-");
+
+        [UnityTest]
         [Explicit("GAM-48 Gate 3 fresh-process C1.")]
         public IEnumerator GAM48_C1_NO_DYNAMIC_BALANCE_FRESH_PROCESS() =>
             RunStandaloneHeldCase("C1_NO_DYNAMIC_BALANCE", 1f, CompositionArm.NoDynamicBalance);
@@ -305,7 +329,10 @@ namespace PowerliftingSimulator.Tests
             string label,
             float phase,
             CompositionArm arm,
-            bool captureGate4b = false)
+            bool captureGate4b = false,
+            string heldEvidenceDirectory = "GAM-48/fresh-process",
+            string decompositionEvidenceDirectory = "GAM-48",
+            string decompositionFilePrefix = "gate4b-runtime-")
         {
             _originalProfiles = SnapshotProfiles();
             try
@@ -313,9 +340,17 @@ namespace PowerliftingSimulator.Tests
                 var csv = new StringBuilder();
                 AppendDiagnosticHeader(csv);
                 var results = new List<HeldResult>();
-                yield return RunHeldCase(label, phase, arm, csv, results, captureGate4b);
+                yield return RunHeldCase(
+                    label,
+                    phase,
+                    arm,
+                    csv,
+                    results,
+                    captureGate4b,
+                    decompositionEvidenceDirectory,
+                    decompositionFilePrefix);
                 Assert.That(results.Count, Is.EqualTo(1));
-                WriteFreshProcessHeldEvidence(label, csv.ToString(), results[0]);
+                WriteFreshProcessHeldEvidence(label, csv.ToString(), results[0], heldEvidenceDirectory);
             }
             finally
             {
@@ -352,7 +387,9 @@ namespace PowerliftingSimulator.Tests
             CompositionArm arm,
             StringBuilder csv,
             List<HeldResult> results,
-            bool captureGate4b = false)
+            bool captureGate4b = false,
+            string decompositionEvidenceDirectory = "GAM-48",
+            string decompositionFilePrefix = "gate4b-runtime-")
         {
             ConfigurePlant();
             yield return LoadFreshScene(controller => ConfigureComposition(controller, arm));
@@ -384,7 +421,7 @@ namespace PowerliftingSimulator.Tests
 
             adapter.HoldReferencePhaseForQualification(phase, direction, state, 0f);
             GAM48Gate4bRecorder gate4b = captureGate4b
-                ? new GAM48Gate4bRecorder(adapter)
+                ? new GAM48Gate4bRecorder(adapter, decompositionEvidenceDirectory, decompositionFilePrefix)
                 : null;
             var held = new List<SquatObservationSnapshot>(HeldSettleTicks);
             for (int tick = 0; tick < HeldSettleTicks; tick++)
@@ -1043,19 +1080,21 @@ namespace PowerliftingSimulator.Tests
         private static void WriteFreshProcessHeldEvidence(
             string label,
             string trace,
-            HeldResult result)
+            HeldResult result,
+            string evidenceDirectory)
         {
             string directory = Path.GetFullPath(Path.Combine(
                 Application.dataPath,
                 "..",
                 "Artifacts",
                 "Measurements",
-                "GAM-48",
-                "fresh-process"));
+                evidenceDirectory));
             Directory.CreateDirectory(directory);
             File.WriteAllText(Path.Combine(directory, label + "-trace.csv"), trace);
             var summary = new StringBuilder();
-            summary.AppendLine("MISSION=GAM48_GATE3_FRESH_PROCESS_DEPTH_ISOLATION");
+            summary.AppendLine("MISSION=" + (evidenceDirectory.StartsWith("GAM-49", StringComparison.Ordinal)
+                ? "GAM49_GATE3_FRESH_PROCESS_SURFACE_DEPTH_DECOMPOSITION"
+                : "GAM48_GATE3_FRESH_PROCESS_DEPTH_ISOLATION"));
             summary.AppendLine("ARM=" + label);
             summary.AppendLine("FRESH_UNITY_PROCESS_REQUIRED=true");
             summary.AppendLine("SETTLE_WINDOW_TICKS=200");

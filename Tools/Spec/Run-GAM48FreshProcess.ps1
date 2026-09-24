@@ -166,8 +166,7 @@ foreach ($key in @('DYNAMIC_DEEPEST_TICK', 'P2_START_RESULT', 'P2_VIOLATIONS', '
 $gate4bC0 = Read-KeyValues (Join-Path $runDirectory 'GATE4B_C0_FULL-decomposition.md')
 $gate4bHold = Read-KeyValues (Join-Path $runDirectory 'GATE4B_HOLD_1.00_FULL-decomposition.md')
 $gate4bDepthStages = @(
-    'D_REF',
-    'D_REF_GAM10_CALIBRATED_LANDMARKS',
+    'D_REF_SURFACE_RULE_PROXY',
     'D_NOMINAL_TARGET',
     'D_GRAVITY_TARGET',
     'D_BALANCE_TARGET',
@@ -197,12 +196,37 @@ foreach ($layer in @(
         $gate4bNumericKeys += ($layer + '_' + $side)
     }
 }
+$gate4bNumericKeys += @(
+    'D_REF_JOINT_CENTER_DIAGNOSTIC_LEFT_DEPTH_M',
+    'D_REF_JOINT_CENTER_DIAGNOSTIC_RIGHT_DEPTH_M',
+    'D_APPLIED_TARGET_JOINT_CENTER_DIAGNOSTIC_LEFT_DEPTH_M',
+    'D_APPLIED_TARGET_JOINT_CENTER_DIAGNOSTIC_RIGHT_DEPTH_M',
+    'D_ACTUAL_JOINT_CENTER_DIAGNOSTIC_LEFT_DEPTH_M',
+    'D_ACTUAL_JOINT_CENTER_DIAGNOSTIC_RIGHT_DEPTH_M',
+    'JOINT_CENTER_DIAGNOSTIC_PHYSICAL_REALIZATION_ERROR_LEFT_M',
+    'JOINT_CENTER_DIAGNOSTIC_PHYSICAL_REALIZATION_ERROR_RIGHT_M',
+    'JOINT_CENTER_DIAGNOSTIC_PHYSICAL_REALIZATION_ERROR_WORST_M',
+    'SURFACE_RULE_PROXY_PHYSICAL_REALIZATION_ERROR_LEFT_M',
+    'SURFACE_RULE_PROXY_PHYSICAL_REALIZATION_ERROR_RIGHT_M',
+    'SURFACE_RULE_PROXY_PHYSICAL_REALIZATION_ERROR_WORST_M'
+)
 foreach ($key in $gate4bNumericKeys)
 {
     Assert-Near $gate4bC0 $gate4bHold $key 1e-5
 }
 Assert-Near $gate4bC0 $gate4bHold 'MODELED_DRIVE_DEMAND' 1e-5
-foreach ($key in @('SUPPORT_RETAINED', 'FINITE_VALID_CONTROL', 'MODELED_DRIVE_DEMAND_HIGH', 'REFERENCE_LANDMARK_METRIC_PARITY'))
+foreach ($key in @(
+    'SUPPORT_RETAINED',
+    'FINITE_VALID_CONTROL',
+    'MODELED_DRIVE_DEMAND_HIGH',
+    'JOINT_CENTER_CHANNEL',
+    'D_REF_SURFACE_RULE_PROXY_IPF_RULE_PREDICATE',
+    'D_REF_SURFACE_RULE_PROXY_GAME_JUDGMENT_QUALIFIED',
+    'D_APPLIED_TARGET_IPF_RULE_PREDICATE',
+    'D_APPLIED_TARGET_GAME_JUDGMENT_QUALIFIED',
+    'D_ACTUAL_IPF_RULE_PREDICATE',
+    'D_ACTUAL_GAME_JUDGMENT_QUALIFIED'
+))
 {
     if ($gate4bC0[$key] -ne $gate4bHold[$key])
     {
@@ -220,7 +244,7 @@ Process isolation: one C0 run and one HOLD_1.00_FULL run, each in a new Unity pr
 
 Result: PASS
 
-Compared left, right, and worst-side values for the reference, all four composition targets, the applied target, actual depth, and all six layer deltas at absolute tolerance 1e-5 m. Modeled drive demand matched at 1e-5; support, finite-control validity, modeled-demand-high flag, and reference landmark parity also matched.
+Compared left, right, and worst-side surface-proxy values for the GAM-10 reference, all four composition targets, applied target, actual bottom, and all six layer deltas at absolute tolerance 1e-5 m. Joint-center target/actual diagnostics and both realization deltas were also compared. Modeled drive demand matched at 1e-5; support, finite-control validity, rule/game predicates, and diagnostic channel semantics matched.
 
 The per-arm decomposition, target-composition, and applied-target CSV files are retained in $runDirectory.
 "@
