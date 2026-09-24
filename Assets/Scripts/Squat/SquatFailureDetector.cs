@@ -137,7 +137,6 @@ namespace PowerliftingSimulator.Squat
         public const string DefaultVersion = "GAM12_P3A1_FAILURE_CALIBRATION_PROVISIONAL_V1";
         public const string DefaultPrecedenceVersion = "GAM12_P3_FIRST_IRREVERSIBLE_PRECEDENCE_V1";
 
-        public const float DefaultLegalDepthMarginM = SquatDepthGeometry.DefaultDepthMarginM;
         public const float DefaultBalanceSupportMarginFailureM = -0.01f;
         public const float DefaultBalanceOutwardComVelocityMps = 0.03f;
         public const int DefaultBalancePersistenceTicks = 12;
@@ -185,7 +184,6 @@ namespace PowerliftingSimulator.Squat
 
         public SquatFailureCalibration(
             string version = DefaultVersion,
-            float legalDepthMarginM = DefaultLegalDepthMarginM,
             float balanceSupportMarginFailureM = DefaultBalanceSupportMarginFailureM,
             float balanceOutwardComVelocityMps = DefaultBalanceOutwardComVelocityMps,
             int balancePersistenceTicks = DefaultBalancePersistenceTicks,
@@ -230,7 +228,6 @@ namespace PowerliftingSimulator.Squat
             int preFailureEvidenceCapacity = DefaultPreFailureEvidenceCapacity)
         {
             RequireText(version, nameof(version));
-            RequireNonNegative(legalDepthMarginM, nameof(legalDepthMarginM));
             RequireNegative(balanceSupportMarginFailureM, nameof(balanceSupportMarginFailureM));
             RequirePositive(balanceOutwardComVelocityMps, nameof(balanceOutwardComVelocityMps));
             RequirePositive(balancePersistenceTicks, nameof(balancePersistenceTicks));
@@ -279,7 +276,6 @@ namespace PowerliftingSimulator.Squat
                 throw new ArgumentOutOfRangeException(nameof(stallLowAscentVelocityMps));
 
             Version = version;
-            LegalDepthMarginM = legalDepthMarginM;
             BalanceSupportMarginFailureM = balanceSupportMarginFailureM;
             BalanceOutwardComVelocityMps = balanceOutwardComVelocityMps;
             BalancePersistenceTicks = balancePersistenceTicks;
@@ -332,7 +328,6 @@ namespace PowerliftingSimulator.Squat
         public SquatFailureCalibrationStatus Status => SquatFailureCalibrationStatus.PROVISIONAL_GAME_CALIBRATION;
         public bool RequiresGAM13Calibration => true;
         public string PrecedenceVersion => DefaultPrecedenceVersion;
-        public float LegalDepthMarginM { get; }
         public float BalanceSupportMarginFailureM { get; }
         public float BalanceOutwardComVelocityMps { get; }
         public int BalancePersistenceTicks { get; }
@@ -384,7 +379,7 @@ namespace PowerliftingSimulator.Squat
             const string provisionalStatus = "P3 synthetic/domain fixture only; not heavy-load validated.";
             return new[]
             {
-                Descriptor("legal_depth_margin", "m", LegalDepthMarginM, "REVERSAL", existing, "Reuse the qualified bilateral depth proxy; physical failure still requires motion evidence.", SquatFailureCalibrationStatus.EXISTING_QUALIFIED_BOUND),
+                Descriptor("game_judgment_margin", "m", SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M, "REVERSAL", existing, "The existing 0.005 m game judgment margin; IPF specifies no numeric distance. Legal depth does not gate physical completion.", SquatFailureCalibrationStatus.EXISTING_QUALIFIED_BOUND),
                 Descriptor("balance_support_margin_failure", "m", BalanceSupportMarginFailureM, "BALANCE", provisional, "Ten millimetres beyond the observed support bound is a provisional game failure boundary.", SquatFailureCalibrationStatus.PROVISIONAL_GAME_CALIBRATION),
                 Descriptor("balance_outward_com_velocity", "m/s", BalanceOutwardComVelocityMps, "BALANCE", provisional, "Outward modeled COM velocity distinguishes a persistent dynamic excursion from a static edge sample.", SquatFailureCalibrationStatus.PROVISIONAL_GAME_CALIBRATION),
                 Descriptor("balance_persistence", "ticks", BalancePersistenceTicks, "BALANCE", provisional, "Fixed-step persistence rejects one-sample support excursions.", SquatFailureCalibrationStatus.PROVISIONAL_GAME_CALIBRATION),
@@ -1991,7 +1986,7 @@ namespace PowerliftingSimulator.Squat
                     snapshot.Depth.WorstSideDepthM,
                     snapshot.SimulationTick - _reversalAttemptTick + 1ul,
                     _calibration.DriveAttemptMinimum01,
-                    -_calibration.LegalDepthMarginM,
+                    -SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M,
                     _calibration.ReversalTimeoutTicks);
             }
         }
@@ -2341,8 +2336,7 @@ namespace PowerliftingSimulator.Squat
         private bool IsLegalBottom(SquatObservationSnapshot snapshot)
         {
             return snapshot.Depth.Availability == SquatTelemetryAvailability.AVAILABLE &&
-                snapshot.Depth.LeftDepthM <= -_calibration.LegalDepthMarginM &&
-                snapshot.Depth.RightDepthM <= -_calibration.LegalDepthMarginM;
+                snapshot.Depth.BilateralGameJudgmentQualified;
         }
 
         private bool TryGetPreferredVertical(
@@ -2649,7 +2643,7 @@ namespace PowerliftingSimulator.Squat
                     AddMeasurement(measurements, ref measurementCount, "bottom_depth", "m", candidate.MeasuredValueB);
                     AddMeasurement(measurements, ref measurementCount, "no_recovery_window", "ticks", candidate.MeasuredValueC);
                     AddThreshold(thresholds, ref thresholdCount, "drive_attempt_minimum", "1", candidate.ThresholdValueA);
-                    AddThreshold(thresholds, ref thresholdCount, "legal_depth_margin", "m", candidate.ThresholdValueB);
+                    AddThreshold(thresholds, ref thresholdCount, "game_judgment_margin", "m", candidate.ThresholdValueB);
                     AddThreshold(thresholds, ref thresholdCount, "reversal_timeout", "ticks", candidate.ThresholdValueC);
                     break;
                 case SquatFailureKind.MID_ASCENT_STALL:

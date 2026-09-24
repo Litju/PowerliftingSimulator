@@ -270,19 +270,14 @@ namespace PowerliftingSimulator.Squat.Unity
 
         private SquatDepthLandmarks CaptureDepth()
         {
-            if (!_adapter.TryGetRawDepthLandmarks(
-                out SquatPoint3 leftHip,
-                out SquatPoint3 rightHip,
-                out SquatPoint3 leftKnee,
-                out SquatPoint3 rightKnee))
+            if (!_adapter.TryGetSurfaceRuleLandmarks(out SquatRuleLandmarkSet landmarks))
                 return SquatDepthLandmarks.Unavailable();
 
             return new SquatDepthLandmarks(
-                leftHip.Y,
-                rightHip.Y,
-                leftKnee.Y,
-                rightKnee.Y,
-                SquatDepthGeometry.DefaultDepthMarginM);
+                landmarks.LeftHipCreaseWorld.y,
+                landmarks.RightHipCreaseWorld.y,
+                landmarks.LeftKneeTopWorld.y,
+                landmarks.RightKneeTopWorld.y);
         }
 
         private SquatSupportObservation CaptureSupport()

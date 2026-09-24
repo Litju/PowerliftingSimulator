@@ -1301,8 +1301,7 @@ namespace PowerliftingSimulator.Tests
                     spec.LeftDepthM,
                     spec.RightDepthM,
                     0f,
-                    0f,
-                    SquatDepthGeometry.DefaultDepthMarginM)
+                    0f)
                 : SquatDepthLandmarks.Unavailable();
             SquatSupportObservation support = spec.SupportAvailable
                 ? new SquatSupportObservation(

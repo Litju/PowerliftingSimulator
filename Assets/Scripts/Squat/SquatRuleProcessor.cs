@@ -262,7 +262,6 @@ namespace PowerliftingSimulator.Squat
 
         public SquatRuleToleranceSet(
             string version = DefaultVersion,
-            float depthMarginM = SquatDepthGeometry.DefaultDepthMarginM,
             float kneeLockoutToleranceRad = DefaultKneeLockoutToleranceRad,
             float hipErectToleranceRad = DefaultHipErectToleranceRad,
             float trunkErectToleranceRad = DefaultTrunkErectToleranceRad,
@@ -288,7 +287,6 @@ namespace PowerliftingSimulator.Squat
             if (string.IsNullOrEmpty(version))
                 throw new ArgumentException("Rule tolerance version is required.", nameof(version));
 
-            RequireNonNegative(depthMarginM, nameof(depthMarginM));
             RequireNonNegative(kneeLockoutToleranceRad, nameof(kneeLockoutToleranceRad));
             RequireNonNegative(hipErectToleranceRad, nameof(hipErectToleranceRad));
             RequireNonNegative(trunkErectToleranceRad, nameof(trunkErectToleranceRad));
@@ -312,7 +310,6 @@ namespace PowerliftingSimulator.Squat
             RequirePositive(finalPositionPersistenceTicks, nameof(finalPositionPersistenceTicks));
 
             Version = version;
-            DepthMarginM = depthMarginM;
             KneeLockoutToleranceRad = kneeLockoutToleranceRad;
             HipErectToleranceRad = hipErectToleranceRad;
             TrunkErectToleranceRad = trunkErectToleranceRad;
@@ -342,7 +339,6 @@ namespace PowerliftingSimulator.Squat
 
         public string Version { get; }
         public string ToleranceVersion => Version;
-        public float DepthMarginM { get; }
         public float KneeLockoutToleranceRad { get; }
         public float KneeUnlockToleranceRad => KneeLockoutToleranceRad;
         public float HipErectToleranceRad { get; }
@@ -372,7 +368,7 @@ namespace PowerliftingSimulator.Squat
             const string source = "GAME_CALIBRATION";
             return new[]
             {
-                Descriptor("depth_margin", "m", DepthMarginM, source, "Reuse PSMS-SQ-11 and SquatDepthGeometry bilateral depth margin."),
+                Descriptor("game_judgment_margin", "m", SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M, source, "The 0.005 m game judgment margin; IPF specifies no numeric distance."),
                 Descriptor("knee_lockout_tolerance", "rad", KneeLockoutToleranceRad, source, "Bounded proxy for a straight knee in the calibrated joint scalar."),
                 Descriptor("hip_erect_tolerance", "rad", HipErectToleranceRad, source, "Bounded game proxy for an erect hip posture."),
                 Descriptor("trunk_erect_tolerance", "rad", TrunkErectToleranceRad, source, "Bounded game proxy for an erect trunk posture."),
@@ -1102,7 +1098,7 @@ namespace PowerliftingSimulator.Squat
                     SquatRuleEvidenceChannel.DEPTH_LANDMARKS,
                     deepest.Depth.LeftDepthM,
                     deepest.Depth.RightDepthM,
-                    _tolerances.DepthMarginM);
+                    SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M);
             }
 
             int bottomIndex = FindFirstBottomIndex(trace, postCommandOnset, preRackEnd);
@@ -1549,8 +1545,7 @@ namespace PowerliftingSimulator.Squat
             for (int index = start; index <= end; index++)
             {
                 SquatDepthLandmarks depth = trace[index].Depth;
-                if (depth.LeftHipCreaseY - depth.LeftKneeTopY <= -_tolerances.DepthMarginM &&
-                    depth.RightHipCreaseY - depth.RightKneeTopY <= -_tolerances.DepthMarginM)
+                if (depth.BilateralGameJudgmentQualified)
                     return index;
             }
 

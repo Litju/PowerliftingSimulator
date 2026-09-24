@@ -17,7 +17,6 @@ namespace PowerliftingSimulator.Squat.Unity
         public const string AssetSha256 = "79344418d754a59730b79d1874752e9592143db34abe8adf138fa9a92a4768e9";
         public const string RootBoundsAuthority = "ABSENT";
 
-        private const float DepthMarginM = SquatDepthGeometry.DefaultDepthMarginM;
         private const float RenderStepSeconds = 0.01f;
         private const float StandingHoldSeconds = 0.45f;
         private const float BottomHoldSeconds = 0.18f;
@@ -78,6 +77,8 @@ namespace PowerliftingSimulator.Squat.Unity
         private Transform _rightForearm;
         private Transform _leftHand;
         private Transform _rightHand;
+        private SquatDepthLandmarkProvider _depthLandmarkProvider;
+        private SquatRuleLandmarkSet _depthLandmarks;
         private LineRenderer _leftDepthLine;
         private LineRenderer _rightDepthLine;
         private LineRenderer _referenceBarGhost;
@@ -134,10 +135,12 @@ namespace PowerliftingSimulator.Squat.Unity
         public float PhaseRate => _phaseRate;
         public ulong SimulationTick => _simulationTick;
         public SquatDepthObservation CurrentDepth => _depth;
+        public SquatRuleLandmarkSet CurrentRuleLandmarks => _depthLandmarks;
         public SquatReferenceSample CurrentSample => _sample;
         public bool ReferencePoseValid => _referencePoseValid;
         public bool FeetPlanted => _feetPlanted;
-        public bool LegalDepthWithPlantedFeet => _referencePoseValid && _feetPlanted && _depth.BilateralLegalReference;
+        public bool LegalDepthWithPlantedFeet =>
+            _referencePoseValid && _feetPlanted && _depth.BilateralGameJudgmentQualified;
         public float FootAnchorsMaxErrorM => _solution == null ? float.PositiveInfinity : _solution.FootAnchorsMaxErrorM;
         public float BilateralHipSolutionErrorM => _solution == null ? float.PositiveInfinity : _solution.BilateralHipSolutionErrorM;
         public float SegmentLengthErrorM => _solution == null ? float.PositiveInfinity : _solution.SegmentLengthErrorM;
@@ -183,6 +186,7 @@ namespace PowerliftingSimulator.Squat.Unity
             referenceAnimator.applyRootMotion = false;
             _calibration = SquatReferenceRigCalibration.Build(referenceAnimator, referenceRoot, AssetPath);
             AnchorReferenceRootFromPlantars();
+            _depthLandmarkProvider = new SquatDepthLandmarkProvider(_calibration);
             CacheJointTransforms();
             CacheBindPose();
             CreateOverlay();
@@ -235,7 +239,7 @@ namespace PowerliftingSimulator.Squat.Unity
             GUILayout.Label($"State: {_state}   Waypoint: {CurrentWaypoint}   Fixture: {_fixture}");
             GUILayout.Label($"s_q: {_phase:F3}   Direction: {_direction}   Rate: {_phaseRate:F3}/s");
             GUILayout.Label($"Depth L/R: {_depth.LeftDepthM:F3} / {_depth.RightDepthM:F3} m   " +
-                (_depth.BilateralLegalReference ? "LEGAL BILATERAL" : "NOT LEGAL"));
+                (_depth.BilateralGameJudgmentQualified ? "GAME LEGAL BILATERAL" : "NOT GAME LEGAL"));
             GUILayout.Label($"Anchors: {FootAnchorsMaxErrorM * 1000f:F2} mm   " +
                 $"Bilateral hips: {BilateralHipSolutionErrorM * 1000f:F2} mm");
             GUILayout.Label($"Segments: {SegmentLengthErrorM * 1000f:F3} mm   " +
@@ -657,7 +661,9 @@ namespace PowerliftingSimulator.Squat.Unity
                 {
                     sourceClass = SquatDepthGeometry.SourceClass,
                     criterion = "hip crease descends below knee proxy",
-                    marginM = DepthMarginM,
+                    gameJudgmentMarginM = SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M,
+                    ipfRulePredicateSatisfied = _depth.IPFRulePredicateSatisfied,
+                    bilateralGameJudgmentQualified = _depth.BilateralGameJudgmentQualified,
                     leftBottomDepthM = _depth.LeftDepthM,
                     rightBottomDepthM = _depth.RightDepthM,
                     feetPlanted = _feetPlanted,
@@ -920,7 +926,8 @@ namespace PowerliftingSimulator.Squat.Unity
 
             if (!_referencePoseValid)
             {
-                _depth = new SquatDepthObservation(1f, 1f, DepthMarginM);
+                _depthLandmarks = default;
+                _depth = new SquatDepthObservation(1f, 1f, SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M);
                 _leftBarHand = _rightBarHand = _upperChest.position;
                 return;
             }
@@ -1017,28 +1024,29 @@ namespace PowerliftingSimulator.Squat.Unity
                 return;
             }
 
-            Vector3 leftHip = _solution.PelvisCenter +
-                _solution.PelvisFrameRotation * _calibration.LeftHipCreaseOffsetInPelvisFrame;
-            Vector3 rightHip = _solution.PelvisCenter +
-                _solution.PelvisFrameRotation * _calibration.RightHipCreaseOffsetInPelvisFrame;
-            Vector3 leftKnee = _solution.LeftLeg.KneeCenter +
-                _solution.LeftLeg.ShankFrameRotation * _calibration.LeftKneeTopOffsetInShankFrame;
-            Vector3 rightKnee = _solution.RightLeg.KneeCenter +
-                _solution.RightLeg.ShankFrameRotation * _calibration.RightKneeTopOffsetInShankFrame;
-            _depth = SquatDepthGeometry.Evaluate(
-                Point(leftHip),
-                Point(rightHip),
-                Point(leftKnee),
-                Point(rightKnee),
-                DepthMarginM);
+            if (!_depthLandmarkProvider.TryEvaluate(
+                _solution.LeftLeg.HipCenter,
+                _solution.RightLeg.HipCenter,
+                _solution.PelvisFrameRotation,
+                _solution.LeftLeg.KneeCenter,
+                _solution.LeftLeg.ShankFrameRotation,
+                _solution.RightLeg.KneeCenter,
+                _solution.RightLeg.ShankFrameRotation,
+                out _depthLandmarks))
+            {
+                _depth = new SquatDepthObservation(1f, 1f, SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M);
+                return;
+            }
+            _depth = _depthLandmarks.Depth;
 
-            Vector3[] positions = { leftHip, rightHip, leftKnee, rightKnee };
-            for (int index = 0; index < _landmarkMarkers.Length; index++)
-                _landmarkMarkers[index].Transform.position = positions[index];
-            _leftDepthLine.SetPosition(0, leftHip);
-            _leftDepthLine.SetPosition(1, leftKnee);
-            _rightDepthLine.SetPosition(0, rightHip);
-            _rightDepthLine.SetPosition(1, rightKnee);
+            _landmarkMarkers[0].Transform.position = _depthLandmarks.LeftHipCreaseWorld;
+            _landmarkMarkers[1].Transform.position = _depthLandmarks.RightHipCreaseWorld;
+            _landmarkMarkers[2].Transform.position = _depthLandmarks.LeftKneeTopWorld;
+            _landmarkMarkers[3].Transform.position = _depthLandmarks.RightKneeTopWorld;
+            _leftDepthLine.SetPosition(0, _depthLandmarks.LeftHipCreaseWorld);
+            _leftDepthLine.SetPosition(1, _depthLandmarks.LeftKneeTopWorld);
+            _rightDepthLine.SetPosition(0, _depthLandmarks.RightHipCreaseWorld);
+            _rightDepthLine.SetPosition(1, _depthLandmarks.RightKneeTopWorld);
             Vector3 thoraxRight = _solution.UpperChestFrameRotation * _calibration.GameRight;
             Vector3 barCenter = (_leftBarHand + _rightBarHand) * 0.5f;
             _referenceBarGhost.SetPosition(0, barCenter - thoraxRight * SquatReferenceKinematics.BarGhostHalfLengthM);
@@ -1170,9 +1178,6 @@ namespace PowerliftingSimulator.Squat.Unity
                 return SquatReferenceWaypoint.QUARTER_DESCENT;
             return SquatReferenceWaypoint.NEAR_PARALLEL;
         }
-
-        private static SquatPoint3 Point(Vector3 value) =>
-            new SquatPoint3(value.x, value.y, value.z);
 
         private static PlayerIntentFrame CreateIntent(float yield, float drive) =>
             new PlayerIntentFrame(
@@ -1321,7 +1326,8 @@ namespace PowerliftingSimulator.Squat.Unity
             public PoseRecord pose;
             public float leftDepthM;
             public float rightDepthM;
-            public bool bilateralLegalReference;
+            public bool ipfRulePredicateSatisfied;
+            public bool bilateralGameJudgmentQualified;
             public bool feetPlanted;
             public float footAnchorsMaxErrorMM;
             public float bilateralHipSolutionErrorMM;
@@ -1370,7 +1376,8 @@ namespace PowerliftingSimulator.Squat.Unity
                     pose = PoseRecord.From(waypoint.Pose),
                     leftDepthM = depth.LeftDepthM,
                     rightDepthM = depth.RightDepthM,
-                    bilateralLegalReference = depth.BilateralLegalReference,
+                    ipfRulePredicateSatisfied = depth.IPFRulePredicateSatisfied,
+                    bilateralGameJudgmentQualified = depth.BilateralGameJudgmentQualified,
                     feetPlanted = solution.FootAnchorsMaxErrorM <=
                         SquatReferenceRigCalibration.FootAnchorToleranceM,
                     footAnchorsMaxErrorMM = solution.FootAnchorsMaxErrorM * 1000f,
@@ -1578,7 +1585,9 @@ namespace PowerliftingSimulator.Squat.Unity
         {
             public string sourceClass;
             public string criterion;
-            public float marginM;
+            public float gameJudgmentMarginM;
+            public bool ipfRulePredicateSatisfied;
+            public bool bilateralGameJudgmentQualified;
             public float leftBottomDepthM;
             public float rightBottomDepthM;
             public bool feetPlanted;

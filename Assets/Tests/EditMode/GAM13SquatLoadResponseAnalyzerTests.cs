@@ -190,7 +190,7 @@ namespace PowerliftingSimulator.Tests
                 false,
                 0.005f);
             float depth = barY < 1.00f ? -0.02f : 0.10f;
-            SquatDepthLandmarks landmarks = new SquatDepthLandmarks(depth, depth, 0f, 0f, SquatDepthGeometry.DefaultDepthMarginM);
+            SquatDepthLandmarks landmarks = new SquatDepthLandmarks(depth, depth, 0f, 0f);
             SquatSupportObservation support = new SquatSupportObservation(
                 SquatTelemetryAvailability.AVAILABLE,
                 new Vector3Value(0f, 1f, 0f),

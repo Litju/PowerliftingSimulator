@@ -13,7 +13,7 @@ namespace PowerliftingSimulator.Tests
     public sealed class GAM48DepthDecompositionTests
     {
         [UnityTest]
-        public IEnumerator GAM48_REFERENCE_SOLVER_PARITY_ONLY()
+        public IEnumerator GAM49_SHARED_PROVIDER_REFERENCE_PARITY()
         {
             AsyncOperation load = SceneManager.LoadSceneAsync("SquatReferencePreview", LoadSceneMode.Single);
             Assert.That(load, Is.Not.Null);
@@ -39,23 +39,28 @@ namespace PowerliftingSimulator.Tests
             SquatDepthObservation reconstructed = DepthFromSolution(reconstructedSolution, calibration);
             Assert.That(reconstructed.LeftDepthM, Is.EqualTo(reference.LeftDepthM).Within(1e-5f));
             Assert.That(reconstructed.RightDepthM, Is.EqualTo(reference.RightDepthM).Within(1e-5f));
-            Assert.That(reference.BilateralLegalReference, Is.True);
-            Assert.That(reconstructed.BilateralLegalReference, Is.True);
+            Assert.That(reference.BilateralGameJudgmentQualified, Is.True);
+            Assert.That(reconstructed.BilateralGameJudgmentQualified, Is.True);
+            Assert.That(reference.IPFRulePredicateSatisfied, Is.True);
+            Assert.That(reconstructed.IPFRulePredicateSatisfied, Is.True);
 
-            string path = Path.GetFullPath("Artifacts/Measurements/GAM-48/gate4-reference-solver-parity.md");
+            string path = Path.GetFullPath("Artifacts/Measurements/GAM-49/gate1-reference-parity.md");
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             File.WriteAllText(path,
-                "MISSION=GAM48_REFERENCE_SOLVER_PARITY_ONLY\n" +
+                "MISSION=GAM49_SHARED_PROVIDER_REFERENCE_PARITY\n" +
                 "REFERENCE_PREVIEW_LEFT_DEPTH_M=" + reference.LeftDepthM.ToString("R") + "\n" +
                 "REFERENCE_PREVIEW_RIGHT_DEPTH_M=" + reference.RightDepthM.ToString("R") + "\n" +
-                "REFERENCE_PREVIEW_LEGAL=true\n" +
+                "REFERENCE_PREVIEW_GAME_JUDGMENT_QUALIFIED=true\n" +
+                "REFERENCE_PREVIEW_IPF_RULE_PREDICATE=true\n" +
                 "REFERENCE_SOLVER_RECONSTRUCTION_LEFT_DEPTH_M=" + reconstructed.LeftDepthM.ToString("R") + "\n" +
                 "REFERENCE_SOLVER_RECONSTRUCTION_RIGHT_DEPTH_M=" + reconstructed.RightDepthM.ToString("R") + "\n" +
-                "REFERENCE_SOLVER_RECONSTRUCTION_LEGAL=true\n" +
+                "REFERENCE_SOLVER_RECONSTRUCTION_GAME_JUDGMENT_QUALIFIED=true\n" +
+                "REFERENCE_SOLVER_RECONSTRUCTION_IPF_RULE_PREDICATE=true\n" +
                 "DYNAMICS_INCLUDED=false\n" +
                 "PHYSICAL_ADAPTER_MAPPING_INCLUDED=false\n" +
                 "TOLERANCE_M=1e-5\n" +
-                "CLAIM_CEILING=REFERENCE_SOLVER_RECONSTRUCTION_PARITY_ONLY\n");
+                "GAME_JUDGMENT_MARGIN_M=" + SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M.ToString("R") + "\n" +
+                "CLAIM_CEILING=GAM10_CALIBRATED_SURFACE_PROXY_REFERENCE_PARITY\n");
             yield return null;
         }
 
@@ -63,19 +68,17 @@ namespace PowerliftingSimulator.Tests
             SquatReferenceKinematicSolution solution,
             SquatReferenceRigCalibration calibration)
         {
-            UnityEngine.Vector3 leftHip = solution.PelvisCenter +
-                solution.PelvisFrameRotation * calibration.LeftHipCreaseOffsetInPelvisFrame;
-            UnityEngine.Vector3 rightHip = solution.PelvisCenter +
-                solution.PelvisFrameRotation * calibration.RightHipCreaseOffsetInPelvisFrame;
-            UnityEngine.Vector3 leftKnee = solution.LeftLeg.KneeCenter +
-                solution.LeftLeg.ShankFrameRotation * calibration.LeftKneeTopOffsetInShankFrame;
-            UnityEngine.Vector3 rightKnee = solution.RightLeg.KneeCenter +
-                solution.RightLeg.ShankFrameRotation * calibration.RightKneeTopOffsetInShankFrame;
-            return SquatDepthGeometry.Evaluate(
-                new SquatPoint3(leftHip.x, leftHip.y, leftHip.z),
-                new SquatPoint3(rightHip.x, rightHip.y, rightHip.z),
-                new SquatPoint3(leftKnee.x, leftKnee.y, leftKnee.z),
-                new SquatPoint3(rightKnee.x, rightKnee.y, rightKnee.z));
+            var provider = new SquatDepthLandmarkProvider(calibration);
+            Assert.That(provider.TryEvaluate(
+                solution.LeftLeg.HipCenter,
+                solution.RightLeg.HipCenter,
+                solution.PelvisFrameRotation,
+                solution.LeftLeg.KneeCenter,
+                solution.LeftLeg.ShankFrameRotation,
+                solution.RightLeg.KneeCenter,
+                solution.RightLeg.ShankFrameRotation,
+                out SquatRuleLandmarkSet landmarks), Is.True);
+            return landmarks.Depth;
         }
     }
 }

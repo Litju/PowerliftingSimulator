@@ -8,13 +8,16 @@ namespace PowerliftingSimulator.Squat.Unity
 {
     public static class SquatPhysicalTargetForwardKinematics
     {
-        public static SquatDepthObservation ReconstructRuleDepth(
+        public static SquatRuleLandmarkSet ReconstructLandmarks(
             PhysicalAthleteRig rig,
+            SquatReferenceRigCalibration calibration,
             IReadOnlyDictionary<string, Quaternion> logicalTargets,
             Quaternion pelvisWorldRotation)
         {
             if (rig == null)
                 throw new ArgumentNullException(nameof(rig));
+            if (calibration == null)
+                throw new ArgumentNullException(nameof(calibration));
             if (logicalTargets == null)
                 throw new ArgumentNullException(nameof(logicalTargets));
             if (rig.PoweredController == null)
@@ -57,12 +60,26 @@ namespace PowerliftingSimulator.Squat.Unity
             Vector3 rightHip = JointAnchor(poses, rig.PoweredController, "right_thigh");
             Vector3 leftKnee = JointAnchor(poses, rig.PoweredController, "left_shank");
             Vector3 rightKnee = JointAnchor(poses, rig.PoweredController, "right_shank");
-            return SquatDepthGeometry.Evaluate(
-                leftHip.y,
-                rightHip.y,
-                leftKnee.y,
-                rightKnee.y);
+            SquatDepthLandmarkProvider provider = new SquatDepthLandmarkProvider(calibration);
+            if (!provider.TryEvaluate(
+                leftHip,
+                rightHip,
+                ReferenceFrameWorldRotation(poses["pelvis"], rig.Segments["pelvis"], calibration.Pelvis),
+                leftKnee,
+                ReferenceFrameWorldRotation(poses["left_shank"], rig.Segments["left_shank"], calibration.LeftShank),
+                rightKnee,
+                ReferenceFrameWorldRotation(poses["right_shank"], rig.Segments["right_shank"], calibration.RightShank),
+                out SquatRuleLandmarkSet landmarks))
+                throw new InvalidOperationException("The reconstructed target contains invalid depth landmark frames.");
+            return landmarks;
         }
+
+        private static Quaternion ReferenceFrameWorldRotation(
+            BodyPose pose,
+            PhysicalAthleteRig.SegmentRuntime segment,
+            SquatReferenceBoneFrame calibration) =>
+            pose.Rotation * segment.BodyToReferenceBoneRotation *
+            Quaternion.Inverse(calibration.BoneFromAnatomicalFrame);
 
         private static Vector3 JointAnchor(
             IReadOnlyDictionary<string, BodyPose> poses,

@@ -138,17 +138,33 @@ namespace PowerliftingSimulator.Tests
         public void BILATERAL_DEPTH_GEOMETRY_REQUIRES_BOTH_SIDES_AND_THE_NAMED_MARGIN()
         {
             SquatDepthObservation legal = SquatDepthGeometry.Evaluate(0.40f, 0.40f, 0.46f, 0.46f);
-            Assert.That(legal.BilateralLegalReference, Is.True);
+            Assert.That(legal.BilateralGameJudgmentQualified, Is.True);
+            Assert.That(legal.IPFRulePredicateSatisfied, Is.True);
             Assert.That(legal.LeftDepthM, Is.EqualTo(-0.06f).Within(1e-6f));
             Assert.That(legal.RightDepthM, Is.EqualTo(-0.06f).Within(1e-6f));
+            Assert.That(SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M, Is.EqualTo(0.005f));
+
+            SquatDepthObservation ipfOnly = SquatDepthGeometry.Evaluate(
+                0f, 0f, SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M * 0.5f,
+                SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M * 0.5f);
+            Assert.That(ipfOnly.IPFRulePredicateSatisfied, Is.True);
+            Assert.That(ipfOnly.BilateralGameJudgmentQualified, Is.False);
+
+            SquatDepthObservation marginBoundary = SquatDepthGeometry.Evaluate(
+                0f, 0f, SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M,
+                SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M);
+            Assert.That(marginBoundary.GameJudgmentMarginM, Is.EqualTo(0.005f));
+            Assert.That(marginBoundary.IPFRulePredicateSatisfied, Is.True);
+            Assert.That(marginBoundary.BilateralGameJudgmentQualified, Is.True);
 
             SquatDepthObservation shallow = SquatDepthGeometry.Evaluate(0.48f, 0.48f, 0.46f, 0.46f);
-            Assert.That(shallow.BilateralLegalReference, Is.False);
+            Assert.That(shallow.BilateralGameJudgmentQualified, Is.False);
+            Assert.That(shallow.IPFRulePredicateSatisfied, Is.False);
 
             SquatDepthObservation unilateralHigh = SquatDepthGeometry.Evaluate(0.40f, 0.48f, 0.46f, 0.46f);
-            Assert.That(unilateralHigh.LeftDepthM, Is.LessThan(-SquatDepthGeometry.DefaultDepthMarginM));
-            Assert.That(unilateralHigh.RightDepthM, Is.GreaterThan(-SquatDepthGeometry.DefaultDepthMarginM));
-            Assert.That(unilateralHigh.BilateralLegalReference, Is.False);
+            Assert.That(unilateralHigh.LeftDepthM, Is.LessThan(-SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M));
+            Assert.That(unilateralHigh.RightDepthM, Is.GreaterThan(-SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M));
+            Assert.That(unilateralHigh.BilateralGameJudgmentQualified, Is.False);
         }
 
         [Test]

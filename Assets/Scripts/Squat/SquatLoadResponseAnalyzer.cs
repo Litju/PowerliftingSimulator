@@ -406,8 +406,7 @@ namespace PowerliftingSimulator.Squat
                 if (sample.Depth.Availability == SquatTelemetryAvailability.AVAILABLE)
                 {
                     minimumDepth = Math.Min(minimumDepth, sample.Depth.WorstSideDepthM);
-                    bool bilateral = sample.Depth.LeftDepthM <= -motion.LegalDepthMarginM &&
-                        sample.Depth.RightDepthM <= -motion.LegalDepthMarginM;
+                    bool bilateral = sample.Depth.BilateralGameJudgmentQualified;
                     legalRun = bilateral ? legalRun + 1 : 0;
                     if (legalRun >= DepthPersistenceTicks)
                         legal = true;

@@ -44,6 +44,7 @@ namespace PowerliftingSimulator.Squat.Unity
         private readonly ReferenceTargetFrame[] _descentTargets;
         private readonly ReferenceTargetFrame[] _ascentTargets;
         private SquatReferenceRigCalibration _referenceCalibration;
+        private SquatDepthLandmarkProvider _depthLandmarkProvider;
         private const int ReferenceTargetSampleCount = 101;
         private const float LockoutTransitionSq = 0.001f;
         private const float MinimumTrunkParticipationRad = 0.0017f; // 0.1 deg
@@ -224,6 +225,7 @@ namespace PowerliftingSimulator.Squat.Unity
         public float RuleDepthRightM { get; private set; }
         public bool LegalDepth { get; private set; }
         public float WorstSideDepthM { get; private set; }
+        public SquatJointCenterDepthDiagnostic JointCenterDepthDiagnostic { get; private set; }
         public string FailureReason => _failureReason;
         public bool AutoCycle { get => _autoCycle; set => _autoCycle = value; }
         public float PhaseRate { get => _phaseRate; set => _phaseRate = Mathf.Clamp(value, 0.05f, 0.75f); }
@@ -601,56 +603,71 @@ namespace PowerliftingSimulator.Squat.Unity
         }
 
         /// <summary>
-        /// Bilateral hip-crease versus knee-top depth on the physical rig,
-        /// using the hip and knee joint anchors as the rule proxies. This is
-        /// squat legality; vertical pelvis descent is not.
+        /// Bilateral GAM-10 hip-crease and knee-top surface proxies on the
+        /// physical rig. Joint centers remain a separate diagnostic.
         /// </summary>
         private void EvaluateRuleDepth()
         {
-            if (!TryJointAnchor("left_thigh", out Vector3 leftHipCrease) ||
-                !TryJointAnchor("right_thigh", out Vector3 rightHipCrease) ||
-                !TryJointAnchor("left_shank", out Vector3 leftKneeTop) ||
-                !TryJointAnchor("right_shank", out Vector3 rightKneeTop))
+            if (!TryGetSurfaceRuleLandmarks(out SquatRuleLandmarkSet landmarks))
+            {
+                LegalDepth = false;
+                RuleDepthLeftM = float.NaN;
+                RuleDepthRightM = float.NaN;
+                WorstSideDepthM = float.NaN;
+                JointCenterDepthDiagnostic = new SquatJointCenterDepthDiagnostic(float.NaN, float.NaN);
                 return;
+            }
 
-            SquatDepthObservation depth = SquatDepthGeometry.Evaluate(
-                leftHipCrease.y,
-                rightHipCrease.y,
-                leftKneeTop.y,
-                rightKneeTop.y);
+            SquatDepthObservation depth = landmarks.Depth;
             RuleDepthLeftM = depth.LeftDepthM;
             RuleDepthRightM = depth.RightDepthM;
             WorstSideDepthM = depth.WorstSideDepthM;
-            LegalDepth = depth.BilateralLegalReference;
+            LegalDepth = depth.BilateralGameJudgmentQualified;
+            JointCenterDepthDiagnostic = landmarks.JointCenterDepthDiagnostic;
         }
 
-        /// <summary>
-        /// Captures the raw calibrated joint-anchor landmarks used by the
-        /// existing depth proxy. This is an observation seam only; it does
-        /// not evaluate or latch a competition judgment.
-        /// </summary>
-        public bool TryGetRawDepthLandmarks(
-            out SquatPoint3 leftHipCrease,
-            out SquatPoint3 rightHipCrease,
-            out SquatPoint3 leftKneeTop,
-            out SquatPoint3 rightKneeTop)
+        /// <summary>Captures the shared GAM-10 surface proxies without writing physics state.</summary>
+        public bool TryGetSurfaceRuleLandmarks(out SquatRuleLandmarkSet landmarks)
         {
-            leftHipCrease = default;
-            rightHipCrease = default;
-            leftKneeTop = default;
-            rightKneeTop = default;
-            if (!TryJointAnchor("left_thigh", out Vector3 leftHip) ||
-                !TryJointAnchor("right_thigh", out Vector3 rightHip) ||
-                !TryJointAnchor("left_shank", out Vector3 leftKnee) ||
-                !TryJointAnchor("right_shank", out Vector3 rightKnee))
+            landmarks = default;
+            if (_referenceCalibration == null ||
+                !_rig.Segments.TryGetValue("pelvis", out PhysicalAthleteRig.SegmentRuntime pelvis) ||
+                pelvis.Body == null ||
+                !_rig.Segments.TryGetValue("left_shank", out PhysicalAthleteRig.SegmentRuntime leftShank) ||
+                leftShank.Body == null ||
+                !_rig.Segments.TryGetValue("right_shank", out PhysicalAthleteRig.SegmentRuntime rightShank) ||
+                rightShank.Body == null ||
+                !TryJointAnchor("left_thigh", out Vector3 leftHipCenter) ||
+                !TryJointAnchor("right_thigh", out Vector3 rightHipCenter) ||
+                !TryJointAnchor("left_shank", out Vector3 leftKneeCenter) ||
+                !TryJointAnchor("right_shank", out Vector3 rightKneeCenter))
                 return false;
 
-            leftHipCrease = new SquatPoint3(leftHip.x, leftHip.y, leftHip.z);
-            rightHipCrease = new SquatPoint3(rightHip.x, rightHip.y, rightHip.z);
-            leftKneeTop = new SquatPoint3(leftKnee.x, leftKnee.y, leftKnee.z);
-            rightKneeTop = new SquatPoint3(rightKnee.x, rightKnee.y, rightKnee.z);
-            return true;
+            Quaternion pelvisFrameRotation = ReferenceFrameWorldRotation(
+                pelvis,
+                _referenceCalibration.Pelvis);
+            Quaternion leftShankFrameRotation = ReferenceFrameWorldRotation(
+                leftShank,
+                _referenceCalibration.LeftShank);
+            Quaternion rightShankFrameRotation = ReferenceFrameWorldRotation(
+                rightShank,
+                _referenceCalibration.RightShank);
+            return _depthLandmarkProvider.TryEvaluate(
+                leftHipCenter,
+                rightHipCenter,
+                pelvisFrameRotation,
+                leftKneeCenter,
+                leftShankFrameRotation,
+                rightKneeCenter,
+                rightShankFrameRotation,
+                out landmarks);
         }
+
+        private static Quaternion ReferenceFrameWorldRotation(
+            PhysicalAthleteRig.SegmentRuntime segment,
+            SquatReferenceBoneFrame calibration) =>
+            segment.Body.rotation * segment.BodyToReferenceBoneRotation *
+            Quaternion.Inverse(calibration.BoneFromAnatomicalFrame);
 
         private bool TryJointAnchor(string jointId, out Vector3 worldAnchor)
         {
@@ -870,6 +887,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 referenceAnimator.transform.root,
                 "Assets/Scenes/Prototype/SquatPhysicalPrototype.unity");
             _referenceCalibration = calibration;
+            _depthLandmarkProvider = new SquatDepthLandmarkProvider(calibration);
 
             Vector3 leftStandingFootAnchor = calibration.LeftFoot.PlantarAnchorWorld;
             Vector3 rightStandingFootAnchor = calibration.RightFoot.PlantarAnchorWorld;

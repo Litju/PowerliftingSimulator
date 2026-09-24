@@ -439,7 +439,7 @@ namespace PowerliftingSimulator.Tests
             CheckFloat(result, tick, DepthFamily, left.RightHipCreaseY, right.RightHipCreaseY, PositionToleranceM);
             CheckFloat(result, tick, DepthFamily, left.LeftKneeTopY, right.LeftKneeTopY, PositionToleranceM);
             CheckFloat(result, tick, DepthFamily, left.RightKneeTopY, right.RightKneeTopY, PositionToleranceM);
-            CheckFloat(result, tick, DepthFamily, left.DepthMarginM, right.DepthMarginM, PositionToleranceM);
+            CheckFloat(result, tick, DepthFamily, left.GameJudgmentMarginM, right.GameJudgmentMarginM, PositionToleranceM);
             CheckFloat(result, tick, DepthFamily, left.LeftDepthM, right.LeftDepthM, PositionToleranceM);
             CheckFloat(result, tick, DepthFamily, left.RightDepthM, right.RightDepthM, PositionToleranceM);
             CheckFloat(result, tick, DepthFamily, left.WorstSideDepthM, right.WorstSideDepthM, PositionToleranceM);

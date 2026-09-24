@@ -26,25 +26,27 @@ namespace PowerliftingSimulator.Squat
 
     public readonly struct SquatDepthObservation
     {
-        public SquatDepthObservation(float leftDepthM, float rightDepthM, float marginM)
+        public SquatDepthObservation(float leftDepthM, float rightDepthM, float gameJudgmentMarginM)
         {
             LeftDepthM = leftDepthM;
             RightDepthM = rightDepthM;
-            MarginM = marginM;
             WorstSideDepthM = Math.Max(leftDepthM, rightDepthM);
-            BilateralLegalReference = WorstSideDepthM <= -marginM;
+            GameJudgmentMarginM = gameJudgmentMarginM;
+            IPFRulePredicateSatisfied = leftDepthM < 0f && rightDepthM < 0f;
+            BilateralGameJudgmentQualified = WorstSideDepthM <= -gameJudgmentMarginM;
         }
 
         public float LeftDepthM { get; }
         public float RightDepthM { get; }
         public float WorstSideDepthM { get; }
-        public float MarginM { get; }
-        public bool BilateralLegalReference { get; }
+        public float GameJudgmentMarginM { get; }
+        public bool IPFRulePredicateSatisfied { get; }
+        public bool BilateralGameJudgmentQualified { get; }
     }
 
     public static class SquatDepthGeometry
     {
-        public const float DefaultDepthMarginM = 0.005f;
+        public const float GAME_JUDGMENT_MARGIN_M = 0.005f;
         public const string RuleSource = "IPF Technical Rule Book, effective 01 March 2026, version 3";
         public const string SourceClass = "RULE_DERIVED_GAME_PROXY";
 
@@ -53,14 +55,14 @@ namespace PowerliftingSimulator.Squat
             SquatPoint3 rightHipCrease,
             SquatPoint3 leftKneeTop,
             SquatPoint3 rightKneeTop,
-            float depthMarginM = DefaultDepthMarginM)
+            float gameJudgmentMarginM = GAME_JUDGMENT_MARGIN_M)
         {
             return Evaluate(
                 leftHipCrease.Y,
                 rightHipCrease.Y,
                 leftKneeTop.Y,
                 rightKneeTop.Y,
-                depthMarginM);
+                gameJudgmentMarginM);
         }
 
         public static SquatDepthObservation Evaluate(
@@ -68,20 +70,20 @@ namespace PowerliftingSimulator.Squat
             float rightHipCreaseY,
             float leftKneeTopY,
             float rightKneeTopY,
-            float depthMarginM = DefaultDepthMarginM)
+            float gameJudgmentMarginM = GAME_JUDGMENT_MARGIN_M)
         {
             ValidateFinite(leftHipCreaseY, nameof(leftHipCreaseY));
             ValidateFinite(rightHipCreaseY, nameof(rightHipCreaseY));
             ValidateFinite(leftKneeTopY, nameof(leftKneeTopY));
             ValidateFinite(rightKneeTopY, nameof(rightKneeTopY));
-            ValidateFinite(depthMarginM, nameof(depthMarginM));
-            if (depthMarginM < 0f)
-                throw new ArgumentOutOfRangeException(nameof(depthMarginM));
+            ValidateFinite(gameJudgmentMarginM, nameof(gameJudgmentMarginM));
+            if (gameJudgmentMarginM < 0f)
+                throw new ArgumentOutOfRangeException(nameof(gameJudgmentMarginM));
 
             return new SquatDepthObservation(
                 leftHipCreaseY - leftKneeTopY,
                 rightHipCreaseY - rightKneeTopY,
-                depthMarginM);
+                gameJudgmentMarginM);
         }
 
         private static void ValidateFinite(float value, string name)

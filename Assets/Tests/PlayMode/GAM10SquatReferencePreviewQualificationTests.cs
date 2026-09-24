@@ -44,9 +44,9 @@ namespace PowerliftingSimulator.Tests
                 $"Legal bottom failed: L={preview.CurrentDepth.LeftDepthM:F4} m, " +
                 $"R={preview.CurrentDepth.RightDepthM:F4} m.");
             Assert.That(preview.CurrentDepth.LeftDepthM,
-                Is.LessThan(-SquatDepthGeometry.DefaultDepthMarginM));
+                Is.LessThan(-SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M));
             Assert.That(preview.CurrentDepth.RightDepthM,
-                Is.LessThan(-SquatDepthGeometry.DefaultDepthMarginM));
+                Is.LessThan(-SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M));
             Assert.That(preview.FootAnchorsMaxErrorM,
                 Is.LessThanOrEqualTo(SquatReferenceRigCalibration.FootAnchorToleranceM));
             Assert.That(preview.BilateralHipSolutionErrorM,

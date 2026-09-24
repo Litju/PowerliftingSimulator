@@ -33,10 +33,10 @@ namespace PowerliftingSimulator.Tests
         private readonly float[] _worstDepthMaxes = new float[DepthStages.Length];
         private readonly StringBuilder _compositionCsv = new StringBuilder();
         private readonly StringBuilder _appliedCsv = new StringBuilder();
-        private readonly float _referenceRuleLeft;
-        private readonly float _referenceRuleRight;
-        private readonly float _referenceLandmarkLeft;
-        private readonly float _referenceLandmarkRight;
+        private readonly float _referenceJointCenterLeft;
+        private readonly float _referenceJointCenterRight;
+        private readonly float _referenceSurfaceLeft;
+        private readonly float _referenceSurfaceRight;
         private int _sampleCount;
         private float _maximumModeledDriveDemand;
 
@@ -62,29 +62,20 @@ namespace PowerliftingSimulator.Tests
                 adapter.RightReferencePlantarAnchorWorld);
             Assert.That(solution.IsValid, Is.True, solution.RejectionReason);
 
-            SquatDepthObservation ruleProxy = SquatDepthGeometry.Evaluate(
-                solution.LeftLeg.HipCenter.y,
-                solution.RightLeg.HipCenter.y,
-                solution.LeftLeg.KneeCenter.y,
-                solution.RightLeg.KneeCenter.y);
-            _referenceRuleLeft = ruleProxy.LeftDepthM;
-            _referenceRuleRight = ruleProxy.RightDepthM;
-
-            Vector3 leftCrease = solution.PelvisCenter +
-                solution.PelvisFrameRotation * calibration.LeftHipCreaseOffsetInPelvisFrame;
-            Vector3 rightCrease = solution.PelvisCenter +
-                solution.PelvisFrameRotation * calibration.RightHipCreaseOffsetInPelvisFrame;
-            Vector3 leftKneeTop = solution.LeftLeg.KneeCenter +
-                solution.LeftLeg.ShankFrameRotation * calibration.LeftKneeTopOffsetInShankFrame;
-            Vector3 rightKneeTop = solution.RightLeg.KneeCenter +
-                solution.RightLeg.ShankFrameRotation * calibration.RightKneeTopOffsetInShankFrame;
-            SquatDepthObservation calibratedLandmarks = SquatDepthGeometry.Evaluate(
-                new SquatPoint3(leftCrease.x, leftCrease.y, leftCrease.z),
-                new SquatPoint3(rightCrease.x, rightCrease.y, rightCrease.z),
-                new SquatPoint3(leftKneeTop.x, leftKneeTop.y, leftKneeTop.z),
-                new SquatPoint3(rightKneeTop.x, rightKneeTop.y, rightKneeTop.z));
-            _referenceLandmarkLeft = calibratedLandmarks.LeftDepthM;
-            _referenceLandmarkRight = calibratedLandmarks.RightDepthM;
+            var provider = new SquatDepthLandmarkProvider(calibration);
+            Assert.That(provider.TryEvaluate(
+                solution.LeftLeg.HipCenter,
+                solution.RightLeg.HipCenter,
+                solution.PelvisFrameRotation,
+                solution.LeftLeg.KneeCenter,
+                solution.LeftLeg.ShankFrameRotation,
+                solution.RightLeg.KneeCenter,
+                solution.RightLeg.ShankFrameRotation,
+                out SquatRuleLandmarkSet reference), Is.True);
+            _referenceJointCenterLeft = reference.JointCenterDepthDiagnostic.LeftDepthM;
+            _referenceJointCenterRight = reference.JointCenterDepthDiagnostic.RightDepthM;
+            _referenceSurfaceLeft = reference.Depth.LeftDepthM;
+            _referenceSurfaceRight = reference.Depth.RightDepthM;
 
             _compositionCsv.AppendLine(
                 "sample,joint_id,nominal_x,nominal_y,nominal_z,nominal_w,gravity_bias_x,gravity_bias_y,gravity_bias_z,gravity_bias_w,balance_offset_x,balance_offset_y,balance_offset_z,balance_offset_w,final_x,final_y,final_z,final_w");
@@ -153,22 +144,25 @@ namespace PowerliftingSimulator.Tests
             if (_sampleCount == 0)
             {
                 BodyState[] before = CaptureBodyStates(rig);
-                SquatDepthObservation repeatedA = SquatPhysicalTargetForwardKinematics.ReconstructRuleDepth(
-                    rig, targets[0], pelvisRotation);
-                SquatDepthObservation repeatedB = SquatPhysicalTargetForwardKinematics.ReconstructRuleDepth(
-                    rig, targets[0], pelvisRotation);
-                Assert.That(Mathf.Abs(repeatedA.LeftDepthM - repeatedB.LeftDepthM), Is.LessThanOrEqualTo(1e-7f));
-                Assert.That(Mathf.Abs(repeatedA.RightDepthM - repeatedB.RightDepthM), Is.LessThanOrEqualTo(1e-7f));
+                SquatRuleLandmarkSet repeatedA = SquatPhysicalTargetForwardKinematics.ReconstructLandmarks(
+                    rig, adapter.ReferenceCalibration, targets[0], pelvisRotation);
+                SquatRuleLandmarkSet repeatedB = SquatPhysicalTargetForwardKinematics.ReconstructLandmarks(
+                    rig, adapter.ReferenceCalibration, targets[0], pelvisRotation);
+                Assert.That(Mathf.Abs(repeatedA.Depth.LeftDepthM - repeatedB.Depth.LeftDepthM), Is.LessThanOrEqualTo(1e-7f));
+                Assert.That(Mathf.Abs(repeatedA.Depth.RightDepthM - repeatedB.Depth.RightDepthM), Is.LessThanOrEqualTo(1e-7f));
+                Assert.That(Mathf.Abs(repeatedA.JointCenterDepthDiagnostic.LeftDepthM - repeatedB.JointCenterDepthDiagnostic.LeftDepthM), Is.LessThanOrEqualTo(1e-7f));
+                Assert.That(Mathf.Abs(repeatedA.JointCenterDepthDiagnostic.RightDepthM - repeatedB.JointCenterDepthDiagnostic.RightDepthM), Is.LessThanOrEqualTo(1e-7f));
                 AssertBodyStatesUnchanged(rig, before);
             }
 
             for (int index = 0; index < 5; index++)
             {
-                SquatDepthObservation depth = SquatPhysicalTargetForwardKinematics.ReconstructRuleDepth(
+                SquatRuleLandmarkSet landmarks = SquatPhysicalTargetForwardKinematics.ReconstructLandmarks(
                     rig,
+                    adapter.ReferenceCalibration,
                     targets[index],
                     pelvisRotation);
-                AddDepth(index, depth.LeftDepthM, depth.RightDepthM);
+                AddDepth(index, landmarks.Depth.LeftDepthM, landmarks.Depth.RightDepthM);
             }
 
             AddDepth(5, actual.Depth.LeftDepthM, actual.Depth.RightDepthM);
@@ -199,9 +193,10 @@ namespace PowerliftingSimulator.Tests
             report.AppendLine("SETTLED_REPORT_SAMPLES=" + _sampleCount.ToString(CultureInfo.InvariantCulture));
             report.AppendLine("ROOT_CARRIER=RUNTIME_ADAPTER_GAM10_PHYSICAL_PELVIS_ROTATION");
             report.AppendLine("ROOT_TRANSLATION=ZERO_DEPTH_DIFFERENCES_TRANSLATION_INVARIANT");
-            report.AppendLine("LANDMARK_AUTHORITY=PRODUCTION_PHYSICAL_HIP_AND_KNEE_JOINT_ANCHORS");
-            report.AppendLine("DEPTH_METRIC=SquatDepthGeometry (hip-anchor Y minus knee-anchor Y)");
-            report.AppendLine("LEGAL_WORST_SIDE_M=" + F(-SquatDepthGeometry.DefaultDepthMarginM));
+            report.AppendLine("LANDMARK_AUTHORITY=GAM10_SHARED_PELVIS_AND_SHANK_FRAME_SURFACE_PROXY");
+            report.AppendLine("DEPTH_METRIC=hip-crease surface proxy Y minus corresponding knee-top surface proxy Y");
+            report.AppendLine("JOINT_CENTER_CHANNEL=DIAGNOSTIC_ONLY");
+            report.AppendLine("GAME_JUDGMENT_WORST_SIDE_M=" + F(-SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M));
             report.AppendLine("NEUTRAL_ANCHOR_TOLERANCE_M=" + F(PhysicalAthleteDefinition.AnchorToleranceMeters));
             report.AppendLine("FRESH_PROCESS_NUMERIC_TOLERANCE_M=0.00001");
             report.AppendLine("MATERIAL_CONTRIBUTION_THRESHOLD_M=0.005");
@@ -214,12 +209,11 @@ namespace PowerliftingSimulator.Tests
             report.AppendLine("MODELED_DRIVE_DEMAND_THRESHOLD=" +
                 F(PoweredJointController.ModeledDemandSaturationThreshold));
 
-            AppendDepth(report, "D_REF", _referenceRuleLeft, _referenceRuleRight,
-                _referenceRuleLeft, _referenceRuleLeft, _referenceRuleRight, _referenceRuleRight,
-                Mathf.Max(_referenceRuleLeft, _referenceRuleRight), Mathf.Max(_referenceRuleLeft, _referenceRuleRight));
-            AppendDepth(report, "D_REF_GAM10_CALIBRATED_LANDMARKS", _referenceLandmarkLeft, _referenceLandmarkRight,
-                _referenceLandmarkLeft, _referenceLandmarkLeft, _referenceLandmarkRight, _referenceLandmarkRight,
-                Mathf.Max(_referenceLandmarkLeft, _referenceLandmarkRight), Mathf.Max(_referenceLandmarkLeft, _referenceLandmarkRight));
+            report.AppendLine("D_REF_JOINT_CENTER_DIAGNOSTIC_LEFT_M=" + F(_referenceJointCenterLeft));
+            report.AppendLine("D_REF_JOINT_CENTER_DIAGNOSTIC_RIGHT_M=" + F(_referenceJointCenterRight));
+            AppendDepth(report, "D_REF_SURFACE_RULE_PROXY", _referenceSurfaceLeft, _referenceSurfaceRight,
+                _referenceSurfaceLeft, _referenceSurfaceLeft, _referenceSurfaceRight, _referenceSurfaceRight,
+                Mathf.Max(_referenceSurfaceLeft, _referenceSurfaceRight), Mathf.Max(_referenceSurfaceLeft, _referenceSurfaceRight));
             for (int index = 0; index < DepthStages.Length; index++)
             {
                 AppendDepth(report, "D_" + DepthStages[index], MeanLeft(index), MeanRight(index),
@@ -227,19 +221,14 @@ namespace PowerliftingSimulator.Tests
                     _rightDepthMins[index], _rightDepthMaxes[index],
                     _worstDepthMins[index], _worstDepthMaxes[index]);
             }
-            AppendDelta(report, "NOMINAL_MAPPING_ERROR", MeanLeft(0) - _referenceRuleLeft, MeanRight(0) - _referenceRuleRight);
+            AppendDelta(report, "NOMINAL_MAPPING_ERROR", MeanLeft(0) - _referenceSurfaceLeft, MeanRight(0) - _referenceSurfaceRight);
             AppendDelta(report, "GRAVITY_COMPOSITION_DISPLACEMENT", MeanLeft(1) - MeanLeft(0), MeanRight(1) - MeanRight(0));
             AppendDelta(report, "BALANCE_COMPOSITION_DISPLACEMENT", MeanLeft(2) - MeanLeft(0), MeanRight(2) - MeanRight(0));
             AppendDelta(report, "FULL_COMPOSITION_DISPLACEMENT", MeanLeft(3) - MeanLeft(0), MeanRight(3) - MeanRight(0));
             AppendDelta(report, "RATE_LIMIT_DISPLACEMENT", MeanLeft(4) - MeanLeft(3), MeanRight(4) - MeanRight(3));
             AppendDelta(report, "PHYSICAL_REALIZATION_ERROR", MeanLeft(5) - MeanLeft(4), MeanRight(5) - MeanRight(4));
-            float referenceMetricDifference = Mathf.Max(
-                Mathf.Abs(_referenceRuleLeft - _referenceLandmarkLeft),
-                Mathf.Abs(_referenceRuleRight - _referenceLandmarkRight));
-            report.AppendLine("REFERENCE_LANDMARK_METRIC_PARITY=" + B(referenceMetricDifference <= 0.005f));
-            report.AppendLine("REFERENCE_LANDMARK_METRIC_MAX_DIFFERENCE_M=" + F(referenceMetricDifference));
             report.AppendLine("ACTUAL_SETTLED_MEAN_WORST_SIDE_DEPTH_M=" + F(Mathf.Max(MeanLeft(5), MeanRight(5))));
-            report.AppendLine("CLAIM_CEILING=PRODUCTION_RULE_ANCHOR_PROXY_AND_ENGINE_RUNTIME_OBSERVATION");
+            report.AppendLine("CLAIM_CEILING=GAM10_CALIBRATED_SURFACE_PROXY_AND_ENGINE_RUNTIME_OBSERVATION");
 
             File.WriteAllText(
                 Path.Combine(directory, "gate4b-runtime-" + label + "-decomposition.md"),
@@ -289,7 +278,7 @@ namespace PowerliftingSimulator.Tests
             output.AppendLine(name + "_SAMPLE_MAX_RIGHT_DEPTH_M=" + F(rightMax));
             output.AppendLine(name + "_SAMPLE_MIN_WORST_DEPTH_M=" + F(worstMin));
             output.AppendLine(name + "_SAMPLE_MAX_WORST_DEPTH_M=" + F(worstMax));
-            output.AppendLine(name + "_LEGAL=" + B(Mathf.Max(left, right) <= -SquatDepthGeometry.DefaultDepthMarginM));
+            output.AppendLine(name + "_GAME_JUDGMENT_QUALIFIED=" + B(Mathf.Max(left, right) <= -SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M));
         }
 
         private static void AppendDelta(StringBuilder output, string name, float left, float right)

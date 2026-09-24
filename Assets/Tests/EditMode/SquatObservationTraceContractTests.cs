@@ -104,13 +104,12 @@ namespace PowerliftingSimulator.Tests
                 0.90f,
                 0.91f,
                 0.95f,
-                0.94f,
-                0.005f);
+                0.94f);
 
             Assert.That(landmarks.LeftDepthM, Is.EqualTo(-0.05f).Within(0.000001f));
             Assert.That(landmarks.RightDepthM, Is.EqualTo(-0.03f).Within(0.000001f));
             Assert.That(landmarks.WorstSideDepthM, Is.EqualTo(-0.03f).Within(0.000001f));
-            Assert.That(landmarks.DepthMarginM, Is.EqualTo(0.005f));
+            Assert.That(landmarks.GameJudgmentMarginM, Is.EqualTo(SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M));
         }
 
         [Test]
@@ -216,7 +215,7 @@ namespace PowerliftingSimulator.Tests
                 0.25f,
                 SquatIntentSnapshot.From(intent),
                 bar.Availability == 0 ? SquatBarObservation.Unavailable() : bar,
-                new SquatDepthLandmarks(0.90f, 0.91f, 0.95f, 0.94f, 0.005f),
+                new SquatDepthLandmarks(0.90f, 0.91f, 0.95f, 0.94f),
                 SquatSupportObservation.Unavailable(),
                 SquatFootObservation.Unavailable(),
                 SquatFootObservation.Unavailable(),
