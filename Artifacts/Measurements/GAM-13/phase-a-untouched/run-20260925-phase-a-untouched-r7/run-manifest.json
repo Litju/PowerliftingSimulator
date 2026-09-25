@@ -1,0 +1,128 @@
+{
+  "schema": "GAM13_PHASE_A_RUN_MANIFEST_V1",
+  "runId": "20260925-phase-a-untouched-r7",
+  "startedUtc": "2026-09-25T06:51:45.9464554Z",
+  "branch": "work/gam-13-squat-load-calibration",
+  "productionBaselineSha": "2aff0202d7574a17414bd4524b8e2ff8f3359884",
+  "worktree": "E:\\Data\\Projects\\PowerliftingSimulator",
+  "unityExecutable": "D:\\Dev\\Unity\\6000.3.22f1\\Editor\\Unity.exe",
+  "unityExecutableVersion": "6000.3.22.1864302",
+  "unityExecutableSha256": "36bafe49cfd65d4c91889167ca051f755195621a8f734392ad33ccccb5c1bba7",
+  "unityVersion": "6000.3.22f1",
+  "loadsKg": [
+    25,
+    60,
+    140,
+    170,
+    300
+  ],
+  "separateFreshProcesses": true,
+  "productionConfigurationDiff": "NONE",
+  "screeningConfigurationFingerprints": {
+    "ProjectSettings/ProjectSettings.asset": "503f6edbd7468b3206b2dd6733a1c1a895f596ef5893f6757240d104f8ff0a5f",
+    "Assets/Scripts/Squat/Unity/SquatDepthLandmarkProvider.cs": "7c6505d9027559786055297057d9fb1de6dfec9010feddb9e54bf9ac074bdfac",
+    "Assets/Scripts/Squat/Unity/SquatPhysicalTargetForwardKinematics.cs": "c5ca27bcf397752006857fa5cd8a7de1f70d0f432060015590488db8fa51d0f3",
+    "Assets/Scripts/Squat/SquatAttemptLifecycle.cs": "85d6ffc4b34c454c1475b6e293110652df83786dfff234cc9155d02fd0f08db6",
+    "Assets/Scripts/Athlete/PhysicalAthleteRig.cs": "653d584e13150a3914489351549317282d8c72b197de161b9f25351beacefca2",
+    "Assets/Scripts/Squat/Unity/SquatPhysicalPrototypeController.cs": "4f77c9dcbdc58670b01a914c6b99033b6cf9b65a4f624ef808cd6290923c2274",
+    "Assets/Scripts/Equipment/PhysicalBarbell.cs": "a1d3f18006196609c766c84d611415a223581d920afad1d3571224279473f6f7",
+    "Assets/Scenes/Prototype/SquatPhysicalPrototype.unity": "bcbb2d9b51c73754d81cfeaff06401e449f679064f1b9ec9bc26c6035d87207d",
+    "Assets/Scripts/Squat/SquatFailureDetector.cs": "4df9ed6aa9e3446d0a07537a0ff855c35e9b375e97955145aad2c00db5160e81",
+    "ProjectSettings/TimeManager.asset": "1a83e54adbbda7c9f4851103a0c6ab7f6448a3343d4ea5b7620452fa08416ecd",
+    "Assets/Scripts/Squat/SquatLoadResponseAnalyzer.cs": "180642857a7aa7168bde06fcb05179fe4ccc5da9566b4331fd9049cc85a5fcd7",
+    "Assets/Scripts/Squat/Unity/SquatPhysicalAdapter.cs": "89de8a35d3fa9233a18747c411bb3047e958cc8ac8d1efec52d2594e38019f3d",
+    "Assets/Scripts/Squat/SquatDepthGeometry.cs": "dc276ce0c6fa3f53a75770daba945db4ea302c424c422f41454562ab045eac74",
+    "Assets/Scripts/Athlete/PoweredJointController.cs": "984ce9a92df50af936f0e453560f0804420a2131e3e9f9dfe637aff6d0819189",
+    "ProjectSettings/DynamicsManager.asset": "b7c9a9dc08b98990109d4346f68745e15e238de400f96c583e53e1c83c743a78"
+  },
+  "sourceFingerprints": [
+    {
+      "path": "Assets/Scripts/Athlete/PhysicalAthleteRig.cs",
+      "sha256": "653d584e13150a3914489351549317282d8c72b197de161b9f25351beacefca2"
+    },
+    {
+      "path": "Assets/Scripts/Athlete/PoweredJointController.cs",
+      "sha256": "984ce9a92df50af936f0e453560f0804420a2131e3e9f9dfe637aff6d0819189"
+    },
+    {
+      "path": "Assets/Scripts/Equipment/PhysicalBarbell.cs",
+      "sha256": "a1d3f18006196609c766c84d611415a223581d920afad1d3571224279473f6f7"
+    },
+    {
+      "path": "Assets/Scripts/Squat/SquatAttemptLifecycle.cs",
+      "sha256": "85d6ffc4b34c454c1475b6e293110652df83786dfff234cc9155d02fd0f08db6"
+    },
+    {
+      "path": "Assets/Scripts/Squat/SquatDepthGeometry.cs",
+      "sha256": "dc276ce0c6fa3f53a75770daba945db4ea302c424c422f41454562ab045eac74"
+    },
+    {
+      "path": "Assets/Scripts/Squat/SquatFailureDetector.cs",
+      "sha256": "4df9ed6aa9e3446d0a07537a0ff855c35e9b375e97955145aad2c00db5160e81"
+    },
+    {
+      "path": "Assets/Scripts/Squat/SquatLoadResponseAnalyzer.cs",
+      "sha256": "180642857a7aa7168bde06fcb05179fe4ccc5da9566b4331fd9049cc85a5fcd7"
+    },
+    {
+      "path": "Assets/Scripts/Squat/Unity/SquatDepthLandmarkProvider.cs",
+      "sha256": "7c6505d9027559786055297057d9fb1de6dfec9010feddb9e54bf9ac074bdfac"
+    },
+    {
+      "path": "Assets/Scripts/Squat/Unity/SquatPhysicalAdapter.cs",
+      "sha256": "89de8a35d3fa9233a18747c411bb3047e958cc8ac8d1efec52d2594e38019f3d"
+    },
+    {
+      "path": "Assets/Scripts/Squat/Unity/SquatPhysicalPrototypeController.cs",
+      "sha256": "4f77c9dcbdc58670b01a914c6b99033b6cf9b65a4f624ef808cd6290923c2274"
+    },
+    {
+      "path": "Assets/Scripts/Squat/Unity/SquatPhysicalTargetForwardKinematics.cs",
+      "sha256": "c5ca27bcf397752006857fa5cd8a7de1f70d0f432060015590488db8fa51d0f3"
+    },
+    {
+      "path": "Assets/Scenes/Prototype/SquatPhysicalPrototype.unity",
+      "sha256": "bcbb2d9b51c73754d81cfeaff06401e449f679064f1b9ec9bc26c6035d87207d"
+    },
+    {
+      "path": "ProjectSettings/DynamicsManager.asset",
+      "sha256": "b7c9a9dc08b98990109d4346f68745e15e238de400f96c583e53e1c83c743a78"
+    },
+    {
+      "path": "ProjectSettings/TimeManager.asset",
+      "sha256": "1a83e54adbbda7c9f4851103a0c6ab7f6448a3343d4ea5b7620452fa08416ecd"
+    },
+    {
+      "path": "ProjectSettings/ProjectSettings.asset",
+      "sha256": "503f6edbd7468b3206b2dd6733a1c1a895f596ef5893f6757240d104f8ff0a5f"
+    },
+    {
+      "path": "Assets/Scripts/Squat/Unity/SquatReferenceKinematics.cs",
+      "sha256": "06acd63eb2559ce4044c951d41c12460c5e51be14a12e12aca4fb05335d980ee"
+    },
+    {
+      "path": "Assets/Scripts/Squat/Unity/SquatObservationCollector.cs",
+      "sha256": "58979c90dd0e2e888bc62cbe73491bc1548bcb34171f5396f5c59b3a297cae2d"
+    },
+    {
+      "path": "Assets/Tests/PlayMode/GAM13SquatLoadCalibrationHarness.cs",
+      "sha256": "6fd54403dc423705c3f9ec766e5c6aef88782bee4b5273c66b5e5fa1f4cc05d6"
+    },
+    {
+      "path": "Assets/Tests/PlayMode/GAM13SquatLoadCalibrationTests.cs",
+      "sha256": "fb7c01659ea07e1ac650c4a52162a010d54f3b5d8ff816de449e5c03f1c20ae0"
+    },
+    {
+      "path": "Assets/Tests/PlayMode/GAM13UntouchedScreeningTrace.cs",
+      "sha256": "635f2ffe8ae08e46c16c4506fe96a46a1f4ba3c38d37350b25217aa1cdda0db3"
+    }
+  ],
+  "processIds": [
+    15532,
+    11676,
+    2612,
+    20936,
+    15500
+  ],
+  "completedUtc": "2026-09-25T06:55:40.3607670Z"
+}

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-25 06:52:10Z" end-time="2026-09-25 06:52:12Z" duration="1.9729027">
+  <test-suite type="TestSuite" id="1310" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="233" result="Passed" start-time="2026-09-25 06:52:10Z" end-time="2026-09-25 06:52:12Z" duration="1.972903" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1304" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="E:/Data/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="233" result="Passed" start-time="2026-09-25 06:52:10Z" end-time="2026-09-25 06:52:12Z" duration="1.958270" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="15532" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1305" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="233" result="Passed" start-time="2026-09-25 06:52:10Z" end-time="2026-09-25 06:52:12Z" duration="1.953772" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1306" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="233" result="Passed" start-time="2026-09-25 06:52:10Z" end-time="2026-09-25 06:52:12Z" duration="1.944871" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1078" name="GAM13SquatLoadCalibrationTests" fullname="PowerliftingSimulator.Tests.GAM13SquatLoadCalibrationTests" classname="PowerliftingSimulator.Tests.GAM13SquatLoadCalibrationTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-25 06:52:10Z" end-time="2026-09-25 06:52:12Z" duration="1.930738" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1080" name="GAM13_PHASE_A_SINGLE_LOAD_FRESH_PROCESS" fullname="PowerliftingSimulator.Tests.GAM13SquatLoadCalibrationTests.GAM13_PHASE_A_SINGLE_LOAD_FRESH_PROCESS" methodname="GAM13_PHASE_A_SINGLE_LOAD_FRESH_PROCESS" classname="PowerliftingSimulator.Tests.GAM13SquatLoadCalibrationTests" runstate="Explicit" seed="871162764" result="Passed" start-time="2026-09-25 06:52:10Z" end-time="2026-09-25 06:52:12Z" duration="1.906706" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="_SKIPREASON" value="GAM-13 Phase A untouched single-load screening; fresh Unity process required." />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[
+IgnoreFailingMessages:true
+GAM13_ATTEMPT sweep=phase-a-untouched candidate=production-checked-in load=25.0 run=1 terminal=PHYSICAL_LOCKOUT@787 P3=EVALUABLE/NO_PHYSICAL_FAILURE primary=NONE onset=NA latch=NA P2=EVALUABLE/GOOD_LIFT depthMin=-0.1207 legal=True bottom=422 ascent=443 lockout=787 concSec=3.65 meanV=0.1534 peakV=0.3268 minMidV=-0.0061 maxDemand=0.303 meanDemand=0.277 sat=0.000 knee=2052.0Nm hip=2052.0Nm sticking=NO_RESOLVABLE_STICKING vmax1=NaN vmin=NaN vmax2=NaN trunkMax=0.181 reversal=0.0080 saddleLoss=False traceCount=747 driveTick=402 squatTick=48
+Saving results to: C:/Users/Usuario/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

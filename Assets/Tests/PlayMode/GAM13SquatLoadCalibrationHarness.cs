@@ -82,7 +82,9 @@ namespace PowerliftingSimulator.Tests
             float loadKg,
             int runIndex,
             Action<SquatPhysicalPrototypeController> configure,
-            List<GAM13AttemptResult> results)
+            List<GAM13AttemptResult> results,
+            Action<SquatPhysicalPrototypeController, SquatObservationSnapshot> postPhysicsObserver = null,
+            bool allowNoAttemptRecord = false)
         {
             AsyncOperation load = SceneManager.LoadSceneAsync(QualificationScene, LoadSceneMode.Single);
             Assert.That(load, Is.Not.Null, "The qualification scene is missing from the project.");
@@ -117,6 +119,12 @@ namespace PowerliftingSimulator.Tests
                 Assert.That(runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds), Is.EqualTo(1));
                 controller.LeftFootContact?.PhysicsTickUpdate(dt);
                 controller.RightFootContact?.PhysicsTickUpdate(dt);
+                if (postPhysicsObserver != null &&
+                    controller.ObservationCollector != null &&
+                    controller.ObservationCollector.HasLastSnapshot)
+                {
+                    postPhysicsObserver(controller, controller.ObservationCollector.LastSnapshot);
+                }
                 ticks++;
 
                 if (squatCommandTick == SquatAttemptEventTicks.NotAvailable &&
@@ -138,6 +146,12 @@ namespace PowerliftingSimulator.Tests
             }
 
             SquatAttemptRecord record = controller.AttemptRecord;
+            if (record == null && allowNoAttemptRecord)
+            {
+                Debug.Log($"GAM13_NO_ATTEMPT_RECORD sweep={sweep} candidate={candidate} load={loadKg:F1}kg " +
+                          $"ticks={ticks} lifecycle={controller.AttemptLifecycle.State} adapter={adapter.State} sq={adapter.Sq:F3}");
+                yield break;
+            }
             Assert.That(
                 record,
                 Is.Not.Null,
