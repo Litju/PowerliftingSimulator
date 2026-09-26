@@ -39,8 +39,7 @@ namespace PowerliftingSimulator.Squat.Unity
         private readonly PhysicalAthleteRig _rig;
         private readonly PhysicalAthleteRig.SegmentRuntime[] _segments;
         private readonly SquatReferenceProfile _profile;
-        private readonly ReferenceTargetFrame[] _descentTargets;
-        private readonly ReferenceTargetFrame[] _ascentTargets;
+        private readonly ReferenceTargetFrame[] _referenceTargets;
         private SquatReferenceRigCalibration _referenceCalibration;
         private SquatDepthLandmarkProvider _depthLandmarkProvider;
         private const int ReferenceTargetSampleCount = 101;
@@ -64,6 +63,8 @@ namespace PowerliftingSimulator.Squat.Unity
         private float _reversalHoldTimer;
         private SquatBarSaddle _saddle;
         private readonly SquatBalanceObserver _observer;
+        private readonly SquatComStabilizerV2 _balanceV2 = new SquatComStabilizerV2();
+        private SquatBalanceCorrectionV2 _lastBalanceCorrection;
 #if UNITY_EDITOR
         private readonly SquatPredictiveBalanceController _balanceController = new SquatPredictiveBalanceController();
         private float _standingComApOffset;
@@ -101,7 +102,7 @@ namespace PowerliftingSimulator.Squat.Unity
             foreach (PhysicalAthleteRig.SegmentRuntime segment in _rig.Segments.Values)
                 _segments[index++] = segment;
             _observer = new SquatBalanceObserver(_rig, _segments);
-            BuildReferenceTargetTables(out _descentTargets, out _ascentTargets);
+            _referenceTargets = BuildReferenceTargetTable();
             CalibrateFamilyFlexionSigns();
             _rig.SetCommandSource(this);
             _sq = 0f;
@@ -122,6 +123,8 @@ namespace PowerliftingSimulator.Squat.Unity
         }
 
         public SquatBalanceObserver Balance => _observer;
+        public SquatComStabilizerV2Calibration StabilizerCalibration => _balanceV2.Calibration;
+        public SquatBalanceCorrectionV2 BalanceCorrectionV2 => _lastBalanceCorrection;
 #if UNITY_EDITOR
         public SquatPredictiveBalanceController BalanceController => _balanceController;
         public SquatEquilibriumPreload Preload => _preload;
@@ -276,6 +279,8 @@ namespace PowerliftingSimulator.Squat.Unity
             _mlComError = 0f;
             _balanceCorrectionRad = 0f;
             _mlBalanceCorrectionRad = 0f;
+            _lastBalanceCorrection = default;
+            _balanceV2.Reset();
 #if UNITY_EDITOR
             AnkleSagittalOffsetAdditiveRad = 0f;
 #endif
@@ -367,6 +372,12 @@ namespace PowerliftingSimulator.Squat.Unity
                 _phaseVelocity = _qualificationPhaseVelocity;
 #endif
             ComputeComAndSupport(previousObservation);
+            _lastBalanceCorrection = _balanceV2.Solve(
+                _systemCom,
+                _observer.SystemComVelocity,
+                _supportCenter,
+                intent.BalanceX,
+                dt);
 
             if (_saddle != null && _saddle.IsBroken)
             {
@@ -391,18 +402,31 @@ namespace PowerliftingSimulator.Squat.Unity
             EvaluateRuleDepth();
             ReferenceTargetFrame reference = EvaluateReferenceTarget();
             _nominalReferenceTarget = reference;
-            _balanceCorrectionRad = 0f;
-            _mlBalanceCorrectionRad = 0f;
-            _isCorrectionSaturated = false;
+            _balanceCorrectionRad = _lastBalanceCorrection.AppliedApRad;
+            _mlBalanceCorrectionRad = _lastBalanceCorrection.AppliedMlRad;
+            _isCorrectionSaturated = _lastBalanceCorrection.IsBoundSaturated;
 
-            Quaternion leftAnkleTarget = Compose("left_foot", reference.LeftFoot, Quaternion.identity, Quaternion.identity);
-            Quaternion rightAnkleTarget = Compose("right_foot", reference.RightFoot, Quaternion.identity, Quaternion.identity);
+            Quaternion ankleBalance = SagittalAndFrontal(
+                _lastBalanceCorrection.AnkleApRad * _familyFlexionSign[(int)SquatJointFamily.Ankle],
+                _lastBalanceCorrection.AnkleMlRad);
+            Quaternion hipBalance = SagittalAndFrontal(
+                _lastBalanceCorrection.HipApRad * _familyFlexionSign[(int)SquatJointFamily.Hip],
+                _lastBalanceCorrection.HipMlRad);
+            Quaternion abdomenBalance = SagittalAndFrontal(
+                _lastBalanceCorrection.TrunkApRad * _familyFlexionSign[(int)SquatJointFamily.Abdomen],
+                0f);
+            Quaternion thoraxBalance = SagittalAndFrontal(
+                _lastBalanceCorrection.TrunkApRad * _familyFlexionSign[(int)SquatJointFamily.Thorax],
+                0f);
+
+            Quaternion leftAnkleTarget = Compose("left_foot", reference.LeftFoot, Quaternion.identity, ankleBalance);
+            Quaternion rightAnkleTarget = Compose("right_foot", reference.RightFoot, Quaternion.identity, ankleBalance);
             Quaternion leftKneeTarget = Compose("left_shank", reference.LeftShank, Quaternion.identity, Quaternion.identity);
             Quaternion rightKneeTarget = Compose("right_shank", reference.RightShank, Quaternion.identity, Quaternion.identity);
-            Quaternion leftHipTarget = Compose("left_thigh", reference.LeftThigh, Quaternion.identity, Quaternion.identity);
-            Quaternion rightHipTarget = Compose("right_thigh", reference.RightThigh, Quaternion.identity, Quaternion.identity);
-            Quaternion abdomenTarget = Compose("abdomen", reference.Abdomen, Quaternion.identity, Quaternion.identity);
-            Quaternion thoraxTarget = Compose("thorax", reference.Thorax, Quaternion.identity, Quaternion.identity);
+            Quaternion leftHipTarget = Compose("left_thigh", reference.LeftThigh, Quaternion.identity, hipBalance);
+            Quaternion rightHipTarget = Compose("right_thigh", reference.RightThigh, Quaternion.identity, hipBalance);
+            Quaternion abdomenTarget = Compose("abdomen", reference.Abdomen, Quaternion.identity, abdomenBalance);
+            Quaternion thoraxTarget = Compose("thorax", reference.Thorax, Quaternion.identity, thoraxBalance);
 
             ReferenceRateFrame rate = Mathf.Abs(_phaseVelocity) > 1e-5f
                 ? EvaluateReferenceRatePerPhase(_sq, _direction)
@@ -838,9 +862,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 tick);
         }
 
-        private void BuildReferenceTargetTables(
-            out ReferenceTargetFrame[] descentTargets,
-            out ReferenceTargetFrame[] ascentTargets)
+        private ReferenceTargetFrame[] BuildReferenceTargetTable()
         {
             Animator referenceAnimator = _rig.ReferenceAnimator;
             if (referenceAnimator == null)
@@ -857,24 +879,18 @@ namespace PowerliftingSimulator.Squat.Unity
             Vector3 rightStandingFootAnchor = calibration.RightFoot.PlantarAnchorWorld;
             LeftReferencePlantarAnchorWorld = leftStandingFootAnchor;
             RightReferencePlantarAnchorWorld = rightStandingFootAnchor;
-            descentTargets = new ReferenceTargetFrame[ReferenceTargetSampleCount];
-            ascentTargets = new ReferenceTargetFrame[ReferenceTargetSampleCount];
+            var targets = new ReferenceTargetFrame[ReferenceTargetSampleCount];
             for (int index = 0; index < ReferenceTargetSampleCount; index++)
             {
                 float phase = index / (float)(ReferenceTargetSampleCount - 1);
-                descentTargets[index] = BuildReferenceTargetFrame(
+                targets[index] = BuildReferenceTargetFrame(
                     calibration,
                     SquatPhaseDirection.Descent,
                     phase,
                     leftStandingFootAnchor,
                     rightStandingFootAnchor);
-                ascentTargets[index] = BuildReferenceTargetFrame(
-                    calibration,
-                    SquatPhaseDirection.Ascent,
-                    phase,
-                    leftStandingFootAnchor,
-                    rightStandingFootAnchor);
             }
+            return targets;
         }
 
         private ReferenceTargetFrame BuildReferenceTargetFrame(
@@ -1009,12 +1025,12 @@ namespace PowerliftingSimulator.Squat.Unity
 
         private ReferenceTargetFrame EvaluateReferenceTarget(float phase, SquatPhaseDirection direction)
         {
-            ReferenceTargetFrame[] targets = direction == SquatPhaseDirection.Ascent ? _ascentTargets : _descentTargets;
             float scaled = Mathf.Clamp01(phase) * (ReferenceTargetSampleCount - 1);
             int lowerIndex = Mathf.FloorToInt(scaled);
             int upperIndex = Mathf.Min(ReferenceTargetSampleCount - 1, lowerIndex + 1);
             float interpolation = scaled - lowerIndex;
-            return ReferenceTargetFrame.Interpolate(targets[lowerIndex], targets[upperIndex], interpolation);
+            return ReferenceTargetFrame.Interpolate(
+                _referenceTargets[lowerIndex], _referenceTargets[upperIndex], interpolation);
         }
 
         /// <summary>
@@ -1074,13 +1090,12 @@ namespace PowerliftingSimulator.Squat.Unity
 
         private ReferenceRateFrame EvaluateReferenceRatePerPhase(float phase, SquatPhaseDirection direction)
         {
-            ReferenceTargetFrame[] targets = direction == SquatPhaseDirection.Ascent ? _ascentTargets : _descentTargets;
             float scaled = Mathf.Clamp01(phase) * (ReferenceTargetSampleCount - 1);
             int lowerIndex = Mathf.Clamp(Mathf.FloorToInt(scaled), 0, ReferenceTargetSampleCount - 2);
             int upperIndex = lowerIndex + 1;
             float phaseStep = 1f / (ReferenceTargetSampleCount - 1);
-            ReferenceTargetFrame from = targets[lowerIndex];
-            ReferenceTargetFrame to = targets[upperIndex];
+            ReferenceTargetFrame from = _referenceTargets[lowerIndex];
+            ReferenceTargetFrame to = _referenceTargets[upperIndex];
             return new ReferenceRateFrame(
                 RatePerPhase(from.LeftFoot, to.LeftFoot, phaseStep),
                 RatePerPhase(from.RightFoot, to.RightFoot, phaseStep),
