@@ -407,16 +407,16 @@ namespace PowerliftingSimulator.Squat.Unity
             _isCorrectionSaturated = _lastBalanceCorrection.IsBoundSaturated;
 
             Quaternion ankleBalance = SagittalAndFrontal(
-                _lastBalanceCorrection.AnkleApRad * _familyFlexionSign[(int)SquatJointFamily.Ankle],
+                _lastBalanceCorrection.AnkleApRad,
                 _lastBalanceCorrection.AnkleMlRad);
             Quaternion hipBalance = SagittalAndFrontal(
-                _lastBalanceCorrection.HipApRad * _familyFlexionSign[(int)SquatJointFamily.Hip],
+                _lastBalanceCorrection.HipApRad,
                 _lastBalanceCorrection.HipMlRad);
             Quaternion abdomenBalance = SagittalAndFrontal(
-                _lastBalanceCorrection.TrunkApRad * _familyFlexionSign[(int)SquatJointFamily.Abdomen],
+                _lastBalanceCorrection.TrunkApRad,
                 0f);
             Quaternion thoraxBalance = SagittalAndFrontal(
-                _lastBalanceCorrection.TrunkApRad * _familyFlexionSign[(int)SquatJointFamily.Thorax],
+                _lastBalanceCorrection.TrunkApRad,
                 0f);
 
             Quaternion leftAnkleTarget = Compose("left_foot", reference.LeftFoot, Quaternion.identity, ankleBalance);

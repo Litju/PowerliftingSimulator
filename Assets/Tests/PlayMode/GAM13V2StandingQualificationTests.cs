@@ -73,6 +73,7 @@ namespace PowerliftingSimulator.Tests
             bool finite = true;
             bool bilateralSupportEverySample = true;
             bool attachedBarEverySample = true;
+            bool apCorrectionMappingConsistent = true;
             bool hasStartWindow = false;
             bool squatCommandIssued = false;
             float minimumPelvisY = float.PositiveInfinity;
@@ -83,6 +84,7 @@ namespace PowerliftingSimulator.Tests
             float maximumJointAnchorSeparation = 0f;
             float maximumSaddleSeparation = 0f;
             float maximumLimitProximity = 0f;
+            int apCorrectionSamples = 0;
 
             for (int tick = 0; tick < QualificationTicks; tick++)
             {
@@ -120,6 +122,16 @@ namespace PowerliftingSimulator.Tests
                 maximumLimitProximity = Mathf.Max(maximumLimitProximity, limitProximity);
                 maximumSaddleSeparation = Mathf.Max(maximumSaddleSeparation, controller.Saddle.SaddleSeparationMeters);
 
+                float ankleApCorrection = controller.Adapter.BalanceCorrectionV2.AnkleApRad;
+                if (Mathf.Abs(ankleApCorrection) > 1e-4f &&
+                    controller.Adapter.TryGetTargetComposition("left_foot", out SquatPhysicalAdapter.JointTargetComposition ankleComposition))
+                {
+                    float mappedApCorrection = PoweredJointController.SignedTwistRadians(
+                        ankleComposition.BalanceOffset, Vector3.right);
+                    apCorrectionSamples++;
+                    apCorrectionMappingConsistent &= mappedApCorrection * ankleApCorrection > 0f;
+                }
+
                 string ruleOutcome = squatCommandIssued ? "SQUAT_COMMAND_ISSUED" : "START_WINDOW_PENDING";
                 trace.Append(
                     loadKg,
@@ -151,6 +163,8 @@ namespace PowerliftingSimulator.Tests
             Assert.That(minimumComSupportMargin, Is.GreaterThanOrEqualTo(MinimumComSupportMarginM), "COM left the plantar support region.");
             Assert.That(hasStartWindow, Is.True, "The start window did not qualify.");
             Assert.That(squatCommandIssued, Is.True, "The Squat command could not be issued after setup qualification.");
+            Assert.That(apCorrectionSamples, Is.GreaterThan(0), "The V2 stabilizer did not apply any AP correction during the standing window.");
+            Assert.That(apCorrectionMappingConsistent, Is.True, "The AP correction sign was inverted when mapped into joint target space.");
             Assert.That(controller.Adapter.Sq, Is.EqualTo(0f).Within(0.001f), "No player Yield input was supplied during standing qualification.");
         }
 
