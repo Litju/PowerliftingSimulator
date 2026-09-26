@@ -72,6 +72,8 @@ namespace PowerliftingSimulator.Squat.Unity
         public int MaximumAttemptTicks => _maximumAttemptTicks;
         public int RequiredStartSamples => _requiredStartSamples;
         public int RequiredLockoutSamples => _requiredLockoutSamples;
+        public bool HasSquatCommand => _squatCommandTick != SquatAttemptEventTicks.NotAvailable;
+        public ulong SquatCommandTick => _squatCommandTick;
         public IReadOnlyList<SquatStartPredicateDiagnostic> StartWindowDiagnostics => _readOnlyStartWindowDiagnostics;
 
         /// <summary>

@@ -43,6 +43,7 @@ namespace PowerliftingSimulator.Squat.Unity
         public PhysicalFootContactDetector LeftFootContact => _leftFootContact;
         public PhysicalFootContactDetector RightFootContact => _rightFootContact;
         public SquatObservationCollector ObservationCollector => _observationCollector;
+        public PhysicalAthleteRig AthleteRig => athleteRig;
         public SquatTrace ObservationTrace => _observationCollector == null ? null : _observationCollector.Trace;
         public SquatAttemptOrchestrator AttemptOrchestrator => _attemptOrchestrator;
         public SquatAttemptLifecycle AttemptLifecycle => _attemptOrchestrator == null ? null : _attemptOrchestrator.Lifecycle;
