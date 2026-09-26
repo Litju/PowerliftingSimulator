@@ -119,7 +119,6 @@ namespace PowerliftingSimulator.Squat.Unity
                 _adapter);
 
             _adapter.Reset();
-            _adapter.EquilibriumLoadKg = _selectedLoadKg;
             _adapter.SetSaddle(_saddle);
             athleteRig.SetGameplayPerformanceProfile(true);
             athleteRig.PrimeCommandSource();
@@ -220,9 +219,6 @@ namespace PowerliftingSimulator.Squat.Unity
                 throw new InvalidOperationException("The squat load cannot change after an attempt lifecycle has started; reset the scene first.");
 
             _selectedLoadKg = Mathf.Max(0f, loadKg);
-            // Single writer for the load the spine equilibrium calibration
-            // is evaluated at, so the bias and the bar can never disagree.
-            _adapter.EquilibriumLoadKg = _selectedLoadKg;
             if (_saddle != null)
             {
                 _saddle.BreakSaddle();
@@ -248,7 +244,6 @@ namespace PowerliftingSimulator.Squat.Unity
             }
 
             _adapter.Reset();
-            _adapter.EquilibriumLoadKg = _selectedLoadKg;
             _adapter.SetSaddle(_saddle);
             athleteRig.SetCommandSource(_adapter);
             athleteRig.PrimeCommandSource();
@@ -366,23 +361,14 @@ namespace PowerliftingSimulator.Squat.Unity
             HudLabel(string.Format(CultureInfo.InvariantCulture, "BAR_SADDLE_ERROR: {0}", float.IsInfinity(saddleError) ? "N/A" : saddleError.ToString("F4", CultureInfo.InvariantCulture) + " m"));
             GUILayout.EndVertical();
 
-            // The balance column. Standing is now a closed loop over these
-            // quantities, so they are what an owner review has to be able to
-            // see failing.
             SquatBalanceObserver balance = _adapter.Balance;
-            SquatPredictiveBalanceController control = _adapter.BalanceController;
             GUILayout.BeginVertical(GUILayout.Width(330f));
             HudLabel(string.Format(CultureInfo.InvariantCulture,
                 "COM_AP: {0:+0.000;-0.000} m  VEL: {1:+0.000;-0.000} m/s",
                 balance.SystemCom.z, balance.SystemComVelocity.z));
             HudLabel(string.Format(CultureInfo.InvariantCulture,
-                "COP_MEASURED_AP: {0}",
-                balance.HasCopEstimate
-                    ? balance.CopEstimate.z.ToString("+0.000;-0.000", CultureInfo.InvariantCulture) + " m"
-                    : "NONE"));
-            HudLabel(string.Format(CultureInfo.InvariantCulture,
-                "COP_DESIRED_AP: {0:+0.000;-0.000} m  ERR: {1:+0.000;-0.000} m",
-                control.CopDesiredAp, control.CopErrorAp));
+                "COM_ML: {0:+0.000;-0.000} m  VEL: {1:+0.000;-0.000} m/s",
+                balance.SystemCom.x, balance.SystemComVelocity.x));
             HudLabel(string.Format(CultureInfo.InvariantCulture,
                 "CAPTURE_AP: {0:+0.000;-0.000} m", balance.CaptureAp));
             HudLabel(string.Format(CultureInfo.InvariantCulture,
@@ -394,17 +380,13 @@ namespace PowerliftingSimulator.Squat.Unity
             HudLabel(string.Format(CultureInfo.InvariantCulture,
                 "ANKLE_NOMINAL: {0:+0.0;-0.0} deg", HudSagittalDegrees(AnkleComposition().Nominal)));
             HudLabel(string.Format(CultureInfo.InvariantCulture,
-                "ANKLE_BALANCE_OFFSET: {0:+0.0;-0.0} deg  ({1:P0} of bound)",
-                control.AnkleSagittalOffsetRad * Mathf.Rad2Deg, control.AnkleAuthorityFraction));
+                "V2_BALANCE_AP/ML: {0:+0.0;-0.0} / {1:+0.0;-0.0} deg",
+                _adapter.BalanceCorrectionRad * Mathf.Rad2Deg,
+                _adapter.MlBalanceCorrectionRad * Mathf.Rad2Deg));
             HudLabel(string.Format(CultureInfo.InvariantCulture,
                 "ANKLE_FINAL_TARGET: {0:+0.0;-0.0} deg", HudSagittalDegrees(AnkleComposition().Final)));
             HudLabel(string.Format(CultureInfo.InvariantCulture,
                 "ANKLE_ACTUAL: {0:+0.0;-0.0} deg", HudAnkleActualDegrees()));
-            HudLabel(string.Format(CultureInfo.InvariantCulture,
-                "HIP/TRUNK_BALANCE: {0:+0.0;-0.0} / {1:+0.0;-0.0} deg  ({2})",
-                control.HipSagittalOffsetRad * Mathf.Rad2Deg,
-                control.TrunkSagittalOffsetRad * Mathf.Rad2Deg,
-                control.HipTrunkStrategyEnabled ? "enabled" : "off"));
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();
 

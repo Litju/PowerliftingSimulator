@@ -41,12 +41,6 @@ namespace PowerliftingSimulator.Squat
             ElbowFlexionRad,
             WristExtensionRad);
 
-        public SquatReferencePose ApplyBrace(float brace01)
-        {
-            float brace = Math.Max(0f, Math.Min(1f, brace01));
-            float adjustedTrunk = Math.Max(0f, TrunkFlexionRad - UnitContract.DegreesToRadians(3f) * brace);
-            return WithTrunkFlexion(adjustedTrunk);
-        }
     }
 
     public readonly struct SquatReferenceWaypointRecord
@@ -291,7 +285,7 @@ namespace PowerliftingSimulator.Squat
             SquatReferencePose standing = Pose(0f, 0f, 0f, 0f, 0f, 0f, 0f);
             SquatReferencePose quarter = Pose(10f, 32f, 30f, 10f, 0f, 0f, 0f);
             SquatReferencePose nearParallel = Pose(21f, 78f, 77f, 15f, 0f, 0f, 0f);
-            SquatReferencePose sticking = Pose(22f, 82f, 81f, 15f, 0f, 0f, 0f);
+            SquatReferencePose midAscent = Pose(22f, 82f, 81f, 15f, 0f, 0f, 0f);
             SquatReferencePose earlyAscent = Pose(25f, 100f, 98f, 16f, 0f, 0f, 0f);
             SquatReferencePose legalBottom = Pose(27f, 114f, 111f, 16f, 0f, 0f, 0f);
             SquatReferenceWaypointRecord[] waypoints =
@@ -301,14 +295,13 @@ namespace PowerliftingSimulator.Squat
                 new(SquatReferenceWaypoint.NEAR_PARALLEL, 0.55f, nearParallel),
                 new(SquatReferenceWaypoint.LEGAL_BOTTOM, 1f, legalBottom),
                 new(SquatReferenceWaypoint.EARLY_ASCENT, 0.82f, earlyAscent),
-                new(SquatReferenceWaypoint.STICKING, 0.64f, sticking),
+                new(SquatReferenceWaypoint.MID_ASCENT, 0.64f, midAscent),
                 new(SquatReferenceWaypoint.LOCKOUT, 0f, standing)
             };
 
-            SquatReferencePose[] sorted = { standing, quarter, nearParallel, sticking, earlyAscent, legalBottom };
-            CubicHermiteCurve[] descent = BuildCurves(sorted, 0.88f);
-            CubicHermiteCurve[] ascent = BuildCurves(sorted, 1.04f);
-            return new SquatReferenceProfile(waypoints, descent, ascent);
+            SquatReferencePose[] sorted = { standing, quarter, nearParallel, midAscent, earlyAscent, legalBottom };
+            CubicHermiteCurve[] path = BuildCurves(sorted, 0.88f);
+            return new SquatReferenceProfile(waypoints, path, path);
         }
 
         private static CubicHermiteCurve[] BuildCurves(SquatReferencePose[] poses, float tangentScale)
@@ -388,8 +381,6 @@ namespace PowerliftingSimulator.Squat
         {
             SquatReferenceProfile profile = SquatReferenceProfile.CanonicalPowerliftingSquatV1;
             SquatReferencePose pose = profile.Evaluate(phase, direction);
-            if (intent.Brace01 > 0f)
-                pose = pose.ApplyBrace(intent.Brace01);
             return new SquatReferenceSample(
                 state,
                 direction,

@@ -21,7 +21,6 @@ namespace PowerliftingSimulator.Squat.Unity
         private const float StandingHoldSeconds = 0.45f;
         private const float BottomHoldSeconds = 0.18f;
         private const float ReversalSeconds = 0.12f;
-        private const float StickingHoldSeconds = 0.16f;
 
         [SerializeField] private Transform referenceRoot;
         [SerializeField] private Animator referenceAnimator;
@@ -559,7 +558,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 SquatReferenceWaypointRecord waypoint = waypoints[index];
                 SquatPhaseDirection direction =
                     waypoint.Waypoint == SquatReferenceWaypoint.EARLY_ASCENT ||
-                    waypoint.Waypoint == SquatReferenceWaypoint.STICKING
+                    waypoint.Waypoint == SquatReferenceWaypoint.MID_ASCENT
                         ? SquatPhaseDirection.Ascent
                         : SquatPhaseDirection.Descent;
                 _fixture = SquatReferenceCalibrationFixture.None;
@@ -826,30 +825,6 @@ namespace PowerliftingSimulator.Squat.Unity
                     _direction = SquatPhaseDirection.Ascent;
                     AdvancePhase(-SquatReferenceMotion.AscentRatePerSecond, RenderStepSeconds);
                     if (_stageElapsed >= ReversalSeconds)
-                    {
-                        _stageElapsed = 0f;
-                        _previewStage = PreviewStage.AscentToSticking;
-                    }
-                    break;
-                case PreviewStage.AscentToSticking:
-                    _state = SquatState.ASCENT;
-                    _direction = SquatPhaseDirection.Ascent;
-                    AdvancePhase(-SquatReferenceMotion.AscentRatePerSecond, RenderStepSeconds);
-                    if (_phase <= 0.6401f)
-                    {
-                        _phase = 0.64f;
-                        _phaseRate = 0f;
-                        _stageElapsed = 0f;
-                        _previewStage = PreviewStage.Sticking;
-                        _state = SquatState.STICKING;
-                    }
-                    break;
-                case PreviewStage.Sticking:
-                    _state = SquatState.STICKING;
-                    _direction = SquatPhaseDirection.Ascent;
-                    _phase = 0.64f;
-                    _phaseRate = 0f;
-                    if (_stageElapsed >= StickingHoldSeconds)
                     {
                         _stageElapsed = 0f;
                         _previewStage = PreviewStage.AscentFinish;
@@ -1157,8 +1132,8 @@ namespace PowerliftingSimulator.Squat.Unity
                     return SquatState.BOTTOM;
                 case SquatReferenceWaypoint.EARLY_ASCENT:
                     return SquatState.ASCENT;
-                case SquatReferenceWaypoint.STICKING:
-                    return SquatState.STICKING;
+                case SquatReferenceWaypoint.MID_ASCENT:
+                    return SquatState.ASCENT;
                 default:
                     return SquatState.DESCENT;
             }
@@ -1173,8 +1148,8 @@ namespace PowerliftingSimulator.Squat.Unity
                 return SquatReferenceWaypoint.LOCKOUT;
             if (phase >= 0.9999f || state == SquatState.BOTTOM || state == SquatState.REVERSAL)
                 return SquatReferenceWaypoint.LEGAL_BOTTOM;
-            if (state == SquatState.STICKING || Mathf.Abs(phase - 0.64f) < 0.025f)
-                return SquatReferenceWaypoint.STICKING;
+            if (Mathf.Abs(phase - 0.64f) < 0.025f)
+                return SquatReferenceWaypoint.MID_ASCENT;
             if (direction == SquatPhaseDirection.Ascent && phase <= 0.85f)
                 return SquatReferenceWaypoint.EARLY_ASCENT;
             if (phase <= 0.34f)
@@ -1213,8 +1188,6 @@ namespace PowerliftingSimulator.Squat.Unity
             Descent,
             Bottom,
             Reversal,
-            AscentToSticking,
-            Sticking,
             AscentFinish
         }
 

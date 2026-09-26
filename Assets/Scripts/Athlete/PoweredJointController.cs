@@ -37,31 +37,33 @@ namespace PowerliftingSimulator.Athlete
         public JointCommand(
             Quaternion targetRelativeRotation,
             Vector3 targetRelativeAngularVelocityRadS,
-            float activation,
-            float capacityScale)
+            float effort,
+            float athleteStrengthScale)
         {
             if (!PoweredJointController.IsFinite(targetRelativeRotation))
                 throw new ArgumentOutOfRangeException(nameof(targetRelativeRotation));
             if (!PoweredJointController.IsFinite(targetRelativeAngularVelocityRadS))
                 throw new ArgumentOutOfRangeException(nameof(targetRelativeAngularVelocityRadS));
-            if (!float.IsFinite(activation))
-                throw new ArgumentOutOfRangeException(nameof(activation));
-            if (!float.IsFinite(capacityScale) || capacityScale < 0f)
-                throw new ArgumentOutOfRangeException(nameof(capacityScale));
+            if (!float.IsFinite(effort))
+                throw new ArgumentOutOfRangeException(nameof(effort));
+            if (!float.IsFinite(athleteStrengthScale) || athleteStrengthScale < 0f)
+                throw new ArgumentOutOfRangeException(nameof(athleteStrengthScale));
 
             TargetRelativeRotation = PoweredJointController.NormalizeCanonical(targetRelativeRotation);
             TargetRelativeAngularVelocityRadS = targetRelativeAngularVelocityRadS;
-            Activation = Mathf.Clamp01(activation);
-            CapacityScale = capacityScale;
+            Effort = Mathf.Clamp01(effort);
+            AthleteStrengthScale = athleteStrengthScale;
         }
 
         public Quaternion TargetRelativeRotation { get; }
         public Vector3 TargetRelativeAngularVelocityRadS { get; }
-        public float Activation { get; }
-        public float CapacityScale { get; }
+        public float Effort { get; }
+        public float AthleteStrengthScale { get; }
+        public float Activation => Effort;
+        public float CapacityScale => AthleteStrengthScale;
 
-        public static JointCommand Neutral(float activation, float capacityScale = 1f) =>
-            new JointCommand(Quaternion.identity, Vector3.zero, activation, capacityScale);
+        public static JointCommand Neutral(float effort, float athleteStrengthScale = 1f) =>
+            new JointCommand(Quaternion.identity, Vector3.zero, effort, athleteStrengthScale);
     }
 
     public readonly struct PoweredJointDiagnostic
@@ -133,10 +135,10 @@ namespace PowerliftingSimulator.Athlete
 
         private static readonly JointFamilyProfile[] Profiles =
         {
-            new JointFamilyProfile("ankle", 650f, 70f, 180f, 2.0f),
-            new JointFamilyProfile("knee", 800f, 80f, 300f, 2.5f),
-            new JointFamilyProfile("hip", 900f, 90f, 360f, 2.2f),
-            new JointFamilyProfile("trunk", 800f, 85f, 260f, 1.8f),
+            new JointFamilyProfile("ankle", 650f, 70f, 450f, 2.0f),
+            new JointFamilyProfile("knee", 800f, 80f, 540f, 2.5f),
+            new JointFamilyProfile("hip", 900f, 90f, 540f, 2.2f),
+            new JointFamilyProfile("trunk", 800f, 85f, 390f, 1.8f),
             new JointFamilyProfile("shoulder", 500f, 55f, 130f, 2.5f),
             new JointFamilyProfile("elbow", 450f, 45f, 100f, 3.0f),
             new JointFamilyProfile("wrist", 250f, 30f, 45f, 2.5f),
@@ -212,7 +214,7 @@ namespace PowerliftingSimulator.Athlete
                     command.TargetRelativeRotation,
                     command.TargetRelativeAngularVelocityRadS,
                     GlobalActivation,
-                    command.CapacityScale);
+                    command.AthleteStrengthScale);
             }
         }
 
@@ -306,8 +308,8 @@ namespace PowerliftingSimulator.Athlete
                 Vector3 targetVelocity = Vector3.ClampMagnitude(
                     command.TargetRelativeAngularVelocityRadS,
                     profile.MaxTargetRateRadS);
-                float activation = Mode == PoweredAthleteMode.Passive ? 0f : command.Activation;
-                float maximumForce = profile.BaseCapacityNm * command.CapacityScale * activation;
+                float effort = Mode == PoweredAthleteMode.Passive ? 0f : command.Effort;
+                float maximumForce = profile.BaseCapacityNm * command.AthleteStrengthScale * effort;
                 if (!float.IsFinite(maximumForce))
                     throw new InvalidOperationException($"Joint '{joint.Id}' produced non-finite authority.");
 
@@ -560,8 +562,8 @@ namespace PowerliftingSimulator.Athlete
         {
             JointCommand command = joint.RequestedCommand;
             JointFamilyProfile profile = joint.Profile.Value;
-            float activation = Mode == PoweredAthleteMode.Passive ? 0f : command.Activation;
-            float maximumForce = profile.BaseCapacityNm * command.CapacityScale * activation;
+            float effort = Mode == PoweredAthleteMode.Passive ? 0f : command.Effort;
+            float maximumForce = profile.BaseCapacityNm * command.AthleteStrengthScale * effort;
             if (!float.IsFinite(maximumForce))
                 throw new InvalidOperationException($"Joint '{joint.Id}' produced non-finite authority.");
 
@@ -572,8 +574,8 @@ namespace PowerliftingSimulator.Athlete
                 joint,
                 targetVelocity,
                 maximumForce,
-                activation,
-                command.CapacityScale);
+                effort,
+                command.AthleteStrengthScale);
         }
 
         private static Vector3 QuaternionLog(Quaternion quaternion)

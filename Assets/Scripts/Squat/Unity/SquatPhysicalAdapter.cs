@@ -14,8 +14,9 @@ namespace PowerliftingSimulator.Squat.Unity
     /// </summary>
     public sealed class SquatPhysicalAdapter : IPhysicalAthleteCommandSource
     {
-        public const string CapacityCalibrationVersion = "GAM13_SQUAT_ATHLETE_CAPACITY_V1";
-        public const float GlobalStrengthScale = 3.8f;
+        public const string CapacityCalibrationVersion = "GAM13_SQUAT_CAPACITY_V2";
+        public const float AthleteStrengthScale = 5.13f;
+#if UNITY_EDITOR
         public const float MaxBalanceCorrectionRad = 0.17453f; // 10 degrees; target offset only
         private const float MaxMlBalanceCorrectionRad = 0.03491f; // 2 degrees; bounded lateral target trim
         public const float MaxBalanceBiasM = 0.025f; // 2.5 cm player balance bias
@@ -31,12 +32,9 @@ namespace PowerliftingSimulator.Squat.Unity
         public const float DefaultMlKd = 0.05f;
         public const float DefaultHipKp = 0.80f;
         public const float DefaultTrunkKp = 1.50f;
+#endif
         private const float SupportFailureApErrorM = 0.30f;
         private const float SupportFailureMlErrorM = 0.30f;
-        private const float AnkleCapacityMultiplier = 2.5f;
-        private const float KneeCapacityMultiplier = 1.8f;
-        private const float HipCapacityMultiplier = 1.5f;
-        private const float TrunkCapacityMultiplier = 1.5f;
 
         private readonly PhysicalAthleteRig _rig;
         private readonly PhysicalAthleteRig.SegmentRuntime[] _segments;
@@ -57,19 +55,25 @@ namespace PowerliftingSimulator.Squat.Unity
         // physical authority.
         private float _phaseRate = 0.30f;
         private float _phaseVelocity;
+#if UNITY_EDITOR
         private bool _autoCycle;
         private float _bottomHoldTimer;
         private const float BottomHoldDuration = 0.20f;
+#endif
         private const float ReversalHoldDuration = 0.10f;
         private float _reversalHoldTimer;
         private SquatBarSaddle _saddle;
         private readonly SquatBalanceObserver _observer;
+#if UNITY_EDITOR
         private readonly SquatPredictiveBalanceController _balanceController = new SquatPredictiveBalanceController();
         private float _standingComApOffset;
         private float _standingComMlOffset;
         private bool _hasStandingCalibration;
+#endif
         private ReferenceTargetFrame _nominalReferenceTarget;
+#if UNITY_EDITOR
         private readonly SquatEquilibriumPreload _preload = SquatEquilibriumPreload.QualifiedStanding();
+#endif
         private readonly float[] _familyFlexionSign = new float[5];
         private readonly System.Collections.Generic.Dictionary<string, JointTargetComposition> _composition =
             new System.Collections.Generic.Dictionary<string, JointTargetComposition>(8);
@@ -118,11 +122,13 @@ namespace PowerliftingSimulator.Squat.Unity
         }
 
         public SquatBalanceObserver Balance => _observer;
+#if UNITY_EDITOR
         public SquatPredictiveBalanceController BalanceController => _balanceController;
         public SquatEquilibriumPreload Preload => _preload;
 
         public float StandingEquilibriumBiasDegrees(SquatJointFamily family) =>
             _preload.BiasDegrees(family, 0f, EquilibriumLoadKg);
+#endif
 
         public SquatReferenceRigCalibration ReferenceCalibration => _referenceCalibration;
 
@@ -173,6 +179,7 @@ namespace PowerliftingSimulator.Squat.Unity
         /// the GAM-10 reference alone, which separates a reference or mapping
         /// failure from a balance failure.
         /// </summary>
+#if UNITY_EDITOR
         public bool BalanceCorrectionsEnabled { get; set; } = true;
 
         /// <summary>
@@ -195,6 +202,7 @@ namespace PowerliftingSimulator.Squat.Unity
         /// residual without replacing the stabilizing balance loop.
         /// </summary>
         public float AnkleSagittalOffsetAdditiveRad { get; set; }
+#endif
 
         public void SetFootContactDetectors(
             PhysicalFootContactDetector leftFoot,
@@ -227,7 +235,9 @@ namespace PowerliftingSimulator.Squat.Unity
         public float WorstSideDepthM { get; private set; }
         public SquatJointCenterDepthDiagnostic JointCenterDepthDiagnostic { get; private set; }
         public string FailureReason => _failureReason;
+#if UNITY_EDITOR
         public bool AutoCycle { get => _autoCycle; set => _autoCycle = value; }
+#endif
         public float PhaseRate { get => _phaseRate; set => _phaseRate = Mathf.Clamp(value, 0.05f, 0.75f); }
 
         public void SetSaddle(SquatBarSaddle saddle)
@@ -252,8 +262,10 @@ namespace PowerliftingSimulator.Squat.Unity
             _state = SquatState.SETUP;
             _direction = SquatPhaseDirection.None;
             _sq = 0f;
+#if UNITY_EDITOR
             _autoCycle = false;
             _bottomHoldTimer = 0f;
+#endif
             _reversalHoldTimer = 0f;
             _lockoutReached = false;
             _failureReason = "NONE";
@@ -264,7 +276,9 @@ namespace PowerliftingSimulator.Squat.Unity
             _mlComError = 0f;
             _balanceCorrectionRad = 0f;
             _mlBalanceCorrectionRad = 0f;
+#if UNITY_EDITOR
             AnkleSagittalOffsetAdditiveRad = 0f;
+#endif
             _isCorrectionSaturated = false;
             _isDriveSaturated = false;
             _maxDriveSaturation = 0f;
@@ -276,14 +290,16 @@ namespace PowerliftingSimulator.Squat.Unity
             _postureUnexpectedMarginConsumed = 0f;
             _postureWorstJoint = "NONE";
             _hasPostureHistory = false;
+#if UNITY_EDITOR
             _balanceController.Reset();
             _hasStandingCalibration = false;
             _qualificationPhaseVelocity = 0f;
+#endif
             _composition.Clear();
         }
 
-        // Retained for deterministic qualification fixtures. Owner gameplay
-        // uses Brace/Yield/Drive through PlayerIntentFrame instead.
+#if UNITY_EDITOR
+        // Historical diagnostic auto-cycle. Owner gameplay never calls this.
         public void StartSquat()
         {
             _state = SquatState.DESCENT;
@@ -292,7 +308,20 @@ namespace PowerliftingSimulator.Squat.Unity
             _lockoutReached = false;
             _failureReason = "NONE";
         }
+#endif
 
+        public void BeginIntentDrivenSquat()
+        {
+            _state = SquatState.SQUAT_COMMAND;
+            _direction = SquatPhaseDirection.None;
+            _lockoutReached = false;
+            _failureReason = "NONE";
+#if UNITY_EDITOR
+            _autoCycle = false;
+#endif
+        }
+
+#if UNITY_EDITOR
         /// <summary>
         /// Qualification only. Places the reference phase directly and reports
         /// the phase velocity that goes with it, so a fixture can ask what the
@@ -319,6 +348,7 @@ namespace PowerliftingSimulator.Squat.Unity
         }
 
         private float _qualificationPhaseVelocity;
+#endif
 
         public void PrepareCommands(
             PhysicalObservation previousObservation,
@@ -332,11 +362,11 @@ namespace PowerliftingSimulator.Squat.Unity
             float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
             _phaseVelocity = 0f;
             AdvanceStateAndPhase(dt, intent);
-            // A held qualification phase does not advance itself, so the rate
-            // feed-forward has to come from the fixture that placed it.
+#if UNITY_EDITOR
             if (!_autoCycle && _qualificationPhaseVelocity != 0f)
                 _phaseVelocity = _qualificationPhaseVelocity;
-            ComputeComAndSupport(previousObservation, intent);
+#endif
+            ComputeComAndSupport(previousObservation);
 
             if (_saddle != null && _saddle.IsBroken)
             {
@@ -348,126 +378,54 @@ namespace PowerliftingSimulator.Squat.Unity
                      (Mathf.Abs(_apComError) > SupportFailureApErrorM ||
                       Mathf.Abs(_mlComError) > SupportFailureMlErrorM))
             {
-                // Diagnostic only: the dynamic bodies continue to simulate so
-                // the owner can inspect the finite physical failure.
                 _failureReason = "COM_OUTSIDE_SUPPORT";
             }
 
             float brace = Mathf.Max(intent.Brace01, intent.BraceHeld ? 1f : 0f);
-
-            CalibrateStandingComRelationship();
-            float balanceBias = Mathf.Clamp(intent.BalanceX, -1f, 1f) * MaxBalanceBiasM;
-            ObserveCanonicalPosture(dt);
-            if (BalanceCorrectionsEnabled)
-            {
-                _balanceController.Solve(
-                    _observer,
-                    _observer.SupportApCenter + _standingComApOffset,
-                    _observer.SupportMlCenter + _standingComMlOffset + balanceBias,
-                    AnkleAnchorAp(),
-                    dt);
-            }
-            else
-            {
-                _balanceController.Reset();
-            }
-
-            _balanceCorrectionRad = _balanceController.AnkleSagittalOffsetRad;
-            _mlBalanceCorrectionRad = _balanceController.AnkleFrontalOffsetRad;
-            _isCorrectionSaturated = _balanceController.IsAnkleOffsetSaturated;
-
-            // GAM13_SQUAT_ATHLETE_CAPACITY_V1. External load remains in the
-            // physical plant and its observations; it never selects athlete
-            // maximum capacity. Bracing is the bounded player-controlled
-            // activation factor, while family multipliers remain fixed.
-            float capacityScale = CalculateAthleteCapacityScale(brace);
+            float drive = Mathf.Max(intent.Drive01, intent.DriveHeld ? 1f : 0f);
+            float effort = CalculateEffort(brace, drive);
 
             if (_rig.Segments.TryGetValue("pelvis", out PhysicalAthleteRig.SegmentRuntime pelvisSegment) && pelvisSegment.Body != null)
                 _minPelvisHeightM = Mathf.Min(_minPelvisHeightM, pelvisSegment.Body.position.y);
 
             EvaluateRuleDepth();
+            ReferenceTargetFrame reference = EvaluateReferenceTarget();
+            _nominalReferenceTarget = reference;
+            _balanceCorrectionRad = 0f;
+            _mlBalanceCorrectionRad = 0f;
+            _isCorrectionSaturated = false;
 
-            ulong tick = time.Tick;
+            Quaternion leftAnkleTarget = Compose("left_foot", reference.LeftFoot, Quaternion.identity, Quaternion.identity);
+            Quaternion rightAnkleTarget = Compose("right_foot", reference.RightFoot, Quaternion.identity, Quaternion.identity);
+            Quaternion leftKneeTarget = Compose("left_shank", reference.LeftShank, Quaternion.identity, Quaternion.identity);
+            Quaternion rightKneeTarget = Compose("right_shank", reference.RightShank, Quaternion.identity, Quaternion.identity);
+            Quaternion leftHipTarget = Compose("left_thigh", reference.LeftThigh, Quaternion.identity, Quaternion.identity);
+            Quaternion rightHipTarget = Compose("right_thigh", reference.RightThigh, Quaternion.identity, Quaternion.identity);
+            Quaternion abdomenTarget = Compose("abdomen", reference.Abdomen, Quaternion.identity, Quaternion.identity);
+            Quaternion thoraxTarget = Compose("thorax", reference.Thorax, Quaternion.identity, Quaternion.identity);
 
-            // FINAL = NOMINAL_GAM10 + GRAVITY_EQUILIBRIUM_BIAS + DYNAMIC_BALANCE.
-            // The three terms stay separable in code, telemetry and tests, so
-            // the owner overlay can show exactly how far each layer moved the
-            // accepted reference.
-            ReferenceTargetFrame referenceTarget = EvaluateReferenceTarget();
-            _nominalReferenceTarget = referenceTarget;
-
-            float anklePreload = PreloadLogicalRad(SquatJointFamily.Ankle);
-            float kneePreload = PreloadLogicalRad(SquatJointFamily.Knee);
-            float hipPreload = PreloadLogicalRad(SquatJointFamily.Hip);
-            float abdomenPreload = PreloadLogicalRad(SquatJointFamily.Abdomen);
-            float thoraxPreload = PreloadLogicalRad(SquatJointFamily.Thorax);
-
-            Quaternion ankleGravityBias = SagittalAndFrontal(anklePreload, 0f);
-            Quaternion kneeGravityBias = SagittalAndFrontal(kneePreload, 0f);
-            Quaternion hipGravityBias = SagittalAndFrontal(hipPreload, 0f);
-            Quaternion abdomenGravityBias = SagittalAndFrontal(abdomenPreload, 0f);
-            Quaternion thoraxGravityBias = SagittalAndFrontal(thoraxPreload, 0f);
-
-            float ankleSagittalOffset = (AnkleSagittalOffsetOverrideRad ?? _balanceController.AnkleSagittalOffsetRad) +
-                AnkleSagittalOffsetAdditiveRad;
-            Quaternion ankleBalance = SagittalAndFrontal(
-                ankleSagittalOffset,
-                _balanceController.AnkleFrontalOffsetRad);
-            Quaternion kneeBalance = Quaternion.identity;
-            Quaternion hipBalance = SagittalAndFrontal(
-                _balanceController.HipSagittalOffsetRad,
-                _balanceController.HipFrontalOffsetRad);
-            Quaternion braceOffset = SagittalAndFrontal(-UnitContract.DegreesToRadians(3f) * brace, 0f);
-            Quaternion trunkBalance = braceOffset * SagittalAndFrontal(
-                _balanceController.TrunkSagittalOffsetRad,
-                _balanceController.HipFrontalOffsetRad * 0.5f);
-
-            Quaternion leftAnkleTarget = Compose("left_foot", referenceTarget.LeftFoot, ankleGravityBias, ankleBalance);
-            Quaternion rightAnkleTarget = Compose("right_foot", referenceTarget.RightFoot, ankleGravityBias, ankleBalance);
-            Quaternion leftKneeTarget = Compose("left_shank", referenceTarget.LeftShank, kneeGravityBias, kneeBalance);
-            Quaternion rightKneeTarget = Compose("right_shank", referenceTarget.RightShank, kneeGravityBias, kneeBalance);
-            Quaternion leftHipTarget = Compose("left_thigh", referenceTarget.LeftThigh, hipGravityBias, hipBalance);
-            Quaternion rightHipTarget = Compose("right_thigh", referenceTarget.RightThigh, hipGravityBias, hipBalance);
-            Quaternion abdomenTarget = Compose("abdomen", referenceTarget.Abdomen, abdomenGravityBias, trunkBalance);
-            Quaternion thoraxTarget = Compose("thorax", referenceTarget.Thorax, thoraxGravityBias, trunkBalance);
-
-            // Feed the canonical reference rate forward while the phase is
-            // actually moving, so the drive is not asked to hold a moving
-            // target with a standstill velocity command.
             ReferenceRateFrame rate = Mathf.Abs(_phaseVelocity) > 1e-5f
                 ? EvaluateReferenceRatePerPhase(_sq, _direction)
                 : ReferenceRateFrame.Zero;
             float phaseVelocity = _phaseVelocity;
+            ulong tick = time.Tick;
 
-            poweredController.ApplyCommand("left_foot", new JointCommand(leftAnkleTarget, rate.LeftFoot * phaseVelocity, 1f, capacityScale * AnkleCapacityMultiplier), tick);
-            poweredController.ApplyCommand("right_foot", new JointCommand(rightAnkleTarget, rate.RightFoot * phaseVelocity, 1f, capacityScale * AnkleCapacityMultiplier), tick);
-            poweredController.ApplyCommand("left_shank", new JointCommand(leftKneeTarget, rate.LeftShank * phaseVelocity, 1f, capacityScale * KneeCapacityMultiplier), tick);
-            poweredController.ApplyCommand("right_shank", new JointCommand(rightKneeTarget, rate.RightShank * phaseVelocity, 1f, capacityScale * KneeCapacityMultiplier), tick);
-            poweredController.ApplyCommand("left_thigh", new JointCommand(leftHipTarget, rate.LeftThigh * phaseVelocity, 1f, capacityScale * HipCapacityMultiplier), tick);
-            poweredController.ApplyCommand("right_thigh", new JointCommand(rightHipTarget, rate.RightThigh * phaseVelocity, 1f, capacityScale * HipCapacityMultiplier), tick);
-            poweredController.ApplyCommand("abdomen", new JointCommand(
-                abdomenTarget,
-                SpineTargetRate(rate.Abdomen, phaseVelocity, referenceTarget.Abdomen, SquatJointFamily.Abdomen),
-                1f, capacityScale * TrunkCapacityMultiplier), tick);
-            poweredController.ApplyCommand("thorax", new JointCommand(
-                thoraxTarget,
-                SpineTargetRate(rate.Thorax, phaseVelocity, referenceTarget.Thorax, SquatJointFamily.Thorax),
-                1f, capacityScale * TrunkCapacityMultiplier), tick);
-
-            // The head holds its canonical neutral relative to the thorax and
-            // nothing else. It is a postural actuator, not part of the balance
-            // law: no centre of mass, centre of pressure or capture state
-            // reaches it. Without a command at all its activation stays zero,
-            // which is what left the head unheld.
+            poweredController.ApplyCommand("left_foot", new JointCommand(leftAnkleTarget, rate.LeftFoot * phaseVelocity, effort, AthleteStrengthScale), tick);
+            poweredController.ApplyCommand("right_foot", new JointCommand(rightAnkleTarget, rate.RightFoot * phaseVelocity, effort, AthleteStrengthScale), tick);
+            poweredController.ApplyCommand("left_shank", new JointCommand(leftKneeTarget, rate.LeftShank * phaseVelocity, effort, AthleteStrengthScale), tick);
+            poweredController.ApplyCommand("right_shank", new JointCommand(rightKneeTarget, rate.RightShank * phaseVelocity, effort, AthleteStrengthScale), tick);
+            poweredController.ApplyCommand("left_thigh", new JointCommand(leftHipTarget, rate.LeftThigh * phaseVelocity, effort, AthleteStrengthScale), tick);
+            poweredController.ApplyCommand("right_thigh", new JointCommand(rightHipTarget, rate.RightThigh * phaseVelocity, effort, AthleteStrengthScale), tick);
+            poweredController.ApplyCommand("abdomen", new JointCommand(abdomenTarget, rate.Abdomen * phaseVelocity, effort, AthleteStrengthScale), tick);
+            poweredController.ApplyCommand("thorax", new JointCommand(thoraxTarget, rate.Thorax * phaseVelocity, effort, AthleteStrengthScale), tick);
             poweredController.ApplyCommand(
                 "head_neck",
-                 new JointCommand(Quaternion.identity, Vector3.zero, 1f, capacityScale * TrunkCapacityMultiplier),
-                 tick);
+                new JointCommand(Quaternion.identity, Vector3.zero, effort, AthleteStrengthScale),
+                tick);
 
-            ApplyUpperLimbReference(poweredController, referenceTarget, rate, phaseVelocity, capacityScale, tick);
+            ApplyUpperLimbReference(poweredController, reference, rate, phaseVelocity, effort, tick);
             CheckDriveSaturation(poweredController);
         }
-
         private void AdvanceStateAndPhase(float dt, PlayerIntentFrame intent)
         {
             float yieldInput = Mathf.Max(intent.Yield01, intent.YieldHeld ? 1f : 0f);
@@ -475,6 +433,7 @@ namespace PowerliftingSimulator.Squat.Unity
             bool braceInput = intent.Brace01 > 0.05f || intent.BraceHeld || intent.WasPressed(IntentAction.Brace) ||
                 intent.WasPressed(IntentAction.Confirm) || intent.ConfirmHeld;
 
+#if UNITY_EDITOR
             if (_autoCycle)
             {
                 switch (_state)
@@ -510,6 +469,7 @@ namespace PowerliftingSimulator.Squat.Unity
                             _state = SquatState.ASCENT;
                         break;
                     case SquatState.ASCENT:
+                    case SquatState.STICKING:
                         _sq = Mathf.Max(0f, _sq - _phaseRate * dt);
                         _phaseVelocity = -_phaseRate;
                         if (_sq <= LockoutTransitionSq)
@@ -527,6 +487,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 }
                 return;
             }
+#endif
 
             // Manual mode is intent-driven. Brace/Confirm arms the squat;
             // Yield and Drive only alter the reference phase.
@@ -569,7 +530,7 @@ namespace PowerliftingSimulator.Squat.Unity
                     _state = SquatState.ASCENT;
             }
 
-            if (_state == SquatState.ASCENT && driveInput > 0.05f)
+            if ((_state == SquatState.ASCENT || _state == SquatState.STICKING) && driveInput > 0.05f)
             {
                 _sq = Mathf.Max(0f, _sq - _phaseRate * driveInput * dt);
                 _phaseVelocity = -_phaseRate * driveInput;
@@ -583,7 +544,7 @@ namespace PowerliftingSimulator.Squat.Unity
             }
         }
 
-        private void ComputeComAndSupport(PhysicalObservation observation, PlayerIntentFrame intent)
+        private void ComputeComAndSupport(PhysicalObservation observation)
         {
             // Support is the plantar contact polygon the solver actually
             // produced last step, not the midpoint of the two foot bodies.
@@ -597,9 +558,8 @@ namespace PowerliftingSimulator.Squat.Unity
                 _observer.SupportPlaneY,
                 _observer.SupportApCenter);
 
-            float balanceBias = Mathf.Clamp(intent.BalanceX, -1f, 1f) * MaxBalanceBiasM;
             _apComError = _systemCom.z - _observer.SupportApCenter;
-            _mlComError = _systemCom.x - (_observer.SupportMlCenter + balanceBias);
+            _mlComError = _systemCom.x - _observer.SupportMlCenter;
         }
 
         /// <summary>
@@ -679,6 +639,7 @@ namespace PowerliftingSimulator.Squat.Unity
             return true;
         }
 
+#if UNITY_EDITOR
         /// <summary>
         /// The accepted standing pose is the calibration. Recording how the
         /// system COM sat relative to the plantar support at that pose gives
@@ -708,6 +669,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 return right.z;
             return _observer.SupportApCenter;
         }
+#endif
 
         /// <summary>
         /// Reads the flexion direction of each joint family straight out of
@@ -735,6 +697,7 @@ namespace PowerliftingSimulator.Squat.Unity
             _familyFlexionSign[(int)family] = sign;
         }
 
+#if UNITY_EDITOR
         /// <summary>
         /// The equilibrium bias term of
         /// FINAL = NOMINAL_GAM10 + GRAVITY_EQUILIBRIUM_BIAS + DYNAMIC_BALANCE,
@@ -749,6 +712,7 @@ namespace PowerliftingSimulator.Squat.Unity
         private float PreloadLogicalRad(SquatJointFamily family) =>
             UnitContract.DegreesToRadians(_preload.BiasDegrees(family, _sq, EquilibriumLoadKg)) *
             _familyFlexionSign[(int)family];
+#endif
 
         private Quaternion Compose(string jointId, Quaternion nominal, Quaternion gravityBias, Quaternion balanceOffset)
         {
@@ -767,6 +731,7 @@ namespace PowerliftingSimulator.Squat.Unity
             return float.IsPositiveInfinity(lowest) ? 0f : lowest;
         }
 
+#if UNITY_EDITOR
         /// <summary>
         /// Angular velocity of the composed spine target, in the same
         /// parent-frame convention EvaluateReferenceRatePerPhase produces.
@@ -811,19 +776,18 @@ namespace PowerliftingSimulator.Squat.Unity
         /// the drive was told to travel along one path and arrive on another.
         /// </summary>
         public bool SpineBiasRateFeedforwardEnabled { get; set; } = true;
+#endif
 
-        /// <summary>
-        /// Load-independent athlete capacity scale. The bar and athlete mass
-        /// still affect the physical equations through the bodies and
-        /// observations; they are deliberately absent from this capability
-        /// model.
-        /// </summary>
-        public static float CalculateAthleteCapacityScale(float brace01)
+        public static float CalculateEffort(float brace01, float drive01)
         {
             if (!float.IsFinite(brace01))
                 throw new ArgumentOutOfRangeException(nameof(brace01));
+            if (!float.IsFinite(drive01))
+                throw new ArgumentOutOfRangeException(nameof(drive01));
             float brace = Mathf.Clamp01(brace01);
-            return GlobalStrengthScale * (1f + 0.35f * brace);
+            float drive = Mathf.Clamp01(drive01);
+            float intent = Mathf.Max(brace, drive);
+            return (1f + 0.35f * intent) / 1.35f;
         }
 
         private static Quaternion SagittalAndFrontal(float sagittalRad, float frontalRad)
@@ -847,15 +811,15 @@ namespace PowerliftingSimulator.Squat.Unity
             ReferenceTargetFrame referenceTarget,
             ReferenceRateFrame rate,
             float phaseVelocity,
-            float capacityScale,
+            float effort,
             ulong tick)
         {
-            ApplyUpperLimbJoint(controller, "left_upper_arm", referenceTarget.LeftUpperArm, rate.LeftUpperArm, phaseVelocity, capacityScale, tick);
-            ApplyUpperLimbJoint(controller, "right_upper_arm", referenceTarget.RightUpperArm, rate.RightUpperArm, phaseVelocity, capacityScale, tick);
-            ApplyUpperLimbJoint(controller, "left_forearm", referenceTarget.LeftForearm, rate.LeftForearm, phaseVelocity, capacityScale, tick);
-            ApplyUpperLimbJoint(controller, "right_forearm", referenceTarget.RightForearm, rate.RightForearm, phaseVelocity, capacityScale, tick);
-            ApplyUpperLimbJoint(controller, "left_hand", referenceTarget.LeftHand, rate.LeftHand, phaseVelocity, capacityScale, tick);
-            ApplyUpperLimbJoint(controller, "right_hand", referenceTarget.RightHand, rate.RightHand, phaseVelocity, capacityScale, tick);
+            ApplyUpperLimbJoint(controller, "left_upper_arm", referenceTarget.LeftUpperArm, rate.LeftUpperArm, phaseVelocity, effort, tick);
+            ApplyUpperLimbJoint(controller, "right_upper_arm", referenceTarget.RightUpperArm, rate.RightUpperArm, phaseVelocity, effort, tick);
+            ApplyUpperLimbJoint(controller, "left_forearm", referenceTarget.LeftForearm, rate.LeftForearm, phaseVelocity, effort, tick);
+            ApplyUpperLimbJoint(controller, "right_forearm", referenceTarget.RightForearm, rate.RightForearm, phaseVelocity, effort, tick);
+            ApplyUpperLimbJoint(controller, "left_hand", referenceTarget.LeftHand, rate.LeftHand, phaseVelocity, effort, tick);
+            ApplyUpperLimbJoint(controller, "right_hand", referenceTarget.RightHand, rate.RightHand, phaseVelocity, effort, tick);
         }
 
         private void ApplyUpperLimbJoint(
@@ -864,13 +828,13 @@ namespace PowerliftingSimulator.Squat.Unity
             Quaternion referenceTarget,
             Vector3 ratePerPhase,
             float phaseVelocity,
-            float capacityScale,
+            float effort,
             ulong tick)
         {
             Quaternion target = Compose(jointId, referenceTarget, Quaternion.identity, Quaternion.identity);
             controller.ApplyCommand(
                 jointId,
-                new JointCommand(target, ratePerPhase * phaseVelocity, 1f, capacityScale),
+                new JointCommand(target, ratePerPhase * phaseVelocity, effort, AthleteStrengthScale),
                 tick);
         }
 
@@ -1280,7 +1244,9 @@ namespace PowerliftingSimulator.Squat.Unity
         /// prototype controller is the single writer; nothing else sets it,
         /// so there is one authority for the load the bias assumes.
         /// </summary>
+#if UNITY_EDITOR
         public float EquilibriumLoadKg { get; set; }
+#endif
         public string CanonicalPostureWorstJoint => _postureWorstJoint;
 
         private float _canonicalPoseErrorRad;
@@ -1292,6 +1258,7 @@ namespace PowerliftingSimulator.Squat.Unity
         private string _postureWorstJoint = "NONE";
         private bool _hasPostureHistory;
 
+#if UNITY_EDITOR
         private void ObserveCanonicalPosture(float dt)
         {
             float worstCanonicalError = 0f;
@@ -1375,6 +1342,7 @@ namespace PowerliftingSimulator.Squat.Unity
             float consumed = Mathf.Max(commanded, actual) - expected;
             return Mathf.Clamp01(consumed / headroom);
         }
+#endif
 
         private void CheckDriveSaturation(PoweredJointController controller)
         {
@@ -1389,6 +1357,7 @@ namespace PowerliftingSimulator.Squat.Unity
             _isDriveSaturated = maximum >= PoweredJointController.ModeledDemandSaturationThreshold;
         }
 
+#if UNITY_EDITOR
         public static float CalculateBalanceOffset(
             float comError,
             float comVelocity,
@@ -1402,5 +1371,6 @@ namespace PowerliftingSimulator.Squat.Unity
             float correction = -kp * comError - kd * comVelocity;
             return Mathf.Clamp(correction, -maxCorrectionRad, maxCorrectionRad);
         }
+#endif
     }
 }

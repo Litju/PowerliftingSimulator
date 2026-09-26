@@ -44,7 +44,7 @@ namespace PowerliftingSimulator.Tests
                 (phase: 0.65f, dir: SquatPhaseDirection.Descent, state: SquatState.DESCENT,  tag: "03_parallel"),
                 (phase: 1.00f, dir: SquatPhaseDirection.Descent, state: SquatState.BOTTOM,   tag: "04_bottom_depth"),
                 (phase: 0.98f, dir: SquatPhaseDirection.Ascent,  state: SquatState.REVERSAL, tag: "05_reversal"),
-                (phase: 0.60f, dir: SquatPhaseDirection.Ascent,  state: SquatState.STICKING, tag: "06_sticking_ascent"),
+                (phase: 0.60f, dir: SquatPhaseDirection.Ascent,  state: SquatState.ASCENT,   tag: "06_mid_ascent"),
                 (phase: 0.00f, dir: SquatPhaseDirection.Ascent,  state: SquatState.LOCKOUT,  tag: "07_lockout_final")
             };
 

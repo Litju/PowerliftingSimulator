@@ -227,7 +227,7 @@ namespace PowerliftingSimulator.Squat.Unity
             // The explicit command and the already-qualified physical
             // operation share this controlled boundary. The adapter remains
             // the sole physical drive writer on the following pre-physics tick.
-            _adapter.StartSquat();
+            _adapter.BeginIntentDrivenSquat();
         }
 
         private void HandleActiveAttempt(SquatObservationSnapshot snapshot)
@@ -390,7 +390,6 @@ namespace PowerliftingSimulator.Squat.Unity
                 supportAvailable && supportPresent && leftFootAvailable && rightFootAvailable &&
                 leftKneePass && rightKneePass && leftHipPass && rightHipPass && abdomenPass && thoraxPass;
 
-            SquatPredictiveBalanceController control = _adapter.BalanceController;
             SquatBalanceObserver balance = _adapter.Balance;
             Vector3 comVelocity = balance.SystemComVelocity;
             float comSpeed = Mathf.Sqrt(comVelocity.x * comVelocity.x + comVelocity.z * comVelocity.z);
@@ -403,7 +402,7 @@ namespace PowerliftingSimulator.Squat.Unity
             float barAngularVelocityZ = barAvailable
                 ? snapshot.Bar.AngularVelocityBarRadiansPerSecond.Z
                 : float.NaN;
-            float copMeasuredAp = control.HasCopMeasurement ? control.CopMeasuredAp : float.NaN;
+            float copMeasuredAp = balance.HasCopEstimate ? balance.CopEstimate.z : float.NaN;
             float copMeasuredMl = balance.HasCopEstimate ? balance.CopEstimate.x : float.NaN;
 
             return new SquatStartPredicateDiagnostic(
@@ -452,19 +451,19 @@ namespace PowerliftingSimulator.Squat.Unity
                 snapshot.Joints.Thorax.ActualAngleRadians,
                 thoraxPass,
                 JointMargin(snapshot.Joints.Thorax, _ruleTolerances.TrunkErectToleranceRad),
-                control.RawAnkleAuthorityFraction,
-                control.RawAnkleSagittalOffsetRad,
-                control.RawAnkleSagittalOffsetRad * control.PostureGuardScale,
-                control.AnkleSagittalOffsetRad,
-                control.PostureGuardScale,
-                control.HipStrategyBlend,
-                Mathf.Abs(control.HipSagittalOffsetRad) / SquatPredictiveBalanceController.MaxHipSagittalOffsetRad,
-                Mathf.Abs(control.TrunkSagittalOffsetRad) / SquatPredictiveBalanceController.MaxTrunkSagittalOffsetRad,
-                _adapter.StandingEquilibriumBiasDegrees(SquatJointFamily.Ankle),
-                _adapter.StandingEquilibriumBiasDegrees(SquatJointFamily.Knee),
-                _adapter.StandingEquilibriumBiasDegrees(SquatJointFamily.Hip),
-                _adapter.StandingEquilibriumBiasDegrees(SquatJointFamily.Abdomen),
-                _adapter.StandingEquilibriumBiasDegrees(SquatJointFamily.Thorax),
+                0f,
+                _adapter.BalanceCorrectionRad,
+                _adapter.BalanceCorrectionRad,
+                _adapter.BalanceCorrectionRad,
+                1f,
+                0f,
+                0f,
+                0f,
+                0f,
+                0f,
+                0f,
+                0f,
+                0f,
                 comSpeed,
                 balance.CaptureMargin2D,
                 balance.SystemCom.z,

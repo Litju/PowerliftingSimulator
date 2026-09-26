@@ -76,6 +76,33 @@ namespace PowerliftingSimulator.Tests
         }
 
         [Test]
+        public void STICKING_OBSERVATION_DOES_NOT_HOLD_REFERENCE_OR_CREATE_TIMEOUT_FAILURE()
+        {
+            var machine = new SquatStateMachine(SquatState.DESCENT);
+            PlayerIntentFrame drive = Intent(IntentEdgeFlags.None, drive01: 1f);
+            machine.Step(Intent(IntentEdgeFlags.None, yield01: 1f), SquatDomainObservation.Empty, StepSeconds);
+            machine.Step(Intent(IntentEdgeFlags.None, yield01: 1f), Observation(depthLegalBilateral: true), StepSeconds);
+            machine.Step(drive, Observation(reversalEvidence: true), StepSeconds);
+            machine.Step(drive, Observation(upwardVelocity: true), StepSeconds);
+
+            float ascentPhase = machine.Phase;
+            SquatTransition sticking = machine.Step(
+                drive,
+                Observation(stickingDetected: true),
+                StepSeconds);
+
+            Assert.That(sticking.To, Is.EqualTo(SquatState.STICKING));
+            Assert.That(machine.Phase, Is.LessThan(ascentPhase));
+
+            for (int tick = 0; tick < 50; tick++)
+                machine.Step(drive, SquatDomainObservation.Empty, StepSeconds);
+
+            Assert.That(machine.State, Is.EqualTo(SquatState.STICKING));
+            Assert.That(machine.Phase, Is.LessThan(ascentPhase));
+            Assert.That(machine.Phase, Is.GreaterThan(0f));
+        }
+
+        [Test]
         public void REFERENCE_PROFILE_HAS_EXACT_ENDPOINTS_AND_BOUNDED_DERIVATIVES()
         {
             SquatReferenceProfile profile = SquatReferenceProfile.CanonicalPowerliftingSquatV1;
@@ -91,7 +118,7 @@ namespace PowerliftingSimulator.Tests
                 SquatReferencePose pose = profile.Evaluate(
                     waypoint.Phase,
                     waypoint.Waypoint == SquatReferenceWaypoint.EARLY_ASCENT ||
-                    waypoint.Waypoint == SquatReferenceWaypoint.STICKING
+                    waypoint.Waypoint == SquatReferenceWaypoint.MID_ASCENT
                         ? SquatPhaseDirection.Ascent
                         : SquatPhaseDirection.Descent);
                 AssertPoseEqual(waypoint.Pose, pose, waypoint.Waypoint.ToString());
@@ -111,6 +138,24 @@ namespace PowerliftingSimulator.Tests
                 SquatReferencePose left = profile.Evaluate(phase - 1e-5f, SquatPhaseDirection.Descent);
                 SquatReferencePose right = profile.Evaluate(phase + 1e-5f, SquatPhaseDirection.Descent);
                 Assert.That(PoseDistance(left, right), Is.LessThan(0.002f), $"phase={phase}");
+            }
+        }
+
+        [Test]
+        public void REFERENCE_ASCENT_USES_THE_SAME_PATH_IN_REVERSE()
+        {
+            SquatReferenceProfile profile = SquatReferenceProfile.CanonicalPowerliftingSquatV1;
+            for (int index = 0; index <= 100; index++)
+            {
+                float phase = index / 100f;
+                AssertPoseEqual(
+                    profile.Evaluate(phase, SquatPhaseDirection.Descent),
+                    profile.Evaluate(phase, SquatPhaseDirection.Ascent),
+                    $"phase={phase:F2}");
+                AssertPoseEqual(
+                    profile.Derivative(phase, SquatPhaseDirection.Descent),
+                    profile.Derivative(phase, SquatPhaseDirection.Ascent),
+                    $"derivative phase={phase:F2}");
             }
         }
 

@@ -12,6 +12,7 @@ namespace PowerliftingSimulator.Squat.Unity
         Thorax
     }
 
+#if UNITY_EDITOR
     /// <summary>
     /// Persistent target-space preload that lets the finite GAM-7 joint
     /// springs develop an antigravity moment while the actual physical pose
@@ -427,3 +428,4 @@ namespace PowerliftingSimulator.Squat.Unity
         }
     }
 }
+#endif

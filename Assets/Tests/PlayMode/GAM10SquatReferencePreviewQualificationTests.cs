@@ -63,8 +63,8 @@ namespace PowerliftingSimulator.Tests
                 "GAM-10-V2-reversal.png");
             yield return CaptureReviewPose(preview, 0.82f, SquatPhaseDirection.Ascent, SquatState.ASCENT,
                 "GAM-10-V2-early-ascent.png");
-            yield return CaptureReviewPose(preview, 0.64f, SquatPhaseDirection.Ascent, SquatState.STICKING,
-                "GAM-10-V2-sticking.png");
+            yield return CaptureReviewPose(preview, 0.64f, SquatPhaseDirection.Ascent, SquatState.ASCENT,
+                "GAM-10-V2-mid-ascent.png");
             yield return CaptureReviewPose(preview, 0f, SquatPhaseDirection.Ascent, SquatState.LOCKOUT,
                 "GAM-10-V2-lockout.png");
 
@@ -139,7 +139,7 @@ namespace PowerliftingSimulator.Tests
                 SquatState.DESCENT,
                 SquatState.DESCENT,
                 SquatState.BOTTOM,
-                SquatState.STICKING
+                SquatState.ASCENT
             };
             string[] labels = { "standing", "phase_0_25", "phase_0_55", "phase_0_80", "bottom", "ascent_0_64" };
             var receipt = new StringBuilder();
