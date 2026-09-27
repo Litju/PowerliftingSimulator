@@ -65,11 +65,12 @@ namespace PowerliftingSimulator.Squat.Unity
         private readonly SquatBalanceObserver _observer;
         private readonly SquatComStabilizerV2 _balanceV2 = new SquatComStabilizerV2();
         private SquatBalanceCorrectionV2 _lastBalanceCorrection;
+        private float _referenceComOffsetAp;
+        private float _referenceComOffsetMl;
+        private Vector3 _referenceSupportCenter;
+        private bool _hasStandingComReference;
 #if UNITY_EDITOR
         private readonly SquatPredictiveBalanceController _balanceController = new SquatPredictiveBalanceController();
-        private float _standingComApOffset;
-        private float _standingComMlOffset;
-        private bool _hasStandingCalibration;
 #endif
         private ReferenceTargetFrame _nominalReferenceTarget;
 #if UNITY_EDITOR
@@ -125,6 +126,10 @@ namespace PowerliftingSimulator.Squat.Unity
         public SquatBalanceObserver Balance => _observer;
         public SquatComStabilizerV2Calibration StabilizerCalibration => _balanceV2.Calibration;
         public SquatBalanceCorrectionV2 BalanceCorrectionV2 => _lastBalanceCorrection;
+        public bool HasStandingComReference => _hasStandingComReference;
+        public float ReferenceComOffsetAp => _referenceComOffsetAp;
+        public float ReferenceComOffsetMl => _referenceComOffsetMl;
+        public Vector3 ReferenceSupportCenter => _referenceSupportCenter;
 #if UNITY_EDITOR
         public SquatPredictiveBalanceController BalanceController => _balanceController;
         public SquatEquilibriumPreload Preload => _preload;
@@ -145,6 +150,26 @@ namespace PowerliftingSimulator.Squat.Unity
         /// </summary>
         public Vector3 LeftReferencePlantarAnchorWorld { get; private set; }
         public Vector3 RightReferencePlantarAnchorWorld { get; private set; }
+        public Vector3 CanonicalPlantarSupportCenter
+        {
+            get
+            {
+                // Before a physics step, the planted collider footprint is the available support geometry.
+                if (_rig.Segments.TryGetValue("left_foot", out PhysicalAthleteRig.SegmentRuntime left) &&
+                    _rig.Segments.TryGetValue("right_foot", out PhysicalAthleteRig.SegmentRuntime right) &&
+                    left.Collider != null && right.Collider != null)
+                {
+                    Bounds leftBounds = left.Collider.bounds;
+                    Bounds rightBounds = right.Collider.bounds;
+                    return new Vector3(
+                        0.5f * (Mathf.Min(leftBounds.min.x, rightBounds.min.x) + Mathf.Max(leftBounds.max.x, rightBounds.max.x)),
+                        0.5f * (leftBounds.center.y + rightBounds.center.y),
+                        0.5f * (Mathf.Min(leftBounds.min.z, rightBounds.min.z) + Mathf.Max(leftBounds.max.z, rightBounds.max.z)));
+                }
+
+                return 0.5f * (LeftReferencePlantarAnchorWorld + RightReferencePlantarAnchorWorld);
+            }
+        }
 
         /// <summary>
         /// The three target layers for one controlled joint, kept separate so
@@ -250,6 +275,16 @@ namespace PowerliftingSimulator.Squat.Unity
                 _failureReason = "NONE";
         }
 
+        public void CaptureStandingComReference()
+        {
+            Vector3 supportCenter = CanonicalPlantarSupportCenter;
+            Vector3 systemCom = _observer.MeasureCurrentSystemCom(_saddle);
+            _referenceSupportCenter = supportCenter;
+            _referenceComOffsetAp = systemCom.z - supportCenter.z;
+            _referenceComOffsetMl = systemCom.x - supportCenter.x;
+            _hasStandingComReference = true;
+        }
+
         public void SetState(SquatState state)
         {
             _state = state;
@@ -297,9 +332,12 @@ namespace PowerliftingSimulator.Squat.Unity
             _hasPostureHistory = false;
 #if UNITY_EDITOR
             _balanceController.Reset();
-            _hasStandingCalibration = false;
             _qualificationPhaseVelocity = 0f;
 #endif
+            _referenceComOffsetAp = 0f;
+            _referenceComOffsetMl = 0f;
+            _referenceSupportCenter = Vector3.zero;
+            _hasStandingComReference = false;
             _composition.Clear();
         }
 
@@ -363,6 +401,8 @@ namespace PowerliftingSimulator.Squat.Unity
         {
             if (poweredController == null)
                 throw new ArgumentNullException(nameof(poweredController));
+            if (!_hasStandingComReference)
+                throw new InvalidOperationException("The physical squat must capture its standing COM reference after reset and saddle attachment.");
 
             float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
             _phaseVelocity = 0f;
@@ -376,6 +416,8 @@ namespace PowerliftingSimulator.Squat.Unity
                 _systemCom,
                 _observer.SystemComVelocity,
                 _supportCenter,
+                _referenceComOffsetAp,
+                _referenceComOffsetMl,
                 intent.BalanceX,
                 dt);
 
@@ -392,9 +434,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 _failureReason = "COM_OUTSIDE_SUPPORT";
             }
 
-            float brace = Mathf.Max(intent.Brace01, intent.BraceHeld ? 1f : 0f);
-            float drive = Mathf.Max(intent.Drive01, intent.DriveHeld ? 1f : 0f);
-            float effort = CalculateEffort(brace, drive);
+            const float effort = 1f;
 
             if (_rig.Segments.TryGetValue("pelvis", out PhysicalAthleteRig.SegmentRuntime pelvisSegment) && pelvisSegment.Body != null)
                 _minPelvisHeightM = Mathf.Min(_minPelvisHeightM, pelvisSegment.Body.position.y);
@@ -577,13 +617,14 @@ namespace PowerliftingSimulator.Squat.Unity
             _observer.Observe(observation, _saddle, LowestFootBodyY());
 
             _systemCom = _observer.SystemCom;
+            Vector3 canonicalSupportCenter = _referenceSupportCenter;
             _supportCenter = new Vector3(
-                _observer.SupportMlCenter,
+                _observer.HasSupport ? _observer.SupportMlCenter : canonicalSupportCenter.x,
                 _observer.SupportPlaneY,
-                _observer.SupportApCenter);
+                _observer.HasSupport ? _observer.SupportApCenter : canonicalSupportCenter.z);
 
-            _apComError = _systemCom.z - _observer.SupportApCenter;
-            _mlComError = _systemCom.x - _observer.SupportMlCenter;
+            _apComError = (_systemCom.z - _supportCenter.z) - _referenceComOffsetAp;
+            _mlComError = (_systemCom.x - _supportCenter.x) - _referenceComOffsetMl;
         }
 
         /// <summary>
@@ -664,23 +705,6 @@ namespace PowerliftingSimulator.Squat.Unity
         }
 
 #if UNITY_EDITOR
-        /// <summary>
-        /// The accepted standing pose is the calibration. Recording how the
-        /// system COM sat relative to the plantar support at that pose gives
-        /// the balance reference, rather than assuming the polygon centre.
-        /// A powerlifting squat holds the system over roughly that same point
-        /// throughout, so the standing relationship is also the squat
-        /// reference until the phase-specific trajectory lands.
-        /// </summary>
-        private void CalibrateStandingComRelationship()
-        {
-            if (_hasStandingCalibration || !_observer.HasSupport || _state != SquatState.SETUP)
-                return;
-            _standingComApOffset = _observer.SystemCom.z - _observer.SupportApCenter;
-            _standingComMlOffset = _observer.SystemCom.x - _observer.SupportMlCenter;
-            _hasStandingCalibration = true;
-        }
-
         private float AnkleAnchorAp()
         {
             bool hasLeft = TryJointAnchor("left_foot", out Vector3 left);
@@ -801,18 +825,6 @@ namespace PowerliftingSimulator.Squat.Unity
         /// </summary>
         public bool SpineBiasRateFeedforwardEnabled { get; set; } = true;
 #endif
-
-        public static float CalculateEffort(float brace01, float drive01)
-        {
-            if (!float.IsFinite(brace01))
-                throw new ArgumentOutOfRangeException(nameof(brace01));
-            if (!float.IsFinite(drive01))
-                throw new ArgumentOutOfRangeException(nameof(drive01));
-            float brace = Mathf.Clamp01(brace01);
-            float drive = Mathf.Clamp01(drive01);
-            float intent = Mathf.Max(brace, drive);
-            return (1f + 0.35f * intent) / 1.35f;
-        }
 
         private static Quaternion SagittalAndFrontal(float sagittalRad, float frontalRad)
         {

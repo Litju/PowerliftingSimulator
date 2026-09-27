@@ -15,6 +15,10 @@ namespace PowerliftingSimulator.Tests
             Assert.That(calibration.AnkleApWeight, Is.GreaterThan(calibration.HipApWeight));
             Assert.That(calibration.TrunkApCounterWeight, Is.GreaterThan(0f));
             Assert.That(calibration.AnkleMlWeight, Is.GreaterThan(calibration.HipMlWeight));
+            Assert.That(calibration.KpAp, Is.EqualTo(0.80f / 0.20446f).Within(1e-6f));
+            Assert.That(calibration.KdAp, Is.EqualTo(calibration.KpAp * 0.1f).Within(1e-6f));
+            Assert.That(calibration.MaxApCorrectionRad, Is.EqualTo(0.26180f).Within(1e-6f));
+            Assert.That(calibration.MaxApCorrectionRateRadS, Is.EqualTo(4f).Within(1e-6f));
         }
 
         [Test]
@@ -25,13 +29,17 @@ namespace PowerliftingSimulator.Tests
                 new Vector3(0.02f, 1f, 0.05f),
                 new Vector3(0f, 0f, 0.10f),
                 Vector3.zero,
+                0.01f,
+                0.005f,
                 0f,
                 1f);
 
-            Assert.That(correction.ErrorApM, Is.EqualTo(0.05f).Within(1e-6f));
-            Assert.That(correction.ErrorMlM, Is.EqualTo(0.02f).Within(1e-6f));
-            Assert.That(correction.CommandApRad, Is.EqualTo(-0.048f).Within(1e-6f));
-            Assert.That(correction.CommandMlRad, Is.EqualTo(-0.013f).Within(1e-6f));
+            Assert.That(correction.ErrorApM, Is.EqualTo(0.04f).Within(1e-6f));
+            Assert.That(correction.ErrorMlM, Is.EqualTo(0.015f).Within(1e-6f));
+            Assert.That(correction.CommandApRad, Is.EqualTo(-(
+                SquatComStabilizerV2Calibration.Default.KpAp * 0.04f +
+                SquatComStabilizerV2Calibration.Default.KdAp * 0.10f)).Within(1e-6f));
+            Assert.That(correction.CommandMlRad, Is.EqualTo(-0.00975f).Within(1e-6f));
             Assert.That(correction.AnkleApRad, Is.EqualTo(correction.AppliedApRad).Within(1e-6f));
             Assert.That(correction.HipApRad, Is.EqualTo(correction.AppliedApRad * 0.20f).Within(1e-6f));
             Assert.That(correction.TrunkApRad, Is.EqualTo(-correction.AppliedApRad * 0.08f).Within(1e-6f));
@@ -51,20 +59,25 @@ namespace PowerliftingSimulator.Tests
                     Vector3.zero,
                     Vector3.zero,
                     0f,
+                    0f,
+                    0f,
                     0.01f);
             }
 
-            Assert.That(correction.AppliedApRad, Is.EqualTo(-0.08f).Within(1e-6f));
+            Assert.That(correction.AppliedApRad, Is.EqualTo(-0.26180f).Within(1e-6f));
             Assert.That(correction.AppliedMlRad, Is.EqualTo(-0.05f).Within(1e-6f));
             Assert.That(correction.IsBoundSaturated, Is.True);
+            Assert.That(correction.IsApBoundSaturated, Is.True);
 
             SquatBalanceCorrectionV2 reversed = stabilizer.Solve(
                 new Vector3(-2f, 1f, -2f),
                 Vector3.zero,
                 Vector3.zero,
                 0f,
+                0f,
+                0f,
                 0.01f);
-            Assert.That(Mathf.Abs(reversed.AppliedApRad - correction.AppliedApRad), Is.LessThanOrEqualTo(0.004f + 1e-6f));
+            Assert.That(Mathf.Abs(reversed.AppliedApRad - correction.AppliedApRad), Is.LessThanOrEqualTo(0.04f + 1e-6f));
             Assert.That(Mathf.Abs(reversed.AppliedMlRad - correction.AppliedMlRad), Is.LessThanOrEqualTo(0.004f + 1e-6f));
         }
 
@@ -76,6 +89,8 @@ namespace PowerliftingSimulator.Tests
                 Vector3.zero,
                 Vector3.zero,
                 Vector3.zero,
+                0f,
+                0f,
                 1f,
                 0.05f);
 

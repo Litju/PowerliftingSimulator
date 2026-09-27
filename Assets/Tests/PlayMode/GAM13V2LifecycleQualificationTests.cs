@@ -17,7 +17,6 @@ namespace PowerliftingSimulator.Tests
     public sealed class GAM13V2LifecycleQualificationTests
     {
         private const string QualificationScene = "SquatPhysicalPrototype";
-        private const int WarmupTicks = 100;
         private const int MaximumLifecycleTicks = 1800;
 
         [UnityTest]
@@ -45,17 +44,12 @@ namespace PowerliftingSimulator.Tests
             controller.enabled = false;
             bootstrap.enabled = false;
             controller.SetLoad(loadKg);
+            Assert.That(controller.Adapter.HasStandingComReference, Is.True);
 
             FoundationRuntime runtime = bootstrap.Runtime;
             float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
-            for (int tick = 0; tick < WarmupTicks; tick++)
-            {
-                Assert.That(runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds), Is.EqualTo(1));
-                TickFeet(controller, dt);
-            }
-
-            controller.BeginAttempt();
             var trace = new GAM13V2QualificationTrace();
+            controller.BeginAttempt();
             bool hasSquatCommand = false;
             bool yieldAdvancedPhase = false;
             bool driveReversedPhase = false;
@@ -79,8 +73,8 @@ namespace PowerliftingSimulator.Tests
 
                 Assert.That(runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds), Is.EqualTo(1));
                 TickFeet(controller, dt);
-                if (!controller.ObservationCollector.HasLastSnapshot)
-                    continue;
+                Assert.That(controller.ObservationCollector.HasLastSnapshot, Is.True,
+                    $"No post-physics observation was recorded at lifecycle tick {tick}.");
 
                 SquatObservationSnapshot snapshot = controller.ObservationCollector.LastSnapshot;
                 finite &= IsFinite(snapshot);
@@ -125,6 +119,8 @@ namespace PowerliftingSimulator.Tests
             Assert.That(authoredSticking, Is.False, "STICKING must remain an observation, not a V2 motor state.");
             Assert.That(finalRecord, Is.Not.Null, "The lifecycle did not finalize a physical/rule outcome within its bounded attempt window.");
             Assert.That(finalRecord.TraceSampleCount, Is.GreaterThan(0));
+            Assert.That(trace.MinimumIntrinsicCapacityFraction, Is.EqualTo(1f).Within(1e-5f),
+                "A V2 lifecycle joint did not receive its full finite intrinsic capacity.");
 
             Debug.Log(string.Format(CultureInfo.InvariantCulture,
                 "GAM13_V2_LIFECYCLE load={0:F1}kg terminal={1} rule={2} physical={3} legalDepthObserved={4} maxBarSpeed={5:F3}m/s trace={6}",
@@ -166,11 +162,13 @@ namespace PowerliftingSimulator.Tests
             maximumLimitProximity = 0f;
             foreach (PoweredJointController.PoweredJointRuntime joint in rig.PoweredController.Joints)
             {
-                if (!joint.Profile.HasValue || !joint.HasPostPhysicsDiagnostic || joint.Joint == null || joint.Joint.connectedBody == null)
+                if (joint.Joint == null || joint.Joint.connectedBody == null)
                     continue;
                 Vector3 childAnchor = joint.Joint.transform.TransformPoint(joint.Joint.anchor);
                 Vector3 parentAnchor = joint.Joint.connectedBody.transform.TransformPoint(joint.Joint.connectedAnchor);
                 maximumAnchorSeparation = Mathf.Max(maximumAnchorSeparation, Vector3.Distance(childAnchor, parentAnchor));
+                if (!joint.Profile.HasValue || !joint.HasPostPhysicsDiagnostic)
+                    continue;
                 maximumLimitProximity = Mathf.Max(maximumLimitProximity, joint.PostPhysicsDiagnostic.LimitProximity);
             }
         }

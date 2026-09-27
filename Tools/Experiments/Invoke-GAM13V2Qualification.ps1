@@ -102,6 +102,10 @@ try {
             "QUALIFICATION=$($summary.Qualification)",
             "TRACE=$tracePath"
         ) | Set-Content -LiteralPath (Join-Path $loadDirectory 'runner-receipt.md') -Encoding utf8
+
+        if ($Mode -eq 'Standing' -and !$passed) {
+            break
+        }
     }
 }
 finally {

@@ -60,6 +60,12 @@ namespace PowerliftingSimulator.Squat.Unity
         public float SupportApLength => SupportApMax - SupportApMin;
         public float SupportMlWidth => SupportMlMax - SupportMlMin;
 
+        public Vector3 MeasureCurrentSystemCom(SquatBarSaddle saddle)
+        {
+            ObserveMassModel(PhysicalObservation.Empty(new SimulationTime(0ul, 0d)), saddle);
+            return SystemCom;
+        }
+
         // Engine contact-impulse centre of pressure.
         public bool HasCopEstimate { get; private set; }
         public Vector3 CopEstimate { get; private set; }

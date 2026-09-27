@@ -8,9 +8,9 @@ namespace PowerliftingSimulator.Squat.Unity
         public const int ActiveScalarCount = 14;
         public static readonly SquatComStabilizerV2Calibration Default = new SquatComStabilizerV2Calibration(
             "GAM13_SQUAT_COM_STABILIZER_V2_1",
-            0.80f, 0.08f, 0.65f, 0.05f,
+            0.80f / 0.20446f, (0.80f / 0.20446f) * 0.1f, 0.65f, 0.05f,
             1.00f, 0.20f, 0.08f, 1.00f, 0.15f,
-            0.08f, 0.05f, 0.40f, 0.40f, 0.02f);
+            0.26180f, 0.05f, 4.0f, 0.40f, 0.02f);
 
         public SquatComStabilizerV2Calibration(
             string version,
@@ -78,7 +78,8 @@ namespace PowerliftingSimulator.Squat.Unity
             float commandMlRad,
             float appliedApRad,
             float appliedMlRad,
-            bool isBoundSaturated,
+            bool isApBoundSaturated,
+            bool isMlBoundSaturated,
             SquatComStabilizerV2Calibration calibration)
         {
             ErrorApM = errorApM;
@@ -87,7 +88,8 @@ namespace PowerliftingSimulator.Squat.Unity
             CommandMlRad = commandMlRad;
             AppliedApRad = appliedApRad;
             AppliedMlRad = appliedMlRad;
-            IsBoundSaturated = isBoundSaturated;
+            IsApBoundSaturated = isApBoundSaturated;
+            IsMlBoundSaturated = isMlBoundSaturated;
             AnkleApRad = appliedApRad * calibration.AnkleApWeight;
             HipApRad = appliedApRad * calibration.HipApWeight;
             TrunkApRad = -appliedApRad * calibration.TrunkApCounterWeight;
@@ -106,7 +108,9 @@ namespace PowerliftingSimulator.Squat.Unity
         public float TrunkApRad { get; }
         public float AnkleMlRad { get; }
         public float HipMlRad { get; }
-        public bool IsBoundSaturated { get; }
+        public bool IsApBoundSaturated { get; }
+        public bool IsMlBoundSaturated { get; }
+        public bool IsBoundSaturated => IsApBoundSaturated || IsMlBoundSaturated;
     }
 
     public sealed class SquatComStabilizerV2
@@ -130,6 +134,8 @@ namespace PowerliftingSimulator.Squat.Unity
             Vector3 athleteBarCom,
             Vector3 comVelocity,
             Vector3 supportCenter,
+            float referenceComOffsetApM,
+            float referenceComOffsetMlM,
             float playerMlBias01,
             float deltaTimeSeconds)
         {
@@ -139,13 +145,17 @@ namespace PowerliftingSimulator.Squat.Unity
                 throw new ArgumentOutOfRangeException(nameof(comVelocity));
             if (!IsFinite(supportCenter))
                 throw new ArgumentOutOfRangeException(nameof(supportCenter));
+            if (!float.IsFinite(referenceComOffsetApM))
+                throw new ArgumentOutOfRangeException(nameof(referenceComOffsetApM));
+            if (!float.IsFinite(referenceComOffsetMlM))
+                throw new ArgumentOutOfRangeException(nameof(referenceComOffsetMlM));
             if (!float.IsFinite(playerMlBias01))
                 throw new ArgumentOutOfRangeException(nameof(playerMlBias01));
             if (!float.IsFinite(deltaTimeSeconds) || deltaTimeSeconds <= 0f)
                 throw new ArgumentOutOfRangeException(nameof(deltaTimeSeconds));
 
-            float errorAp = athleteBarCom.z - supportCenter.z;
-            float errorMl = athleteBarCom.x - supportCenter.x;
+            float errorAp = (athleteBarCom.z - supportCenter.z) - referenceComOffsetApM;
+            float errorMl = (athleteBarCom.x - supportCenter.x) - referenceComOffsetMlM;
             float commandAp = -(_calibration.KpAp * errorAp + _calibration.KdAp * comVelocity.z);
             float commandMl = -(_calibration.KpMl * errorMl + _calibration.KdMl * comVelocity.x);
             float biasedMl = commandMl + Mathf.Clamp(playerMlBias01, -1f, 1f) * _calibration.MaxPlayerMlBiasRad;
@@ -163,8 +173,8 @@ namespace PowerliftingSimulator.Squat.Unity
                 commandMl,
                 _apOutputRad,
                 _mlOutputRad,
-                Mathf.Abs(commandAp) > _calibration.MaxApCorrectionRad ||
-                    Mathf.Abs(biasedMl) > _calibration.MaxMlCorrectionRad,
+                Mathf.Abs(commandAp) > _calibration.MaxApCorrectionRad,
+                Mathf.Abs(biasedMl) > _calibration.MaxMlCorrectionRad,
                 _calibration);
         }
 

@@ -122,6 +122,7 @@ namespace PowerliftingSimulator.Squat.Unity
             _adapter.Reset();
             _adapter.SetSaddle(_saddle);
             athleteRig.SetGameplayPerformanceProfile(true);
+            _adapter.CaptureStandingComReference();
             athleteRig.PrimeCommandSource();
 
             if (autoSquatOnStart)
@@ -247,6 +248,7 @@ namespace PowerliftingSimulator.Squat.Unity
             _adapter.Reset();
             _adapter.SetSaddle(_saddle);
             athleteRig.SetCommandSource(_adapter);
+            _adapter.CaptureStandingComReference();
             athleteRig.PrimeCommandSource();
         }
 

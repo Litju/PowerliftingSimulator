@@ -17,7 +17,6 @@ namespace PowerliftingSimulator.Tests
     public sealed class GAM13V2StandingQualificationTests
     {
         private const string QualificationScene = "SquatPhysicalPrototype";
-        private const int WarmupTicks = 100;
         private const int QualificationTicks = 500;
         private const float MaximumTrunkPitchRad = 0.70f;
         private const float MinimumPelvisHeightM = 0.90f;
@@ -58,22 +57,18 @@ namespace PowerliftingSimulator.Tests
             Assert.That(controller.Saddle.IsAttached, Is.True);
             Assert.That(controller.Saddle.IsBroken, Is.False);
             Assert.That(controller.Saddle.Barbell.LoadedMassKg, Is.EqualTo(loadKg).Within(0.001f));
+            Assert.That(controller.Adapter.HasStandingComReference, Is.True);
 
             FoundationRuntime runtime = bootstrap.Runtime;
             float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
             var trace = new GAM13V2QualificationTrace();
-            for (int tick = 0; tick < WarmupTicks; tick++)
-            {
-                Assert.That(runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds), Is.EqualTo(1));
-                TickFeet(controller, dt);
-            }
-
             controller.BeginAttempt();
 
             bool finite = true;
             bool bilateralSupportEverySample = true;
             bool attachedBarEverySample = true;
             bool apCorrectionMappingConsistent = true;
+            bool referenceErrorConsistent = true;
             bool hasStartWindow = false;
             bool squatCommandIssued = false;
             float minimumPelvisY = float.PositiveInfinity;
@@ -90,11 +85,8 @@ namespace PowerliftingSimulator.Tests
             {
                 Assert.That(runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds), Is.EqualTo(1));
                 TickFeet(controller, dt);
-                if (!controller.ObservationCollector.HasLastSnapshot)
-                {
-                    finite = false;
-                    continue;
-                }
+                Assert.That(controller.ObservationCollector.HasLastSnapshot, Is.True,
+                    $"No post-physics observation was recorded at standing tick {tick}.");
 
                 SquatObservationSnapshot snapshot = controller.ObservationCollector.LastSnapshot;
                 finite &= IsFinite(snapshot, rig, controller);
@@ -118,6 +110,13 @@ namespace PowerliftingSimulator.Tests
                     snapshot.Support.ComToSupportMlRightMarginM);
                 MeasureConstraintHealth(rig, out float anchorSeparation, out float limitProximity, out bool diagnosticsAvailable);
                 finite &= diagnosticsAvailable;
+                float expectedControlErrorAp =
+                    controller.Adapter.SystemCom.z - controller.Adapter.SupportCenter.z - controller.Adapter.ReferenceComOffsetAp;
+                float expectedControlErrorMl =
+                    controller.Adapter.SystemCom.x - controller.Adapter.SupportCenter.x - controller.Adapter.ReferenceComOffsetMl;
+                referenceErrorConsistent &=
+                    Mathf.Abs(expectedControlErrorAp - controller.Adapter.BalanceCorrectionV2.ErrorApM) <= 1e-5f &&
+                    Mathf.Abs(expectedControlErrorMl - controller.Adapter.BalanceCorrectionV2.ErrorMlM) <= 1e-5f;
                 maximumJointAnchorSeparation = Mathf.Max(maximumJointAnchorSeparation, anchorSeparation);
                 maximumLimitProximity = Mathf.Max(maximumLimitProximity, limitProximity);
                 maximumSaddleSeparation = Mathf.Max(maximumSaddleSeparation, controller.Saddle.SaddleSeparationMeters);
@@ -151,6 +150,8 @@ namespace PowerliftingSimulator.Tests
                 maximumJointAnchorSeparation, maximumSaddleSeparation, maximumLimitProximity, tracePath));
 
             Assert.That(finite, Is.True, "The simulation, body state, or authoritative observations became non-finite.");
+            Assert.That(referenceErrorConsistent, Is.True, "The controller error does not equal support-relative COM offset minus the captured reference.");
+            Assert.That(trace.MinimumIntrinsicCapacityFraction, Is.EqualTo(1f).Within(1e-5f), "A V2 standing joint did not receive its full finite intrinsic capacity.");
             Assert.That(attachedBarEverySample, Is.True, "The physical bar detached or the saddle broke during qualification.");
             Assert.That(controller.Saddle.SpawnAlignmentWithinTolerance, Is.True, "The bar saddle did not begin in a valid alignment.");
             Assert.That(bilateralSupportEverySample, Is.True, "Bilateral plantar support was lost during the standing qualification window.");
@@ -230,9 +231,7 @@ namespace PowerliftingSimulator.Tests
             diagnosticsAvailable = true;
             foreach (PoweredJointController.PoweredJointRuntime joint in rig.PoweredController.Joints)
             {
-                if (!joint.Profile.HasValue)
-                    continue;
-                if (!joint.HasPostPhysicsDiagnostic || joint.Joint == null || joint.Joint.connectedBody == null)
+                if (joint.Joint == null || joint.Joint.connectedBody == null)
                 {
                     diagnosticsAvailable = false;
                     continue;
@@ -240,6 +239,13 @@ namespace PowerliftingSimulator.Tests
                 Vector3 childAnchor = joint.Joint.transform.TransformPoint(joint.Joint.anchor);
                 Vector3 parentAnchor = joint.Joint.connectedBody.transform.TransformPoint(joint.Joint.connectedAnchor);
                 maximumAnchorSeparation = Mathf.Max(maximumAnchorSeparation, Vector3.Distance(childAnchor, parentAnchor));
+                if (!joint.Profile.HasValue)
+                    continue;
+                if (!joint.HasPostPhysicsDiagnostic)
+                {
+                    diagnosticsAvailable = false;
+                    continue;
+                }
                 maximumLimitProximity = Mathf.Max(maximumLimitProximity, joint.PostPhysicsDiagnostic.LimitProximity);
             }
         }
