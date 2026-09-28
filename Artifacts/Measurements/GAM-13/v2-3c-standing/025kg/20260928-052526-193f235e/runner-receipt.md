@@ -1,0 +1,15 @@
+# GAM-13 V2-3C 25 kg Gate B receipt
+
+GATE=25_KG_STANDING_B
+LOAD_KG=25
+UNITY_VERSION=6000.3.22f1
+UNITY_PID=16316
+FRESH_PROCESS=true
+TEST_FILTER=GAM13V2StandingQualificationTests
+TEST_RESULT=Failed(Child)
+TESTS=1
+PASSED=0
+FAILED=1
+PROCESS_EXIT=2
+QUALIFICATION=FAIL
+TRACE=E:\Data\Projects\PowerliftingSimulator\Artifacts\Measurements\GAM-13\v2-3c-standing\025kg\20260928-052526-193f235e\qualification-trace.csv
