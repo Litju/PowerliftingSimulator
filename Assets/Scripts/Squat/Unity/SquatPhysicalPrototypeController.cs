@@ -99,6 +99,7 @@ namespace PowerliftingSimulator.Squat.Unity
 
             if (barbell != null)
             {
+                PrepareBarbellSpawn();
                 if (!barbell.IsBuilt)
                     barbell.Build();
                 barbell.SetGameplayPerformanceProfile(true);
@@ -306,6 +307,29 @@ namespace PowerliftingSimulator.Squat.Unity
 
             _saddle = new SquatBarSaddle(barbell, thorax.Body);
             _adapter?.SetSaddle(_saddle);
+        }
+
+        private void PrepareBarbellSpawn()
+        {
+            if (!attachBarSaddle)
+                return;
+            if (!athleteRig.Segments.TryGetValue("thorax", out PhysicalAthleteRig.SegmentRuntime thorax) ||
+                thorax.Body == null)
+                throw new InvalidOperationException("Saddle spawn registration requires the built physical thorax.");
+
+            Vector3 alignedPosition = SquatBarSaddle.AlignedBarRootPosition(thorax.Body, Quaternion.identity);
+            if (!barbell.IsBuilt)
+            {
+                barbell.SetInitialSpawnPosition(alignedPosition);
+                return;
+            }
+
+            Vector3 barAnchor = barbell.Body.transform.TransformPoint(SquatBarSaddle.BarLocalAnchor);
+            Vector3 thoraxAnchor = thorax.Body.transform.TransformPoint(SquatBarSaddle.ThoraxLocalAnchor);
+            float initialError = Vector3.Distance(barAnchor, thoraxAnchor);
+            if (initialError > SquatBarSaddle.InitialAnchorToleranceM)
+                throw new InvalidOperationException(
+                    $"The barbell was built before saddle alignment and starts {initialError * 1000f:F3} mm away from the thorax anchor.");
         }
 
         private void ReleaseSaddleForFailureInspection()

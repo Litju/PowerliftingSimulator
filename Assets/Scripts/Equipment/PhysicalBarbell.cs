@@ -167,6 +167,16 @@ namespace PowerliftingSimulator.Equipment
             _status = "105 kg loaded: one dynamic Rigidbody, gravity on";
         }
 
+        public void SetInitialSpawnPosition(Vector3 positionWorldMeters)
+        {
+            if (IsBuilt)
+                throw new InvalidOperationException("The barbell spawn position is immutable after its Rigidbody is built.");
+            if (!float.IsFinite(positionWorldMeters.x) || !float.IsFinite(positionWorldMeters.y) || !float.IsFinite(positionWorldMeters.z))
+                throw new ArgumentOutOfRangeException(nameof(positionWorldMeters));
+
+            spawnPosition = positionWorldMeters;
+        }
+
         private void Update()
         {
             if (_barBody == null)

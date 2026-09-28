@@ -33,9 +33,10 @@ namespace PowerliftingSimulator.Squat.Unity
         /// (Artifacts/Research/GAM-13-saddle-v2-contact-topology.md).
         /// </summary>
         public const string CollisionTopologyVersion = "GAM13_SADDLE_BAR_LIMB_FILTER_V2";
-        public const float DefaultLinearLimitM = 0.05f;
-        public const float DefaultLinearSpring = 50000f;
-        public const float DefaultLinearDamper = 3000f;
+        public const float InitialAnchorToleranceM = 0.0001f;
+        public const float DefaultLinearLimitM = 0.012f;
+        public const float DefaultLinearSpring = 500000f;
+        public const float DefaultLinearDamper = 6500f;
         public const float DefaultLinearMaxForce = 60000f;
         public const float DefaultAngularSpring = 1200f;
         public const float DefaultAngularDamper = 100f;
@@ -43,7 +44,6 @@ namespace PowerliftingSimulator.Squat.Unity
         public const float DefaultBreakForce = 60000f;
         public const float DefaultBreakTorque = 15000f;
         public const float MaxPlausibleSeparationM = 0.12f;
-        public const float MaxSpawnAnchorErrorM = 0.20f;
 
         // Calibrated local trap shelf anchor on thorax body
         public static readonly Vector3 ThoraxLocalAnchor = new Vector3(0f, 0.080f, -0.115f);
@@ -73,7 +73,8 @@ namespace PowerliftingSimulator.Squat.Unity
         public bool IsAttached => _joint != null && !_explicitlyBroken;
         public bool IsBroken => !IsAttached || SaddleSeparationMeters > MaxPlausibleSeparationM;
         public float InitialAnchorErrorMeters => _initialAnchorErrorM;
-        public bool SpawnAlignmentWithinTolerance => _initialAnchorErrorM <= MaxSpawnAnchorErrorM;
+        public bool SpawnAlignmentWithinTolerance =>
+            float.IsFinite(_initialAnchorErrorM) && _initialAnchorErrorM <= InitialAnchorToleranceM;
         public SquatBarThoraxContactDetector ThoraxContact => _thoraxContactDetector;
         public bool ConnectedBodyCollisionEnabled => _joint != null && _joint.enableCollision;
         public int BarThoraxColliderPairCount => _barThoraxColliderPairCount;
@@ -90,9 +91,7 @@ namespace PowerliftingSimulator.Squat.Unity
         /// </summary>
         public Vector3 CurrentForceEngine => _joint == null ? Vector3.zero : _joint.currentForce;
         public Vector3 CurrentTorqueEngine => _joint == null ? Vector3.zero : _joint.currentTorque;
-        public float CurrentLinearLimitOccupancy => _joint == null || _joint.linearLimit.limit <= 0f
-            ? float.NaN
-            : AnchorErrorWorld.magnitude / _joint.linearLimit.limit;
+        public float CurrentLinearLimitOccupancy => LinearLimitOccupancy();
         public float CurrentAngularXLimitOccupancy => AngularLimitOccupancy(AxisComponent.X);
         public float CurrentAngularYLimitOccupancy => AngularLimitOccupancy(AxisComponent.Y);
         public float CurrentAngularZLimitOccupancy => AngularLimitOccupancy(AxisComponent.Z);
@@ -105,6 +104,23 @@ namespace PowerliftingSimulator.Squat.Unity
         public float ThoraxMassKg => _thoraxBody == null ? float.NaN : _thoraxBody.mass;
         public float BarToThoraxMassRatio =>
             float.IsFinite(BarMassKg) && ThoraxMassKg > 0f ? BarMassKg / ThoraxMassKg : float.NaN;
+
+        public static Vector3 AlignedBarRootPosition(Rigidbody thoraxBody, Quaternion barRotation)
+        {
+            if (thoraxBody == null)
+                throw new ArgumentNullException(nameof(thoraxBody));
+            if (!Finite(barRotation))
+                throw new ArgumentOutOfRangeException(nameof(barRotation));
+            float magnitude = Mathf.Sqrt(
+                barRotation.x * barRotation.x + barRotation.y * barRotation.y +
+                barRotation.z * barRotation.z + barRotation.w * barRotation.w);
+            if (magnitude <= 0.000001f)
+                throw new ArgumentOutOfRangeException(nameof(barRotation));
+            barRotation = new Quaternion(
+                barRotation.x / magnitude, barRotation.y / magnitude,
+                barRotation.z / magnitude, barRotation.w / magnitude);
+            return thoraxBody.transform.TransformPoint(ThoraxLocalAnchor) - barRotation * BarLocalAnchor;
+        }
 
         public float SaddleSeparationMeters
         {
@@ -156,6 +172,9 @@ namespace PowerliftingSimulator.Squat.Unity
             _initialAnchorErrorM = Vector3.Distance(
                 _barbell.Body.transform.TransformPoint(BarLocalAnchor),
                 _thoraxBody.transform.TransformPoint(ThoraxLocalAnchor));
+            if (!float.IsFinite(_initialAnchorErrorM) || _initialAnchorErrorM > InitialAnchorToleranceM)
+                throw new InvalidOperationException(
+                    $"The bar/thorax saddle starts {_initialAnchorErrorM * 1000f:F3} mm misaligned; maximum is {InitialAnchorToleranceM * 1000f:F3} mm.");
             _initialRelativeBarToThorax = Quaternion.Inverse(_barbell.Body.rotation) * _thoraxBody.rotation;
 
             _barThoraxColliderPairCount = 0;
@@ -295,6 +314,21 @@ namespace PowerliftingSimulator.Squat.Unity
             return Mathf.Abs(componentRadians) * Mathf.Rad2Deg / limitDegrees;
         }
 
+        private float LinearLimitOccupancy()
+        {
+            if (_joint == null || _joint.linearLimit.limit <= 0f)
+                return float.NaN;
+
+            Vector3 x = _barbell.Body.transform.TransformDirection(_joint.axis).normalized;
+            Vector3 y = _barbell.Body.transform.TransformDirection(_joint.secondaryAxis).normalized;
+            Vector3 z = Vector3.Cross(x, y).normalized;
+            Vector3 error = AnchorErrorWorld;
+            return Mathf.Max(
+                Mathf.Abs(Vector3.Dot(error, x)),
+                Mathf.Max(Mathf.Abs(Vector3.Dot(error, y)), Mathf.Abs(Vector3.Dot(error, z)))) /
+                _joint.linearLimit.limit;
+        }
+
         /// <summary>
         /// Total thorax-relative bar rotation since the joint was created, in
         /// degrees. Diagnostic only; it is independent of axis decomposition.
@@ -325,6 +359,10 @@ namespace PowerliftingSimulator.Squat.Unity
             float angle = 2f * Mathf.Atan2(vectorMagnitude, Mathf.Clamp(value.w, -1f, 1f));
             return new Vector3(value.x, value.y, value.z) * (angle / vectorMagnitude);
         }
+
+        private static bool Finite(Quaternion value) =>
+            float.IsFinite(value.x) && float.IsFinite(value.y) &&
+            float.IsFinite(value.z) && float.IsFinite(value.w);
 
         private readonly struct CollisionIgnorePair
         {

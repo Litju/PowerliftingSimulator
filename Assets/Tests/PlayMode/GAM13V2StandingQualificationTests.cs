@@ -24,6 +24,9 @@ namespace PowerliftingSimulator.Tests
         private const float MaximumComSpeedMps = 0.25f;
         private const float MinimumComSupportMarginM = -0.02f;
         private const float MaximumConstraintSeparationM = 0.05f;
+        private const float MaximumSaddleSeparationM = 0.02f;
+        private const float MaximumSaddleLimitOccupancy = 0.95f;
+        private const float MaximumSaddleRelativeRotationDegrees = 35f;
 
         [UnityTest]
         public IEnumerator GAM13_V2_FRESH_PROCESS_STANDING_QUALIFICATION()
@@ -78,6 +81,10 @@ namespace PowerliftingSimulator.Tests
             float minimumComSupportMargin = float.PositiveInfinity;
             float maximumJointAnchorSeparation = 0f;
             float maximumSaddleSeparation = 0f;
+            float maximumSaddleLimitOccupancy = 0f;
+            float maximumSaddleRelativeRotation = 0f;
+            float maximumSaddleEngineForce = 0f;
+            float maximumSaddleEngineTorque = 0f;
             float maximumLimitProximity = 0f;
             int apCorrectionSamples = 0;
 
@@ -120,6 +127,16 @@ namespace PowerliftingSimulator.Tests
                 maximumJointAnchorSeparation = Mathf.Max(maximumJointAnchorSeparation, anchorSeparation);
                 maximumLimitProximity = Mathf.Max(maximumLimitProximity, limitProximity);
                 maximumSaddleSeparation = Mathf.Max(maximumSaddleSeparation, controller.Saddle.SaddleSeparationMeters);
+                float saddleOccupancy = controller.Saddle.CurrentLinearLimitOccupancy;
+                float saddleRotation = controller.Saddle.RelativeRotationDegrees;
+                Vector3 saddleForce = controller.Saddle.CurrentForceEngine;
+                Vector3 saddleTorque = controller.Saddle.CurrentTorqueEngine;
+                finite &= float.IsFinite(saddleOccupancy) && float.IsFinite(saddleRotation) &&
+                    IsFinite(saddleForce) && IsFinite(saddleTorque);
+                maximumSaddleLimitOccupancy = Mathf.Max(maximumSaddleLimitOccupancy, saddleOccupancy);
+                maximumSaddleRelativeRotation = Mathf.Max(maximumSaddleRelativeRotation, saddleRotation);
+                maximumSaddleEngineForce = Mathf.Max(maximumSaddleEngineForce, saddleForce.magnitude);
+                maximumSaddleEngineTorque = Mathf.Max(maximumSaddleEngineTorque, saddleTorque.magnitude);
 
                 float ankleApCorrection = controller.Adapter.BalanceCorrectionV2.AnkleApRad;
                 if (Mathf.Abs(ankleApCorrection) > 1e-4f &&
@@ -144,19 +161,25 @@ namespace PowerliftingSimulator.Tests
 
             trace.Save(tracePath);
             Debug.Log(string.Format(CultureInfo.InvariantCulture,
-                "GAM13_V2_STANDING load={0:F1}kg command={1} window={2} contacts={3} pelvis={4:F3}m trunk={5:F3}rad comSpeed={6:F3}m/s comSupport={7:F3}m anchor={8:F4}m saddle={9:F4}m limit={10:F3} trace={11}",
+                "GAM13_V2_STANDING load={0:F1}kg command={1} window={2} contacts={3} pelvis={4:F3}m trunk={5:F3}rad comSpeed={6:F3}m/s comSupport={7:F3}m anchor={8:F4}m saddleError0={9:F5}m saddleMax={10:F4}m saddleOcc={11:F3} saddleRot={12:F2}deg saddleForce={13:F1}N saddleTorque={14:F1}Nm limit={15:F3} trace={16}",
                 loadKg, squatCommandIssued, hasStartWindow, bilateralSupportEverySample,
                 minimumPelvisY, maximumTrunkPitch, maximumComSpeed, minimumComSupportMargin,
-                maximumJointAnchorSeparation, maximumSaddleSeparation, maximumLimitProximity, tracePath));
+                maximumJointAnchorSeparation, controller.Saddle.InitialAnchorErrorMeters,
+                maximumSaddleSeparation, maximumSaddleLimitOccupancy, maximumSaddleRelativeRotation,
+                maximumSaddleEngineForce, maximumSaddleEngineTorque, maximumLimitProximity, tracePath));
 
             Assert.That(finite, Is.True, "The simulation, body state, or authoritative observations became non-finite.");
             Assert.That(referenceErrorConsistent, Is.True, "The controller error does not equal support-relative COM offset minus the captured reference.");
             Assert.That(trace.MinimumIntrinsicCapacityFraction, Is.EqualTo(1f).Within(1e-5f), "A V2 standing joint did not receive its full finite intrinsic capacity.");
             Assert.That(attachedBarEverySample, Is.True, "The physical bar detached or the saddle broke during qualification.");
-            Assert.That(controller.Saddle.SpawnAlignmentWithinTolerance, Is.True, "The bar saddle did not begin in a valid alignment.");
+            Assert.That(controller.Saddle.InitialAnchorErrorMeters,
+                Is.LessThanOrEqualTo(SquatBarSaddle.InitialAnchorToleranceM),
+                "The bar saddle did not begin in a valid alignment.");
             Assert.That(bilateralSupportEverySample, Is.True, "Bilateral plantar support was lost during the standing qualification window.");
             Assert.That(maximumJointAnchorSeparation, Is.LessThanOrEqualTo(MaximumConstraintSeparationM), "A ConfigurableJoint separated pathologically.");
-            Assert.That(maximumSaddleSeparation, Is.LessThanOrEqualTo(MaximumConstraintSeparationM), "The bar saddle separated pathologically.");
+            Assert.That(maximumSaddleSeparation, Is.LessThanOrEqualTo(MaximumSaddleSeparationM), "The bar saddle separated pathologically.");
+            Assert.That(maximumSaddleLimitOccupancy, Is.LessThan(MaximumSaddleLimitOccupancy), "The bar saddle rode its translation limit.");
+            Assert.That(maximumSaddleRelativeRotation, Is.LessThan(MaximumSaddleRelativeRotationDegrees), "The bar rotated pathologically relative to the thorax.");
             Assert.That(minimumPelvisY, Is.GreaterThanOrEqualTo(MinimumPelvisHeightM), "The setup is not upright.");
             Assert.That(minimumBarY, Is.GreaterThanOrEqualTo(MinimumBarHeightM), "The bar is not at a credible supported standing height.");
             Assert.That(maximumTrunkPitch, Is.LessThanOrEqualTo(MaximumTrunkPitchRad), "The trunk is not upright.");

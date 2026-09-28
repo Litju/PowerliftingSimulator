@@ -32,7 +32,9 @@ namespace PowerliftingSimulator.Tests
                 "trunk_target_rad,trunk_actual_error_rad,raw_balance_ap_rad,applied_balance_ap_rad," +
                 "raw_balance_ml_rad,applied_balance_ml_rad,ap_correction_saturated,ml_correction_saturated," +
                 "max_modeled_drive_demand,minimum_intrinsic_capacity_fraction,max_joint_limit_proximity,max_joint_anchor_separation_m," +
-                "saddle_separation_m,rule_outcome,physical_outcome");
+                "saddle_initial_anchor_error_m,saddle_separation_m,saddle_linear_limit_occupancy," +
+                "saddle_relative_rotation_deg,saddle_is_broken,saddle_force_engine_x,saddle_force_engine_y,saddle_force_engine_z," +
+                "saddle_torque_engine_x,saddle_torque_engine_y,saddle_torque_engine_z,rule_outcome,physical_outcome");
         }
 
         public void Append(
@@ -59,9 +61,13 @@ namespace PowerliftingSimulator.Tests
             SquatJointTargetError knee = Joint(controller, "left_shank", "right_shank");
             SquatJointTargetError hip = Joint(controller, "left_thigh", "right_thigh");
             SquatJointTargetError trunk = Trunk(controller);
-            float saddleSeparation = controller.Saddle != null
-                ? controller.Saddle.SaddleSeparationMeters
-                : float.NaN;
+            SquatBarSaddle saddle = controller.Saddle;
+            float saddleInitialAnchorError = saddle != null ? saddle.InitialAnchorErrorMeters : float.NaN;
+            float saddleSeparation = saddle != null ? saddle.SaddleSeparationMeters : float.NaN;
+            float saddleLinearLimitOccupancy = saddle != null ? saddle.CurrentLinearLimitOccupancy : float.NaN;
+            float saddleRelativeRotation = saddle != null ? saddle.RelativeRotationDegrees : float.NaN;
+            Vector3 saddleForceEngine = saddle != null ? saddle.CurrentForceEngine : new Vector3(float.NaN, float.NaN, float.NaN);
+            Vector3 saddleTorqueEngine = saddle != null ? saddle.CurrentTorqueEngine : new Vector3(float.NaN, float.NaN, float.NaN);
 
             Value(loadKg); Value(snapshot.SimulationTick.ToString(Invariant));
             Value(snapshot.State.ToString()); Value(snapshot.Sq);
@@ -88,7 +94,10 @@ namespace PowerliftingSimulator.Tests
             Value(correction.CommandMlRad); Value(correction.AppliedMlRad);
             Value(Bool(correction.IsApBoundSaturated)); Value(Bool(correction.IsMlBoundSaturated));
             Value(snapshot.MaximumModeledDemand); Value(capacityFraction); Value(maximumLimitProximity);
-            Value(maximumJointAnchorSeparationM); Value(saddleSeparation);
+            Value(maximumJointAnchorSeparationM); Value(saddleInitialAnchorError); Value(saddleSeparation);
+            Value(saddleLinearLimitOccupancy); Value(saddleRelativeRotation); Value(Bool(saddle != null && saddle.IsBroken));
+            Value(saddleForceEngine.x); Value(saddleForceEngine.y); Value(saddleForceEngine.z);
+            Value(saddleTorqueEngine.x); Value(saddleTorqueEngine.y); Value(saddleTorqueEngine.z);
             _lastOutcomeStart = _csv.Length;
             Value(ruleOutcome); Value(physicalOutcome);
             _csv.AppendLine();
