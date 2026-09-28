@@ -89,6 +89,8 @@ namespace PowerliftingSimulator.Tests
             bool attachedBarEverySample = true;
             bool apCorrectionMappingConsistent = true;
             bool referenceErrorConsistent = true;
+            // SignedTwistRadians uses Quaternion.ToAngleAxis; below 1 mrad its float W can round to 1 and report zero.
+            const float MinimumMappingCorrectionRad = 0.001f;
             bool hasStartWindow = false;
             bool squatCommandIssued = false;
             float minimumPelvisY = float.PositiveInfinity;
@@ -162,14 +164,24 @@ namespace PowerliftingSimulator.Tests
                 }
 
                 float ankleApCorrection = controller.Adapter.BalanceCorrectionV2.AnkleApRad;
-                if (Mathf.Abs(ankleApCorrection) > 1e-4f &&
+                if (Mathf.Abs(ankleApCorrection) >= MinimumMappingCorrectionRad &&
                     isLoaded &&
                     controller.Adapter.TryGetTargetComposition("left_foot", out SquatPhysicalAdapter.JointTargetComposition ankleComposition))
                 {
-                    float mappedApCorrection = PoweredJointController.SignedTwistRadians(
+                    float logicalBalanceTwist = PoweredJointController.SignedTwistRadians(
                         ankleComposition.BalanceOffset, Vector3.right);
+                    Quaternion logicalTargetDelta = ankleComposition.Final * Quaternion.Inverse(ankleComposition.Nominal);
+                    float logicalTargetTwist = PoweredJointController.SignedTwistRadians(
+                        logicalTargetDelta, Vector3.right);
+                    JointCommand command = rig.PoweredController.GetJoint("left_foot").RequestedCommand;
+                    Quaternion logicalCommandDelta = command.TargetRelativeRotation * Quaternion.Inverse(ankleComposition.Nominal);
+                    float logicalCommandTwist = PoweredJointController.SignedTwistRadians(
+                        logicalCommandDelta, Vector3.right);
                     apCorrectionSamples++;
-                    apCorrectionMappingConsistent &= mappedApCorrection * ankleApCorrection > 0f;
+                    apCorrectionMappingConsistent &=
+                        logicalBalanceTwist * ankleApCorrection > 0f &&
+                        logicalTargetTwist * ankleApCorrection > 0f &&
+                        logicalCommandTwist * ankleApCorrection > 0f;
                 }
 
                 string ruleOutcome = squatCommandIssued ? "SQUAT_COMMAND_ISSUED" : "START_WINDOW_PENDING";
@@ -226,6 +238,166 @@ namespace PowerliftingSimulator.Tests
             }
             Assert.That(controller.Adapter.Sq, Is.EqualTo(0f).Within(0.001f), "No player Yield input was supplied during standing qualification.");
         }
+
+        [UnityTest]
+        public IEnumerator GAM13_V23D_TARGET_SPACE_REPRESENTATION_PRESERVES_AP_SIGN()
+        {
+            AsyncOperation loadScene = SceneManager.LoadSceneAsync(QualificationScene, LoadSceneMode.Single);
+            Assert.That(loadScene, Is.Not.Null, "The GAM-13 qualification scene is missing.");
+            while (!loadScene.isDone)
+                yield return null;
+            yield return null;
+
+            FoundationBootstrap bootstrap = UnityEngine.Object.FindFirstObjectByType<FoundationBootstrap>();
+            PhysicalAthleteRig rig = UnityEngine.Object.FindFirstObjectByType<PhysicalAthleteRig>();
+            SquatPhysicalPrototypeController controller =
+                UnityEngine.Object.FindFirstObjectByType<SquatPhysicalPrototypeController>();
+            Assert.That(bootstrap, Is.Not.Null);
+            Assert.That(rig, Is.Not.Null);
+            Assert.That(controller, Is.Not.Null);
+            for (int frame = 0; frame < 8 && !controller.IsInitialized; frame++)
+                yield return null;
+            Assert.That(controller.IsInitialized, Is.True, controller.StartupFailure);
+            controller.enabled = false;
+            bootstrap.enabled = false;
+            controller.SetLoad(25f);
+            Assert.That(controller.Saddle, Is.Not.Null);
+            Assert.That(bootstrap.Runtime.CurrentTime.Tick, Is.EqualTo(0ul));
+
+            bool positiveCorrectionPreserved = false;
+            bool negativeCorrectionPreserved = false;
+            bool unityRepresentationsMatch = true;
+            bool issuedCommandMatchesComposition = true;
+            bool appliedTargetMatchesCommand = true;
+            const float firstGateBApRad = 0.000330548617f;
+            const float firstGateBAnkleMlRad = -3.49903672e-7f;
+            SquatComStabilizerV2Calibration calibration = controller.Adapter.StabilizerCalibration;
+            float[] apObservationShiftsM = { 0.004f, -0.004f, firstGateBApRad / calibration.KpAp };
+            float[] mlObservationShiftsM = { 0f, 0f, -firstGateBAnkleMlRad / calibration.KpMl };
+            for (int index = 0; index < apObservationShiftsM.Length; index++)
+            {
+                float shiftM = apObservationShiftsM[index];
+                float shiftMlM = mlObservationShiftsM[index];
+                ulong tick = (ulong)(index + 1);
+                controller.Adapter.Reset();
+                controller.Adapter.SetSaddle(controller.Saddle);
+                controller.Adapter.CaptureStandingComReference();
+                rig.PoweredController.Reset(PoweredAthleteMode.Controlled);
+
+                PhysicalObservation observation = CreateShiftedApObservation(rig, controller.Saddle, shiftM, shiftMlM, tick);
+                var time = new SimulationTime(tick, SimulationConstants.TimeForTick(tick));
+                controller.Adapter.PrepareCommands(observation, time, default, rig.PoweredController);
+                SquatBalanceCorrectionV2 correction = controller.Adapter.BalanceCorrectionV2;
+                Assert.That(controller.Adapter.TryGetTargetComposition("left_foot", out SquatPhysicalAdapter.JointTargetComposition composition), Is.True);
+
+                float balanceTwist = PoweredJointController.SignedTwistRadians(composition.BalanceOffset, Vector3.right);
+                Quaternion logicalDelta = composition.Final * Quaternion.Inverse(composition.Nominal);
+                float logicalDeltaTwist = PoweredJointController.SignedTwistRadians(logicalDelta, Vector3.right);
+                PoweredJointController.PoweredJointRuntime ankle = rig.PoweredController.GetJoint("left_foot");
+                JointCommand command = ankle.RequestedCommand;
+                Quaternion commandDelta = command.TargetRelativeRotation * Quaternion.Inverse(composition.Nominal);
+                float commandDeltaTwist = PoweredJointController.SignedTwistRadians(commandDelta, Vector3.right);
+                issuedCommandMatchesComposition &=
+                    Quaternion.Angle(command.TargetRelativeRotation, composition.Final) < 0.0001f;
+
+                rig.PoweredController.SnapAppliedTargets();
+                rig.PoweredController.Step(
+                    new SimulationTime(tick + 1, SimulationConstants.TimeForTick(tick + 1)),
+                    default);
+                Quaternion appliedTarget = ankle.AppliedTarget;
+                Quaternion appliedDelta = appliedTarget * Quaternion.Inverse(composition.Nominal);
+                float appliedDeltaTwist = PoweredJointController.SignedTwistRadians(appliedDelta, Vector3.right);
+                appliedTargetMatchesCommand &=
+                    Quaternion.Angle(appliedTarget, command.TargetRelativeRotation) < 0.0001f;
+                Quaternion unityTarget = ankle.Joint.targetRotation;
+                Quaternion convertedTarget = PoweredJointController.ToUnityTargetRotation(appliedTarget);
+                float unityConversionErrorDegrees = Quaternion.Angle(unityTarget, convertedTarget);
+
+                Debug.Log(string.Format(CultureInfo.InvariantCulture,
+                    "GAM13_V23D_TARGET_SPACE sign={0} shiftApM={1:R} shiftMlM={2:R} tick={3} appliedApRad={4:R} ankleApRad={5:R} ankleMlRad={6:R} nominal={7} balanceOffset={8} balanceTwistRad={9:R} final={10} logicalDelta={11} logicalDeltaTwistRad={12:R} issuedCommand={13} commandDelta={14} commandDeltaTwistRad={15:R} requestedCommand={16} appliedTarget={17} appliedDelta={18} appliedDeltaTwistRad={19:R} unityTargetRotation={20} unityTargetTwistRad={21:R} convertedTarget={22} conversionErrorDeg={23:R}",
+                    index == 2 ? "gateB-first-failure-reproduction" : shiftM > 0f ? "positive" : "negative", shiftM, shiftMlM, tick,
+                    correction.AppliedApRad, correction.AnkleApRad, correction.AnkleMlRad,
+                    FormatQuaternion(composition.Nominal), FormatQuaternion(composition.BalanceOffset), balanceTwist,
+                    FormatQuaternion(composition.Final), FormatQuaternion(logicalDelta), logicalDeltaTwist,
+                    FormatQuaternion(command.TargetRelativeRotation), FormatQuaternion(commandDelta), commandDeltaTwist,
+                    FormatQuaternion(ankle.RequestedCommand.TargetRelativeRotation), FormatQuaternion(appliedTarget),
+                    FormatQuaternion(appliedDelta), appliedDeltaTwist, FormatQuaternion(unityTarget),
+                    PoweredJointController.SignedTwistRadians(unityTarget, Vector3.right),
+                    FormatQuaternion(convertedTarget), unityConversionErrorDegrees));
+
+                bool correctionHasExpectedSign = shiftM > 0f
+                    ? correction.AppliedApRad > 0f && correction.AnkleApRad > 0f
+                    : correction.AppliedApRad < 0f && correction.AnkleApRad < 0f;
+                bool preservesLogicalSign = correctionHasExpectedSign &&
+                    balanceTwist * correction.AnkleApRad > 0f &&
+                    logicalDeltaTwist * correction.AnkleApRad > 0f &&
+                    commandDeltaTwist * correction.AnkleApRad > 0f &&
+                    appliedDeltaTwist * correction.AnkleApRad > 0f;
+                if (Mathf.Abs(correction.AnkleApRad) >= 0.001f)
+                {
+                    if (shiftM > 0f)
+                        positiveCorrectionPreserved = preservesLogicalSign;
+                    else
+                        negativeCorrectionPreserved = preservesLogicalSign;
+                }
+                unityRepresentationsMatch &= unityConversionErrorDegrees < 0.0001f;
+            }
+
+            Assert.That(positiveCorrectionPreserved, Is.True, "Positive AP correction did not preserve its logical ankle target sign.");
+            Assert.That(negativeCorrectionPreserved, Is.True, "Negative AP correction did not preserve its logical ankle target sign.");
+            Assert.That(issuedCommandMatchesComposition, Is.True, "The issued JointCommand did not preserve the composed logical target.");
+            Assert.That(appliedTargetMatchesCommand, Is.True, "PoweredJointController.AppliedTarget did not preserve the issued logical target.");
+            Assert.That(unityRepresentationsMatch, Is.True, "Unity targetRotation did not equal the documented inverse logical target representation.");
+        }
+
+        private static PhysicalObservation CreateShiftedApObservation(
+            PhysicalAthleteRig rig,
+            SquatBarSaddle saddle,
+            float shiftApM,
+            float shiftMlM,
+            ulong tick)
+        {
+            bool includeBarbell = saddle != null && saddle.Barbell != null && saddle.Barbell.Body != null &&
+                saddle.Barbell.Body.gameObject.activeInHierarchy;
+            var bodies = new PhysicalBodyObservation[rig.Segments.Count + (includeBarbell ? 1 : 0)];
+            int index = 0;
+            foreach (PhysicalAthleteRig.SegmentRuntime segment in rig.Segments.Values)
+            {
+                Rigidbody body = segment.Body;
+                Vector3 position = body.worldCenterOfMass + new Vector3(shiftMlM, 0f, shiftApM);
+                Vector3 velocity = Vector3.zero;
+                Quaternion rotation = body.rotation;
+                bodies[index++] = new PhysicalBodyObservation(
+                    segment.Recipe.Id,
+                    body.mass,
+                    new Vector3Value(position.x, position.y, position.z),
+                    new QuaternionValue(rotation.x, rotation.y, rotation.z, rotation.w),
+                    new Vector3Value(velocity.x, velocity.y, velocity.z),
+                    Vector3Value.Zero);
+            }
+
+            if (includeBarbell)
+            {
+                Rigidbody body = saddle.Barbell.Body;
+                Vector3 position = body.worldCenterOfMass + new Vector3(shiftMlM, 0f, shiftApM);
+                Quaternion rotation = body.rotation;
+                bodies[index] = new PhysicalBodyObservation(
+                    "barbell",
+                    body.mass,
+                    new Vector3Value(position.x, position.y, position.z),
+                    new QuaternionValue(rotation.x, rotation.y, rotation.z, rotation.w),
+                    Vector3Value.Zero,
+                    Vector3Value.Zero);
+            }
+
+            var time = new SimulationTime(tick, SimulationConstants.TimeForTick(tick));
+            return new PhysicalObservation(time, bodies[0], true, bodies);
+        }
+
+        private static string FormatQuaternion(Quaternion value) => string.Format(
+            CultureInfo.InvariantCulture,
+            "({0:R},{1:R},{2:R},{3:R})",
+            value.x, value.y, value.z, value.w);
 
         private static float ReadLoadKg()
         {

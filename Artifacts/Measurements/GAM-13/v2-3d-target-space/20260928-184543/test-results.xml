@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-28 21:46:12Z" end-time="2026-09-28 21:46:13Z" duration="0.9525932">
+  <test-suite type="TestSuite" id="1331" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="248" result="Passed" start-time="2026-09-28 21:46:12Z" end-time="2026-09-28 21:46:13Z" duration="0.952593" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1325" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="E:/Data/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="248" result="Passed" start-time="2026-09-28 21:46:12Z" end-time="2026-09-28 21:46:13Z" duration="0.939267" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="22844" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1326" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="248" result="Passed" start-time="2026-09-28 21:46:12Z" end-time="2026-09-28 21:46:13Z" duration="0.935690" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1327" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="248" result="Passed" start-time="2026-09-28 21:46:12Z" end-time="2026-09-28 21:46:13Z" duration="0.932279" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1111" name="GAM13V2StandingQualificationTests" fullname="PowerliftingSimulator.Tests.GAM13V2StandingQualificationTests" classname="PowerliftingSimulator.Tests.GAM13V2StandingQualificationTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-28 21:46:12Z" end-time="2026-09-28 21:46:13Z" duration="0.925397" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1113" name="GAM13_V23D_TARGET_SPACE_REPRESENTATION_PRESERVES_AP_SIGN" fullname="PowerliftingSimulator.Tests.GAM13V2StandingQualificationTests.GAM13_V23D_TARGET_SPACE_REPRESENTATION_PRESERVES_AP_SIGN" methodname="GAM13_V23D_TARGET_SPACE_REPRESENTATION_PRESERVES_AP_SIGN" classname="PowerliftingSimulator.Tests.GAM13V2StandingQualificationTests" runstate="Runnable" seed="1304024981" result="Passed" start-time="2026-09-28 21:46:12Z" end-time="2026-09-28 21:46:13Z" duration="0.904013" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[GAM13_V23D_TARGET_SPACE sign=positive shiftApM=0.004 shiftMlM=0 tick=1 appliedApRad=0.0156509858 ankleApRad=0.0156509858 ankleMlRad=0 nominal=(1.46779222E-09,-9.636216E-15,-7.331967E-15,1) balanceOffset=(0.007825413,0,0,0.999969363) balanceTwistRad=0.01564029 final=(0.007825415,-9.693297E-15,-7.256335E-15,0.999969363) logicalDelta=(0.007825413,-1.147516E-16,1.50815169E-16,0.999969363) logicalDeltaTwistRad=0.01564029 issuedCommand=(0.007825416,-9.693298E-15,-7.256336E-15,0.9999695) commandDelta=(0.007825414,-1.147513E-16,1.508152E-16,0.9999695) commandDeltaTwistRad=0.0156555269 requestedCommand=(0.007825416,-9.693298E-15,-7.256336E-15,0.9999695) appliedTarget=(0.007825415,-9.693297E-15,-7.256335E-15,0.999969363) appliedDelta=(0.007825413,-1.147516E-16,1.50815169E-16,0.999969363) appliedDeltaTwistRad=0.01564029 unityTargetRotation=(-0.007825415,9.693297E-15,7.256335E-15,0.999969363) unityTargetTwistRad=-0.01564029 convertedTarget=(-0.007825415,9.693297E-15,7.256335E-15,0.999969363) conversionErrorDeg=0
+GAM13_V23D_TARGET_SPACE sign=negative shiftApM=-0.004 shiftMlM=0 tick=2 appliedApRad=-0.0156509727 ankleApRad=-0.0156509727 ankleMlRad=0 nominal=(1.46779222E-09,-9.636216E-15,-7.331967E-15,1) balanceOffset=(-0.007825407,0,0,0.999969363) balanceTwistRad=-0.01564029 final=(-0.007825405,-9.578545E-15,-7.40715E-15,0.999969363) logicalDelta=(-0.007825407,1.14751484E-16,-1.50814587E-16,0.999969363) logicalDeltaTwistRad=-0.01564029 issuedCommand=(-0.007825406,-9.578546E-15,-7.407151E-15,0.9999695) commandDelta=(-0.007825408,1.147518E-16,-1.5081456E-16,0.9999695) commandDeltaTwistRad=-0.0156555269 requestedCommand=(-0.007825406,-9.578546E-15,-7.407151E-15,0.9999695) appliedTarget=(-0.007825405,-9.578545E-15,-7.40715E-15,0.999969363) appliedDelta=(-0.007825407,1.14751484E-16,-1.50814587E-16,0.999969363) appliedDeltaTwistRad=-0.01564029 unityTargetRotation=(0.007825405,9.578545E-15,7.40715E-15,0.999969363) unityTargetTwistRad=0.01564029 convertedTarget=(0.007825405,9.578545E-15,7.40715E-15,0.999969363) conversionErrorDeg=0
+GAM13_V23D_TARGET_SPACE sign=gateB-first-failure-reproduction shiftApM=8.447996E-05 shiftMlM=5.383134E-07 tick=3 appliedApRad=0.000330527982 ankleApRad=0.000330527982 ankleMlRad=-3.49627868E-07 nominal=(1.46779222E-09,-9.636216E-15,-7.331967E-15,1) balanceOffset=(0.000165263991,2.88904491E-11,-1.74813934E-07,1) balanceTwistRad=0 final=(0.000165265461,2.88810677E-11,-1.74813948E-07,1) logicalDelta=(0.000165263991,2.88909591E-11,-1.74813934E-07,1) logicalDeltaTwistRad=0 issuedCommand=(0.000165265461,2.88810677E-11,-1.74813948E-07,1) commandDelta=(0.000165263991,2.88909591E-11,-1.74813934E-07,1) commandDeltaTwistRad=0 requestedCommand=(0.000165265461,2.88810677E-11,-1.74813948E-07,1) appliedTarget=(0.000165265461,2.88810677E-11,-1.74813948E-07,1) appliedDelta=(0.000165263991,2.88909591E-11,-1.74813934E-07,1) appliedDeltaTwistRad=0 unityTargetRotation=(-0.000165265461,-2.88810677E-11,1.74813948E-07,1) unityTargetTwistRad=0 convertedTarget=(-0.000165265461,-2.88810677E-11,1.74813948E-07,1) conversionErrorDeg=0
+Saving results to: C:/Users/Usuario/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
