@@ -13,4 +13,4 @@ There are four explicitly suppressed direct athlete-joint overlap pairs (pelvisâ
 
 The fresh-process PlayMode receipt/reset checks passed 1/1 for [unloaded](../Measurements/GAM-13/v2-3b-substrate/tick0-playmode-unloaded-results.xml) and [25 kg](../Measurements/GAM-13/v2-3b-substrate/tick0-playmode-25kg-results.xml).
 
-The unloaded **standing** gate is a separate failure: see [Gate A trace](../Measurements/GAM-13/v2-3b-substrate/standing/000kg/20260927-gate-a-capsule-inertia/qualification-trace.csv). Gate B and all later phases were not run.
+The unloaded **standing** gate is a separate failure: see [Gate A trace](../Measurements/GAM-13/v2-3b-substrate/standing/000kg/20260927-gate-a-final/qualification-trace.csv). Gate B and all later phases were not run.
