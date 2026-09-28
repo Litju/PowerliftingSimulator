@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Failed(Child)" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-28 21:59:47Z" end-time="2026-09-28 21:59:49Z" duration="2.4715929">
+  <test-suite type="TestSuite" id="1331" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="248" result="Failed" site="Child" start-time="2026-09-28 21:59:47Z" end-time="2026-09-28 21:59:49Z" duration="2.471593" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1325" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="E:/Data/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="248" result="Failed" site="Child" start-time="2026-09-28 21:59:47Z" end-time="2026-09-28 21:59:49Z" duration="2.440116" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="21328" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1326" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="248" result="Failed" site="Child" start-time="2026-09-28 21:59:47Z" end-time="2026-09-28 21:59:49Z" duration="2.431006" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1327" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="248" result="Failed" site="Child" start-time="2026-09-28 21:59:47Z" end-time="2026-09-28 21:59:49Z" duration="2.420505" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestFixture" id="1111" name="GAM13V2StandingQualificationTests" fullname="PowerliftingSimulator.Tests.GAM13V2StandingQualificationTests" classname="PowerliftingSimulator.Tests.GAM13V2StandingQualificationTests" runstate="Runnable" testcasecount="2" result="Failed" site="Child" start-time="2026-09-28 21:59:47Z" end-time="2026-09-28 21:59:49Z" duration="2.399119" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1112" name="GAM13_V2_FRESH_PROCESS_STANDING_QUALIFICATION" fullname="PowerliftingSimulator.Tests.GAM13V2StandingQualificationTests.GAM13_V2_FRESH_PROCESS_STANDING_QUALIFICATION" methodname="GAM13_V2_FRESH_PROCESS_STANDING_QUALIFICATION" classname="PowerliftingSimulator.Tests.GAM13V2StandingQualificationTests" runstate="Runnable" seed="749350970" result="Failed" start-time="2026-09-28 21:59:47Z" end-time="2026-09-28 21:59:49Z" duration="2.356517" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  The setup is not upright.
+  Expected: greater than or equal to 0.899999976f
+  But was:  0.11234688f
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.Tests.GAM13V2StandingQualificationTests+<GAM13_V2_FRESH_PROCESS_STANDING_QUALIFICATION>d__11.MoveNext () [0x00b47] in E:\Data\Projects\PowerliftingSimulator\Assets\Tests\PlayMode\GAM13V2StandingQualificationTests.cs:216
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[GAM13_V2_STANDING load=60.0kg command=True window=True contacts=True pelvis=0.112m trunk=1.417rad comSpeed=2.015m/s comSupport=-1.132m anchor=0.0243m saddleError0=0.00000m saddleMax=0.0154m saddleOcc=1.237 saddleRot=20.98deg saddleForce=3502.2N saddleTorque=0.0Nm limit=1.000 trace=E:\Data\Projects\PowerliftingSimulator\Artifacts\Measurements\GAM-13\v2-3d-standing\060kg\20260928-185655\qualification-trace.csv
+Saving results to: C:/Users/Usuario/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
