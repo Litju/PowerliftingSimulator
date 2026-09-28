@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-28 21:54:12Z" end-time="2026-09-28 21:54:15Z" duration="3.5329545">
+  <test-suite type="TestSuite" id="1331" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="248" result="Passed" start-time="2026-09-28 21:54:12Z" end-time="2026-09-28 21:54:15Z" duration="3.532955" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1325" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="E:/Data/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="248" result="Passed" start-time="2026-09-28 21:54:12Z" end-time="2026-09-28 21:54:15Z" duration="3.496925" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="22716" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1326" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="248" result="Passed" start-time="2026-09-28 21:54:12Z" end-time="2026-09-28 21:54:15Z" duration="3.471411" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1327" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="248" result="Passed" start-time="2026-09-28 21:54:12Z" end-time="2026-09-28 21:54:15Z" duration="3.445766" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1111" name="GAM13V2StandingQualificationTests" fullname="PowerliftingSimulator.Tests.GAM13V2StandingQualificationTests" classname="PowerliftingSimulator.Tests.GAM13V2StandingQualificationTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-28 21:54:12Z" end-time="2026-09-28 21:54:15Z" duration="3.404500" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1112" name="GAM13_V2_FRESH_PROCESS_STANDING_QUALIFICATION" fullname="PowerliftingSimulator.Tests.GAM13V2StandingQualificationTests.GAM13_V2_FRESH_PROCESS_STANDING_QUALIFICATION" methodname="GAM13_V2_FRESH_PROCESS_STANDING_QUALIFICATION" classname="PowerliftingSimulator.Tests.GAM13V2StandingQualificationTests" runstate="Runnable" seed="1555277656" result="Passed" start-time="2026-09-28 21:54:12Z" end-time="2026-09-28 21:54:15Z" duration="3.320514" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[GAM13_V2_STANDING load=25.0kg command=True window=True contacts=True pelvis=0.973m trunk=0.394rad comSpeed=0.057m/s comSupport=0.101m anchor=0.0039m saddleError0=0.00000m saddleMax=0.0007m saddleOcc=0.058 saddleRot=0.12deg saddleForce=0.0N saddleTorque=0.0Nm limit=0.881 trace=E:\Data\Projects\PowerliftingSimulator\Artifacts\Measurements\GAM-13\v2-3d-standing\025kg\20260928-185152\qualification-trace.csv
+Saving results to: C:/Users/Usuario/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
