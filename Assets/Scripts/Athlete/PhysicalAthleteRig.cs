@@ -36,6 +36,7 @@ namespace PowerliftingSimulator.Athlete
         private Renderer[] _visibleRenderers = Array.Empty<Renderer>();
         private Transform _visibleHips;
         private GameObject _physicalRoot;
+        private BoxCollider _platformCollider;
         private DebugMarker _wholeBodyComMarker;
         private PoweredJointController _poweredController;
         private float _totalMassKg;
@@ -54,6 +55,7 @@ namespace PowerliftingSimulator.Athlete
 
         public IReadOnlyDictionary<string, SegmentRuntime> Segments => _segments;
         public IReadOnlyList<JointRuntime> Joints => _joints;
+        public BoxCollider PlatformCollider => _platformCollider;
         public bool IsInspectionFrozen => _inspectionFrozen;
         public float TotalMassKg => _totalMassKg;
         public float MaxInitialNonAdjacentPenetrationMeters { get; private set; }
@@ -144,6 +146,7 @@ namespace PowerliftingSimulator.Athlete
             // the sag transient the preload exists to remove.
             _poweredController.SnapAppliedTargets();
             _poweredController.Step(time, PlayerIntentFrame.Empty);
+            _poweredController.ValidateAppliedDrives();
         }
 
         public void PrePhysicsStep(SimulationTime time, PlayerIntentFrame intent)
@@ -369,6 +372,8 @@ namespace PowerliftingSimulator.Athlete
             bodyObject.transform.SetParent(_physicalRoot.transform, false);
             bodyObject.transform.SetPositionAndRotation(center, rotation);
             Rigidbody body = bodyObject.AddComponent<Rigidbody>();
+            body.automaticCenterOfMass = false;
+            body.automaticInertiaTensor = false;
             body.mass = PhysicalAthleteDefinition.PrototypeBodyMassKg * recipe.MassFraction;
             _totalMassKg += body.mass;
             body.useGravity = true;
@@ -530,8 +535,8 @@ namespace PowerliftingSimulator.Athlete
             GameObject platform = new GameObject("PhysicalPlatform_GAM6");
             SceneManager.MoveGameObjectToScene(platform, foundation.Runtime.AuthoritativeScene);
             platform.transform.SetPositionAndRotation(PhysicalAthleteDefinition.PlatformCenterMeters, Quaternion.identity);
-            BoxCollider collider = platform.AddComponent<BoxCollider>();
-            collider.size = PhysicalAthleteDefinition.PlatformSizeMeters;
+            _platformCollider = platform.AddComponent<BoxCollider>();
+            _platformCollider.size = PhysicalAthleteDefinition.PlatformSizeMeters;
             PhysicsMaterial material = new PhysicsMaterial("GAM6_PlatformContact")
             {
                 dynamicFriction = 0.75f,
@@ -540,7 +545,7 @@ namespace PowerliftingSimulator.Athlete
                 frictionCombine = PhysicsMaterialCombine.Average,
                 bounceCombine = PhysicsMaterialCombine.Minimum
             };
-            collider.material = material;
+            _platformCollider.material = material;
         }
 
         private void BuildVisibleFollower()
@@ -668,11 +673,15 @@ namespace PowerliftingSimulator.Athlete
                 throw new InvalidOperationException("Runtime topology is not the canonical 16-body/15-joint graph.");
             if (Mathf.Abs(TotalMassKg - PhysicalAthleteDefinition.PrototypeBodyMassKg) > 0.0001f)
                 throw new InvalidOperationException($"Assigned mass {TotalMassKg:R} kg does not match profile mass.");
+            if (MaxInitialNonAdjacentPenetrationMeters > PhysicalAthleteDefinition.AnchorToleranceMeters)
+                throw new InvalidOperationException(
+                    $"The neutral athlete has {MaxInitialNonAdjacentPenetrationMeters * 1000f:F3} mm nonadjacent collider penetration.");
 
             foreach (SegmentRuntime segment in _segments.Values)
             {
                 Vector3 inertia = segment.Body.inertiaTensor;
-                if (segment.Body.isKinematic || !segment.Body.useGravity || segment.Body.mass <= 0f ||
+                if (segment.Body.isKinematic || !segment.Body.useGravity ||
+                    segment.Body.automaticCenterOfMass || segment.Body.automaticInertiaTensor || segment.Body.mass <= 0f ||
                     !Finite(segment.Body.position) || !Finite(segment.Body.rotation) ||
                     !Finite(segment.Body.centerOfMass) || !Finite(segment.Body.worldCenterOfMass) ||
                     !Finite(segment.Body.linearVelocity) || !Finite(segment.Body.angularVelocity) ||
@@ -737,6 +746,45 @@ namespace PowerliftingSimulator.Athlete
                     throw new InvalidOperationException($"Joint '{jointRuntime.Recipe.ChildId}' violates its hinge/ball degree-of-freedom contract.");
                 if (joint.projectionMode != JointProjectionMode.None || HasPoweredDrive(joint))
                     throw new InvalidOperationException($"Joint '{jointRuntime.Recipe.ChildId}' violates passive-mode authority.");
+            }
+
+            ValidatePlantarRegistration();
+        }
+
+        private void ValidatePlantarRegistration()
+        {
+            if (!_canonicalPlantarPlaneY.HasValue)
+                return;
+            if (_platformCollider == null)
+                throw new InvalidOperationException("Canonical plantar registration requires the authoritative platform collider.");
+
+            PhysicsMaterial platformMaterial = _platformCollider.sharedMaterial;
+            if (platformMaterial == null ||
+                Mathf.Abs(platformMaterial.staticFriction - 0.85f) > 0.0001f ||
+                Mathf.Abs(platformMaterial.dynamicFriction - 0.75f) > 0.0001f ||
+                platformMaterial.frictionCombine != PhysicsMaterialCombine.Average ||
+                platformMaterial.bounciness != 0f)
+                throw new InvalidOperationException("Platform friction material no longer matches the authored contact contract.");
+
+            foreach (string footId in new[] { "left_foot", "right_foot" })
+            {
+                SegmentRuntime foot = _segments[footId];
+                if (!(foot.Collider is BoxCollider box) || box.sharedMaterial == null ||
+                    Mathf.Abs(box.sharedMaterial.staticFriction - 1f) > 0.0001f ||
+                    Mathf.Abs(box.sharedMaterial.dynamicFriction - 1f) > 0.0001f ||
+                    box.sharedMaterial.frictionCombine != PhysicsMaterialCombine.Maximum ||
+                    box.sharedMaterial.bounciness != 0f)
+                    throw new InvalidOperationException($"Foot '{footId}' does not use the authored plantar grip material.");
+
+                float gap = box.bounds.min.y - _platformCollider.bounds.max.y;
+                if (Mathf.Abs(gap) > PhysicalAthleteDefinition.AnchorToleranceMeters)
+                    throw new InvalidOperationException(
+                        $"Foot '{footId}' plantar surface is {gap * 1000f:F3} mm from the platform top.");
+                if (Physics.ComputePenetration(
+                    box, box.transform.position, box.transform.rotation,
+                    _platformCollider, _platformCollider.transform.position, _platformCollider.transform.rotation,
+                    out _, out float penetration) && penetration > PhysicalAthleteDefinition.AnchorToleranceMeters)
+                    throw new InvalidOperationException($"Foot '{footId}' begins penetrating the platform.");
             }
         }
 

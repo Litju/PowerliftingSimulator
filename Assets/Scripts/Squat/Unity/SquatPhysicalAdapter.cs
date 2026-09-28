@@ -397,10 +397,10 @@ namespace PowerliftingSimulator.Squat.Unity
             PhysicalObservation previousObservation,
             SimulationTime time,
             PlayerIntentFrame intent,
-            PoweredJointController poweredController)
+            IPhysicalAthleteJointCommandSink jointCommandSink)
         {
-            if (poweredController == null)
-                throw new ArgumentNullException(nameof(poweredController));
+            if (jointCommandSink == null)
+                throw new ArgumentNullException(nameof(jointCommandSink));
             if (!_hasStandingComReference)
                 throw new InvalidOperationException("The physical squat must capture its standing COM reference after reset and saddle attachment.");
 
@@ -474,21 +474,21 @@ namespace PowerliftingSimulator.Squat.Unity
             float phaseVelocity = _phaseVelocity;
             ulong tick = time.Tick;
 
-            poweredController.ApplyCommand("left_foot", new JointCommand(leftAnkleTarget, rate.LeftFoot * phaseVelocity, effort, AthleteStrengthScale), tick);
-            poweredController.ApplyCommand("right_foot", new JointCommand(rightAnkleTarget, rate.RightFoot * phaseVelocity, effort, AthleteStrengthScale), tick);
-            poweredController.ApplyCommand("left_shank", new JointCommand(leftKneeTarget, rate.LeftShank * phaseVelocity, effort, AthleteStrengthScale), tick);
-            poweredController.ApplyCommand("right_shank", new JointCommand(rightKneeTarget, rate.RightShank * phaseVelocity, effort, AthleteStrengthScale), tick);
-            poweredController.ApplyCommand("left_thigh", new JointCommand(leftHipTarget, rate.LeftThigh * phaseVelocity, effort, AthleteStrengthScale), tick);
-            poweredController.ApplyCommand("right_thigh", new JointCommand(rightHipTarget, rate.RightThigh * phaseVelocity, effort, AthleteStrengthScale), tick);
-            poweredController.ApplyCommand("abdomen", new JointCommand(abdomenTarget, rate.Abdomen * phaseVelocity, effort, AthleteStrengthScale), tick);
-            poweredController.ApplyCommand("thorax", new JointCommand(thoraxTarget, rate.Thorax * phaseVelocity, effort, AthleteStrengthScale), tick);
-            poweredController.ApplyCommand(
+            jointCommandSink.ApplyCommand("left_foot", new JointCommand(leftAnkleTarget, rate.LeftFoot * phaseVelocity, effort, AthleteStrengthScale), tick);
+            jointCommandSink.ApplyCommand("right_foot", new JointCommand(rightAnkleTarget, rate.RightFoot * phaseVelocity, effort, AthleteStrengthScale), tick);
+            jointCommandSink.ApplyCommand("left_shank", new JointCommand(leftKneeTarget, rate.LeftShank * phaseVelocity, effort, AthleteStrengthScale), tick);
+            jointCommandSink.ApplyCommand("right_shank", new JointCommand(rightKneeTarget, rate.RightShank * phaseVelocity, effort, AthleteStrengthScale), tick);
+            jointCommandSink.ApplyCommand("left_thigh", new JointCommand(leftHipTarget, rate.LeftThigh * phaseVelocity, effort, AthleteStrengthScale), tick);
+            jointCommandSink.ApplyCommand("right_thigh", new JointCommand(rightHipTarget, rate.RightThigh * phaseVelocity, effort, AthleteStrengthScale), tick);
+            jointCommandSink.ApplyCommand("abdomen", new JointCommand(abdomenTarget, rate.Abdomen * phaseVelocity, effort, AthleteStrengthScale), tick);
+            jointCommandSink.ApplyCommand("thorax", new JointCommand(thoraxTarget, rate.Thorax * phaseVelocity, effort, AthleteStrengthScale), tick);
+            jointCommandSink.ApplyCommand(
                 "head_neck",
                 new JointCommand(Quaternion.identity, Vector3.zero, effort, AthleteStrengthScale),
                 tick);
 
-            ApplyUpperLimbReference(poweredController, reference, rate, phaseVelocity, effort, tick);
-            CheckDriveSaturation(poweredController);
+            ApplyUpperLimbReference(jointCommandSink, reference, rate, phaseVelocity, effort, tick);
+            CheckDriveSaturation(_rig.PoweredController);
         }
         private void AdvanceStateAndPhase(float dt, PlayerIntentFrame intent)
         {
@@ -843,23 +843,23 @@ namespace PowerliftingSimulator.Squat.Unity
         /// the load still runs bar to upper-back saddle to thorax.
         /// </summary>
         private void ApplyUpperLimbReference(
-            PoweredJointController controller,
+            IPhysicalAthleteJointCommandSink jointCommandSink,
             ReferenceTargetFrame referenceTarget,
             ReferenceRateFrame rate,
             float phaseVelocity,
             float effort,
             ulong tick)
         {
-            ApplyUpperLimbJoint(controller, "left_upper_arm", referenceTarget.LeftUpperArm, rate.LeftUpperArm, phaseVelocity, effort, tick);
-            ApplyUpperLimbJoint(controller, "right_upper_arm", referenceTarget.RightUpperArm, rate.RightUpperArm, phaseVelocity, effort, tick);
-            ApplyUpperLimbJoint(controller, "left_forearm", referenceTarget.LeftForearm, rate.LeftForearm, phaseVelocity, effort, tick);
-            ApplyUpperLimbJoint(controller, "right_forearm", referenceTarget.RightForearm, rate.RightForearm, phaseVelocity, effort, tick);
-            ApplyUpperLimbJoint(controller, "left_hand", referenceTarget.LeftHand, rate.LeftHand, phaseVelocity, effort, tick);
-            ApplyUpperLimbJoint(controller, "right_hand", referenceTarget.RightHand, rate.RightHand, phaseVelocity, effort, tick);
+            ApplyUpperLimbJoint(jointCommandSink, "left_upper_arm", referenceTarget.LeftUpperArm, rate.LeftUpperArm, phaseVelocity, effort, tick);
+            ApplyUpperLimbJoint(jointCommandSink, "right_upper_arm", referenceTarget.RightUpperArm, rate.RightUpperArm, phaseVelocity, effort, tick);
+            ApplyUpperLimbJoint(jointCommandSink, "left_forearm", referenceTarget.LeftForearm, rate.LeftForearm, phaseVelocity, effort, tick);
+            ApplyUpperLimbJoint(jointCommandSink, "right_forearm", referenceTarget.RightForearm, rate.RightForearm, phaseVelocity, effort, tick);
+            ApplyUpperLimbJoint(jointCommandSink, "left_hand", referenceTarget.LeftHand, rate.LeftHand, phaseVelocity, effort, tick);
+            ApplyUpperLimbJoint(jointCommandSink, "right_hand", referenceTarget.RightHand, rate.RightHand, phaseVelocity, effort, tick);
         }
 
         private void ApplyUpperLimbJoint(
-            PoweredJointController controller,
+            IPhysicalAthleteJointCommandSink jointCommandSink,
             string jointId,
             Quaternion referenceTarget,
             Vector3 ratePerPhase,
@@ -868,7 +868,7 @@ namespace PowerliftingSimulator.Squat.Unity
             ulong tick)
         {
             Quaternion target = Compose(jointId, referenceTarget, Quaternion.identity, Quaternion.identity);
-            controller.ApplyCommand(
+            jointCommandSink.ApplyCommand(
                 jointId,
                 new JointCommand(target, ratePerPhase * phaseVelocity, effort, AthleteStrengthScale),
                 tick);

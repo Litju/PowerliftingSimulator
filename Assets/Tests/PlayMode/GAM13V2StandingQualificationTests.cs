@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using NUnit.Framework;
 using PowerliftingSimulator.Athlete;
+using PowerliftingSimulator.Equipment;
 using PowerliftingSimulator.Foundation;
 using PowerliftingSimulator.Foundation.Unity;
 using PowerliftingSimulator.Squat;
@@ -32,6 +33,7 @@ namespace PowerliftingSimulator.Tests
         public IEnumerator GAM13_V2_FRESH_PROCESS_STANDING_QUALIFICATION()
         {
             float loadKg = ReadLoadKg();
+            bool isLoaded = loadKg > 0f;
             string tracePath = Environment.GetEnvironmentVariable("GAM13_V2_TRACE_PATH") ??
                 Path.Combine(Directory.GetCurrentDirectory(), "Artifacts", "Measurements", "GAM-13", "v2-standing",
                     "load-" + loadKg.ToString("000", CultureInfo.InvariantCulture) + "kg.csv");
@@ -56,16 +58,31 @@ namespace PowerliftingSimulator.Tests
             bootstrap.enabled = false;
 
             controller.SetLoad(loadKg);
-            Assert.That(controller.Saddle, Is.Not.Null);
-            Assert.That(controller.Saddle.IsAttached, Is.True);
-            Assert.That(controller.Saddle.IsBroken, Is.False);
-            Assert.That(controller.Saddle.Barbell.LoadedMassKg, Is.EqualTo(loadKg).Within(0.001f));
+            PhysicalBarbell physicalBarbell = UnityEngine.Object.FindFirstObjectByType<PhysicalBarbell>();
+            Assert.That(controller.Saddle != null, Is.EqualTo(isLoaded));
+            if (isLoaded)
+            {
+                Assert.That(controller.Saddle.IsAttached, Is.True);
+                Assert.That(controller.Saddle.IsBroken, Is.False);
+                Assert.That(controller.Saddle.Barbell.LoadedMassKg, Is.EqualTo(loadKg).Within(0.001f));
+            }
+            else
+            {
+                Assert.That(physicalBarbell, Is.Not.Null);
+                Assert.That(physicalBarbell.Body.gameObject.activeInHierarchy, Is.False);
+            }
             Assert.That(controller.Adapter.HasStandingComReference, Is.True);
 
             FoundationRuntime runtime = bootstrap.Runtime;
+            Assert.That(controller.TickZeroSubstrateValidated, Is.True,
+                "The physical substrate was not validated before the first authoritative simulation tick.");
+            Assert.That(controller.TickZeroValidationTick, Is.EqualTo(0ul));
+            Assert.That(runtime.CurrentTime.Tick, Is.EqualTo(0ul),
+                "Standing qualification must begin from the tick-0 reset state.");
             float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
             var trace = new GAM13V2QualificationTrace();
-            controller.BeginAttempt();
+            if (isLoaded)
+                controller.BeginAttempt();
 
             bool finite = true;
             bool bilateralSupportEverySample = true;
@@ -96,16 +113,19 @@ namespace PowerliftingSimulator.Tests
                     $"No post-physics observation was recorded at standing tick {tick}.");
 
                 SquatObservationSnapshot snapshot = controller.ObservationCollector.LastSnapshot;
-                finite &= IsFinite(snapshot, rig, controller);
+                finite &= IsFinite(snapshot, rig, controller, isLoaded, physicalBarbell);
                 bilateralSupportEverySample &= snapshot.Support.HasSupport &&
                     snapshot.LeftFoot.IsInContact && snapshot.RightFoot.IsInContact;
-                attachedBarEverySample &= controller.Saddle != null && controller.Saddle.IsAttached && !controller.Saddle.IsBroken;
+                attachedBarEverySample &= isLoaded
+                    ? controller.Saddle != null && controller.Saddle.IsAttached && !controller.Saddle.IsBroken
+                    : controller.Saddle == null && !physicalBarbell.Body.gameObject.activeInHierarchy;
                 hasStartWindow |= controller.AttemptLifecycle.HasStartWindow &&
                     controller.AttemptLifecycle.StartWindowSampleCount >= controller.AttemptOrchestrator.RequiredStartSamples;
-                squatCommandIssued |= controller.AttemptOrchestrator.HasSquatCommand;
+                squatCommandIssued |= isLoaded && controller.AttemptOrchestrator.HasSquatCommand;
 
                 minimumPelvisY = Mathf.Min(minimumPelvisY, snapshot.PelvisPositionWorldMeters.Y);
-                minimumBarY = Mathf.Min(minimumBarY, snapshot.Bar.PositionWorldMeters.Y);
+                if (isLoaded)
+                    minimumBarY = Mathf.Min(minimumBarY, snapshot.Bar.PositionWorldMeters.Y);
                 maximumTrunkPitch = Mathf.Max(maximumTrunkPitch, Mathf.Abs(snapshot.TrunkWorldPitchRadians));
                 Vector3Value comVelocity = snapshot.Support.SystemComVelocityWorldMetersPerSecond;
                 maximumComSpeed = Mathf.Max(maximumComSpeed, Mathf.Sqrt(comVelocity.X * comVelocity.X + comVelocity.Z * comVelocity.Z));
@@ -126,20 +146,24 @@ namespace PowerliftingSimulator.Tests
                     Mathf.Abs(expectedControlErrorMl - controller.Adapter.BalanceCorrectionV2.ErrorMlM) <= 1e-5f;
                 maximumJointAnchorSeparation = Mathf.Max(maximumJointAnchorSeparation, anchorSeparation);
                 maximumLimitProximity = Mathf.Max(maximumLimitProximity, limitProximity);
-                maximumSaddleSeparation = Mathf.Max(maximumSaddleSeparation, controller.Saddle.SaddleSeparationMeters);
-                float saddleOccupancy = controller.Saddle.CurrentLinearLimitOccupancy;
-                float saddleRotation = controller.Saddle.RelativeRotationDegrees;
-                Vector3 saddleForce = controller.Saddle.CurrentForceEngine;
-                Vector3 saddleTorque = controller.Saddle.CurrentTorqueEngine;
-                finite &= float.IsFinite(saddleOccupancy) && float.IsFinite(saddleRotation) &&
-                    IsFinite(saddleForce) && IsFinite(saddleTorque);
-                maximumSaddleLimitOccupancy = Mathf.Max(maximumSaddleLimitOccupancy, saddleOccupancy);
-                maximumSaddleRelativeRotation = Mathf.Max(maximumSaddleRelativeRotation, saddleRotation);
-                maximumSaddleEngineForce = Mathf.Max(maximumSaddleEngineForce, saddleForce.magnitude);
-                maximumSaddleEngineTorque = Mathf.Max(maximumSaddleEngineTorque, saddleTorque.magnitude);
+                if (controller.Saddle != null)
+                {
+                    maximumSaddleSeparation = Mathf.Max(maximumSaddleSeparation, controller.Saddle.SaddleSeparationMeters);
+                    float saddleOccupancy = controller.Saddle.CurrentLinearLimitOccupancy;
+                    float saddleRotation = controller.Saddle.RelativeRotationDegrees;
+                    Vector3 saddleForce = controller.Saddle.CurrentForceEngine;
+                    Vector3 saddleTorque = controller.Saddle.CurrentTorqueEngine;
+                    finite &= float.IsFinite(saddleOccupancy) && float.IsFinite(saddleRotation) &&
+                        IsFinite(saddleForce) && IsFinite(saddleTorque);
+                    maximumSaddleLimitOccupancy = Mathf.Max(maximumSaddleLimitOccupancy, saddleOccupancy);
+                    maximumSaddleRelativeRotation = Mathf.Max(maximumSaddleRelativeRotation, saddleRotation);
+                    maximumSaddleEngineForce = Mathf.Max(maximumSaddleEngineForce, saddleForce.magnitude);
+                    maximumSaddleEngineTorque = Mathf.Max(maximumSaddleEngineTorque, saddleTorque.magnitude);
+                }
 
                 float ankleApCorrection = controller.Adapter.BalanceCorrectionV2.AnkleApRad;
                 if (Mathf.Abs(ankleApCorrection) > 1e-4f &&
+                    isLoaded &&
                     controller.Adapter.TryGetTargetComposition("left_foot", out SquatPhysicalAdapter.JointTargetComposition ankleComposition))
                 {
                     float mappedApCorrection = PoweredJointController.SignedTwistRadians(
@@ -160,11 +184,14 @@ namespace PowerliftingSimulator.Tests
             }
 
             trace.Save(tracePath);
+            float saddleInitialError = controller.Saddle != null
+                ? controller.Saddle.InitialAnchorErrorMeters
+                : float.NaN;
             Debug.Log(string.Format(CultureInfo.InvariantCulture,
                 "GAM13_V2_STANDING load={0:F1}kg command={1} window={2} contacts={3} pelvis={4:F3}m trunk={5:F3}rad comSpeed={6:F3}m/s comSupport={7:F3}m anchor={8:F4}m saddleError0={9:F5}m saddleMax={10:F4}m saddleOcc={11:F3} saddleRot={12:F2}deg saddleForce={13:F1}N saddleTorque={14:F1}Nm limit={15:F3} trace={16}",
                 loadKg, squatCommandIssued, hasStartWindow, bilateralSupportEverySample,
                 minimumPelvisY, maximumTrunkPitch, maximumComSpeed, minimumComSupportMargin,
-                maximumJointAnchorSeparation, controller.Saddle.InitialAnchorErrorMeters,
+                maximumJointAnchorSeparation, saddleInitialError,
                 maximumSaddleSeparation, maximumSaddleLimitOccupancy, maximumSaddleRelativeRotation,
                 maximumSaddleEngineForce, maximumSaddleEngineTorque, maximumLimitProximity, tracePath));
 
@@ -172,23 +199,31 @@ namespace PowerliftingSimulator.Tests
             Assert.That(referenceErrorConsistent, Is.True, "The controller error does not equal support-relative COM offset minus the captured reference.");
             Assert.That(trace.MinimumIntrinsicCapacityFraction, Is.EqualTo(1f).Within(1e-5f), "A V2 standing joint did not receive its full finite intrinsic capacity.");
             Assert.That(attachedBarEverySample, Is.True, "The physical bar detached or the saddle broke during qualification.");
-            Assert.That(controller.Saddle.InitialAnchorErrorMeters,
-                Is.LessThanOrEqualTo(SquatBarSaddle.InitialAnchorToleranceM),
-                "The bar saddle did not begin in a valid alignment.");
             Assert.That(bilateralSupportEverySample, Is.True, "Bilateral plantar support was lost during the standing qualification window.");
             Assert.That(maximumJointAnchorSeparation, Is.LessThanOrEqualTo(MaximumConstraintSeparationM), "A ConfigurableJoint separated pathologically.");
-            Assert.That(maximumSaddleSeparation, Is.LessThanOrEqualTo(MaximumSaddleSeparationM), "The bar saddle separated pathologically.");
-            Assert.That(maximumSaddleLimitOccupancy, Is.LessThan(MaximumSaddleLimitOccupancy), "The bar saddle rode its translation limit.");
-            Assert.That(maximumSaddleRelativeRotation, Is.LessThan(MaximumSaddleRelativeRotationDegrees), "The bar rotated pathologically relative to the thorax.");
             Assert.That(minimumPelvisY, Is.GreaterThanOrEqualTo(MinimumPelvisHeightM), "The setup is not upright.");
-            Assert.That(minimumBarY, Is.GreaterThanOrEqualTo(MinimumBarHeightM), "The bar is not at a credible supported standing height.");
             Assert.That(maximumTrunkPitch, Is.LessThanOrEqualTo(MaximumTrunkPitchRad), "The trunk is not upright.");
             Assert.That(maximumComSpeed, Is.LessThanOrEqualTo(MaximumComSpeedMps), "COM is moving too quickly for a supported setup.");
             Assert.That(minimumComSupportMargin, Is.GreaterThanOrEqualTo(MinimumComSupportMarginM), "COM left the plantar support region.");
-            Assert.That(hasStartWindow, Is.True, "The start window did not qualify.");
-            Assert.That(squatCommandIssued, Is.True, "The Squat command could not be issued after setup qualification.");
-            Assert.That(apCorrectionSamples, Is.GreaterThan(0), "The V2 stabilizer did not apply any AP correction during the standing window.");
-            Assert.That(apCorrectionMappingConsistent, Is.True, "The AP correction sign was inverted when mapped into joint target space.");
+            if (isLoaded)
+            {
+                Assert.That(controller.Saddle.InitialAnchorErrorMeters,
+                    Is.LessThanOrEqualTo(SquatBarSaddle.InitialAnchorToleranceM),
+                    "The bar saddle did not begin in a valid alignment.");
+                Assert.That(maximumSaddleSeparation, Is.LessThanOrEqualTo(MaximumSaddleSeparationM), "The bar saddle separated pathologically.");
+                Assert.That(maximumSaddleLimitOccupancy, Is.LessThan(MaximumSaddleLimitOccupancy), "The bar saddle rode its translation limit.");
+                Assert.That(maximumSaddleRelativeRotation, Is.LessThan(MaximumSaddleRelativeRotationDegrees), "The bar rotated pathologically relative to the thorax.");
+                Assert.That(minimumBarY, Is.GreaterThanOrEqualTo(MinimumBarHeightM), "The bar is not at a credible supported standing height.");
+                Assert.That(hasStartWindow, Is.True, "The start window did not qualify.");
+                Assert.That(squatCommandIssued, Is.True, "The Squat command could not be issued after setup qualification.");
+                Assert.That(apCorrectionSamples, Is.GreaterThan(0), "The V2 stabilizer did not apply any AP correction during the standing window.");
+                Assert.That(apCorrectionMappingConsistent, Is.True, "The AP correction sign was inverted when mapped into joint target space.");
+            }
+            else
+            {
+                Assert.That(controller.Saddle, Is.Null);
+                Assert.That(physicalBarbell.Body.gameObject.activeInHierarchy, Is.False);
+            }
             Assert.That(controller.Adapter.Sq, Is.EqualTo(0f).Within(0.001f), "No player Yield input was supplied during standing qualification.");
         }
 
@@ -196,7 +231,7 @@ namespace PowerliftingSimulator.Tests
         {
             string value = Environment.GetEnvironmentVariable("GAM13_V2_LOAD_KG") ?? "25";
             float load = float.Parse(value, CultureInfo.InvariantCulture);
-            bool supported = load == 25f || load == 60f || load == 140f || load == 170f || load == 300f;
+            bool supported = load == 0f || load == 25f || load == 60f || load == 140f || load == 170f || load == 300f;
             Assert.That(supported, Is.True, $"Unsupported standing probe load: {load:R} kg.");
             return load;
         }
@@ -207,11 +242,21 @@ namespace PowerliftingSimulator.Tests
             controller.RightFootContact?.PhysicsTickUpdate(dt);
         }
 
-        private static bool IsFinite(SquatObservationSnapshot snapshot, PhysicalAthleteRig rig, SquatPhysicalPrototypeController controller)
+        private static bool IsFinite(
+            SquatObservationSnapshot snapshot,
+            PhysicalAthleteRig rig,
+            SquatPhysicalPrototypeController controller,
+            bool isLoaded,
+            PhysicalBarbell physicalBarbell)
         {
-            if (!SquatTelemetryValue.IsFinite(snapshot.Bar.PositionWorldMeters) ||
-                !SquatTelemetryValue.IsFinite(snapshot.Bar.LinearVelocityWorldMetersPerSecond) ||
-                !SquatTelemetryValue.IsFinite(snapshot.Bar.LoadKilograms) ||
+            if ((isLoaded && (!SquatTelemetryValue.IsFinite(snapshot.Bar.PositionWorldMeters) ||
+                 !SquatTelemetryValue.IsFinite(snapshot.Bar.LinearVelocityWorldMetersPerSecond) ||
+                 !SquatTelemetryValue.IsFinite(snapshot.Bar.LoadKilograms) ||
+                 snapshot.Bar.Availability != SquatTelemetryAvailability.AVAILABLE)) ||
+                (!isLoaded && (snapshot.Bar.Availability != SquatTelemetryAvailability.NOT_AVAILABLE ||
+                 snapshot.Bar.SaddleAvailability != SquatTelemetryAvailability.NOT_AVAILABLE ||
+                 controller.Saddle != null || physicalBarbell == null ||
+                 physicalBarbell.Body.gameObject.activeInHierarchy)) ||
                 !SquatTelemetryValue.IsFinite(snapshot.Support.SystemComWorldMeters) ||
                 !SquatTelemetryValue.IsFinite(snapshot.Support.SystemComVelocityWorldMetersPerSecond) ||
                 !SquatTelemetryValue.IsFinite(snapshot.Support.SupportCenterWorldMeters) ||
@@ -238,9 +283,9 @@ namespace PowerliftingSimulator.Tests
                     return false;
             }
 
-            return controller.Saddle != null && controller.Saddle.Barbell != null &&
-                controller.Saddle.Barbell.Body != null && IsFinite(controller.Saddle.Barbell.Body.position) &&
-                IsFinite(controller.Saddle.Barbell.Body.linearVelocity) && IsFinite(controller.Saddle.Barbell.Body.angularVelocity);
+            Rigidbody barBody = physicalBarbell != null ? physicalBarbell.Body : controller.Saddle?.Barbell.Body;
+            return barBody != null && IsFinite(barBody.position) &&
+                IsFinite(barBody.linearVelocity) && IsFinite(barBody.angularVelocity);
         }
 
         private static void MeasureConstraintHealth(

@@ -203,7 +203,8 @@ namespace PowerliftingSimulator.Athlete
                     float capMass = massKg - cylinderMass;
                     float axial = 0.5f * cylinderMass * radius * radius + 0.4f * capMass * radius * radius;
                     float transverse = cylinderMass * (3f * radius * radius + cylinderLength * cylinderLength) / 12f +
-                        capMass * (0.4f * radius * radius + cylinderLength * cylinderLength * 0.25f);
+                        capMass * (0.4f * radius * radius + cylinderLength * cylinderLength * 0.25f +
+                            3f * cylinderLength * radius / 8f);
                     inertia = new Vector3(transverse, axial, transverse);
                     break;
 

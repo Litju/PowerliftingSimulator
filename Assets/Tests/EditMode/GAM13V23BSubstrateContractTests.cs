@@ -55,7 +55,7 @@ namespace PowerliftingSimulator.Tests
 
         [TestCase(PhysicalColliderKind.Box, 1f, 2f, 4f, 6f, 0f, 0f, 0f, 4.3333335f, 3.3333333f, 1.6666666f)]
         [TestCase(PhysicalColliderKind.Capsule, 2f, 1f, 1f, 1f, 0f, 0f, 0f, 0.2f, 0.2f, 0.2f)]
-        [TestCase(PhysicalColliderKind.Capsule, 8f, 1f, 3f, 1f, 0f, 0f, 0f, 4.575f, 0.95f, 4.575f)]
+        [TestCase(PhysicalColliderKind.Capsule, 8f, 1f, 3f, 1f, 0f, 0f, 0f, 5.325f, 0.95f, 5.325f)]
         public void GAM13_V23B_PRIMITIVE_INERTIA_MATCHES_COLLIDER_GEOMETRY(
             PhysicalColliderKind kind,
             float mass,
@@ -99,6 +99,19 @@ namespace PowerliftingSimulator.Tests
             Assert.Throws<System.ArgumentOutOfRangeException>(() =>
                 PhysicalAthleteDefinition.PrimitiveInertiaAboutBodyCenter(
                     PhysicalColliderKind.Capsule, 1f, new Vector3(0.2f, 0.1f, 0.2f), Vector3.zero));
+        }
+
+        [Test]
+        public void GAM13_V23B_GAMEPLAY_COMMAND_CONTRACT_DOES_NOT_EXPOSE_CONFIGURABLE_JOINTS()
+        {
+            System.Reflection.ParameterInfo[] parameters =
+                typeof(IPhysicalAthleteCommandSource).GetMethod(nameof(IPhysicalAthleteCommandSource.PrepareCommands)).GetParameters();
+
+            Assert.That(parameters.Length, Is.EqualTo(4));
+            Assert.That(parameters[0].ParameterType, Is.EqualTo(typeof(PowerliftingSimulator.Foundation.PhysicalObservation)));
+            Assert.That(parameters[1].ParameterType, Is.EqualTo(typeof(PowerliftingSimulator.Foundation.SimulationTime)));
+            Assert.That(parameters[2].ParameterType, Is.EqualTo(typeof(PowerliftingSimulator.Foundation.PlayerIntentFrame)));
+            Assert.That(parameters[3].ParameterType, Is.EqualTo(typeof(IPhysicalAthleteJointCommandSink)));
         }
 
         private static bool IsFinitePositive(Vector3 value) =>

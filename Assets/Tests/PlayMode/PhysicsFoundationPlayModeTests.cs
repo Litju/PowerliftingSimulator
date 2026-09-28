@@ -53,6 +53,27 @@ namespace PowerliftingSimulator.Tests
         }
 
         [UnityTest]
+        public IEnumerator InitialStateGateBlocksTheFirstOwnedPhysicsStep()
+        {
+            _runtime = CreateRuntime();
+            Rigidbody body = CreateProbe(_runtime, 1f);
+            _runtime.RegisterPrimaryBody(body, "probe");
+            Vector3 initialPosition = body.position;
+
+            _runtime.HoldPhysicsUntilInitialStateValidated();
+            Assert.Throws<InvalidOperationException>(() => _runtime.StepOne());
+            Assert.That(_runtime.CurrentTime.Tick, Is.EqualTo(0ul));
+            Assert.That(body.position, Is.EqualTo(initialPosition));
+            Assert.That(body.linearVelocity, Is.EqualTo(Vector3.zero));
+
+            _runtime.MarkInitialPhysicalStateValidated();
+            _runtime.StepOne();
+            Assert.That(_runtime.CurrentTime.Tick, Is.EqualTo(1ul));
+            Assert.That(body.position.y, Is.LessThan(initialPosition.y));
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator RenderCatchUpIsBoundedAtFourTicks()
         {
             _runtime = CreateRuntime();

@@ -18,6 +18,7 @@ namespace PowerliftingSimulator.Foundation.Unity
         private bool _renderModeStarted;
         private bool _manualSteppingMode;
         private bool _completingRenderFrame;
+        private bool _initialPhysicalStateValidated = true;
         private bool _stepInProgress;
         private bool _tickAdvanced;
         private Action<SimulationTime, PlayerIntentFrame> _prePhysicsStep;
@@ -88,6 +89,8 @@ namespace PowerliftingSimulator.Foundation.Unity
 
         public void StepOne()
         {
+            if (!_initialPhysicalStateValidated)
+                throw new InvalidOperationException("The initial physical state must validate before the first simulation step.");
             if (!_authoritativeScene.IsValid)
                 throw new InvalidOperationException("Cannot step an invalid authoritative physics scene.");
             if (_renderFramePrepared)
@@ -132,6 +135,20 @@ namespace PowerliftingSimulator.Foundation.Unity
             {
                 _stepInProgress = false;
             }
+        }
+
+        public void HoldPhysicsUntilInitialStateValidated()
+        {
+            if (_stepInProgress || CurrentTime.Tick != 0ul)
+                throw new InvalidOperationException("Initial-state validation can only be held at physics tick 0.");
+            _initialPhysicalStateValidated = false;
+        }
+
+        public void MarkInitialPhysicalStateValidated()
+        {
+            if (_stepInProgress || CurrentTime.Tick != 0ul)
+                throw new InvalidOperationException("Initial-state validation must complete at physics tick 0.");
+            _initialPhysicalStateValidated = true;
         }
 
         public int AdvanceRenderFrame(double renderDeltaTimeSeconds)

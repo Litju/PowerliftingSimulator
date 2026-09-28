@@ -31,7 +31,9 @@ namespace PowerliftingSimulator.Tests
                 "knee_target_rad,knee_actual_error_rad,hip_target_rad,hip_actual_error_rad," +
                 "trunk_target_rad,trunk_actual_error_rad,raw_balance_ap_rad,applied_balance_ap_rad," +
                 "raw_balance_ml_rad,applied_balance_ml_rad,ap_correction_saturated,ml_correction_saturated," +
-                "max_modeled_drive_demand,minimum_intrinsic_capacity_fraction,max_joint_limit_proximity,max_joint_anchor_separation_m," +
+                "max_twist_drive_demand_nm,max_swing_yz_drive_demand_nm,max_twist_drive_demand_fraction," +
+                "max_swing_yz_drive_demand_fraction,max_modeled_drive_demand,minimum_intrinsic_capacity_fraction," +
+                "max_joint_limit_proximity,max_joint_anchor_separation_m," +
                 "saddle_initial_anchor_error_m,saddle_separation_m,saddle_linear_limit_occupancy," +
                 "saddle_relative_rotation_deg,saddle_is_broken,saddle_force_engine_x,saddle_force_engine_y,saddle_force_engine_z," +
                 "saddle_torque_engine_x,saddle_torque_engine_y,saddle_torque_engine_z,rule_outcome,physical_outcome");
@@ -68,6 +70,12 @@ namespace PowerliftingSimulator.Tests
             float saddleRelativeRotation = saddle != null ? saddle.RelativeRotationDegrees : float.NaN;
             Vector3 saddleForceEngine = saddle != null ? saddle.CurrentForceEngine : new Vector3(float.NaN, float.NaN, float.NaN);
             Vector3 saddleTorqueEngine = saddle != null ? saddle.CurrentTorqueEngine : new Vector3(float.NaN, float.NaN, float.NaN);
+            MaximumDriveChannelDemands(
+                controller.AthleteRig.PoweredController,
+                out float maximumTwistDemandNm,
+                out float maximumSwingDemandNm,
+                out float maximumTwistDemandFraction,
+                out float maximumSwingDemandFraction);
 
             Value(loadKg); Value(snapshot.SimulationTick.ToString(Invariant));
             Value(snapshot.State.ToString()); Value(snapshot.Sq);
@@ -93,6 +101,8 @@ namespace PowerliftingSimulator.Tests
             Value(correction.CommandApRad); Value(correction.AppliedApRad);
             Value(correction.CommandMlRad); Value(correction.AppliedMlRad);
             Value(Bool(correction.IsApBoundSaturated)); Value(Bool(correction.IsMlBoundSaturated));
+            Value(maximumTwistDemandNm); Value(maximumSwingDemandNm);
+            Value(maximumTwistDemandFraction); Value(maximumSwingDemandFraction);
             Value(snapshot.MaximumModeledDemand); Value(capacityFraction); Value(maximumLimitProximity);
             Value(maximumJointAnchorSeparationM); Value(saddleInitialAnchorError); Value(saddleSeparation);
             Value(saddleLinearLimitOccupancy); Value(saddleRelativeRotation); Value(Bool(saddle != null && saddle.IsBroken));
@@ -133,6 +143,31 @@ namespace PowerliftingSimulator.Tests
         }
 
         private static string Bool(bool value) => value ? "true" : "false";
+
+        private static void MaximumDriveChannelDemands(
+            PoweredJointController controller,
+            out float twistNm,
+            out float swingNm,
+            out float twistFraction,
+            out float swingFraction)
+        {
+            twistNm = 0f;
+            swingNm = 0f;
+            twistFraction = 0f;
+            swingFraction = 0f;
+            foreach (PoweredJointController.PoweredJointRuntime joint in controller.Joints)
+            {
+                if (!joint.Profile.HasValue || !joint.HasPostPhysicsDiagnostic)
+                    continue;
+                PoweredJointDiagnostic diagnostic = joint.PostPhysicsDiagnostic;
+                twistNm = Mathf.Max(twistNm, diagnostic.TwistDriveDemandNm);
+                twistFraction = Mathf.Max(twistFraction, diagnostic.TwistDriveDemandFraction);
+                if (float.IsFinite(diagnostic.SwingDriveDemandNm))
+                    swingNm = Mathf.Max(swingNm, diagnostic.SwingDriveDemandNm);
+                if (float.IsFinite(diagnostic.SwingDriveDemandFraction))
+                    swingFraction = Mathf.Max(swingFraction, diagnostic.SwingDriveDemandFraction);
+            }
+        }
 
         private static float MinimumCapacityFraction(SquatPhysicalPrototypeController controller)
         {

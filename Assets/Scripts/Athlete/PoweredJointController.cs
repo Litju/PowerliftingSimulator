@@ -78,6 +78,10 @@ namespace PowerliftingSimulator.Athlete
             float maximumForceNm,
             float activation,
             float capacityScale,
+            float twistDriveDemandNm,
+            float swingDriveDemandNm,
+            float twistDriveDemandFraction,
+            float swingDriveDemandFraction,
             float modeledDemand,
             float limitProximity,
             Vector3 solverTorqueJointSpaceNm)
@@ -91,6 +95,10 @@ namespace PowerliftingSimulator.Athlete
             MaximumForceNm = maximumForceNm;
             Activation = activation;
             CapacityScale = capacityScale;
+            TwistDriveDemandNm = twistDriveDemandNm;
+            SwingDriveDemandNm = swingDriveDemandNm;
+            TwistDriveDemandFraction = twistDriveDemandFraction;
+            SwingDriveDemandFraction = swingDriveDemandFraction;
             ModeledDemand = modeledDemand;
             LimitProximity = limitProximity;
             SolverTorqueJointSpaceNm = solverTorqueJointSpaceNm;
@@ -105,6 +113,10 @@ namespace PowerliftingSimulator.Athlete
         public float MaximumForceNm { get; }
         public float Activation { get; }
         public float CapacityScale { get; }
+        public float TwistDriveDemandNm { get; }
+        public float SwingDriveDemandNm { get; }
+        public float TwistDriveDemandFraction { get; }
+        public float SwingDriveDemandFraction { get; }
         public float ModeledDemand { get; }
         public float LimitProximity { get; }
 
@@ -125,7 +137,30 @@ namespace PowerliftingSimulator.Athlete
         public float SolverFlexionTorqueNm => SolverTorqueJointSpaceNm.x;
     }
 
-    public sealed class PoweredJointController
+    public readonly struct PoweredDriveDemand
+    {
+        internal PoweredDriveDemand(
+            float twistNm,
+            float swingNm,
+            float twistFraction,
+            float swingFraction,
+            float maximumChannelFraction)
+        {
+            TwistNm = twistNm;
+            SwingNm = swingNm;
+            TwistFraction = twistFraction;
+            SwingFraction = swingFraction;
+            MaximumChannelFraction = maximumChannelFraction;
+        }
+
+        public float TwistNm { get; }
+        public float SwingNm { get; }
+        public float TwistFraction { get; }
+        public float SwingFraction { get; }
+        public float MaximumChannelFraction { get; }
+    }
+
+    public sealed class PoweredJointController : IPhysicalAthleteJointCommandSink
     {
         public const string WriterId = "PoweredJointController";
         public const string CalibrationVersion = "GAM7_CONFIGURABLE_JOINT_LOCAL_V1";
@@ -318,6 +353,48 @@ namespace PowerliftingSimulator.Athlete
             }
         }
 
+        public void ValidateAppliedDrives()
+        {
+            foreach (PoweredJointRuntime joint in _joints)
+            {
+                if (!joint.Profile.HasValue)
+                    continue;
+
+                ConfigurableJoint configurable = joint.Joint;
+                JointFamilyProfile profile = joint.Profile.Value;
+                JointCommand command = joint.RequestedCommand;
+                float maximumForce = profile.BaseCapacityNm * command.AthleteStrengthScale * CapacityActivation(command);
+                Vector3 targetVelocity = Vector3.ClampMagnitude(
+                    command.TargetRelativeAngularVelocityRadS, profile.MaxTargetRateRadS);
+                if (configurable.configuredInWorldSpace ||
+                    configurable.rotationDriveMode != RotationDriveMode.XYAndZ ||
+                    Quaternion.Angle(configurable.targetRotation, ToUnityTargetRotation(joint.AppliedTarget)) > 0.001f ||
+                    Vector3.Distance(configurable.targetAngularVelocity, -targetVelocity) > 0.00001f ||
+                    targetVelocity.magnitude > profile.MaxTargetRateRadS + 0.00001f ||
+                    !DriveMatches(configurable.angularXDrive, profile, maximumForce) ||
+                    !DriveMatches(configurable.angularYZDrive, profile, maximumForce,
+                        joint.Recipe.Kind == PhysicalJointKind.Ball) ||
+                    !DriveMatches(configurable.slerpDrive, default, 0f, false))
+                    throw new InvalidOperationException($"Joint '{joint.Id}' does not match its active PhysX drive contract.");
+            }
+        }
+
+        private static bool DriveMatches(
+            JointDrive actual,
+            JointFamilyProfile expected,
+            float maximumForce,
+            bool active = true)
+        {
+            float spring = active ? expected.Spring : 0f;
+            float damper = active ? expected.Damper : 0f;
+            float force = active ? maximumForce : 0f;
+            return IsValidPoweredDrive(actual) &&
+                float.IsFinite(actual.positionSpring) && float.IsFinite(actual.positionDamper) &&
+                Mathf.Abs(actual.positionSpring - spring) <= 0.001f &&
+                Mathf.Abs(actual.positionDamper - damper) <= 0.001f &&
+                Mathf.Abs(actual.maximumForce - force) <= 0.001f;
+        }
+
         /// <summary>
         /// Recomputes read-only diagnostics from the current post-physics
         /// joint state. The ordinary Diagnostic remains the pre-physics
@@ -494,14 +571,14 @@ namespace PowerliftingSimulator.Athlete
         public static JointDrive BuildDriveForTest(JointFamilyProfile profile, float maximumForce) =>
             Drive(profile, maximumForce);
 
-        public static float ModelDemandForTest(
+        public static PoweredDriveDemand ModelDemandForTest(
+            PhysicalJointKind kind,
             JointFamilyProfile profile,
             Vector3 errorRad,
             Vector3 velocityErrorRadS,
             float maximumForce)
         {
-            Vector3 conceptualTorque = profile.Spring * errorRad + profile.Damper * velocityErrorRadS;
-            return conceptualTorque.magnitude / Mathf.Max(maximumForce, 0.001f);
+            return ModelDriveDemand(kind, profile, errorRad, velocityErrorRadS, maximumForce);
         }
 
         private static JointFamilyProfile? ResolveProfile(string family)
@@ -534,8 +611,12 @@ namespace PowerliftingSimulator.Athlete
             JointFamilyProfile profile = joint.Profile.Value;
             // Demand models the gains actually written to the drive, against
             // the finite maximumForce ceiling that capacity scales.
-            Vector3 conceptualTorque = profile.Spring * errorRad + profile.Damper * (targetVelocity - actualVelocity);
-            float demand = conceptualTorque.magnitude / Mathf.Max(maximumForce, 0.001f);
+            PoweredDriveDemand demand = ModelDriveDemand(
+                joint.Recipe.Kind,
+                profile,
+                errorRad,
+                targetVelocity - actualVelocity,
+                maximumForce);
             float xDegrees = SignedTwistDegrees(actual, Vector3.right);
             float limit = xDegrees >= 0f ? Mathf.Max(0.001f, joint.Recipe.HighDegrees) : Mathf.Max(0.001f, -joint.Recipe.LowDegrees);
             float proximity = Mathf.Clamp01(Mathf.Abs(xDegrees) / limit);
@@ -553,9 +634,33 @@ namespace PowerliftingSimulator.Athlete
                 maximumForce,
                 activation,
                 capacityScale,
-                demand,
+                demand.TwistNm,
+                demand.SwingNm,
+                demand.TwistFraction,
+                demand.SwingFraction,
+                demand.MaximumChannelFraction,
                 proximity,
                 solverTorque);
+        }
+
+        private static PoweredDriveDemand ModelDriveDemand(
+            PhysicalJointKind kind,
+            JointFamilyProfile profile,
+            Vector3 errorRad,
+            Vector3 velocityErrorRadS,
+            float maximumForce)
+        {
+            Vector3 torqueByAxis = profile.Spring * errorRad + profile.Damper * velocityErrorRadS;
+            float denominator = Mathf.Max(maximumForce, 0.001f);
+            float twistNm = Mathf.Abs(torqueByAxis.x);
+            float twistFraction = twistNm / denominator;
+            if (kind == PhysicalJointKind.Hinge)
+                return new PoweredDriveDemand(twistNm, float.NaN, twistFraction, float.NaN, twistFraction);
+
+            float swingNm = Mathf.Sqrt(torqueByAxis.y * torqueByAxis.y + torqueByAxis.z * torqueByAxis.z);
+            float swingFraction = swingNm / denominator;
+            return new PoweredDriveDemand(
+                twistNm, swingNm, twistFraction, swingFraction, Mathf.Max(twistFraction, swingFraction));
         }
 
         private PoweredJointDiagnostic BuildCurrentDiagnostic(PoweredJointRuntime joint)

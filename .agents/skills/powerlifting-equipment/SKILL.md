@@ -58,9 +58,11 @@ sleeve cylinder volumes receive one effective density scaled to 20 kg; plate
 face masses are exact authored values. Each aligned cylinder uses
 `I_x = 1/2 m r^2` and `I_y = I_z = m(3r^2 + L^2)/12`; axial offsets add the
 parallel-axis term to the transverse axes. Symmetric loads keep COM at BAR
-origin within numerical tolerance, and the resulting mass and inertia are
-assigned to the one root Rigidbody. The two 2.5 kg removable collars are
-compound-inertia components at their same load-dependent layout centers.
+origin within numerical tolerance. `PhysicalBarbell` disables automatic COM
+and inertia derivation, lays out the load-dependent child colliders, then
+assigns and checks the compound mass properties on the one root Rigidbody.
+The two 2.5 kg removable collars are compound-inertia components at their
+same load-dependent layout centers.
 
 # Collision Model
 
@@ -119,3 +121,9 @@ seam were exercised by the GAM-8 qualification test.
 1.125 m, and symmetric loading, presentation-only trail, and reset passed in
 the Windows standalone smoke. This remains a rigid engineering approximation;
 grip, rack, and lift coupling are not implemented.
+
+2026-09-28 under GAM-13 V2-3B: the active 25 kg bar's Rigidbody COM/inertia
+matched its compound load model at tick 0 and remained aligned through one
+owned step/reset. Unloaded setup deactivates the bar; its positive authored
+compound model remains available for later activation. The other canonical
+standing loads have not been requalified in this pass.
