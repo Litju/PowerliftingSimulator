@@ -1,201 +1,250 @@
 # GAM-13 V2-3B Physics Substrate Audit
 
-Authority: live Linear issue GAM-13, V2-3B active. Scope is physical construction through post-physics observation; the V2 controller remains `q_cmd = q_ref(s) + delta_q_balance`.
+Authority: active Linear issue GAM-13 V2-3B. Unity remains the game engine. The V2 controller remains `q_cmd = q_ref(s) + delta_q_balance`; no controller or strength tuning was performed.
 
 ## Tick-0 physical state
 
 ### CURRENT
 
-`PhysicalAthleteRig.Build` creates and validates the athlete before simulation. It checks total mass, positive finite inertia, zero projection, zero passive drives, and anchor coincidence to `0.1 mm`. It measures nonadjacent athlete self-penetration, but does not validate all body transforms/velocities, joint axes, platform/body penetration, bar state, or the complete primed V2 command before the first `PhysicsScene.Simulate`.
+The physical athlete, support platform, bar, optional saddle, and primed standing command are validated during squat initialization and load reset before the first local physics step. The foundation holds `PhysicsTickDriver.StepOne` until the squat validator releases it. Each Rigidbody is checked for finite pose, COM, inertia, and velocities; athlete mass/topology and anchors are checked; active collider pairs are tested; and the bar and saddle contracts are checked when loaded. A failure throws before the first `PhysicsScene.Simulate`.
 
 ### FINDING
 
-There is no single hard pre-simulation gate for the complete athlete + platform + bar + saddle state. Startup errors can reach the first solver step.
+The initial state now has a hard gate. The unloaded receipt lists four connected athlete-joint overlaps; the loaded receipt adds four bar/non-thorax setup overlaps. They are collision-suppressed (maximum recorded overlap is 101.6 mm at pelvis/thigh). No active pair begins penetrated.
 
 ### CHANGE
 
-Add a build-time tick-0 validator for finite body state, zero unintended velocity, collider penetration, plantar/platform registration, anchor/axis validity, primed targets, and bar/saddle initialization. Fail initialization before simulation on any violation.
+Added complete tick-0 validation, including the primed drive targets. The bar spawn is derived from the thorax saddle anchor before its Rigidbody is registered, so reset returns to the aligned pose.
 
 ### VALIDATION
 
-Pending focused EditMode and PlayMode substrate tests and a fresh-process tick-0 receipt.
+Fresh-process PlayMode tick-0 audit passed for unloaded and 25 kg setups with the first-tick hold active. Both receipts record tick 0, 16 athlete bodies, 15 joints, 100 kg total athlete mass, bilateral plantar geometry, zero active initial penetration pairs, and exact reset after one owned step:
+
+- `Artifacts/Measurements/GAM-13/v2-3b-substrate/tick-0-unloaded-final-gated.json`
+- `Artifacts/Measurements/GAM-13/v2-3b-substrate/tick-0-25kg-final-gated.json`
+
+The receipts enumerate intentional suppressed overlaps separately by collider pair and depth.
 
 ### STATUS
 
-OPEN — source audit complete; implementation and runtime validation pending.
+PASS — both authored startup states validate before simulation.
 
 ## Athlete mass, COM, and inertia
 
 ### CURRENT
 
-The 16-body model assigns exactly 100 kg from explicit segment fractions. Each body uses a zero local COM. `PhysicalAthleteRig.CreateSegment` assigns `PhysicalAthleteDefinition.BoxInertia` for both box and capsule colliders; capsule dimensions use the measured segment length and collider radius. The foot collider is offset to register its sole while its authored body COM remains at the segment origin.
+The 16 authored masses sum to 99.999992 kg at runtime (100 kg within float precision). Each body’s local origin is its authored COM. Boxes use analytic box inertia; Y-axis capsules use solid-cylinder plus hemispherical-cap inertia, including the cap-centroid offset; the foot box includes its collider-center parallel-axis term. Automatic Unity COM and inertia derivation are disabled after these authored properties are assigned.
 
 ### FINDING
 
-Box inertia is not consistent with the actual capsule geometry. The authored segment origin is the intended COM; the foot collider offset also needs its parallel-axis contribution.
+The former box approximation for capsules was inconsistent with the actual collision shape. The first analytic capsule correction also omitted the cap-centroid offset; the final formula and test expectation include it.
 
 ### CHANGE
 
-Keep authored masses and COMs. Replace the box-only tensor with exact box/capsule primitive inertia about the authored COM, including collider-offset terms, and retain a principal-axis rotation consistent with the body frame.
+Replaced the mixed box/capsule approximation with collider-consistent primitive inertia about each authored COM. Inertia principal axes stay aligned with the body frame; the current recipe offsets only the plantar boxes along one principal axis.
 
 ### VALIDATION
 
-Pending per-segment mass/COM/inertia receipt, positive finite principal inertia checks, formula tests, and deterministic rebuild comparison.
+The audit receipts contain mass, collider kind/dimensions/center, COM, inertia tensor, and tensor rotation for every segment. EditMode primitive-formula and recipe tests passed 7/7; the production athlete PlayMode reset/fall test passed 1/1.
 
 ### STATUS
 
-OPEN — box/capsule inconsistency confirmed in source.
+PASS — no capsule uses box inertia; values are finite, positive, deterministic, and retained by PhysX.
 
 ## Powered-joint topology and reference bounds
 
 ### CURRENT
 
-The 15 joints are created on each child body and connected to the recipe’s parent. Anchors come from GAM-10 reference bones. Hinges lock Y/Z; ball joints limit X/Y/Z. Limits invert authored X bounds to match Unity target-rotation sign. Projection is disabled. Primary axes are resolved in child space; secondary axes are selected from world up/forward without Gram-Schmidt orthogonalization. Existing GAM-13 joint-limit mapping tests encode the V2 headroom contract.
+All 15 child joints connect to the recipe parent. Build validation checks child/parent ownership, coincident anchors, finite normalized orthogonal axes, recipe primary-axis direction, hinge/ball angular freedom, physical bounds, and disabled projection. GAM-10 reference geometry and the V2 joint-headroom contract are unchanged.
 
 ### FINDING
 
-Parent/child and target-space mappings are explicit, but axis validity/orthogonality and the complete configured joint contract are not hard-validated at construction.
+The previous frame construction could provide a non-orthogonal secondary axis and did not hard-check the full runtime topology. The accepted physical limits and reference targets remain unchanged.
 
 ### CHANGE
 
-Orthonormalize and validate each joint frame. Validate recipe parent, active degrees of freedom, physical bounds, canonical reference headroom, and neutral/target rotation mapping without projection or a second physical writer.
+Projected the secondary axis perpendicular to the primary and added construction checks for topology, axes, anchors, degrees of freedom, and limits. The sole powered writer continues to map logical neutral identity through the existing joint-space conversion.
 
 ### VALIDATION
 
-Pending focused topology, target-mapping, and existing joint-headroom regression tests.
+`GAM13V2JointLimitMappingTests` passed 1/1. GAM-10 reference tick and render-rate/root-authority regressions passed 2/2. No physical bounds or GAM-10 reference angles changed.
 
 ### STATUS
 
-OPEN — source mapping exists; additional build-time checks pending.
+PASS — configured topology is valid and existing reference/headroom regressions hold.
 
-## Powered drive and demand diagnostics
+## Powered drives and demand diagnostics
 
 ### CURRENT
 
-`PoweredJointController` is the only joint-drive writer. It uses `XYAndZ`, finite force-mode drives, target rotation, target angular velocity, and shortest-arc target-rate limiting. Hinges activate angular X only; ball joints activate X and YZ. The modeled demand currently forms a 3D torque vector and divides its magnitude by maximum force. `ConfigurableJoint.currentTorque` is already exposed separately as a solver diagnostic.
+`PoweredJointController` remains the single actuator writer. The active PhysX contract is `XYAndZ`, force mode, finite per-family spring/damper and maximum force, inverse target rotation, negated target angular velocity, and a per-tick shortest-arc target-rate limit. Hinges drive twist only; ball joints drive twist and swing/YZ.
 
 ### FINDING
 
-The current norm combines unrelated twist and swing axes, so it is not evidence of saturation in an active PhysX drive channel.
+The prior modeled demand combined twist and swing into a 3D vector norm, which did not correspond to either active PhysX drive channel. `ConfigurableJoint.currentTorque` remains a solver/constraint diagnostic, not drive demand.
 
 ### CHANGE
 
-Report hinge twist demand, and ball twist plus YZ swing demand. Define actuator pressure as the maximum active-channel demand fraction. Keep solver torque separate and label it as an engine/constraint diagnostic.
+Diagnostics now report twist demand and normalized pressure separately from ball-joint swing/YZ demand and pressure. Canonical modeled drive pressure is the maximum active-channel pressure. Tick-0 priming validates actual drive mode, gains, force ceilings, target rotation, and target-rate limit. The command-source interface now receives an `IPhysicalAthleteJointCommandSink`; the Unity backend still owns the only ConfigurableJoint writer.
 
 ### VALIDATION
 
-Pending drive-contract assertions and EditMode demand tests for hinge, ball, inactive channels, target-rate limit, and finite maximum force.
+EditMode channel tests passed 4/4; the substrate/command-seam EditMode tests passed 7/7. The complete Unity-generated solution build passed with 0 errors. The existing warning set is limited to unassigned serialized/test fields.
 
 ### STATUS
 
-OPEN — current demand calculation is not channel-aligned.
+PASS — reported saturation is channel-aligned and solver torque stays separate.
 
 ## Feet, platform, and contact
 
 ### CURRENT
 
-The platform is a static 5 m × 0.1 m × 5 m box with a 0.85 static / 0.75 dynamic friction material and Average combine. Foot boxes are placed on the canonical plantar plane and use 1.0 static/dynamic friction with Maximum combine. The rig checks nonadjacent athlete self-penetration before creating the platform. `PhysicalFootContactDetector` promotes collision-callback data at the next physics-tick update.
+The static platform is 5 m × 0.1 m × 5 m, with static/dynamic friction 0.85/0.75 and Average combine. Plantar boxes use 1.0/1.0 friction and Maximum combine. Build validation requires both soles within 0.1 mm of the actual platform top and checks all active collider pairs before simulation. Contact callbacks are consumed after simulation.
 
 ### FINDING
 
-Material intent and post-simulation contact timing are explicit. Tick-0 geometric foot/platform registration and unintended external penetrations are not part of the current hard validation gate.
+Tick-0 bilateral support is geometric; contact-detector state is only authoritative after the first physics step. The standing trace confirms both contacts persist, even while the unloaded posture later fails.
 
 ### CHANGE
 
-Validate both plantar box bottoms against the actual platform top and reject initial penetrations among active collision pairs. Preserve physical friction and record that detector contact becomes authoritative after the first simulation step.
+Added hard platform/material/plantar checks and pre-simulation active-pair penetration rejection. Joint-suppressed overlaps are recorded rather than hidden.
 
 ### VALIDATION
 
-Pending tick-0 bilateral plantar geometry checks and standing-window bilateral contact checks.
+Both tick-0 receipts report bilateral plantar geometry. Gate A recorded bilateral foot contact in all 500 samples and zero active initial penetration. Its posture failure is recorded separately below.
 
 ### STATUS
 
-OPEN — contact materials are authored; full initialization validation pending.
+PASS — platform registration, material pairing, and contact persistence validate.
 
 ## Barbell mass and rigid-body state
 
 ### CURRENT
 
-The bar uses one dynamic gravity-enabled Rigidbody. The loading model assigns 20 kg to the bare bar plus 5 kg collars and symmetric plate mass. Compound COM/inertia are calculated from cylinder components and assigned to the root; shaft/sleeve/shoulder, plate, and collar colliders are child colliders without extra Rigidbodies.
+The bar is one dynamic, gravity-enabled Rigidbody with a single compound collider assembly. The authored loading model is 20 kg bare bar plus 5 kg collars plus symmetric plates; the compound model supplies COM and inertia. Automatic COM/inertia are disabled so plate/collar collider placement cannot replace the model.
 
 ### FINDING
 
-The modeled construction is physically dynamic and load-independent in outcome selection. Canonical-load mass, COM, inertia, collider topology, and finite tick-0 state are not checked together before simulation.
+The first tick-0 check found the inactive unloaded bar’s Unity inertia tensor reads zero after deactivation. The active bar must therefore be validated immediately after its colliders are laid out and before an unloaded setup deactivates it. The authored model remains available and positive for the inactive bar.
 
 ### CHANGE
 
-Keep the existing compound bar model and verify exact requested mass, finite symmetric COM/inertia, single-body collider topology, gravity, and dynamic state at initialization for each tested load.
+Bar load construction now applies mass properties after moving load-dependent colliders and verifies the active Rigidbody against the compound model. Tick-0 validation checks the model for an inactive unloaded bar and the Rigidbody properties whenever the bar is active.
 
 ### VALIDATION
 
-Pending canonical 25/60/140/170/300 kg loading checks and the tick-0 bar-state receipt.
+The 25 kg receipt reports exact requested/actual mass and a 1.35×10⁻⁶ kg·m² inertia difference. The bar has one Rigidbody and dynamic/gravity state when loaded. PhysicalBarbell PlayMode loading/collider regressions passed 2/2.
 
 ### STATUS
 
-OPEN — compound mass model present; complete substrate validation pending.
+PASS — loaded canonical bar state matches its authored mass model; unloaded bar is physically inactive.
 
 ## Bar-to-thorax saddle
 
 ### CURRENT
 
-`SquatBarSaddle` joins the dynamic bar to the dynamic thorax with finite angular bounds and finite break force/torque. Translation is compliant on all axes with a 50 mm limit, 50 kN/m spring, and 3 kN·s/m damping. It records initial anchor error but accepts up to 200 mm and does not align the bar before creating the joint. The prior fresh-process 25 kg trace recorded 50.0068 mm maximum separation on the first sample, marginally over its 50 mm standing criterion.
+Loaded setup aligns the bar root to the thorax anchor before Rigidbody registration. Initial anchor tolerance is 0.1 mm. Translation is compliant on all axes with 12 mm limit, 500 kN/m spring and 6.5 kN·s/m damping; angular freedom is bounded, projection is disabled, and break force/torque are finite. Current and trace diagnostics keep initial error, separation, limit occupancy, relative rotation, break state, engine force, and engine torque separate.
 
 ### FINDING
 
-The spawn tolerance is wider than the entire intended translation range, so a large initialization mismatch may be left for PhysX to reconcile. Current evidence identifies this as a substrate defect; it does not establish a joint-solver failure.
+The previous permissive 200 mm spawn tolerance and 50 mm working limit allowed a startup mismatch to be left for PhysX to reconcile. The former 25 kg trace’s first-step 50.0068 mm separation is no longer representative of the refactored startup.
 
 ### CHANGE
 
-Set the bar’s authored initial spawn position from the thorax anchor before bar-body registration. Reject any remaining initialization mismatch at a tight tolerance. Use tightly compliant millimetre-scale translation with finite force/break limits and bounded angular freedom. Report anchor error, separation, limit occupancy, relative rotation, break state, and current engine force/torque separately.
+The scene builder now authors the aligned pose before the bar body is registered. Saddle construction fails immediately on a mismatch above 0.1 mm. The finite, millimetre-scale compliant load path remains between two dynamic bodies.
 
 ### VALIDATION
 
-Pending tick-0 alignment assertion and unloaded/25 kg saddle separation and limit-occupancy measurements.
+At 25 kg tick 0: initial error 0, separation 0, limit occupancy 0, relative rotation 0°, unbroken, engine force/torque 0. Tick-0 reset/rebuild checks pass. Gate A has no saddle because the bar is intentionally inactive.
 
 ### STATUS
 
-OPEN — initialization alignment and working range require refactor.
+PASS — tick-0 saddle configuration is aligned and does not begin on a translation limit.
 
 ## Simulation ownership and reset
 
 ### CURRENT
 
-`PhysicsTickDriver.StepOne` advances the monotonic clock, samples intent, runs one pre-physics callback, calls the authoritative local `PhysicsScene.Simulate(0.01)`, captures/publishes a copied observation, commits trace, then invokes the post-physics observer. Production code has one `Simulate` call. Registered Rigidbody reset snapshots preserve pose, velocity, sleep, and kinematic state.
+`PhysicsTickDriver.StepOne` advances the monotonic clock, samples intent, runs the single pre-physics command callback, simulates the authoritative local scene once at 0.01 s, publishes a copied observation, commits trace, and then calls post-physics observers. A readiness guard blocks the first step until tick-0 validation succeeds. The aligned bar spawn is the registered reset pose.
 
 ### FINDING
 
-The fixed-step ordering and one-owner boundary are present. The startup contract does not yet prove that full squat construction and target priming finish before the first tick, or that the aligned saddle pose is the reset baseline.
+The existing one-owner order was retained. Startup now proves the complete physical state and targets are valid at tick 0, and a reset after an actual owned step must restore the authored poses and zero velocities.
 
 ### CHANGE
 
-Keep the existing step owner and 0.01 s step. Make squat initialization fail before the first tick if substrate validation or command priming fails; make the aligned bar spawn pose the registered reset state and verify exact reset/rebuild.
+Added the initialization guard before the first step and verified reset/rebuild against captured tick-0 body poses. No second simulation owner or post-step transform write was added.
 
 ### VALIDATION
 
-Pending simulation-ownership, observer immutability, initial-tick, and reset determinism checks plus the Master Spec verifier.
+Master Spec verifier passed. `PhysicsOwnershipContractTests` passed 1/1; `PhysicsFoundationPlayModeTests` passed 14/14, including the first-step readiness gate, stable post-step observation, and reset; the V2-3B tick-0/reset PlayMode test passed for unloaded and 25 kg.
 
 ### STATUS
 
-OPEN — runtime owner is single; first-tick and aligned-reset qualification pending.
+PASS — one local scene, one fixed-step owner, 0.01 s step, and exact reset baseline.
 
 ## Replaceable physical simulation boundary
 
 ### CURRENT
 
-Gameplay input and replay state already flow through `PlayerIntentFrame` and copied `PhysicalObservation`. The Unity squat adapter still receives concrete `PoweredJointController` access through `IPhysicalAthleteCommandSource` and reads `PoweredJointRuntime`/ConfigurableJoint details for target mapping and diagnostics.
+Input and replay still use `PlayerIntentFrame`; physical state still crosses the loop as copied `PhysicalObservation`. The Unity squat command source now emits target commands through `IPhysicalAthleteJointCommandSink`. `PoweredJointController` implements that sink and owns ConfigurableJoint writes.
 
 ### FINDING
 
-The observation and input loop are stable contracts, but the actuator seam leaks ConfigurableJoint implementation details into the squat command path.
+Rules, input, UI, presentation, replay, and the fixed-step loop do not depend on ConfigurableJoint. Joint-space readback and target construction remain inside the current Unity squat adapter, where a future athlete backend would replace that adapter-facing readback implementation.
 
 ### CHANGE
 
-Narrow the athlete command/readback seam to copied joint state plus target commands while leaving `PoweredJointController` as the sole Unity actuator writer. Keep rules, input, UI, presentation, replay, and fixed-step ownership on their current contracts; add no engine-wide abstraction.
+Added only the current physical command seam; no engine-wide abstraction or gameplay layer was added. The escalation path remains ConfigurableJoint → ArticulationBody → native physics only if product evidence later proves it necessary.
 
 ### VALIDATION
 
-Pending dependency/ownership checks proving gameplay consumers use the state/command seam and only the Unity athlete backend writes ConfigurableJoint properties.
+The EditMode seam test confirms `IPhysicalAthleteCommandSource` accepts copied observation/time/intent plus the joint-command sink, not a ConfigurableJoint. One command source and one drive writer are enforced.
 
 ### STATUS
 
-OPEN — replaceable loop contracts exist; actuator seam needs cleanup.
+PASS — gameplay loop contracts are preserved and the actuator command boundary is replaceable.
+
+## GAM-10, GAM-12, and GAM-49 authority regressions
+
+### CURRENT
+
+GAM-10 reference mapping, GAM-12 rules/failure/attempt authority, and GAM-49 surface-landmark depth remain the unchanged owners for their contracts.
+
+### FINDING
+
+The substrate work did not require changes to lift rules, failure predicates, reference geometry, or depth authority.
+
+### CHANGE
+
+No authority logic was changed. The physical command and observation seams continue to feed the existing rule and depth consumers.
+
+### VALIDATION
+
+GAM-10 joint-limit/reference mapping passed 1/1; GAM-10 reference tick and render-rate/root-authority checks passed 2/2. GAM-12 EditMode rule, failure, and attempt tests passed 45/45, 60/60, and 18/18. GAM-49 depth-landmark provider tests passed 2/2.
+
+### STATUS
+
+PASS — preserved authority regressions remain green.
+
+## Standing qualification outcome
+
+### CURRENT
+
+Standing qualification was run in a fresh Unity process at 0 kg from a validated tick 0. The 500-sample window maintained bilateral foot contact, but the athlete did not remain upright. The 25 kg standing gate and every later ladder/lifecycle/strength phase remain unrun.
+
+### FINDING
+
+Gate A fails at the existing V2 balance bound, not at initialization: AP COM error begins at 5.0×10⁻⁶ m on tick 1, reaches 0.0474 m as the ankle correction hits its fixed −0.2618 rad bound on tick 38, then continues growing. The pelvis falls to 0.1432 m by tick 142; trunk pitch reaches 1.5569 rad at tick 140; horizontal COM speed peaks at 1.8895 m/s. Both feet remain in contact throughout. Maximum joint-anchor separation reaches 0.0212 m at tick 138, after posture collapse; tick-0 anchors and first-step separation are materially smaller. Peak active-channel modeled demand is 1.3626 on tick 1, driven by swing/YZ demand. No bar, saddle, pin, transform-driven motion, or strength change is involved.
+
+### CHANGE
+
+No controller bound, gain, strength, or load rule was changed in response. The substrate defects found in the source audit were corrected. Because Gate A still fails after a valid tick-0 substrate, qualification stops here; no Gate B 25 kg standing run, heavier standing ladder, lifecycle, intrinsic-strength calibration, or final GAM-13 qualification was run.
+
+### VALIDATION
+
+Fresh-process Gate A failure evidence: `Artifacts/Measurements/GAM-13/v2-3b-substrate/standing/000kg/20260927-gate-a-final/`. The sequential acceptance rule prohibited proceeding to 25 kg standing.
+
+### STATUS
+
+FAIL — the cleaned ConfigurableJoint substrate has not qualified the simple V2 controller for unloaded standing. ArticulationBody escalation is not supported by this evidence: the startup, inertia, saddle, and anchor checks pass, and the observed initiating limit is controller AP correction saturation rather than dominant joint-constraint error.
