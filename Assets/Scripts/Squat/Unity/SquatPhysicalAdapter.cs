@@ -211,6 +211,13 @@ namespace PowerliftingSimulator.Squat.Unity
         public bool BalanceCorrectionsEnabled { get; set; } = true;
 
         /// <summary>
+        /// Editor-only plant-identification seam. Disables the AP stabilizer
+        /// contribution at every allocated joint while leaving ML feedback
+        /// and the rest of the command path unchanged.
+        /// </summary>
+        public bool ApFeedbackContributionEnabled { get; set; } = true;
+
+        /// <summary>
         /// Reversible GAM-43 diagnostic seam. Production uses the canonical
         /// pose error; the historical target-deflection input is available
         /// only for the one requested semantics comparison.
@@ -317,6 +324,7 @@ namespace PowerliftingSimulator.Squat.Unity
             _lastBalanceCorrection = default;
             _balanceV2.Reset();
 #if UNITY_EDITOR
+            ApFeedbackContributionEnabled = true;
             AnkleSagittalOffsetAdditiveRad = 0f;
 #endif
             _isCorrectionSaturated = false;
@@ -446,17 +454,23 @@ namespace PowerliftingSimulator.Squat.Unity
             _mlBalanceCorrectionRad = _lastBalanceCorrection.AppliedMlRad;
             _isCorrectionSaturated = _lastBalanceCorrection.IsBoundSaturated;
 
+            float apFeedbackScale = 1f;
+            float ankleProbeResidualRad = 0f;
+#if UNITY_EDITOR
+            apFeedbackScale = ApFeedbackContributionEnabled ? 1f : 0f;
+            ankleProbeResidualRad = AnkleSagittalOffsetAdditiveRad;
+#endif
             Quaternion ankleBalance = SagittalAndFrontal(
-                _lastBalanceCorrection.AnkleApRad,
+                _lastBalanceCorrection.AnkleApRad * apFeedbackScale + ankleProbeResidualRad,
                 _lastBalanceCorrection.AnkleMlRad);
             Quaternion hipBalance = SagittalAndFrontal(
-                _lastBalanceCorrection.HipApRad,
+                _lastBalanceCorrection.HipApRad * apFeedbackScale,
                 _lastBalanceCorrection.HipMlRad);
             Quaternion abdomenBalance = SagittalAndFrontal(
-                _lastBalanceCorrection.TrunkApRad,
+                _lastBalanceCorrection.TrunkApRad * apFeedbackScale,
                 0f);
             Quaternion thoraxBalance = SagittalAndFrontal(
-                _lastBalanceCorrection.TrunkApRad,
+                _lastBalanceCorrection.TrunkApRad * apFeedbackScale,
                 0f);
 
             Quaternion leftAnkleTarget = Compose("left_foot", reference.LeftFoot, Quaternion.identity, ankleBalance);

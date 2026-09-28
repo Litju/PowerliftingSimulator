@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-28 08:10:59Z" end-time="2026-09-28 08:11:03Z" duration="4.036142">
+  <test-suite type="TestSuite" id="1330" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="247" result="Passed" start-time="2026-09-28 08:10:59Z" end-time="2026-09-28 08:11:03Z" duration="4.036142" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1324" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="E:/Data/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="247" result="Passed" start-time="2026-09-28 08:10:59Z" end-time="2026-09-28 08:11:03Z" duration="4.006985" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="19572" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1325" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="247" result="Passed" start-time="2026-09-28 08:10:59Z" end-time="2026-09-28 08:11:03Z" duration="3.998639" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1326" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="247" result="Passed" start-time="2026-09-28 08:10:59Z" end-time="2026-09-28 08:11:03Z" duration="3.988482" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1105" name="GAM13V23CPlantSignTests" fullname="PowerliftingSimulator.Tests.GAM13V23CPlantSignTests" classname="PowerliftingSimulator.Tests.GAM13V23CPlantSignTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-28 08:10:59Z" end-time="2026-09-28 08:11:03Z" duration="3.966526" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1106" name="GAM13_V23C_CLEAN_UNLOADED_AP_PLANT_SIGN_PROBE" fullname="PowerliftingSimulator.Tests.GAM13V23CPlantSignTests.GAM13_V23C_CLEAN_UNLOADED_AP_PLANT_SIGN_PROBE" methodname="GAM13_V23C_CLEAN_UNLOADED_AP_PLANT_SIGN_PROBE" classname="PowerliftingSimulator.Tests.GAM13V23CPlantSignTests" runstate="Runnable" seed="2070782734" result="Passed" start-time="2026-09-28 08:10:59Z" end-time="2026-09-28 08:11:03Z" duration="3.926427" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[GAM13_V23C_PLANT_SIGN classification=POSITIVE_ANKLE_TARGET_MOVES_COP_FORWARD g_ap=0.98506844m/rad cop_plus=-0.06317337m cop_minus=-0.0975587443m delta=0.0343853757m window=1..5 path=E:\Data\Projects\PowerliftingSimulator\Artifacts\Measurements\GAM-13\v2-3c-plant-sign\20260928-050921-f8fb1934
+Saving results to: C:/Users/Usuario/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
