@@ -156,7 +156,9 @@ namespace PowerliftingSimulator.Squat.Unity
 
             float errorAp = (athleteBarCom.z - supportCenter.z) - referenceComOffsetApM;
             float errorMl = (athleteBarCom.x - supportCenter.x) - referenceComOffsetMlM;
-            float commandAp = -(_calibration.KpAp * errorAp + _calibration.KdAp * comVelocity.z);
+            // Clean unloaded V2-3C measured positive ankle target -> forward
+            // COP (G_ap = +0.985 m/rad), so forward COM error needs positive AP output.
+            float commandAp = _calibration.KpAp * errorAp + _calibration.KdAp * comVelocity.z;
             float commandMl = -(_calibration.KpMl * errorMl + _calibration.KdMl * comVelocity.x);
             float biasedMl = commandMl + Mathf.Clamp(playerMlBias01, -1f, 1f) * _calibration.MaxPlayerMlBiasRad;
             float targetAp = Mathf.Clamp(commandAp, -_calibration.MaxApCorrectionRad, _calibration.MaxApCorrectionRad);

@@ -36,9 +36,9 @@ namespace PowerliftingSimulator.Tests
 
             Assert.That(correction.ErrorApM, Is.EqualTo(0.04f).Within(1e-6f));
             Assert.That(correction.ErrorMlM, Is.EqualTo(0.015f).Within(1e-6f));
-            Assert.That(correction.CommandApRad, Is.EqualTo(-(
+            Assert.That(correction.CommandApRad, Is.EqualTo(
                 SquatComStabilizerV2Calibration.Default.KpAp * 0.04f +
-                SquatComStabilizerV2Calibration.Default.KdAp * 0.10f)).Within(1e-6f));
+                SquatComStabilizerV2Calibration.Default.KdAp * 0.10f).Within(1e-6f));
             Assert.That(correction.CommandMlRad, Is.EqualTo(-0.00975f).Within(1e-6f));
             Assert.That(correction.AnkleApRad, Is.EqualTo(correction.AppliedApRad).Within(1e-6f));
             Assert.That(correction.HipApRad, Is.EqualTo(correction.AppliedApRad * 0.20f).Within(1e-6f));
@@ -64,7 +64,7 @@ namespace PowerliftingSimulator.Tests
                     0.01f);
             }
 
-            Assert.That(correction.AppliedApRad, Is.EqualTo(-0.26180f).Within(1e-6f));
+            Assert.That(correction.AppliedApRad, Is.EqualTo(0.26180f).Within(1e-6f));
             Assert.That(correction.AppliedMlRad, Is.EqualTo(-0.05f).Within(1e-6f));
             Assert.That(correction.IsBoundSaturated, Is.True);
             Assert.That(correction.IsApBoundSaturated, Is.True);
@@ -79,6 +79,34 @@ namespace PowerliftingSimulator.Tests
                 0.01f);
             Assert.That(Mathf.Abs(reversed.AppliedApRad - correction.AppliedApRad), Is.LessThanOrEqualTo(0.04f + 1e-6f));
             Assert.That(Mathf.Abs(reversed.AppliedMlRad - correction.AppliedMlRad), Is.LessThanOrEqualTo(0.004f + 1e-6f));
+        }
+
+        [Test]
+        public void MEASURED_POSITIVE_AP_PLANT_USES_RESTORING_FEEDBACK_SIGN()
+        {
+            var forward = new SquatComStabilizerV2().Solve(
+                new Vector3(0f, 1f, 0.005f),
+                new Vector3(0f, 0f, 0.001f),
+                Vector3.zero,
+                0f,
+                0f,
+                0f,
+                0.01f);
+            var backward = new SquatComStabilizerV2().Solve(
+                new Vector3(0f, 1f, -0.005f),
+                new Vector3(0f, 0f, -0.001f),
+                Vector3.zero,
+                0f,
+                0f,
+                0f,
+                0.01f);
+
+            Assert.That(forward.CommandApRad, Is.GreaterThan(0f));
+            Assert.That(forward.AppliedApRad, Is.GreaterThan(0f));
+            Assert.That(forward.AnkleApRad, Is.GreaterThan(0f));
+            Assert.That(backward.CommandApRad, Is.LessThan(0f));
+            Assert.That(backward.AppliedApRad, Is.LessThan(0f));
+            Assert.That(backward.AnkleApRad, Is.LessThan(0f));
         }
 
         [Test]
