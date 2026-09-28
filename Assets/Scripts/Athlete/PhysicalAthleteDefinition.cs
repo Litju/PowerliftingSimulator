@@ -167,6 +167,69 @@ namespace PowerliftingSimulator.Athlete
                 massKg * (sizeMeters.x * sizeMeters.x + sizeMeters.y * sizeMeters.y) / 12f);
         }
 
+        public static Vector3 PrimitiveInertiaAboutBodyCenter(
+            PhysicalColliderKind kind,
+            float massKg,
+            Vector3 dimensionsMeters,
+            Vector3 colliderCenterMeters)
+        {
+            if (!float.IsFinite(massKg) || massKg <= 0f ||
+                !Finite(dimensionsMeters) || !Finite(colliderCenterMeters))
+                throw new ArgumentOutOfRangeException(nameof(massKg), "Primitive inertia inputs must be finite and positive.");
+
+            Vector3 inertia;
+            switch (kind)
+            {
+                case PhysicalColliderKind.Box:
+                    if (dimensionsMeters.x <= 0f || dimensionsMeters.y <= 0f || dimensionsMeters.z <= 0f)
+                        throw new ArgumentOutOfRangeException(nameof(dimensionsMeters));
+                    inertia = BoxInertia(massKg, dimensionsMeters);
+                    break;
+
+                case PhysicalColliderKind.Capsule:
+                    float radius = dimensionsMeters.x * 0.5f;
+                    float height = dimensionsMeters.y;
+                    if (radius <= 0f || dimensionsMeters.z <= 0f ||
+                        Mathf.Abs(dimensionsMeters.z - dimensionsMeters.x) > 0.000001f ||
+                        height < 2f * radius)
+                        throw new ArgumentOutOfRangeException(nameof(dimensionsMeters),
+                            "A Unity Y-axis capsule requires equal diameters and a height at least its diameter.");
+
+                    float cylinderLength = height - 2f * radius;
+                    float cylinderVolume = Mathf.PI * radius * radius * cylinderLength;
+                    float capVolume = (4f / 3f) * Mathf.PI * radius * radius * radius;
+                    float totalVolume = cylinderVolume + capVolume;
+                    float cylinderMass = massKg * cylinderVolume / totalVolume;
+                    float capMass = massKg - cylinderMass;
+                    float axial = 0.5f * cylinderMass * radius * radius + 0.4f * capMass * radius * radius;
+                    float transverse = cylinderMass * (3f * radius * radius + cylinderLength * cylinderLength) / 12f +
+                        capMass * (0.4f * radius * radius + cylinderLength * cylinderLength * 0.25f);
+                    inertia = new Vector3(transverse, axial, transverse);
+                    break;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(kind));
+            }
+
+            // Current recipes offset only the foot box along local Y. This keeps
+            // the authored body origin at its intentional COM and preserves a
+            // diagonal principal tensor in the body's collider-aligned frame.
+            int offsetAxes = (Mathf.Abs(colliderCenterMeters.x) > 0.000001f ? 1 : 0) +
+                (Mathf.Abs(colliderCenterMeters.y) > 0.000001f ? 1 : 0) +
+                (Mathf.Abs(colliderCenterMeters.z) > 0.000001f ? 1 : 0);
+            if (offsetAxes > 1)
+                throw new ArgumentOutOfRangeException(nameof(colliderCenterMeters),
+                    "Collider offsets must preserve the authored principal axes.");
+
+            inertia.x += massKg * (colliderCenterMeters.y * colliderCenterMeters.y + colliderCenterMeters.z * colliderCenterMeters.z);
+            inertia.y += massKg * (colliderCenterMeters.x * colliderCenterMeters.x + colliderCenterMeters.z * colliderCenterMeters.z);
+            inertia.z += massKg * (colliderCenterMeters.x * colliderCenterMeters.x + colliderCenterMeters.y * colliderCenterMeters.y);
+            return inertia;
+        }
+
+        private static bool Finite(Vector3 value) =>
+            float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+
         public static void ValidateDefinition()
         {
             if (Segments.Count != 16 || Joints.Count != 15)

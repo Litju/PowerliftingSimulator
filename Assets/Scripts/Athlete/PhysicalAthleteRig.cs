@@ -399,7 +399,11 @@ namespace PowerliftingSimulator.Athlete
                     bounceCombine = PhysicsMaterialCombine.Minimum
                 };
             }
-            body.inertiaTensor = PhysicalAthleteDefinition.BoxInertia(body.mass, dimensions);
+            Vector3 colliderCenter = collider is BoxCollider boxCollider
+                ? boxCollider.center
+                : ((CapsuleCollider)collider).center;
+            body.inertiaTensor = PhysicalAthleteDefinition.PrimitiveInertiaAboutBodyCenter(
+                recipe.Collider, body.mass, dimensions, colliderCenter);
             body.inertiaTensorRotation = Quaternion.identity;
             // The athlete pays for its own drive convergence; the platform and
             // barbell keep the project default.
@@ -436,12 +440,17 @@ namespace PowerliftingSimulator.Athlete
             joint.autoConfigureConnectedAnchor = false;
             joint.anchor = child.Body.transform.InverseTransformPoint(anchorWorld);
             joint.connectedAnchor = parent.Body.transform.InverseTransformPoint(anchorWorld);
-            Vector3 primaryAxisWorld = ResolvePrimaryAxisWorld(recipe, child);
-            joint.axis = child.Body.transform.InverseTransformDirection(primaryAxisWorld);
+            Vector3 primaryAxisWorld = ResolvePrimaryAxisWorld(recipe, child).normalized;
             Vector3 secondaryWorld = Mathf.Abs(Vector3.Dot(primaryAxisWorld, Vector3.up)) < 0.9f
                 ? Vector3.up
                 : Vector3.forward;
-            joint.secondaryAxis = child.Body.transform.InverseTransformDirection(secondaryWorld);
+            secondaryWorld = (secondaryWorld - Vector3.Dot(secondaryWorld, primaryAxisWorld) * primaryAxisWorld).normalized;
+            if (!Finite(primaryAxisWorld) || !Finite(secondaryWorld) ||
+                primaryAxisWorld.sqrMagnitude < 0.99f || secondaryWorld.sqrMagnitude < 0.99f ||
+                Mathf.Abs(Vector3.Dot(primaryAxisWorld, secondaryWorld)) > 0.0001f)
+                throw new InvalidOperationException($"Joint '{recipe.ChildId}' has a degenerate joint frame.");
+            joint.axis = child.Body.transform.InverseTransformDirection(primaryAxisWorld).normalized;
+            joint.secondaryAxis = child.Body.transform.InverseTransformDirection(secondaryWorld).normalized;
             joint.xMotion = ConfigurableJointMotion.Locked;
             joint.yMotion = ConfigurableJointMotion.Locked;
             joint.zMotion = ConfigurableJointMotion.Locked;
@@ -664,8 +673,29 @@ namespace PowerliftingSimulator.Athlete
             {
                 Vector3 inertia = segment.Body.inertiaTensor;
                 if (segment.Body.isKinematic || !segment.Body.useGravity || segment.Body.mass <= 0f ||
+                    !Finite(segment.Body.position) || !Finite(segment.Body.rotation) ||
+                    !Finite(segment.Body.centerOfMass) || !Finite(segment.Body.worldCenterOfMass) ||
+                    !Finite(segment.Body.linearVelocity) || !Finite(segment.Body.angularVelocity) ||
+                    segment.Body.linearVelocity.sqrMagnitude > 0.00000001f ||
+                    segment.Body.angularVelocity.sqrMagnitude > 0.00000001f ||
                     !Finite(inertia) || inertia.x <= 0f || inertia.y <= 0f || inertia.z <= 0f)
                     throw new InvalidOperationException($"Segment '{segment.Recipe.Id}' is not a finite dynamic gravity body.");
+
+                float expectedMass = PhysicalAthleteDefinition.PrototypeBodyMassKg * segment.Recipe.MassFraction;
+                if (Mathf.Abs(segment.Body.mass - expectedMass) > 0.00001f ||
+                    Vector3.Distance(segment.Body.centerOfMass, Vector3.zero) > 0.000001f)
+                    throw new InvalidOperationException($"Segment '{segment.Recipe.Id}' mass or authored COM changed.");
+
+                Vector3 colliderCenter = segment.Collider is BoxCollider boxCollider
+                    ? boxCollider.center
+                    : segment.Collider is CapsuleCollider capsuleCollider
+                        ? capsuleCollider.center
+                        : throw new InvalidOperationException($"Segment '{segment.Recipe.Id}' has an unsupported collider.");
+                Vector3 expectedInertia = PhysicalAthleteDefinition.PrimitiveInertiaAboutBodyCenter(
+                    segment.Recipe.Collider, expectedMass, segment.DimensionsMeters, colliderCenter);
+                if (Vector3.Distance(inertia, expectedInertia) > 0.000001f ||
+                    Quaternion.Angle(segment.Body.inertiaTensorRotation, Quaternion.identity) > 0.001f)
+                    throw new InvalidOperationException($"Segment '{segment.Recipe.Id}' inertia is not consistent with its collider and authored COM.");
             }
 
             foreach (JointRuntime jointRuntime in _joints)
@@ -678,6 +708,33 @@ namespace PowerliftingSimulator.Athlete
                 Vector3 parentAnchor = joint.connectedBody.transform.TransformPoint(joint.connectedAnchor);
                 if (Vector3.Distance(childAnchor, parentAnchor) > PhysicalAthleteDefinition.AnchorToleranceMeters)
                     throw new InvalidOperationException($"Joint '{jointRuntime.Recipe.ChildId}' bind anchors do not coincide.");
+                SegmentRuntime child = _segments[jointRuntime.Recipe.ChildId];
+                if (joint.transform != child.Body.transform ||
+                    joint.connectedBody != _segments[child.Recipe.ParentId].Body ||
+                    !Finite(joint.axis) || !Finite(joint.secondaryAxis) ||
+                    Mathf.Abs(joint.axis.sqrMagnitude - 1f) > 0.0001f ||
+                    Mathf.Abs(joint.secondaryAxis.sqrMagnitude - 1f) > 0.0001f ||
+                    Mathf.Abs(Vector3.Dot(joint.axis, joint.secondaryAxis)) > 0.0001f ||
+                    Vector3.Cross(joint.axis, joint.secondaryAxis).sqrMagnitude < 0.99f)
+                    throw new InvalidOperationException($"Joint '{jointRuntime.Recipe.ChildId}' topology or joint frame is malformed.");
+                Vector3 expectedPrimaryWorld = ResolvePrimaryAxisWorld(jointRuntime.Recipe, child).normalized;
+                if (Vector3.Dot(joint.transform.TransformDirection(joint.axis).normalized, expectedPrimaryWorld) < 0.9999f)
+                    throw new InvalidOperationException($"Joint '{jointRuntime.Recipe.ChildId}' primary axis does not match its recipe.");
+                if (Mathf.Abs(joint.lowAngularXLimit.limit + jointRuntime.Recipe.HighDegrees) > 0.001f ||
+                    Mathf.Abs(joint.highAngularXLimit.limit + jointRuntime.Recipe.LowDegrees) > 0.001f ||
+                    Mathf.Abs(joint.angularYLimit.limit - jointRuntime.Recipe.SecondaryLimitDegrees) > 0.001f ||
+                    Mathf.Abs(joint.angularZLimit.limit - jointRuntime.Recipe.SecondaryLimitDegrees) > 0.001f)
+                    throw new InvalidOperationException($"Joint '{jointRuntime.Recipe.ChildId}' angular bounds do not match its physical recipe.");
+                if (joint.xMotion != ConfigurableJointMotion.Locked ||
+                    joint.yMotion != ConfigurableJointMotion.Locked ||
+                    joint.zMotion != ConfigurableJointMotion.Locked ||
+                    joint.angularXMotion != ConfigurableJointMotion.Limited ||
+                    joint.angularYMotion != (jointRuntime.Recipe.Kind == PhysicalJointKind.Hinge
+                        ? ConfigurableJointMotion.Locked : ConfigurableJointMotion.Limited) ||
+                    joint.angularZMotion != (jointRuntime.Recipe.Kind == PhysicalJointKind.Hinge
+                        ? ConfigurableJointMotion.Locked : ConfigurableJointMotion.Limited) ||
+                    joint.projectionMode != JointProjectionMode.None)
+                    throw new InvalidOperationException($"Joint '{jointRuntime.Recipe.ChildId}' violates its hinge/ball degree-of-freedom contract.");
                 if (joint.projectionMode != JointProjectionMode.None || HasPoweredDrive(joint))
                     throw new InvalidOperationException($"Joint '{jointRuntime.Recipe.ChildId}' violates passive-mode authority.");
             }
@@ -884,6 +941,9 @@ namespace PowerliftingSimulator.Athlete
 
         private static SoftJointLimit Limit(float degrees) => new SoftJointLimit { limit = degrees, bounciness = 0f, contactDistance = 2f };
         private static bool Finite(Vector3 value) => float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+
+        private static bool Finite(Quaternion value) =>
+            float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z) && float.IsFinite(value.w);
 
         private static Transform RequireBone(Animator animator, HumanBodyBones bone)
         {

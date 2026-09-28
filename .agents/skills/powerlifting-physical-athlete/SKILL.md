@@ -120,7 +120,7 @@ The JSON records asset transform pivots, their distances, rotations, and rendere
 - The prototype profile is `GAM6_QUATERNIUS_100KG_GAME_CALIBRATION_V1`; 100 kg is a `GAME_CALIBRATION`, not a population claim.
 - The frozen mass fractions are used without redistribution and assign exactly 100 kg across the 16 bodies. Runtime segment mass values are `ENGINEERING_DERIVED` from the calibrated profile mass and frozen fractions.
 - Limb longitudinal proxy placement uses de Leva (1996) fractions where definitions are close enough to guide an engineering proxy; torso, head/neck, hands, and final foot placement use explicit proxy centers. All runtime COM placements remain `ENGINEERING_DERIVED` because GAM-5 bone pivots are not anatomical joint centers.
-- Principal inertia is the analytic solid-box tensor `I_x=m(h^2+d^2)/12`, `I_y=m(w^2+d^2)/12`, `I_z=m(w^2+h^2)/12` using each actual proxy's dimensions. Capsule bodies intentionally use that documented equivalent-box seed; all axes are positive and finite.
+- The runtime COM is intentionally authored at each segment body's local origin. Boxes use the analytic solid-box tensor from their actual collider dimensions; Y-axis capsules use the solid cylinder + hemispherical-cap tensor from the collider's actual radius and height. The plantar foot box's local-center offset contributes its parallel-axis term. Current principal axes remain aligned to the body frame; all principal inertias are finite and positive.
 
 # Collider and Joint Recipes
 

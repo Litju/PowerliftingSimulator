@@ -37,7 +37,7 @@ namespace PowerliftingSimulator.Tests
                 Assert.That(segments.TryGetValue(joint.ChildId, out PhysicalSegmentRecipe child), Is.True,
                     $"Joint child {joint.ChildId} is missing.");
                 Assert.That(child.ParentId, Is.Not.Null);
-                Assert.That(IsFinitePositive(joint.PrimaryAxisWorld), Is.True,
+                Assert.That(IsFiniteNonZero(joint.PrimaryAxisWorld), Is.True,
                     $"Joint {joint.ChildId} has a degenerate primary axis.");
                 Assert.That(float.IsFinite(joint.LowDegrees) && float.IsFinite(joint.HighDegrees) &&
                     joint.LowDegrees < joint.HighDegrees, Is.True, $"Joint {joint.ChildId} has invalid X bounds.");
@@ -53,10 +53,62 @@ namespace PowerliftingSimulator.Tests
             }
         }
 
+        [TestCase(PhysicalColliderKind.Box, 1f, 2f, 4f, 6f, 0f, 0f, 0f, 4.3333335f, 3.3333333f, 1.6666666f)]
+        [TestCase(PhysicalColliderKind.Capsule, 2f, 1f, 1f, 1f, 0f, 0f, 0f, 0.2f, 0.2f, 0.2f)]
+        [TestCase(PhysicalColliderKind.Capsule, 8f, 1f, 3f, 1f, 0f, 0f, 0f, 4.575f, 0.95f, 4.575f)]
+        public void GAM13_V23B_PRIMITIVE_INERTIA_MATCHES_COLLIDER_GEOMETRY(
+            PhysicalColliderKind kind,
+            float mass,
+            float x,
+            float y,
+            float z,
+            float centerX,
+            float centerY,
+            float centerZ,
+            float expectedX,
+            float expectedY,
+            float expectedZ)
+        {
+            Vector3 inertia = PhysicalAthleteDefinition.PrimitiveInertiaAboutBodyCenter(
+                kind, mass, new Vector3(x, y, z), new Vector3(centerX, centerY, centerZ));
+
+            Assert.That(inertia.x, Is.EqualTo(expectedX).Within(0.00001f));
+            Assert.That(inertia.y, Is.EqualTo(expectedY).Within(0.00001f));
+            Assert.That(inertia.z, Is.EqualTo(expectedZ).Within(0.00001f));
+            Assert.That(inertia.x > 0f && inertia.y > 0f && inertia.z > 0f, Is.True);
+        }
+
+        [Test]
+        public void GAM13_V23B_FOOT_COLLIDER_OFFSET_ADDS_PARALLEL_AXIS_INERTIA()
+        {
+            Vector3 centered = PhysicalAthleteDefinition.PrimitiveInertiaAboutBodyCenter(
+                PhysicalColliderKind.Box, 1f, new Vector3(2f, 4f, 6f), Vector3.zero);
+            Vector3 offset = PhysicalAthleteDefinition.PrimitiveInertiaAboutBodyCenter(
+                PhysicalColliderKind.Box, 1f, new Vector3(2f, 4f, 6f), new Vector3(0f, 0.1f, 0f));
+
+            Assert.That(offset.x - centered.x, Is.EqualTo(0.01f).Within(0.000001f));
+            Assert.That(offset.y, Is.EqualTo(centered.y).Within(0.000001f));
+            Assert.That(offset.z - centered.z, Is.EqualTo(0.01f).Within(0.000001f));
+            Assert.That(offset, Is.EqualTo(PhysicalAthleteDefinition.PrimitiveInertiaAboutBodyCenter(
+                PhysicalColliderKind.Box, 1f, new Vector3(2f, 4f, 6f), new Vector3(0f, 0.1f, 0f))));
+        }
+
+        [Test]
+        public void GAM13_V23B_CAPSULE_REJECTS_GEOMETRY_PHYSX_WOULD_CLAMP()
+        {
+            Assert.Throws<System.ArgumentOutOfRangeException>(() =>
+                PhysicalAthleteDefinition.PrimitiveInertiaAboutBodyCenter(
+                    PhysicalColliderKind.Capsule, 1f, new Vector3(0.2f, 0.1f, 0.2f), Vector3.zero));
+        }
+
         private static bool IsFinitePositive(Vector3 value) =>
             float.IsFinite(value.x) && value.x > 0f &&
             float.IsFinite(value.y) && value.y > 0f &&
             float.IsFinite(value.z) && value.z > 0f;
+
+        private static bool IsFiniteNonZero(Vector3 value) =>
+            float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z) &&
+            value.sqrMagnitude > 0.000001f;
 
         private static bool IsValidColliderDimensions(PhysicalSegmentRecipe segment)
         {
