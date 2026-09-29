@@ -35,7 +35,7 @@ namespace PowerliftingSimulator.Squat.Unity
         private int _startPredicateRun;
         private int _startWindowSamples;
         private int _lockoutSamples;
-        private ulong _squatCommandTick;
+        private ulong _squatCommandTick = SquatAttemptEventTicks.NotAvailable;
         private SquatObservationSnapshot _standingReference;
         private bool _hasStandingReference;
         private SquatAttemptRecord _record;

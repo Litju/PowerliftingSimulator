@@ -19,7 +19,10 @@ namespace PowerliftingSimulator.Tests
     public sealed class GAM13V2SquatMechanicsQualificationTests
     {
         private const string QualificationScene = "SquatPhysicalPrototype";
-        private const int SetupQualificationTicks = 1;
+        private const int RequiredSetupQualificationSamples = 50;
+        private const int SetupQualificationTimeoutTicks = 500;
+        private const int RequiredLockoutSamples = 3;
+        private const int LockoutSettlingTimeoutTicks = 100;
         private const int MaximumMechanicsTicks = 2000;
         private const float MaximumTrunkPitchRad = 0.70f;
         private const float MinimumPelvisHeightM = 0.90f;
@@ -30,6 +33,32 @@ namespace PowerliftingSimulator.Tests
         private const float MaximumSaddleSeparationM = 0.02f;
         private const float MaximumSaddleLimitOccupancy = 0.95f;
         private const float MaximumSaddleRelativeRotationDegrees = 35f;
+
+        [UnityTest]
+        public IEnumerator GAM13_V23G_NEW_ORCHESTRATOR_HAS_IDLE_LIFECYCLE_DEFAULTS()
+        {
+            AsyncOperation loadScene = SceneManager.LoadSceneAsync(QualificationScene, LoadSceneMode.Single);
+            Assert.That(loadScene, Is.Not.Null, "The GAM-13 qualification scene is missing.");
+            while (!loadScene.isDone)
+                yield return null;
+            yield return null;
+
+            FoundationBootstrap bootstrap = UnityEngine.Object.FindFirstObjectByType<FoundationBootstrap>();
+            SquatPhysicalPrototypeController controller =
+                UnityEngine.Object.FindFirstObjectByType<SquatPhysicalPrototypeController>();
+            Assert.That(bootstrap, Is.Not.Null);
+            Assert.That(controller, Is.Not.Null);
+            for (int frame = 0; frame < 8 && !controller.IsInitialized; frame++)
+                yield return null;
+            Assert.That(controller.IsInitialized, Is.True, controller.StartupFailure);
+            controller.enabled = false;
+            bootstrap.enabled = false;
+
+            SquatAttemptOrchestrator orchestrator = controller.AttemptOrchestrator;
+            Assert.That(orchestrator.HasStarted, Is.False);
+            Assert.That(orchestrator.HasSquatCommand, Is.False);
+            Assert.That(orchestrator.SquatCommandTick, Is.EqualTo(SquatAttemptEventTicks.NotAvailable));
+        }
 
         [UnityTest]
         public IEnumerator GAM13_V2_PHYSICAL_SQUAT_MECHANICS()
@@ -69,33 +98,43 @@ namespace PowerliftingSimulator.Tests
             float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
             Assert.That(runtime.CurrentTime.Tick, Is.EqualTo(0ul));
             Assert.That(controller.AttemptOrchestrator.HasStarted, Is.False);
+            Assert.That(controller.AttemptOrchestrator.HasSquatCommand, Is.False);
             ulong lifecycleSquatCommandTick = controller.AttemptOrchestrator.SquatCommandTick;
+            Assert.That(lifecycleSquatCommandTick, Is.EqualTo(SquatAttemptEventTicks.NotAvailable));
             Assert.That(controller.AttemptLifecycle.State, Is.EqualTo(SquatAttemptLifecycleState.IDLE));
             Assert.That(controller.AttemptRecord, Is.Null);
 
             SquatObservationSnapshot standingReference = default;
-            bool physicalStandingQualified = false;
-            for (int tick = 0; tick < SetupQualificationTicks; tick++)
+            int consecutiveStandingSamples = 0;
+            int setupTicks = 0;
+            while (consecutiveStandingSamples < RequiredSetupQualificationSamples &&
+                setupTicks < SetupQualificationTimeoutTicks)
             {
                 Assert.That(runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds), Is.EqualTo(1));
                 TickFeet(controller, dt);
                 Assert.That(controller.ObservationCollector.HasLastSnapshot, Is.True);
                 standingReference = controller.ObservationCollector.LastSnapshot;
-                physicalStandingQualified = IsPhysicalStandingQualified(
+                bool sampleQualified = IsPhysicalStandingQualified(
                     standingReference, rig, controller, barbell);
+                consecutiveStandingSamples = sampleQualified ? consecutiveStandingSamples + 1 : 0;
+                setupTicks++;
+                bool setupTimedOut = setupTicks >= SetupQualificationTimeoutTicks &&
+                    consecutiveStandingSamples < RequiredSetupQualificationSamples;
+                AppendSample(trace, loadKg, standingReference, controller, rig, false,
+                    null, null, null, false, setupTimedOut,
+                    setupTimedOut ? "SETUP_NOT_PHYSICALLY_QUALIFIED" : "NONE");
+                if (setupTicks % 50 == 0)
+                    yield return null;
             }
 
+            bool physicalStandingQualified = consecutiveStandingSamples >= RequiredSetupQualificationSamples;
             if (!physicalStandingQualified)
             {
-                AppendSample(trace, loadKg, standingReference, controller, rig, false,
-                    null, null, null, false, true, "SETUP_NOT_PHYSICALLY_QUALIFIED");
                 SaveTrace(tracePath, trace);
-                Debug.Log($"GAM13_V2_SQUAT_MECHANICS load={loadKg:F1}kg PHYSICAL_STANDING_QUALIFIED=false physical_failure=SETUP_NOT_PHYSICALLY_QUALIFIED trace={tracePath}");
+                Debug.Log($"GAM13_V2_SQUAT_MECHANICS load={loadKg:F1}kg PHYSICAL_STANDING_QUALIFIED=false setup_samples={consecutiveStandingSamples}/{RequiredSetupQualificationSamples} setup_ticks={setupTicks} physical_failure=SETUP_NOT_PHYSICALLY_QUALIFIED trace={tracePath}");
                 yield break;
             }
 
-            AppendSample(trace, loadKg, standingReference, controller, rig, false,
-                null, null, null, false, false, "NONE");
             controller.BeginPhysicalSquatMotionForQualification();
             Assert.That(controller.Adapter.State, Is.EqualTo(SquatState.SQUAT_COMMAND));
             Assert.That(controller.AttemptOrchestrator.HasStarted, Is.False);
@@ -114,12 +153,20 @@ namespace PowerliftingSimulator.Tests
             ulong? descentTick = null;
             ulong? reversalTick = null;
             ulong? ascentTick = null;
+            ulong? bottomOrReversalContextTick = null;
+            ulong? lockoutStartTick = null;
+            int consecutiveLockoutSamples = 0;
             float lowestBarY = float.PositiveInfinity;
             int mechanicsTicks = 0;
 
             while (!lockout && !physicalFailure && mechanicsTicks < MaximumMechanicsTicks)
             {
                 SquatState phaseBeforeStep = controller.Adapter.State;
+                if (!bottomOrReversalContextTick.HasValue && hasDescent &&
+                    (phaseBeforeStep == SquatState.BOTTOM || phaseBeforeStep == SquatState.REVERSAL))
+                {
+                    bottomOrReversalContextTick = runtime.CurrentTime.Tick;
+                }
                 double inputTime = runtime.CurrentTime.SimulationTimeSeconds +
                     0.25d * SimulationConstants.FixedDeltaTimeSeconds;
                 bool yieldInput = phaseBeforeStep == SquatState.SQUAT_COMMAND ||
@@ -150,7 +197,8 @@ namespace PowerliftingSimulator.Tests
                     hasDescent = true;
                     descentTick = snapshot.SimulationTick;
                 }
-                if (hasDescent && !hasReversal &&
+                if (hasDescent && !hasReversal && bottomOrReversalContextTick.HasValue &&
+                    snapshot.SimulationTick > bottomOrReversalContextTick.Value &&
                     barVelocityY >= failureCalibration.PhysicalMotionVelocityMps)
                 {
                     hasReversal = true;
@@ -167,12 +215,25 @@ namespace PowerliftingSimulator.Tests
                 legalDepthReached |= controller.Adapter.LegalDepth;
                 physicalFailureReason = FindPhysicalFailure(controller, snapshot);
                 physicalFailure = physicalFailureReason != "NONE";
-                lockout = !physicalFailure && hasAscent && SquatAttemptPhysicalEvidence.IsLockout(
-                    snapshot, standingReference, failureCalibration);
-                if (!lockout && !physicalFailure && controller.Adapter.LockoutReached)
+                if (controller.Adapter.LockoutReached && !lockoutStartTick.HasValue)
                 {
-                    physicalFailure = true;
-                    physicalFailureReason = LockoutFailureReason(hasDescent, legalDepthReached, hasReversal, hasAscent);
+                    lockoutStartTick = snapshot.SimulationTick;
+                }
+                if (!physicalFailure && lockoutStartTick.HasValue)
+                {
+                    consecutiveLockoutSamples = SquatAttemptPhysicalEvidence.IsLockout(
+                        snapshot, standingReference, failureCalibration)
+                        ? consecutiveLockoutSamples + 1
+                        : 0;
+                    lockout = consecutiveLockoutSamples >= RequiredLockoutSamples;
+                    bool lockoutSettlingTimedOut = snapshot.SimulationTick - lockoutStartTick.Value + 1ul >=
+                        (ulong)LockoutSettlingTimeoutTicks;
+                    if (!lockout && lockoutSettlingTimedOut)
+                    {
+                        physicalFailure = true;
+                        physicalFailureReason = LockoutFailureReason(
+                            hasDescent, legalDepthReached, hasReversal, hasAscent);
+                    }
                 }
 
                 AppendSample(trace, loadKg, snapshot, controller, rig, legalDepthReached,
@@ -184,6 +245,13 @@ namespace PowerliftingSimulator.Tests
             SaveTrace(tracePath, trace);
             Assert.That(lockout || physicalFailure, Is.True,
                 "The adapter did not reach a physical lockout or report a physical mechanics failure.");
+            if (reversalTick.HasValue)
+            {
+                Assert.That(bottomOrReversalContextTick.HasValue, Is.True,
+                    "A bar reversal requires prior adapter bottom/reversal context.");
+                Assert.That(reversalTick.Value, Is.GreaterThan(bottomOrReversalContextTick.Value),
+                    "An upward bar-velocity event before adapter bottom/reversal context is not squat reversal.");
+            }
             Debug.Log(string.Format(CultureInfo.InvariantCulture,
                 "GAM13_V2_SQUAT_MECHANICS load={0:F1}kg PHYSICAL_STANDING_QUALIFIED=true legal_physical_depth={1} descent_tick={2} reversal_tick={3} ascent_tick={4} lockout={5} physical_failure={6} physical_failure_reason={7} trace={8}",
                 loadKg, legalDepthReached, Tick(descentTick), Tick(reversalTick), Tick(ascentTick),
