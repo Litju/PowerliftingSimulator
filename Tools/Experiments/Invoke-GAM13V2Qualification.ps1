@@ -1,7 +1,9 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('Standing', 'Lifecycle')]
+    [ValidateSet('Standing', 'Lifecycle', 'SquatMechanics')]
     [string]$Mode = 'Standing',
+    [ValidateSet('25', '60', '140', '170', '300')]
+    [string[]]$LoadsKg = @('25', '60', '140', '170', '300'),
     [string]$UnityExecutable = 'D:\Dev\Unity\6000.3.22f1\Editor\Unity.exe',
     [string]$RunId = (Get-Date -Format 'yyyyMMdd-HHmmss')
 )
@@ -11,7 +13,11 @@ if (!(Test-Path -LiteralPath $UnityExecutable)) {
     throw "Unity 6000.3.22f1 executable not found: $UnityExecutable"
 }
 
-$testFilter = if ($Mode -eq 'Standing') { 'GAM13V2StandingQualificationTests' } else { 'GAM13V2LifecycleQualificationTests' }
+$testFilter = switch ($Mode) {
+    'Standing' { 'GAM13V2StandingQualificationTests' }
+    'Lifecycle' { 'GAM13V2LifecycleQualificationTests' }
+    'SquatMechanics' { 'GAM13V2SquatMechanicsQualificationTests' }
+}
 $artifactRoot = Join-Path $projectRoot "Artifacts/Measurements/GAM-13/v2-$($Mode.ToLowerInvariant())/$RunId"
 New-Item -ItemType Directory -Path $artifactRoot -Force | Out-Null
 $previousLoad = $env:GAM13_V2_LOAD_KG
@@ -20,7 +26,8 @@ $unityVersion = (Get-Content (Join-Path $projectRoot 'ProjectSettings/ProjectVer
 $results = [System.Collections.Generic.List[object]]::new()
 
 try {
-    foreach ($loadKg in @(25, 60, 140, 170, 300)) {
+    foreach ($loadValue in $LoadsKg) {
+        $loadKg = [int]$loadValue
         $loadDirectory = Join-Path $artifactRoot ('{0:000}kg' -f $loadKg)
         New-Item -ItemType Directory -Path $loadDirectory -Force | Out-Null
         $tracePath = Join-Path $loadDirectory 'qualification-trace.csv'
@@ -71,6 +78,11 @@ try {
         $passed = $null -ne $xml -and $xml.'test-run'.result -eq 'Passed' -and
             [int]$xml.'test-run'.total -gt 0 -and [int]$xml.'test-run'.failed -eq 0 -and
             $exitCode -eq 0 -and (Test-Path -LiteralPath $tracePath)
+        $physicalFailure = $false
+        if ($Mode -eq 'SquatMechanics' -and (Test-Path -LiteralPath $tracePath)) {
+            $lastSample = Import-Csv -LiteralPath $tracePath | Select-Object -Last 1
+            $physicalFailure = $null -ne $lastSample -and $lastSample.physical_failure -eq 'true'
+        }
         $summary = [PSCustomObject]@{
             Mode = $Mode
             LoadKg = $loadKg
@@ -81,6 +93,7 @@ try {
             Failed = if ($xml) { [int]$xml.'test-run'.failed } else { 1 }
             ProcessExit = $exitCode
             Qualification = if ($passed) { 'PASS' } else { 'FAIL' }
+            PhysicalFailure = $physicalFailure
             Trace = $tracePath
         }
         $results.Add($summary)
@@ -103,7 +116,10 @@ try {
             "TRACE=$tracePath"
         ) | Set-Content -LiteralPath (Join-Path $loadDirectory 'runner-receipt.md') -Encoding utf8
 
-        if ($Mode -eq 'Standing' -and !$passed) {
+        if ($Mode -eq 'SquatMechanics' -and !$passed) {
+            throw "GAM-13 mechanics harness did not complete for $loadKg kg; no physical-failure conclusion can be drawn from this run."
+        }
+        if ($Mode -eq 'SquatMechanics' -and $physicalFailure) {
             break
         }
     }

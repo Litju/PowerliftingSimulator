@@ -274,6 +274,18 @@ namespace PowerliftingSimulator.Squat.Unity
             foundation.Runtime.MarkInitialPhysicalStateValidated();
         }
 
+#if UNITY_EDITOR
+        public void BeginPhysicalSquatMotionForQualification()
+        {
+            if (!_isInitialized || _adapter == null || !_adapter.HasStandingComReference)
+                throw new InvalidOperationException("A validated physical setup is required before the mechanics probe.");
+            if (_attemptOrchestrator == null || _attemptOrchestrator.HasStarted)
+                throw new InvalidOperationException("The mechanics probe must not start a squat attempt lifecycle.");
+
+            _adapter.BeginIntentDrivenSquat();
+        }
+#endif
+
         private void ValidateInitialSubstrate()
         {
             _tickZeroSubstrateValidated = false;
