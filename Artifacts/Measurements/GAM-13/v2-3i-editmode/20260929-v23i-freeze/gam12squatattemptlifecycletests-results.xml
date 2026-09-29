@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="21" result="Passed" total="21" passed="21" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-29 08:46:18Z" end-time="2026-09-29 08:46:20Z" duration="1.3989807">
+  <test-suite type="TestSuite" id="1000" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="248" result="Passed" start-time="2026-09-29 08:46:18Z" end-time="2026-09-29 08:46:20Z" duration="1.398981" total="21" passed="21" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1277" name="PowerliftingSimulator.Foundation.Tests.EditMode.dll" fullname="E:/Data/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.EditMode.dll" runstate="Runnable" testcasecount="248" result="Passed" start-time="2026-09-29 08:46:18Z" end-time="2026-09-29 08:46:20Z" duration="1.388414" total="21" passed="21" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="22364" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1278" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="248" result="Passed" start-time="2026-09-29 08:46:18Z" end-time="2026-09-29 08:46:20Z" duration="1.385473" total="21" passed="21" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1279" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="248" result="Passed" start-time="2026-09-29 08:46:18Z" end-time="2026-09-29 08:46:20Z" duration="1.382757" total="21" passed="21" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1024" name="GAM12SquatAttemptLifecycleTests" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" testcasecount="21" result="Passed" start-time="2026-09-29 08:46:18Z" end-time="2026-09-29 08:46:20Z" duration="1.377808" total="21" passed="21" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1045" name="AN_UNTERMINATED_ATTEMPT_CANNOT_PRODUCE_A_TERMINAL_FAILED_LOCKOUT" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests.AN_UNTERMINATED_ATTEMPT_CANNOT_PRODUCE_A_TERMINAL_FAILED_LOCKOUT" methodname="AN_UNTERMINATED_ATTEMPT_CANNOT_PRODUCE_A_TERMINAL_FAILED_LOCKOUT" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" seed="576797290" result="Passed" start-time="2026-09-29 08:46:19Z" end-time="2026-09-29 08:46:19Z" duration="0.046684" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1030" name="ATTEMPT_RECORD_PRESERVES_ALL_VERSION_PROVENANCE" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests.ATTEMPT_RECORD_PRESERVES_ALL_VERSION_PROVENANCE" methodname="ATTEMPT_RECORD_PRESERVES_ALL_VERSION_PROVENANCE" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" seed="1339193775" result="Passed" start-time="2026-09-29 08:46:19Z" end-time="2026-09-29 08:46:19Z" duration="0.016124" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1025" name="ATTEMPT_RECORD_REQUIRES_FROZEN_TRACE" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests.ATTEMPT_RECORD_REQUIRES_FROZEN_TRACE" methodname="ATTEMPT_RECORD_REQUIRES_FROZEN_TRACE" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" seed="2094510532" result="Passed" start-time="2026-09-29 08:46:19Z" end-time="2026-09-29 08:46:19Z" duration="0.003246" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1029" name="COMMAND_TIMELINE_IS_TRACE_COVERED" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests.COMMAND_TIMELINE_IS_TRACE_COVERED" methodname="COMMAND_TIMELINE_IS_TRACE_COVERED" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" seed="2082553291" result="Passed" start-time="2026-09-29 08:46:19Z" end-time="2026-09-29 08:46:19Z" duration="0.001224" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1046" name="DESCENT_COLLAPSE_PROVENANCE_MATCHES_REAL_SELECTING_PREDICATE" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests.DESCENT_COLLAPSE_PROVENANCE_MATCHES_REAL_SELECTING_PREDICATE" methodname="DESCENT_COLLAPSE_PROVENANCE_MATCHES_REAL_SELECTING_PREDICATE" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" seed="882296976" result="Passed" start-time="2026-09-29 08:46:19Z" end-time="2026-09-29 08:46:19Z" duration="0.007333" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1037" name="EARLY_SETUP_HISTORY_CANNOT_CHANGE_LOCKOUT_REFERENCE" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests.EARLY_SETUP_HISTORY_CANNOT_CHANGE_LOCKOUT_REFERENCE" methodname="EARLY_SETUP_HISTORY_CANNOT_CHANGE_LOCKOUT_REFERENCE" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" seed="1064400390" result="Passed" start-time="2026-09-29 08:46:19Z" end-time="2026-09-29 08:46:19Z" duration="0.001764" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1028" name="FINALIZE_IS_DETERMINISTIC" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests.FINALIZE_IS_DETERMINISTIC" methodname="FINALIZE_IS_DETERMINISTIC" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" seed="244197888" result="Passed" start-time="2026-09-29 08:46:19Z" end-time="2026-09-29 08:46:19Z" duration="0.001355" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1042" name="LIFECYCLE_IS_THE_TERMINAL_CONTEXT_AUTHORITY_FOR_PHYSICAL_FAILURE" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests.LIFECYCLE_IS_THE_TERMINAL_CONTEXT_AUTHORITY_FOR_PHYSICAL_FAILURE" methodname="LIFECYCLE_IS_THE_TERMINAL_CONTEXT_AUTHORITY_FOR_PHYSICAL_FAILURE" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" seed="478675543" result="Passed" start-time="2026-09-29 08:46:19Z" end-time="2026-09-29 08:46:19Z" duration="0.001687" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1034" name="MISSING_EVIDENCE_REMAINS_UNDETERMINED" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests.MISSING_EVIDENCE_REMAINS_UNDETERMINED" methodname="MISSING_EVIDENCE_REMAINS_UNDETERMINED" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" seed="1551817784" result="Passed" start-time="2026-09-29 08:46:19Z" end-time="2026-09-29 08:46:19Z" duration="0.001759" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1027" name="NO_TRACE_APPEND_AFTER_FINALIZATION" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests.NO_TRACE_APPEND_AFTER_FINALIZATION" methodname="NO_TRACE_APPEND_AFTER_FINALIZATION" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" seed="1482256210" result="Passed" start-time="2026-09-29 08:46:19Z" end-time="2026-09-29 08:46:19Z" duration="0.000754" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1043" name="P3_EXPLICIT_ATTEMPT_CONTEXT_EXCLUDES_PRE_COMMAND_SETTLING" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests.P3_EXPLICIT_ATTEMPT_CONTEXT_EXCLUDES_PRE_COMMAND_SETTLING" methodname="P3_EXPLICIT_ATTEMPT_CONTEXT_EXCLUDES_PRE_COMMAND_SETTLING" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" seed="1967616839" result="Passed" start-time="2026-09-29 08:46:19Z" end-time="2026-09-29 08:46:19Z" duration="0.001164" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1033" name="PHYSICAL_FAILURE_CAN_COEXIST_WITH_RULE_RESULT" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests.PHYSICAL_FAILURE_CAN_COEXIST_WITH_RULE_RESULT" methodname="PHYSICAL_FAILURE_CAN_COEXIST_WITH_RULE_RESULT" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" seed="688520844" result="Passed" start-time="2026-09-29 08:46:19Z" end-time="2026-09-29 08:46:19Z" duration="0.000657" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1041" name="PHYSICAL_LOCKOUT_REJECTS_EITHER_LOCAL_TRUNK_ANGLE_OUTSIDE_TOLERANCE" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests.PHYSICAL_LOCKOUT_REJECTS_EITHER_LOCAL_TRUNK_ANGLE_OUTSIDE_TOLERANCE" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-29 08:46:19Z" end-time="2026-09-29 08:46:20Z" duration="1.255747" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1039" name="PHYSICAL_LOCKOUT_REJECTS_EITHER_LOCAL_TRUNK_ANGLE_OUTSIDE_TOLERANCE(True)" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests.PHYSICAL_LOCKOUT_REJECTS_EITHER_LOCAL_TRUNK_ANGLE_OUTSIDE_TOLERANCE(True)" methodname="PHYSICAL_LOCKOUT_REJECTS_EITHER_LOCAL_TRUNK_ANGLE_OUTSIDE_TOLERANCE" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" seed="1625961806" result="Passed" start-time="2026-09-29 08:46:20Z" end-time="2026-09-29 08:46:20Z" duration="0.003641" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+              <test-case id="1040" name="PHYSICAL_LOCKOUT_REJECTS_EITHER_LOCAL_TRUNK_ANGLE_OUTSIDE_TOLERANCE(False)" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests.PHYSICAL_LOCKOUT_REJECTS_EITHER_LOCAL_TRUNK_ANGLE_OUTSIDE_TOLERANCE(False)" methodname="PHYSICAL_LOCKOUT_REJECTS_EITHER_LOCAL_TRUNK_ANGLE_OUTSIDE_TOLERANCE" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" seed="445252159" result="Passed" start-time="2026-09-29 08:46:20Z" end-time="2026-09-29 08:46:20Z" duration="0.000371" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+              </test-case>
+            </test-suite>
+            <test-case id="1038" name="PHYSICAL_LOCKOUT_USES_LOCAL_TRUNK_ANGLES_INSTEAD_OF_WORLD_PITCH" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests.PHYSICAL_LOCKOUT_USES_LOCAL_TRUNK_ANGLES_INSTEAD_OF_WORLD_PITCH" methodname="PHYSICAL_LOCKOUT_USES_LOCAL_TRUNK_ANGLES_INSTEAD_OF_WORLD_PITCH" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" seed="1719133751" result="Passed" start-time="2026-09-29 08:46:20Z" end-time="2026-09-29 08:46:20Z" duration="0.000664" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1036" name="PRESENTATION_CANNOT_MUTATE_ATTEMPT_TRUTH" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests.PRESENTATION_CANNOT_MUTATE_ATTEMPT_TRUTH" methodname="PRESENTATION_CANNOT_MUTATE_ATTEMPT_TRUTH" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" seed="1263257826" result="Passed" start-time="2026-09-29 08:46:20Z" end-time="2026-09-29 08:46:20Z" duration="0.001086" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1026" name="RULE_AND_FAILURE_USE_SAME_FROZEN_TRACE" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests.RULE_AND_FAILURE_USE_SAME_FROZEN_TRACE" methodname="RULE_AND_FAILURE_USE_SAME_FROZEN_TRACE" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" seed="1286101094" result="Passed" start-time="2026-09-29 08:46:20Z" end-time="2026-09-29 08:46:20Z" duration="0.001160" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1032" name="RULE_NO_LIFT_CAN_COEXIST_WITH_NO_PHYSICAL_FAILURE" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests.RULE_NO_LIFT_CAN_COEXIST_WITH_NO_PHYSICAL_FAILURE" methodname="RULE_NO_LIFT_CAN_COEXIST_WITH_NO_PHYSICAL_FAILURE" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" seed="108708414" result="Passed" start-time="2026-09-29 08:46:20Z" end-time="2026-09-29 08:46:20Z" duration="0.002568" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1035" name="SAFETY_HANDOFF_ELIGIBLE_ONLY_AFTER_FAILURE_TRUTH_FREEZE" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests.SAFETY_HANDOFF_ELIGIBLE_ONLY_AFTER_FAILURE_TRUTH_FREEZE" methodname="SAFETY_HANDOFF_ELIGIBLE_ONLY_AFTER_FAILURE_TRUTH_FREEZE" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" seed="1632548231" result="Passed" start-time="2026-09-29 08:46:20Z" end-time="2026-09-29 08:46:20Z" duration="0.001460" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1031" name="SAFETY_HANDOFF_NOT_ELIGIBLE_BEFORE_ATTEMPT_TRUTH_FREEZE" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests.SAFETY_HANDOFF_NOT_ELIGIBLE_BEFORE_ATTEMPT_TRUTH_FREEZE" methodname="SAFETY_HANDOFF_NOT_ELIGIBLE_BEFORE_ATTEMPT_TRUTH_FREEZE" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" seed="2099572429" result="Passed" start-time="2026-09-29 08:46:20Z" end-time="2026-09-29 08:46:20Z" duration="0.000610" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1044" name="TERMINAL_FAILED_LOCKOUT_LATCHES_AT_THE_LIFECYCLE_TERMINAL_TICK" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests.TERMINAL_FAILED_LOCKOUT_LATCHES_AT_THE_LIFECYCLE_TERMINAL_TICK" methodname="TERMINAL_FAILED_LOCKOUT_LATCHES_AT_THE_LIFECYCLE_TERMINAL_TICK" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleTests" runstate="Runnable" seed="422240487" result="Passed" start-time="2026-09-29 08:46:20Z" end-time="2026-09-29 08:46:20Z" duration="0.004085" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: C:/Users/Usuario/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

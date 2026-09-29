@@ -22,6 +22,8 @@ $artifactRoot = Join-Path $projectRoot "Artifacts/Measurements/GAM-13/v2-$($Mode
 New-Item -ItemType Directory -Path $artifactRoot -Force | Out-Null
 $previousLoad = $env:GAM13_V2_LOAD_KG
 $previousTrace = $env:GAM13_V2_TRACE_PATH
+$previousActuatorTrace = $env:GAM13_V2_ACTUATOR_TRACE_PATH
+$previousPhysicsContract = $env:GAM13_V2_PHYSICS_CONTRACT_PATH
 $unityVersion = (Get-Content (Join-Path $projectRoot 'ProjectSettings/ProjectVersion.txt') -TotalCount 1).Split(':')[1].Trim()
 $results = [System.Collections.Generic.List[object]]::new()
 
@@ -31,11 +33,15 @@ try {
         $loadDirectory = Join-Path $artifactRoot ('{0:000}kg' -f $loadKg)
         New-Item -ItemType Directory -Path $loadDirectory -Force | Out-Null
         $tracePath = Join-Path $loadDirectory 'qualification-trace.csv'
+        $actuatorTracePath = Join-Path $loadDirectory 'actuator-diagnostics.csv'
+        $physicsContractPath = Join-Path $loadDirectory 'runtime-physics-contract.json'
         $testResults = Join-Path $loadDirectory 'test-results.xml'
         $logPath = Join-Path $loadDirectory 'unity.log'
 
         $env:GAM13_V2_LOAD_KG = [string]$loadKg
         $env:GAM13_V2_TRACE_PATH = $tracePath
+        $env:GAM13_V2_ACTUATOR_TRACE_PATH = $actuatorTracePath
+        $env:GAM13_V2_PHYSICS_CONTRACT_PATH = $physicsContractPath
         $arguments = @(
             '-batchmode', '-nographics',
             '-projectPath', $projectRoot,
@@ -77,11 +83,18 @@ try {
         $exitCode = if ($process.HasExited) { $process.ExitCode } else { -1 }
         $passed = $null -ne $xml -and $xml.'test-run'.result -eq 'Passed' -and
             [int]$xml.'test-run'.total -gt 0 -and [int]$xml.'test-run'.failed -eq 0 -and
-            $exitCode -eq 0 -and (Test-Path -LiteralPath $tracePath)
+            $exitCode -eq 0 -and (Test-Path -LiteralPath $tracePath) -and
+            ($Mode -ne 'SquatMechanics' -or
+                ((Test-Path -LiteralPath $actuatorTracePath) -and (Test-Path -LiteralPath $physicsContractPath)))
         $physicalFailure = $false
+        $mechanicsOutcome = 'NOT_RUN'
         if ($Mode -eq 'SquatMechanics' -and (Test-Path -LiteralPath $tracePath)) {
             $lastSample = Import-Csv -LiteralPath $tracePath | Select-Object -Last 1
             $physicalFailure = $null -ne $lastSample -and $lastSample.physical_failure -eq 'true'
+            $mechanicsOutcome = if ($null -eq $lastSample) { 'NO_SAMPLES' }
+                elseif ($lastSample.lockout -eq 'true') { 'PHYSICAL_LOCKOUT' }
+                elseif ($lastSample.physical_failure -eq 'true') { $lastSample.physical_failure_reason }
+                else { 'INCOMPLETE' }
         }
         $summary = [PSCustomObject]@{
             Mode = $Mode
@@ -94,7 +107,10 @@ try {
             ProcessExit = $exitCode
             Qualification = if ($passed) { 'PASS' } else { 'FAIL' }
             PhysicalFailure = $physicalFailure
+            MechanicsOutcome = $mechanicsOutcome
             Trace = $tracePath
+            ActuatorTrace = $actuatorTracePath
+            PhysicsContract = $physicsContractPath
         }
         $results.Add($summary)
 
@@ -113,20 +129,22 @@ try {
             "FAILED=$($summary.Failed)",
             "PROCESS_EXIT=$exitCode",
             "QUALIFICATION=$($summary.Qualification)",
-            "TRACE=$tracePath"
+            "MECHANICS_OUTCOME=$mechanicsOutcome",
+            "TRACE=$tracePath",
+            "ACTUATOR_TRACE=$actuatorTracePath",
+            "PHYSICS_CONTRACT=$physicsContractPath"
         ) | Set-Content -LiteralPath (Join-Path $loadDirectory 'runner-receipt.md') -Encoding utf8
 
         if ($Mode -eq 'SquatMechanics' -and !$passed) {
             throw "GAM-13 mechanics harness did not complete for $loadKg kg; no physical-failure conclusion can be drawn from this run."
-        }
-        if ($Mode -eq 'SquatMechanics' -and $physicalFailure) {
-            break
         }
     }
 }
 finally {
     $env:GAM13_V2_LOAD_KG = $previousLoad
     $env:GAM13_V2_TRACE_PATH = $previousTrace
+    $env:GAM13_V2_ACTUATOR_TRACE_PATH = $previousActuatorTrace
+    $env:GAM13_V2_PHYSICS_CONTRACT_PATH = $previousPhysicsContract
 }
 
 $results | Format-Table -AutoSize

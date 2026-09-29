@@ -2315,35 +2315,8 @@ namespace PowerliftingSimulator.Squat
 
         private bool IsPhysicalLockout(SquatObservationSnapshot snapshot)
         {
-            if (!snapshot.Bar.IsAvailable ||
-                !_hasStandingReference ||
-                snapshot.Bar.PositionWorldMeters.Y < _standingReferenceY - _calibration.LockoutHeightToleranceM ||
-                snapshot.Bar.LinearVelocityWorldMetersPerSecond.Length > _calibration.LockoutBarStillVelocityMps ||
-                snapshot.Bar.AngularVelocityBarRadiansPerSecond.Length > _calibration.LockoutBarStillAngularVelocityRadS)
-                return false;
-            if (snapshot.Joints.LeftKnee.JointAvailability != SquatTelemetryAvailability.AVAILABLE ||
-                snapshot.Joints.RightKnee.JointAvailability != SquatTelemetryAvailability.AVAILABLE ||
-                snapshot.Joints.LeftHip.JointAvailability != SquatTelemetryAvailability.AVAILABLE ||
-                snapshot.Joints.RightHip.JointAvailability != SquatTelemetryAvailability.AVAILABLE)
-                return false;
-            if (MaxKneeAngle(snapshot) > _calibration.LockoutKneeToleranceRadians ||
-                MaxHipAngle(snapshot) > _calibration.LockoutHipToleranceRadians)
-                return false;
-            return TryGetMaxLocalTrunkAngle(snapshot, out float trunkAngle) &&
-                trunkAngle <= _calibration.LockoutTrunkToleranceRadians;
-        }
-
-        private static bool TryGetMaxLocalTrunkAngle(SquatObservationSnapshot snapshot, out float angle)
-        {
-            angle = 0f;
-            if (snapshot.Joints.Abdomen.JointAvailability != SquatTelemetryAvailability.AVAILABLE ||
-                snapshot.Joints.Thorax.JointAvailability != SquatTelemetryAvailability.AVAILABLE)
-                return false;
-
-            angle = Math.Max(
-                Math.Abs(snapshot.Joints.Abdomen.ActualAngleRadians),
-                Math.Abs(snapshot.Joints.Thorax.ActualAngleRadians));
-            return true;
+            return SquatAttemptPhysicalEvidence.MeasureLockout(
+                snapshot, _hasStandingReference, _standingReferenceY, _calibration).IsLockout;
         }
 
         private bool IsLegalBottom(SquatObservationSnapshot snapshot)

@@ -243,7 +243,18 @@ namespace PowerliftingSimulator.Tests
                 abdomenAngleRad: abdomenOutside ? outsideTolerance : 0f,
                 thoraxAngleRad: abdomenOutside ? 0f : outsideTolerance);
 
-            Assert.That(SquatAttemptPhysicalEvidence.IsLockout(snapshot, standing), Is.False);
+            SquatPhysicalLockoutDiagnostic diagnostic = SquatAttemptPhysicalEvidence.MeasureLockout(
+                snapshot, true, standing.Bar.PositionWorldMeters.Y);
+
+            Assert.That(diagnostic.IsLockout, Is.False);
+            Assert.That(diagnostic.BarHeightPass, Is.True);
+            Assert.That(diagnostic.BarLinearStillnessPass, Is.True);
+            Assert.That(diagnostic.BarAngularStillnessPass, Is.True);
+            Assert.That(diagnostic.KneeExtensionPass, Is.True);
+            Assert.That(diagnostic.HipExtensionPass, Is.True);
+            Assert.That(diagnostic.TrunkErectnessPass, Is.False);
+            Assert.That(diagnostic.MaximumTrunkAngle, Is.EqualTo(outsideTolerance).Within(0.000001f));
+            Assert.That(SquatAttemptPhysicalEvidence.IsLockout(snapshot, standing), Is.EqualTo(diagnostic.IsLockout));
         }
 
         [Test]

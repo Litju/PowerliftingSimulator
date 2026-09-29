@@ -171,7 +171,7 @@ namespace PowerliftingSimulator.Athlete
         private static readonly JointFamilyProfile[] Profiles =
         {
             new JointFamilyProfile("ankle", 650f, 70f, 450f, 2.0f),
-            new JointFamilyProfile("knee", 800f, 80f, 540f, 2.5f),
+            new JointFamilyProfile("knee", 1123f, 94.8f, 540f, 2.5f),
             new JointFamilyProfile("hip", 900f, 90f, 540f, 2.2f),
             new JointFamilyProfile("trunk", 3200f, 170f, 390f, 1.8f),
             new JointFamilyProfile("shoulder", 500f, 55f, 130f, 2.5f),

@@ -48,7 +48,11 @@ namespace PowerliftingSimulator.Tests
             Assert.That(controller.TickZeroValidationTick, Is.EqualTo(0ul));
             Assert.That(runtime.CurrentTime.Tick, Is.EqualTo(0ul));
 
-            WriteReceipt(controller, runtime, loadKg);
+            WriteRuntimeReceipt(
+                controller,
+                runtime,
+                loadKg,
+                Environment.GetEnvironmentVariable("GAM13_V23B_TICK0_RECEIPT_PATH"));
 
             Rigidbody barBody = UnityEngine.Object.FindFirstObjectByType<PhysicalBarbell>().Body;
             BodyBaseline[] baseline = CaptureBaseline(rig, barBody);
@@ -67,19 +71,26 @@ namespace PowerliftingSimulator.Tests
                 : 0f;
         }
 
-        private static void WriteReceipt(
+        internal static void WriteRuntimeReceipt(
             SquatPhysicalPrototypeController controller,
             FoundationRuntime runtime,
-            float loadKg)
+            float loadKg,
+            string path,
+            string authority = "GAM-13 V2-3B")
         {
             PhysicalAthleteRig rig = controller.AthleteRig;
             Receipt receipt = new Receipt
             {
-                authority = "GAM-13 V2-3B",
+                authority = authority,
                 unityVersion = Application.unityVersion,
                 physicsScene = runtime.AuthoritativeScene.name,
                 physicsTick = (long)runtime.CurrentTime.Tick,
                 fixedDeltaSeconds = (float)SimulationConstants.FixedDeltaTimeSeconds,
+                gravityWorldMps2 = Physics.gravity,
+                simulationMode = Physics.simulationMode.ToString(),
+                defaultSolverIterations = Physics.defaultSolverIterations,
+                defaultSolverVelocityIterations = Physics.defaultSolverVelocityIterations,
+                defaultContactOffsetM = Physics.defaultContactOffset,
                 tickZeroValidationPassed = controller.TickZeroSubstrateValidated,
                 tickZeroValidationTick = (long)controller.TickZeroValidationTick,
                 loadKg = loadKg,
@@ -102,7 +113,8 @@ namespace PowerliftingSimulator.Tests
                 saddle = CreateSaddleRecord(controller.Saddle)
             };
 
-            string path = Environment.GetEnvironmentVariable("GAM13_V23B_TICK0_RECEIPT_PATH");
+            if (string.IsNullOrWhiteSpace(path))
+                path = Environment.GetEnvironmentVariable("GAM13_V23B_TICK0_RECEIPT_PATH");
             if (string.IsNullOrWhiteSpace(path))
             {
                 string timestamp = DateTime.UtcNow.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
@@ -155,6 +167,21 @@ namespace PowerliftingSimulator.Tests
                     inertiaTensorRotation = segment.Body.inertiaTensorRotation,
                     automaticCenterOfMass = segment.Body.automaticCenterOfMass,
                     automaticInertiaTensor = segment.Body.automaticInertiaTensor,
+                    isKinematic = segment.Body.isKinematic,
+                    useGravity = segment.Body.useGravity,
+                    linearDamping = segment.Body.linearDamping,
+                    angularDamping = segment.Body.angularDamping,
+                    collisionDetectionMode = segment.Body.collisionDetectionMode.ToString(),
+                    solverIterations = segment.Body.solverIterations,
+                    solverVelocityIterations = segment.Body.solverVelocityIterations,
+                    maxAngularVelocity = segment.Body.maxAngularVelocity,
+                    constraints = segment.Body.constraints.ToString(),
+                    colliderSizeM = ColliderSize(segment.Collider),
+                    colliderBoundsSizeM = segment.Collider.bounds.size,
+                    colliderIsTrigger = segment.Collider.isTrigger,
+                    colliderContactOffsetM = segment.Collider.contactOffset,
+                    colliderMaterial = MaterialRecord.From(segment.Collider.sharedMaterial),
+                    worldLayer = segment.Collider.gameObject.layer,
                     positionWorldM = segment.Body.position,
                     rotationWorld = segment.Body.rotation,
                     linearVelocityMps = segment.Body.linearVelocity,
@@ -181,8 +208,21 @@ namespace PowerliftingSimulator.Tests
                     anchorWorldErrorM = Vector3.Distance(
                         joint.transform.TransformPoint(joint.anchor),
                         joint.connectedBody.transform.TransformPoint(joint.connectedAnchor)),
+                    anchorLocalM = joint.anchor,
+                    connectedAnchorLocalM = joint.connectedAnchor,
+                    anchorWorldM = joint.transform.TransformPoint(joint.anchor),
+                    connectedAnchorWorldM = joint.connectedBody.transform.TransformPoint(joint.connectedAnchor),
                     axisChild = joint.axis,
                     secondaryAxisChild = joint.secondaryAxis,
+                    axisWorld = joint.transform.TransformDirection(joint.axis),
+                    secondaryAxisWorld = joint.transform.TransformDirection(joint.secondaryAxis),
+                    linearXMotion = joint.xMotion.ToString(),
+                    linearYMotion = joint.yMotion.ToString(),
+                    linearZMotion = joint.zMotion.ToString(),
+                    angularXMotion = joint.angularXMotion.ToString(),
+                    angularYMotion = joint.angularYMotion.ToString(),
+                    angularZMotion = joint.angularZMotion.ToString(),
+                    linearLimitM = joint.linearLimit.limit,
                     angularXLowDeg = joint.lowAngularXLimit.limit,
                     angularXHighDeg = joint.highAngularXLimit.limit,
                     angularYLimitDeg = joint.angularYLimit.limit,
@@ -191,14 +231,38 @@ namespace PowerliftingSimulator.Tests
                     angularYZDrive = DriveRecord.From(joint.angularYZDrive),
                     rotationDriveMode = joint.rotationDriveMode.ToString(),
                     configuredInWorldSpace = joint.configuredInWorldSpace,
+                    autoConfigureConnectedAnchor = joint.autoConfigureConnectedAnchor,
+                    enableCollision = joint.enableCollision,
+                    enablePreprocessing = joint.enablePreprocessing,
+                    projectionDistanceM = joint.projectionDistance,
+                    projectionAngleDeg = joint.projectionAngle,
+                    massScale = joint.massScale,
+                    connectedMassScale = joint.connectedMassScale,
+                    breakForceN = joint.breakForce,
+                    breakTorqueNm = joint.breakTorque,
                     projectionMode = joint.projectionMode.ToString(),
                     targetRotation = joint.targetRotation,
                     targetAngularVelocityRadS = joint.targetAngularVelocity,
+                    logicalRequestedTarget = powered.RequestedCommand.TargetRelativeRotation,
+                    logicalAppliedTarget = powered.AppliedTarget,
+                    unityTargetRotationConversionErrorDeg = Quaternion.Angle(
+                        joint.targetRotation,
+                        PoweredJointController.ToUnityTargetRotation(powered.AppliedTarget)),
+                    unityTargetAngularVelocityConversionErrorRadS = Vector3.Distance(
+                        joint.targetAngularVelocity,
+                        -Vector3.ClampMagnitude(
+                            powered.RequestedCommand.TargetRelativeAngularVelocityRadS,
+                            powered.Profile.HasValue ? powered.Profile.Value.MaxTargetRateRadS : 0f)),
                     twistDemandNm = diagnostic.TwistDriveDemandNm,
                     swingYZDemandNm = diagnostic.SwingDriveDemandNm,
                     twistDemandFraction = diagnostic.TwistDriveDemandFraction,
                     swingYZDemandFraction = diagnostic.SwingDriveDemandFraction,
                     maximumActiveDriveDemandFraction = diagnostic.ModeledDemand,
+                    twistLimitProximity = diagnostic.LimitProximity,
+                    targetTwistLimitProximity = PoweredJointController.LimitProximityOf(
+                        powered.AppliedTarget,
+                        runtime.Recipe.LowDegrees,
+                        runtime.Recipe.HighDegrees),
                     solverConstraintTorqueNm = diagnostic.SolverTorqueJointSpaceNm
                 };
             }
@@ -219,7 +283,14 @@ namespace PowerliftingSimulator.Tests
                 frictionCombine = material.frictionCombine.ToString(),
                 bounce = material.bounciness,
                 leftFootGapM = rig.Segments["left_foot"].Collider.bounds.min.y - platform.bounds.max.y,
-                rightFootGapM = rig.Segments["right_foot"].Collider.bounds.min.y - platform.bounds.max.y
+                rightFootGapM = rig.Segments["right_foot"].Collider.bounds.min.y - platform.bounds.max.y,
+                centerLocalM = platform.center,
+                worldLayer = platform.gameObject.layer,
+                contactOffsetM = platform.contactOffset,
+                leftFootPairIgnored = Physics.GetIgnoreCollision(rig.Segments["left_foot"].Collider, platform),
+                rightFootPairIgnored = Physics.GetIgnoreCollision(rig.Segments["right_foot"].Collider, platform),
+                footPlatformLayerCollisionIgnored = Physics.GetIgnoreLayerCollision(
+                    rig.Segments["left_foot"].Collider.gameObject.layer, platform.gameObject.layer)
             };
         }
 
@@ -243,8 +314,16 @@ namespace PowerliftingSimulator.Tests
                 rigidbodyCount = body.GetComponentsInChildren<Rigidbody>(true).Length,
                 isKinematic = body.isKinematic,
                 useGravity = body.useGravity,
+                linearDamping = body.linearDamping,
+                angularDamping = body.angularDamping,
+                collisionDetectionMode = body.collisionDetectionMode.ToString(),
+                solverIterations = body.solverIterations,
+                solverVelocityIterations = body.solverVelocityIterations,
+                maxAngularVelocity = body.maxAngularVelocity,
+                constraints = body.constraints.ToString(),
                 automaticCenterOfMass = body.automaticCenterOfMass,
                 automaticInertiaTensor = body.automaticInertiaTensor,
+                colliderGeometry = ColliderDescriptions(body.GetComponentsInChildren<Collider>(true)),
                 positionWorldM = body.position,
                 linearVelocityMps = body.linearVelocity,
                 angularVelocityRadS = body.angularVelocity
@@ -265,6 +344,29 @@ namespace PowerliftingSimulator.Tests
                 isBroken = saddle.IsBroken,
                 breakForceN = saddle.Joint.breakForce,
                 breakTorqueNm = saddle.Joint.breakTorque,
+                anchorLocalM = saddle.Joint.anchor,
+                connectedAnchorLocalM = saddle.Joint.connectedAnchor,
+                axis = saddle.Joint.axis,
+                secondaryAxis = saddle.Joint.secondaryAxis,
+                xMotion = saddle.Joint.xMotion.ToString(),
+                yMotion = saddle.Joint.yMotion.ToString(),
+                zMotion = saddle.Joint.zMotion.ToString(),
+                angularXMotion = saddle.Joint.angularXMotion.ToString(),
+                angularYMotion = saddle.Joint.angularYMotion.ToString(),
+                angularZMotion = saddle.Joint.angularZMotion.ToString(),
+                linearLimitM = saddle.Joint.linearLimit.limit,
+                linearXDrive = DriveRecord.From(saddle.Joint.xDrive),
+                linearYDrive = DriveRecord.From(saddle.Joint.yDrive),
+                linearZDrive = DriveRecord.From(saddle.Joint.zDrive),
+                angularXDrive = DriveRecord.From(saddle.Joint.angularXDrive),
+                angularYZDrive = DriveRecord.From(saddle.Joint.angularYZDrive),
+                massScale = saddle.Joint.massScale,
+                connectedMassScale = saddle.Joint.connectedMassScale,
+                enableCollision = saddle.Joint.enableCollision,
+                projectionMode = saddle.Joint.projectionMode.ToString(),
+                ignoredBarAthletePairs = saddle.FilteredBarAthletePairCount,
+                barThoraxColliderPairs = saddle.BarThoraxColliderPairCount,
+                ignoredBarThoraxColliderPairs = saddle.BarThoraxIgnoredPairCount,
                 currentForceEngine = saddle.CurrentForceEngine,
                 currentTorqueEngine = saddle.CurrentTorqueEngine
             };
@@ -273,6 +375,62 @@ namespace PowerliftingSimulator.Tests
         private static bool PlantarGapWithinTolerance(PhysicalAthleteRig rig, string footId) =>
             Mathf.Abs(rig.Segments[footId].Collider.bounds.min.y - rig.PlatformCollider.bounds.max.y) <=
             PhysicalAthleteDefinition.AnchorToleranceMeters;
+
+        private static Vector3 ColliderSize(Collider collider)
+        {
+            if (collider is BoxCollider box)
+                return box.size;
+            if (collider is CapsuleCollider capsule)
+                return new Vector3(capsule.radius * 2f, capsule.height, capsule.radius * 2f);
+            return collider.bounds.size;
+        }
+
+        private static string[] ColliderDescriptions(Collider[] colliders)
+        {
+            var descriptions = new List<string>(colliders.Length);
+            foreach (Collider collider in colliders)
+            {
+                if (collider is CapsuleCollider capsule)
+                {
+                    descriptions.Add(string.Format(
+                        CultureInfo.InvariantCulture,
+                        "{0}:center={1};radius={2:R};height={3:R};direction={4};bounds={5};{6}",
+                        collider.GetType().Name, capsule.center, capsule.radius, capsule.height,
+                        capsule.direction, collider.bounds.size, ColliderState(collider)));
+                }
+                else if (collider is BoxCollider box)
+                {
+                    descriptions.Add(string.Format(
+                        CultureInfo.InvariantCulture,
+                        "{0}:center={1};size={2};bounds={3};{4}",
+                        collider.GetType().Name, box.center, box.size, collider.bounds.size,
+                        ColliderState(collider)));
+                }
+                else
+                {
+                    descriptions.Add(collider.GetType().Name + ":bounds=" + collider.bounds.size + ";" +
+                        ColliderState(collider));
+                }
+            }
+            return descriptions.ToArray();
+        }
+
+        private static string ColliderState(Collider collider)
+        {
+            PhysicsMaterial material = collider.sharedMaterial;
+            string materialState = material == null
+                ? "material=none"
+                : string.Format(
+                    CultureInfo.InvariantCulture,
+                    "material=sf:{0:R};df:{1:R};b:{2:R};friction:{3};bounce:{4}",
+                    material.staticFriction, material.dynamicFriction, material.bounciness,
+                    material.frictionCombine, material.bounceCombine);
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "enabled={0};active={1};trigger={2};layer={3};{4}",
+                collider.enabled, collider.gameObject.activeInHierarchy, collider.isTrigger,
+                collider.gameObject.layer, materialState);
+        }
 
         private static BodyBaseline[] CaptureBaseline(PhysicalAthleteRig rig, Rigidbody barBody)
         {
@@ -337,6 +495,11 @@ namespace PowerliftingSimulator.Tests
             public string physicsScene;
             public long physicsTick;
             public float fixedDeltaSeconds;
+            public Vector3 gravityWorldMps2;
+            public string simulationMode;
+            public int defaultSolverIterations;
+            public int defaultSolverVelocityIterations;
+            public float defaultContactOffsetM;
             public bool tickZeroValidationPassed;
             public long tickZeroValidationTick;
             public float loadKg;
@@ -373,10 +536,48 @@ namespace PowerliftingSimulator.Tests
             public Quaternion inertiaTensorRotation;
             public bool automaticCenterOfMass;
             public bool automaticInertiaTensor;
+            public bool isKinematic;
+            public bool useGravity;
+            public float linearDamping;
+            public float angularDamping;
+            public string collisionDetectionMode;
+            public int solverIterations;
+            public int solverVelocityIterations;
+            public float maxAngularVelocity;
+            public string constraints;
+            public Vector3 colliderSizeM;
+            public Vector3 colliderBoundsSizeM;
+            public bool colliderIsTrigger;
+            public float colliderContactOffsetM;
+            public MaterialRecord colliderMaterial;
+            public int worldLayer;
             public Vector3 positionWorldM;
             public Quaternion rotationWorld;
             public Vector3 linearVelocityMps;
             public Vector3 angularVelocityRadS;
+        }
+
+        [Serializable]
+        private sealed class MaterialRecord
+        {
+            public bool present;
+            public float staticFriction;
+            public float dynamicFriction;
+            public float bounciness;
+            public string frictionCombine;
+            public string bounceCombine;
+
+            public static MaterialRecord From(PhysicsMaterial material) => material == null
+                ? new MaterialRecord { present = false }
+                : new MaterialRecord
+                {
+                    present = true,
+                    staticFriction = material.staticFriction,
+                    dynamicFriction = material.dynamicFriction,
+                    bounciness = material.bounciness,
+                    frictionCombine = material.frictionCombine.ToString(),
+                    bounceCombine = material.bounceCombine.ToString()
+                };
         }
 
         [Serializable]
@@ -386,8 +587,21 @@ namespace PowerliftingSimulator.Tests
             public string parentId;
             public string kind;
             public float anchorWorldErrorM;
+            public Vector3 anchorLocalM;
+            public Vector3 connectedAnchorLocalM;
+            public Vector3 anchorWorldM;
+            public Vector3 connectedAnchorWorldM;
             public Vector3 axisChild;
             public Vector3 secondaryAxisChild;
+            public Vector3 axisWorld;
+            public Vector3 secondaryAxisWorld;
+            public string linearXMotion;
+            public string linearYMotion;
+            public string linearZMotion;
+            public string angularXMotion;
+            public string angularYMotion;
+            public string angularZMotion;
+            public float linearLimitM;
             public float angularXLowDeg;
             public float angularXHighDeg;
             public float angularYLimitDeg;
@@ -396,14 +610,29 @@ namespace PowerliftingSimulator.Tests
             public DriveRecord angularYZDrive;
             public string rotationDriveMode;
             public bool configuredInWorldSpace;
+            public bool autoConfigureConnectedAnchor;
+            public bool enableCollision;
+            public bool enablePreprocessing;
+            public float projectionDistanceM;
+            public float projectionAngleDeg;
+            public float massScale;
+            public float connectedMassScale;
+            public float breakForceN;
+            public float breakTorqueNm;
             public string projectionMode;
             public Quaternion targetRotation;
             public Vector3 targetAngularVelocityRadS;
+            public Quaternion logicalRequestedTarget;
+            public Quaternion logicalAppliedTarget;
+            public float unityTargetRotationConversionErrorDeg;
+            public float unityTargetAngularVelocityConversionErrorRadS;
             public float twistDemandNm;
             public float swingYZDemandNm;
             public float twistDemandFraction;
             public float swingYZDemandFraction;
             public float maximumActiveDriveDemandFraction;
+            public float twistLimitProximity;
+            public float targetTwistLimitProximity;
             public Vector3 solverConstraintTorqueNm;
         }
 
@@ -436,6 +665,12 @@ namespace PowerliftingSimulator.Tests
             public float bounce;
             public float leftFootGapM;
             public float rightFootGapM;
+            public Vector3 centerLocalM;
+            public int worldLayer;
+            public float contactOffsetM;
+            public bool leftFootPairIgnored;
+            public bool rightFootPairIgnored;
+            public bool footPlatformLayerCollisionIgnored;
         }
 
         [Serializable]
@@ -453,8 +688,16 @@ namespace PowerliftingSimulator.Tests
             public int rigidbodyCount;
             public bool isKinematic;
             public bool useGravity;
+            public float linearDamping;
+            public float angularDamping;
+            public string collisionDetectionMode;
+            public int solverIterations;
+            public int solverVelocityIterations;
+            public float maxAngularVelocity;
+            public string constraints;
             public bool automaticCenterOfMass;
             public bool automaticInertiaTensor;
+            public string[] colliderGeometry;
             public Vector3 positionWorldM;
             public Vector3 linearVelocityMps;
             public Vector3 angularVelocityRadS;
@@ -471,6 +714,29 @@ namespace PowerliftingSimulator.Tests
             public bool isBroken;
             public float breakForceN;
             public float breakTorqueNm;
+            public Vector3 anchorLocalM;
+            public Vector3 connectedAnchorLocalM;
+            public Vector3 axis;
+            public Vector3 secondaryAxis;
+            public string xMotion;
+            public string yMotion;
+            public string zMotion;
+            public string angularXMotion;
+            public string angularYMotion;
+            public string angularZMotion;
+            public float linearLimitM;
+            public DriveRecord linearXDrive;
+            public DriveRecord linearYDrive;
+            public DriveRecord linearZDrive;
+            public DriveRecord angularXDrive;
+            public DriveRecord angularYZDrive;
+            public float massScale;
+            public float connectedMassScale;
+            public bool enableCollision;
+            public string projectionMode;
+            public int ignoredBarAthletePairs;
+            public int barThoraxColliderPairs;
+            public int ignoredBarThoraxColliderPairs;
             public Vector3 currentForceEngine;
             public Vector3 currentTorqueEngine;
         }

@@ -571,23 +571,59 @@ namespace PowerliftingSimulator.Squat
             SquatObservationSnapshot standingReference,
             SquatFailureCalibration calibration = null)
         {
-            SquatFailureCalibration values = calibration ?? SquatFailureCalibration.Default;
-            if (!snapshot.Bar.IsAvailable || !standingReference.Bar.IsAvailable ||
-                snapshot.Bar.PositionWorldMeters.Y < standingReference.Bar.PositionWorldMeters.Y - values.LockoutHeightToleranceM ||
-                snapshot.Bar.LinearVelocityWorldMetersPerSecond.Length > values.LockoutBarStillVelocityMps ||
-                snapshot.Bar.AngularVelocityBarRadiansPerSecond.Length > values.LockoutBarStillAngularVelocityRadS)
-                return false;
-            if (snapshot.Joints.LeftKnee.JointAvailability != SquatTelemetryAvailability.AVAILABLE ||
-                snapshot.Joints.RightKnee.JointAvailability != SquatTelemetryAvailability.AVAILABLE ||
-                snapshot.Joints.LeftHip.JointAvailability != SquatTelemetryAvailability.AVAILABLE ||
-                snapshot.Joints.RightHip.JointAvailability != SquatTelemetryAvailability.AVAILABLE)
-                return false;
-            if (MaxKneeAngle(snapshot) > values.LockoutKneeToleranceRadians ||
-                MaxHipAngle(snapshot) > values.LockoutHipToleranceRadians)
-                return false;
+            return MeasureLockout(
+                snapshot,
+                standingReference.Bar.IsAvailable,
+                standingReference.Bar.PositionWorldMeters.Y,
+                calibration).IsLockout;
+        }
 
-            return TryGetMaxLocalTrunkAngle(snapshot, out float trunkAngle) &&
-                trunkAngle <= values.LockoutTrunkToleranceRadians;
+        public static SquatPhysicalLockoutDiagnostic MeasureLockout(
+            SquatObservationSnapshot snapshot,
+            bool hasStandingReference,
+            float standingReferenceBarY,
+            SquatFailureCalibration calibration = null)
+        {
+            SquatFailureCalibration values = calibration ?? SquatFailureCalibration.Default;
+            bool barAvailable = snapshot.Bar.IsAvailable;
+            bool referenceAvailable = hasStandingReference && float.IsFinite(standingReferenceBarY);
+            float barY = barAvailable ? snapshot.Bar.PositionWorldMeters.Y : float.NaN;
+            float barSpeed = barAvailable ? snapshot.Bar.LinearVelocityWorldMetersPerSecond.Length : float.NaN;
+            float barAngularSpeed = barAvailable ? snapshot.Bar.AngularVelocityBarRadiansPerSecond.Length : float.NaN;
+            bool kneeJointsAvailable =
+                snapshot.Joints.LeftKnee.JointAvailability == SquatTelemetryAvailability.AVAILABLE &&
+                snapshot.Joints.RightKnee.JointAvailability == SquatTelemetryAvailability.AVAILABLE;
+            bool hipJointsAvailable =
+                snapshot.Joints.LeftHip.JointAvailability == SquatTelemetryAvailability.AVAILABLE &&
+                snapshot.Joints.RightHip.JointAvailability == SquatTelemetryAvailability.AVAILABLE;
+            bool trunkJointsAvailable =
+                snapshot.Joints.Abdomen.JointAvailability == SquatTelemetryAvailability.AVAILABLE &&
+                snapshot.Joints.Thorax.JointAvailability == SquatTelemetryAvailability.AVAILABLE;
+            float maxKneeAngle = kneeJointsAvailable ? MaxKneeAngle(snapshot) : float.NaN;
+            float maxHipAngle = hipJointsAvailable ? MaxHipAngle(snapshot) : float.NaN;
+            float maxTrunkAngle = trunkJointsAvailable && TryGetMaxLocalTrunkAngle(snapshot, out float trunkAngle)
+                ? trunkAngle
+                : float.NaN;
+
+            return new SquatPhysicalLockoutDiagnostic(
+                barAvailable,
+                referenceAvailable,
+                barAvailable && referenceAvailable && barY >= standingReferenceBarY - values.LockoutHeightToleranceM,
+                barAvailable && barSpeed <= values.LockoutBarStillVelocityMps,
+                barAvailable && barAngularSpeed <= values.LockoutBarStillAngularVelocityRadS,
+                kneeJointsAvailable,
+                kneeJointsAvailable && maxKneeAngle <= values.LockoutKneeToleranceRadians,
+                hipJointsAvailable,
+                hipJointsAvailable && maxHipAngle <= values.LockoutHipToleranceRadians,
+                trunkJointsAvailable,
+                trunkJointsAvailable && maxTrunkAngle <= values.LockoutTrunkToleranceRadians,
+                barY,
+                standingReferenceBarY,
+                barSpeed,
+                barAngularSpeed,
+                maxKneeAngle,
+                maxHipAngle,
+                maxTrunkAngle);
         }
 
         private static float MaxKneeAngle(SquatObservationSnapshot snapshot) => Math.Max(
@@ -610,5 +646,70 @@ namespace PowerliftingSimulator.Squat
                 Math.Abs(snapshot.Joints.Thorax.ActualAngleRadians));
             return true;
         }
+    }
+
+    public readonly struct SquatPhysicalLockoutDiagnostic
+    {
+        public SquatPhysicalLockoutDiagnostic(
+            bool barAvailable,
+            bool standingReferenceAvailable,
+            bool barHeightPass,
+            bool barLinearStillnessPass,
+            bool barAngularStillnessPass,
+            bool kneeJointsAvailable,
+            bool kneeExtensionPass,
+            bool hipJointsAvailable,
+            bool hipExtensionPass,
+            bool trunkJointsAvailable,
+            bool trunkErectnessPass,
+            float barY,
+            float standingReferenceBarY,
+            float barSpeed,
+            float barAngularSpeed,
+            float maximumKneeAngle,
+            float maximumHipAngle,
+            float maximumTrunkAngle)
+        {
+            BarAvailable = barAvailable;
+            StandingReferenceAvailable = standingReferenceAvailable;
+            BarHeightPass = barHeightPass;
+            BarLinearStillnessPass = barLinearStillnessPass;
+            BarAngularStillnessPass = barAngularStillnessPass;
+            KneeJointsAvailable = kneeJointsAvailable;
+            KneeExtensionPass = kneeExtensionPass;
+            HipJointsAvailable = hipJointsAvailable;
+            HipExtensionPass = hipExtensionPass;
+            TrunkJointsAvailable = trunkJointsAvailable;
+            TrunkErectnessPass = trunkErectnessPass;
+            BarY = barY;
+            StandingReferenceBarY = standingReferenceBarY;
+            BarSpeed = barSpeed;
+            BarAngularSpeed = barAngularSpeed;
+            MaximumKneeAngle = maximumKneeAngle;
+            MaximumHipAngle = maximumHipAngle;
+            MaximumTrunkAngle = maximumTrunkAngle;
+        }
+
+        public bool BarAvailable { get; }
+        public bool StandingReferenceAvailable { get; }
+        public bool BarHeightPass { get; }
+        public bool BarLinearStillnessPass { get; }
+        public bool BarAngularStillnessPass { get; }
+        public bool KneeJointsAvailable { get; }
+        public bool KneeExtensionPass { get; }
+        public bool HipJointsAvailable { get; }
+        public bool HipExtensionPass { get; }
+        public bool TrunkJointsAvailable { get; }
+        public bool TrunkErectnessPass { get; }
+        public float BarY { get; }
+        public float StandingReferenceBarY { get; }
+        public float BarSpeed { get; }
+        public float BarAngularSpeed { get; }
+        public float MaximumKneeAngle { get; }
+        public float MaximumHipAngle { get; }
+        public float MaximumTrunkAngle { get; }
+        public bool IsLockout => BarAvailable && StandingReferenceAvailable && BarHeightPass &&
+            BarLinearStillnessPass && BarAngularStillnessPass && KneeJointsAvailable && KneeExtensionPass &&
+            HipJointsAvailable && HipExtensionPass && TrunkJointsAvailable && TrunkErectnessPass;
     }
 }

@@ -14,8 +14,11 @@ namespace PowerliftingSimulator.Squat.Unity
     /// </summary>
     public sealed class SquatPhysicalAdapter : IPhysicalAthleteCommandSource
     {
-        public const string CapacityCalibrationVersion = "GAM13_SQUAT_CAPACITY_V2";
-        public const float AthleteStrengthScale = 5.13f;
+        public const string CapacityCalibrationVersion = "GAM13_SQUAT_CAPACITY_V3";
+        // One shared scale derived from the unchanged 60 kg ascent: its 0.1382715
+        // peak channel demand projects to 0.34567875 at 300 kg by total mass;
+        // calibrating that boundary to 1.05 gives 5.13 * 0.34567875 / 1.05.
+        public const float AthleteStrengthScale = 1.689f;
 #if UNITY_EDITOR
         public const float MaxBalanceCorrectionRad = 0.17453f; // 10 degrees; target offset only
         private const float MaxMlBalanceCorrectionRad = 0.03491f; // 2 degrees; bounded lateral target trim

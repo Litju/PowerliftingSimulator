@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using NUnit.Framework;
 using PowerliftingSimulator.Athlete;
+using PowerliftingSimulator.Squat.Unity;
 using UnityEngine;
 
 namespace PowerliftingSimulator.Tests
@@ -112,6 +113,48 @@ namespace PowerliftingSimulator.Tests
             Assert.That(parameters[1].ParameterType, Is.EqualTo(typeof(PowerliftingSimulator.Foundation.SimulationTime)));
             Assert.That(parameters[2].ParameterType, Is.EqualTo(typeof(PowerliftingSimulator.Foundation.PlayerIntentFrame)));
             Assert.That(parameters[3].ParameterType, Is.EqualTo(typeof(IPhysicalAthleteJointCommandSink)));
+        }
+
+        [Test]
+        public void GAM13_V23I_KNEE_IMPEDANCE_IS_DERIVED_FROM_MEASURED_LOCKOUT_ERROR()
+        {
+            const float measuredSpringTorqueNm = 97.98962f;
+            const float acceptableKneeErrorRad = 0.08726646f;
+            const float oldSpring = 800f;
+            const float oldDamper = 80f;
+            float derivedSpring = measuredSpringTorqueNm / acceptableKneeErrorRad;
+            float derivedDamper = oldDamper * Mathf.Sqrt(derivedSpring / oldSpring);
+            JointFamilyProfile knee = default;
+            int kneeProfiles = 0;
+
+            foreach (JointFamilyProfile profile in PoweredJointController.FamilyProfiles)
+            {
+                if (profile.Id != "knee")
+                    continue;
+                knee = profile;
+                kneeProfiles++;
+            }
+
+            Assert.That(kneeProfiles, Is.EqualTo(1));
+            Assert.That(knee.Spring, Is.EqualTo(derivedSpring).Within(0.5f));
+            Assert.That(knee.Damper, Is.EqualTo(derivedDamper).Within(0.1f));
+            Assert.That(knee.BaseCapacityNm, Is.EqualTo(540f), "This is a stiffness change, not strength calibration.");
+        }
+
+        [Test]
+        public void GAM13_V23I_STRENGTH_CALIBRATION_IS_ONE_SHARED_LOAD_INDEPENDENT_SCALE()
+        {
+            const float previousScale = 5.13f;
+            const float measuredSixtyKgPeakDemand = 0.1382715f;
+            const float athleteMassKg = 100f;
+            const float targetThreeHundredKgDemand = 1.05f;
+            float projectedThreeHundredDemandAtPreviousScale = measuredSixtyKgPeakDemand *
+                (athleteMassKg + 300f) / (athleteMassKg + 60f);
+            float derivedScale = previousScale * projectedThreeHundredDemandAtPreviousScale /
+                targetThreeHundredKgDemand;
+
+            Assert.That(SquatPhysicalAdapter.AthleteStrengthScale, Is.EqualTo(derivedScale).Within(0.001f));
+            Assert.That(SquatPhysicalAdapter.CapacityCalibrationVersion, Is.EqualTo("GAM13_SQUAT_CAPACITY_V3"));
         }
 
         private static bool IsFinitePositive(Vector3 value) =>
