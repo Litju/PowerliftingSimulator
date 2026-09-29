@@ -261,6 +261,40 @@ namespace PowerliftingSimulator.Tests
         }
 
         [Test]
+        public void WORLD_TRUNK_PITCH_ALONE_DOES_NOT_BLOCK_PHYSICAL_LOCKOUT()
+        {
+            List<SampleSpec> samples = GoodAttemptSamples();
+            for (int index = 9; index < samples.Count; index++)
+                samples[index].TrunkPitchRad = 0.60f;
+
+            SquatFailureDetector detector = new SquatFailureDetector();
+            SquatFailureResult result = detector.Evaluate(Trace(samples));
+
+            Assert.That(detector.PhysicalLockoutSeen, Is.True);
+            Assert.That(result.Outcome, Is.EqualTo(SquatFailureResultKind.NO_PHYSICAL_FAILURE));
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public void LOCAL_ABDOMEN_OR_THORAX_OUTSIDE_TOLERANCE_PREVENTS_PHYSICAL_LOCKOUT(bool abdomenOutside)
+        {
+            List<SampleSpec> samples = SamplesForTopRegionWithoutLockout(30);
+            float outsideTolerance = SquatFailureCalibration.Default.LockoutTrunkToleranceRadians + 0.01f;
+            for (int index = 9; index < samples.Count; index++)
+            {
+                samples[index].AbdomenAngleRad = abdomenOutside ? outsideTolerance : 0f;
+                samples[index].ThoraxAngleRad = abdomenOutside ? 0f : outsideTolerance;
+            }
+
+            SquatTrace trace = Trace(samples);
+            SquatFailureDetector detector = new SquatFailureDetector();
+            SquatFailureResult result = detector.Evaluate(trace, TerminalAtLastSample(trace));
+
+            Assert.That(detector.PhysicalLockoutSeen, Is.False);
+            Assert.That(result.FailureRecord.PrimaryFailureKind, Is.EqualTo(SquatFailureKind.FAILED_LOCKOUT));
+        }
+
+        [Test]
         public void CRITICAL_JOINT_LIMIT_IS_A_POSTURE_DETAIL()
         {
             List<SampleSpec> samples = GoodAttemptSamples();
@@ -1333,8 +1367,32 @@ namespace PowerliftingSimulator.Tests
                     1f,
                     1f)
                 : SquatJointObservation.Unavailable();
+            SquatJointObservation abdomen = spec.JointsAvailable
+                ? SquatJointObservation.Available(
+                    spec.AbdomenAngleRad,
+                    new Vector3Value(0f, 0f, 0f),
+                    0f,
+                    spec.AbdomenAngleRad,
+                    spec.LimitProximity,
+                    spec.ModeledDemand,
+                    100f,
+                    1f,
+                    1f)
+                : SquatJointObservation.Unavailable();
+            SquatJointObservation thorax = spec.JointsAvailable
+                ? SquatJointObservation.Available(
+                    spec.ThoraxAngleRad,
+                    new Vector3Value(0f, 0f, 0f),
+                    0f,
+                    spec.ThoraxAngleRad,
+                    spec.LimitProximity,
+                    spec.ModeledDemand,
+                    100f,
+                    1f,
+                    1f)
+                : SquatJointObservation.Unavailable();
             SquatJointObservationSet joints = new SquatJointObservationSet(
-                joint, joint, joint, joint, joint, joint, joint, joint);
+                joint, joint, joint, joint, joint, joint, abdomen, thorax);
             SquatFootObservation foot = spec.FootAvailable
                 ? SquatFootObservation.Available(spec.FootContact, spec.FootContact ? 1 : 0, 1, 0f, 0f)
                 : SquatFootObservation.Unavailable();
@@ -1381,7 +1439,9 @@ namespace PowerliftingSimulator.Tests
                 spec.PelvisAvailable
                     ? new Vector3Value(0f, spec.PelvisVelocityY, 0f)
                     : SquatTelemetryValue.UnavailableVector3,
-                spec.TrunkAvailable ? QuaternionValue.Identity : SquatTelemetryValue.UnavailableQuaternion,
+                spec.TrunkAvailable
+                    ? QuaternionValue.FromAxisAngleRadians(CoordinateContract.RightAxis, -spec.TrunkPitchRad)
+                    : SquatTelemetryValue.UnavailableQuaternion,
                 spec.TrunkAvailable ? spec.TrunkPitchRad : float.NaN,
                 spec.DriveAvailable
                     ? SquatTelemetryAvailability.AVAILABLE
@@ -1415,6 +1475,8 @@ namespace PowerliftingSimulator.Tests
             public float RightDepthM = -0.02f;
             public float KneeAngleRad;
             public float TrunkPitchRad;
+            public float AbdomenAngleRad;
+            public float ThoraxAngleRad;
             public float LimitProximity;
             public float ModeledDemand;
             public float LoadKg = 25f;

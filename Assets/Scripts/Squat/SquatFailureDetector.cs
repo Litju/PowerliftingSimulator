@@ -2329,8 +2329,21 @@ namespace PowerliftingSimulator.Squat
             if (MaxKneeAngle(snapshot) > _calibration.LockoutKneeToleranceRadians ||
                 MaxHipAngle(snapshot) > _calibration.LockoutHipToleranceRadians)
                 return false;
-            return TryGetMaxTrunkAngle(snapshot, out float trunkAngle) &&
+            return TryGetMaxLocalTrunkAngle(snapshot, out float trunkAngle) &&
                 trunkAngle <= _calibration.LockoutTrunkToleranceRadians;
+        }
+
+        private static bool TryGetMaxLocalTrunkAngle(SquatObservationSnapshot snapshot, out float angle)
+        {
+            angle = 0f;
+            if (snapshot.Joints.Abdomen.JointAvailability != SquatTelemetryAvailability.AVAILABLE ||
+                snapshot.Joints.Thorax.JointAvailability != SquatTelemetryAvailability.AVAILABLE)
+                return false;
+
+            angle = Math.Max(
+                Math.Abs(snapshot.Joints.Abdomen.ActualAngleRadians),
+                Math.Abs(snapshot.Joints.Thorax.ActualAngleRadians));
+            return true;
         }
 
         private bool IsLegalBottom(SquatObservationSnapshot snapshot)

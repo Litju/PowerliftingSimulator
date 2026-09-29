@@ -217,6 +217,36 @@ namespace PowerliftingSimulator.Tests
         }
 
         [Test]
+        public void PHYSICAL_LOCKOUT_USES_LOCAL_TRUNK_ANGLES_INSTEAD_OF_WORLD_PITCH()
+        {
+            SquatObservationSnapshot standing = Snapshot(0ul, 1.02f, 0f, -0.02f, -0.02f, 0f);
+            SquatObservationSnapshot snapshot = Snapshot(
+                1ul, 1.02f, 0f, -0.02f, -0.02f, 0f,
+                trunkWorldPitchRad: 0.60f,
+                abdomenAngleRad: 0.05f,
+                thoraxAngleRad: -0.04f);
+
+            Assert.That(
+                SquatAttemptPhysicalEvidence.IsLockout(snapshot, standing),
+                Is.True,
+                "A world-trunk pitch outside the lockout tolerance must not override passing local abdomen/thorax angles.");
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public void PHYSICAL_LOCKOUT_REJECTS_EITHER_LOCAL_TRUNK_ANGLE_OUTSIDE_TOLERANCE(bool abdomenOutside)
+        {
+            float outsideTolerance = SquatFailureCalibration.Default.LockoutTrunkToleranceRadians + 0.01f;
+            SquatObservationSnapshot standing = Snapshot(0ul, 1.02f, 0f, -0.02f, -0.02f, 0f);
+            SquatObservationSnapshot snapshot = Snapshot(
+                1ul, 1.02f, 0f, -0.02f, -0.02f, 0f,
+                abdomenAngleRad: abdomenOutside ? outsideTolerance : 0f,
+                thoraxAngleRad: abdomenOutside ? 0f : outsideTolerance);
+
+            Assert.That(SquatAttemptPhysicalEvidence.IsLockout(snapshot, standing), Is.False);
+        }
+
+        [Test]
         public void LIFECYCLE_IS_THE_TERMINAL_CONTEXT_AUTHORITY_FOR_PHYSICAL_FAILURE()
         {
             SquatTrace trace = BuildTrace();
@@ -408,7 +438,10 @@ namespace PowerliftingSimulator.Tests
             float kneeAngleRad,
             bool barAvailable = true,
             bool saddleBroken = false,
-            bool hasSupport = true)
+            bool hasSupport = true,
+            float trunkWorldPitchRad = 0f,
+            float abdomenAngleRad = 0f,
+            float thoraxAngleRad = 0f)
         {
             double time = tick * StepSeconds;
             PlayerIntentFrame intent = new PlayerIntentFrame(
@@ -466,6 +499,26 @@ namespace PowerliftingSimulator.Tests
                 100f,
                 1f,
                 1f);
+            SquatJointObservation abdomen = SquatJointObservation.Available(
+                abdomenAngleRad,
+                new Vector3Value(0f, 0f, 0f),
+                0f,
+                abdomenAngleRad,
+                0f,
+                0f,
+                100f,
+                1f,
+                1f);
+            SquatJointObservation thorax = SquatJointObservation.Available(
+                thoraxAngleRad,
+                new Vector3Value(0f, 0f, 0f),
+                0f,
+                thoraxAngleRad,
+                0f,
+                0f,
+                100f,
+                1f,
+                1f);
             SquatJointObservationSet joints = new SquatJointObservationSet(
                 joint,
                 joint,
@@ -473,8 +526,8 @@ namespace PowerliftingSimulator.Tests
                 joint,
                 SquatJointObservation.Available(0f, new Vector3Value(0f, 0f, 0f), 0f, 0f, 0f, 0f, 100f, 1f, 1f),
                 SquatJointObservation.Available(0f, new Vector3Value(0f, 0f, 0f), 0f, 0f, 0f, 0f, 100f, 1f, 1f),
-                joint,
-                joint);
+                abdomen,
+                thorax);
             return new SquatObservationSnapshot(
                 tick,
                 time,
@@ -497,8 +550,8 @@ namespace PowerliftingSimulator.Tests
                 joints,
                 new Vector3Value(0f, barY, 0f),
                 new Vector3Value(0f, barVelocityY, 0f),
-                QuaternionValue.Identity,
-                0f,
+                QuaternionValue.FromAxisAngleRadians(CoordinateContract.RightAxis, -trunkWorldPitchRad),
+                trunkWorldPitchRad,
                 SquatTelemetryAvailability.AVAILABLE,
                 false,
                 0f,

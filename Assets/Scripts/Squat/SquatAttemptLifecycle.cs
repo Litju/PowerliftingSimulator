@@ -586,7 +586,7 @@ namespace PowerliftingSimulator.Squat
                 MaxHipAngle(snapshot) > values.LockoutHipToleranceRadians)
                 return false;
 
-            return TryGetMaxTrunkAngle(snapshot, out float trunkAngle) &&
+            return TryGetMaxLocalTrunkAngle(snapshot, out float trunkAngle) &&
                 trunkAngle <= values.LockoutTrunkToleranceRadians;
         }
 
@@ -598,26 +598,17 @@ namespace PowerliftingSimulator.Squat
             Math.Abs(snapshot.Joints.LeftHip.ActualAngleRadians),
             Math.Abs(snapshot.Joints.RightHip.ActualAngleRadians));
 
-        private static bool TryGetMaxTrunkAngle(SquatObservationSnapshot snapshot, out float angle)
+        private static bool TryGetMaxLocalTrunkAngle(SquatObservationSnapshot snapshot, out float angle)
         {
-            bool has = false;
             angle = 0f;
-            if (snapshot.TrunkAvailability == SquatTelemetryAvailability.AVAILABLE)
-            {
-                angle = Math.Abs(snapshot.TrunkWorldPitchRadians);
-                has = true;
-            }
-            if (snapshot.Joints.Abdomen.JointAvailability == SquatTelemetryAvailability.AVAILABLE)
-            {
-                angle = Math.Max(angle, Math.Abs(snapshot.Joints.Abdomen.ActualAngleRadians));
-                has = true;
-            }
-            if (snapshot.Joints.Thorax.JointAvailability == SquatTelemetryAvailability.AVAILABLE)
-            {
-                angle = Math.Max(angle, Math.Abs(snapshot.Joints.Thorax.ActualAngleRadians));
-                has = true;
-            }
-            return has;
+            if (snapshot.Joints.Abdomen.JointAvailability != SquatTelemetryAvailability.AVAILABLE ||
+                snapshot.Joints.Thorax.JointAvailability != SquatTelemetryAvailability.AVAILABLE)
+                return false;
+
+            angle = Math.Max(
+                Math.Abs(snapshot.Joints.Abdomen.ActualAngleRadians),
+                Math.Abs(snapshot.Joints.Thorax.ActualAngleRadians));
+            return true;
         }
     }
 }
