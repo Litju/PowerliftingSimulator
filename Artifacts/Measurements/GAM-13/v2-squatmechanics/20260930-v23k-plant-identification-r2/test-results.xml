@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-30 07:32:10Z" end-time="2026-09-30 07:32:15Z" duration="4.9351398">
+  <test-suite type="TestSuite" id="1336" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="251" result="Passed" start-time="2026-09-30 07:32:10Z" end-time="2026-09-30 07:32:15Z" duration="4.935140" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1330" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="E:/Data/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="251" result="Passed" start-time="2026-09-30 07:32:10Z" end-time="2026-09-30 07:32:15Z" duration="4.924089" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="20072" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1331" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="251" result="Passed" start-time="2026-09-30 07:32:10Z" end-time="2026-09-30 07:32:15Z" duration="4.921943" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1332" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="251" result="Passed" start-time="2026-09-30 07:32:10Z" end-time="2026-09-30 07:32:15Z" duration="4.920536" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1107" name="GAM13V23KPlantIdentificationTests" fullname="PowerliftingSimulator.Tests.GAM13V23KPlantIdentificationTests" classname="PowerliftingSimulator.Tests.GAM13V23KPlantIdentificationTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-30 07:32:10Z" end-time="2026-09-30 07:32:15Z" duration="4.914258" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1108" name="GAM13_V23K_PAIRED_SAGITTAL_PLANT_IDENTIFICATION" fullname="PowerliftingSimulator.Tests.GAM13V23KPlantIdentificationTests.GAM13_V23K_PAIRED_SAGITTAL_PLANT_IDENTIFICATION" methodname="GAM13_V23K_PAIRED_SAGITTAL_PLANT_IDENTIFICATION" classname="PowerliftingSimulator.Tests.GAM13V23KPlantIdentificationTests" runstate="Runnable" seed="1407332747" result="Passed" start-time="2026-09-30 07:32:10Z" end-time="2026-09-30 07:32:15Z" duration="4.894720" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[GAM13_V23K channel=ankle G_com_z=-0.00378211052m/rad delta_com=-0.000132020563m delta_bar_z=-0.000137171155m delta_cop_ap=0.00680830562m direction=NEGATIVE_TARGET headroom=0.7100109rad
+GAM13_V23K channel=hip G_com_z=0.00263771252m/rad delta_com=9.207353E-05m delta_bar_z=-7.25477948E-05m delta_cop_ap=0.00045684725m direction=POSITIVE_TARGET headroom=0.9937694rad
+GAM13_V23K channel=trunk G_com_z=-0.005805405m/rad delta_com=-0.000202646857m delta_bar_z=-0.000410686422m delta_cop_ap=0.00109288027m direction=NEGATIVE_TARGET headroom=0.5376258rad
+Saving results to: C:/Users/Usuario/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
