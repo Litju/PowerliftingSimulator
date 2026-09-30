@@ -74,6 +74,18 @@ namespace PowerliftingSimulator.Tests
                 Path.ChangeExtension(tracePath, ".actuators.csv");
             var actuatorTrace = new GAM13V2ActuatorTrace();
             var trace = new StringBuilder();
+            var firstComOutsideSupportLatch = new StringBuilder();
+            firstComOutsideSupportLatch.AppendLine(
+                "load_kg,input_tick,latch_tick,phase_before_latch,direction_before_latch,sq_before_latch,state_after_latch," +
+                "system_com_x_m,system_com_y_m,system_com_z_m,system_com_vx_mps,system_com_vy_mps,system_com_vz_mps," +
+                "support_center_x_m,support_center_y_m,support_center_z_m,ap_front_margin_m,ap_rear_margin_m,ml_left_margin_m,ml_right_margin_m," +
+                "frozen_standing_com_offset_ap_m,frozen_standing_com_offset_ml_m,current_ap_reference_error_m,current_ml_reference_error_m," +
+                "raw_ap_command_rad,raw_ml_command_rad,applied_ap_correction_rad,applied_ml_correction_rad,ap_saturated,ml_saturated," +
+                "ankle_ap_offset_rad,ankle_ml_offset_rad,hip_ap_offset_rad,hip_ml_offset_rad,trunk_ap_offset_rad," +
+                "cop_available,cop_ap_m,cop_ml_m,left_foot_contact,right_foot_contact,left_foot_slip_mps,right_foot_slip_mps," +
+                "bar_x_m,bar_y_m,bar_z_m,bar_vx_mps,bar_vy_mps,bar_vz_mps," +
+                "maximum_active_joint_demand_nm,worst_demand_joint,worst_demand_channel,worst_demand_fraction," +
+                "maximum_joint_anchor_separation_m,saddle_attached,saddle_broken,saddle_separation_m,saddle_limit_occupancy,saddle_relative_rotation_deg");
             trace.AppendLine("load_kg,tick,time_s,phase,direction,legal_depth,legal_depth_reached,depth_left_m,depth_right_m,worst_side_depth_m,descent_tick,reversal_tick,ascent_tick,lockout,physical_failure,physical_failure_reason,bar_y_m,bar_vx_mps,bar_vy_mps,bar_vz_mps,support_available,support_present,support_contact_count,left_foot_contact,right_foot_contact,left_foot_slip_mps,right_foot_slip_mps,ap_front_margin_m,ap_rear_margin_m,ml_left_margin_m,ml_right_margin_m,joint_limit_proximity,worst_limit_joint,saddle_attached,saddle_separation_m,saddle_initial_anchor_error_m,saddle_linear_limit_occupancy,saddle_relative_rotation_deg,saddle_is_broken,lockout_qualified,lockout_failed_predicates,lockout_reference_bar_y_m,lockout_bar_linear_speed_mps,lockout_bar_angular_speed_rad_s,lockout_max_knee_angle_rad,lockout_max_hip_angle_rad,lockout_max_local_trunk_angle_rad,lockout_height_tolerance_m,lockout_bar_speed_tolerance_mps,lockout_bar_angular_speed_tolerance_rad_s,lockout_knee_tolerance_rad,lockout_hip_tolerance_rad,lockout_trunk_tolerance_rad");
 
             AsyncOperation loadScene = SceneManager.LoadSceneAsync(QualificationScene, LoadSceneMode.Single);
@@ -176,10 +188,36 @@ namespace PowerliftingSimulator.Tests
             ulong? peakAscentDemandTick = null;
             bool bottomCaptured = false;
             int mechanicsTicks = 0;
+            string firstComOutsideSupportLatchPath = Path.Combine(
+                Path.GetDirectoryName(Path.GetFullPath(tracePath)), "first-com-outside-support-latch.csv");
+            bool capturedComOutsideSupportLatch = false;
 
             while (!lockout && !physicalFailure && mechanicsTicks < MaximumMechanicsTicks)
             {
                 SquatState phaseBeforeStep = controller.Adapter.State;
+                SquatPhaseDirection directionBeforeStep = controller.Adapter.Direction;
+                float sqBeforeStep = controller.Adapter.Sq;
+                SquatObservationSnapshot latchInput = controller.ObservationCollector.LastSnapshot;
+                bool copAvailable = controller.Adapter.Balance.HasCopEstimate;
+                Vector3 cop = controller.Adapter.Balance.CopEstimate;
+                MeasureMaximumActiveJointDemand(
+                    rig.PoweredController,
+                    out float maximumActiveJointDemandNm,
+                    out string worstDemandJoint,
+                    out string worstDemandChannel,
+                    out float worstDemandFraction);
+                GAM13V2StandingQualificationTests.MeasureConstraintHealth(
+                    rig, out float maximumJointAnchorSeparationM, out _, out _);
+                SquatBarSaddle saddleBeforeStep = controller.Saddle;
+                float saddleSeparationM = saddleBeforeStep != null
+                    ? saddleBeforeStep.SaddleSeparationMeters
+                    : float.NaN;
+                float saddleLimitOccupancy = saddleBeforeStep != null
+                    ? saddleBeforeStep.CurrentLinearLimitOccupancy
+                    : float.NaN;
+                float saddleRelativeRotationDegrees = saddleBeforeStep != null
+                    ? saddleBeforeStep.RelativeRotationDegrees
+                    : float.NaN;
                 if (!bottomOrReversalContextTick.HasValue && hasDescent &&
                     (phaseBeforeStep == SquatState.BOTTOM || phaseBeforeStep == SquatState.REVERSAL))
                 {
@@ -250,6 +288,31 @@ namespace PowerliftingSimulator.Tests
 
                 physicalFailureReason = FindPhysicalFailure(controller, snapshot);
                 physicalFailure = physicalFailureReason != "NONE";
+                if (!capturedComOutsideSupportLatch &&
+                    string.Equals(controller.Adapter.FailureReason, "COM_OUTSIDE_SUPPORT", StringComparison.Ordinal))
+                {
+                    AppendComOutsideSupportLatch(
+                        firstComOutsideSupportLatch,
+                        loadKg,
+                        runtime.CurrentTime.Tick,
+                        phaseBeforeStep,
+                        directionBeforeStep,
+                        sqBeforeStep,
+                        latchInput,
+                        controller,
+                        copAvailable,
+                        cop,
+                        maximumActiveJointDemandNm,
+                        worstDemandJoint,
+                        worstDemandChannel,
+                        worstDemandFraction,
+                        maximumJointAnchorSeparationM,
+                        saddleBeforeStep,
+                        saddleSeparationM,
+                        saddleLimitOccupancy,
+                        saddleRelativeRotationDegrees);
+                    capturedComOutsideSupportLatch = true;
+                }
                 if (physicalFailure)
                     actuatorTrace.Mark(snapshot.SimulationTick, "PHYSICAL_FAILURE");
                 if (controller.Adapter.LockoutReached && !lockoutStartTick.HasValue)
@@ -289,6 +352,7 @@ namespace PowerliftingSimulator.Tests
                 actuatorTrace.Mark(peakAscentDemandTick.Value, "PEAK_ASCENT_DEMAND");
             SaveTrace(tracePath, trace);
             actuatorTrace.Save(actuatorTracePath);
+            File.WriteAllText(firstComOutsideSupportLatchPath, firstComOutsideSupportLatch.ToString(), new UTF8Encoding(false));
             Assert.That(lockout || physicalFailure, Is.True,
                 "The adapter did not reach a physical lockout or report a physical mechanics failure.");
             if (reversalTick.HasValue)
@@ -302,6 +366,99 @@ namespace PowerliftingSimulator.Tests
                 "GAM13_V2_SQUAT_MECHANICS load={0:F1}kg PHYSICAL_STANDING_QUALIFIED=true legal_physical_depth={1} descent_tick={2} reversal_tick={3} ascent_tick={4} lockout={5} physical_failure={6} physical_failure_reason={7} trace={8} actuators={9}",
                 loadKg, legalDepthReached, Tick(descentTick), Tick(reversalTick), Tick(ascentTick),
                 lockout, physicalFailure, physicalFailureReason, tracePath, actuatorTracePath));
+        }
+
+        private static void AppendComOutsideSupportLatch(
+            StringBuilder trace,
+            float loadKg,
+            ulong latchTick,
+            SquatState phaseBeforeLatch,
+            SquatPhaseDirection directionBeforeLatch,
+            float sqBeforeLatch,
+            SquatObservationSnapshot input,
+            SquatPhysicalPrototypeController controller,
+            bool copAvailable,
+            Vector3 cop,
+            float maximumActiveJointDemandNm,
+            string worstDemandJoint,
+            string worstDemandChannel,
+            float worstDemandFraction,
+            float maximumJointAnchorSeparationM,
+            SquatBarSaddle saddle,
+            float saddleSeparationM,
+            float saddleLimitOccupancy,
+            float saddleRelativeRotationDegrees)
+        {
+            SquatSupportObservation support = input.Support;
+            SquatBalanceCorrectionV2 correction = controller.Adapter.BalanceCorrectionV2;
+            Vector3Value com = support.SystemComWorldMeters;
+            Vector3Value comVelocity = support.SystemComVelocityWorldMetersPerSecond;
+            Vector3Value supportCenter = support.SupportCenterWorldMeters;
+            Vector3Value barPosition = input.Bar.PositionWorldMeters;
+            Vector3Value barVelocity = input.Bar.LinearVelocityWorldMetersPerSecond;
+            trace.AppendLine(string.Join(",", new[]
+            {
+                Format(loadKg), Tick(input.SimulationTick), Tick(latchTick), phaseBeforeLatch.ToString(),
+                directionBeforeLatch.ToString(), Format(sqBeforeLatch), controller.Adapter.State.ToString(),
+                Format(com.X), Format(com.Y), Format(com.Z),
+                Format(comVelocity.X), Format(comVelocity.Y), Format(comVelocity.Z),
+                Format(supportCenter.X), Format(supportCenter.Y), Format(supportCenter.Z),
+                Format(support.ComToSupportApFrontMarginM), Format(support.ComToSupportApRearMarginM),
+                Format(support.ComToSupportMlLeftMarginM), Format(support.ComToSupportMlRightMarginM),
+                Format(controller.Adapter.ReferenceComOffsetAp), Format(controller.Adapter.ReferenceComOffsetMl),
+                Format(correction.ErrorApM), Format(correction.ErrorMlM),
+                Format(correction.CommandApRad), Format(correction.CommandMlRad),
+                Format(correction.AppliedApRad), Format(correction.AppliedMlRad),
+                correction.IsApBoundSaturated ? "true" : "false",
+                correction.IsMlBoundSaturated ? "true" : "false",
+                Format(correction.AnkleApRad), Format(correction.AnkleMlRad),
+                Format(correction.HipApRad), Format(correction.HipMlRad), Format(correction.TrunkApRad),
+                copAvailable ? "true" : "false", copAvailable ? Format(cop.z) : "NA", copAvailable ? Format(cop.x) : "NA",
+                input.LeftFoot.IsInContact ? "true" : "false", input.RightFoot.IsInContact ? "true" : "false",
+                Format(input.LeftFoot.SlipSpeedMetersPerSecond), Format(input.RightFoot.SlipSpeedMetersPerSecond),
+                Format(barPosition.X), Format(barPosition.Y), Format(barPosition.Z),
+                Format(barVelocity.X), Format(barVelocity.Y), Format(barVelocity.Z),
+                Format(maximumActiveJointDemandNm), worstDemandJoint, worstDemandChannel, Format(worstDemandFraction),
+                Format(maximumJointAnchorSeparationM),
+                saddle != null && saddle.IsAttached ? "true" : "false",
+                saddle == null || saddle.IsBroken ? "true" : "false",
+                Format(saddleSeparationM), Format(saddleLimitOccupancy), Format(saddleRelativeRotationDegrees)
+            }));
+        }
+
+        private static void MeasureMaximumActiveJointDemand(
+            PoweredJointController poweredController,
+            out float maximumDemandNm,
+            out string worstJoint,
+            out string worstChannel,
+            out float worstDemandFraction)
+        {
+            maximumDemandNm = 0f;
+            worstJoint = "NONE";
+            worstChannel = "NONE";
+            worstDemandFraction = 0f;
+            foreach (PoweredJointController.PoweredJointRuntime joint in poweredController.Joints)
+            {
+                if (!joint.Profile.HasValue || !joint.HasPostPhysicsDiagnostic)
+                    continue;
+                PoweredJointDiagnostic diagnostic = joint.PostPhysicsDiagnostic;
+                if (diagnostic.TwistDriveDemandNm > maximumDemandNm)
+                {
+                    maximumDemandNm = diagnostic.TwistDriveDemandNm;
+                    worstJoint = joint.Id;
+                    worstChannel = "twist_x";
+                    worstDemandFraction = diagnostic.TwistDriveDemandFraction;
+                }
+                if (joint.Recipe.Kind == PhysicalJointKind.Ball &&
+                    float.IsFinite(diagnostic.SwingDriveDemandNm) &&
+                    diagnostic.SwingDriveDemandNm > maximumDemandNm)
+                {
+                    maximumDemandNm = diagnostic.SwingDriveDemandNm;
+                    worstJoint = joint.Id;
+                    worstChannel = "swing_yz";
+                    worstDemandFraction = diagnostic.SwingDriveDemandFraction;
+                }
+            }
         }
 
         private static bool IsPhysicalStandingQualified(
