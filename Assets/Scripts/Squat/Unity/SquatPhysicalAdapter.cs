@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using PowerliftingSimulator.Athlete;
 using PowerliftingSimulator.Foundation;
 using PowerliftingSimulator.Squat;
@@ -43,6 +44,9 @@ namespace PowerliftingSimulator.Squat.Unity
         private readonly PhysicalAthleteRig.SegmentRuntime[] _segments;
         private readonly SquatReferenceProfile _profile;
         private readonly ReferenceTargetFrame[] _referenceTargets;
+        private readonly float[] _referenceComOffsetApSamples = new float[ReferenceTargetSampleCount];
+        private readonly ReferenceBodyPose[] _referenceBodyPoses = new ReferenceBodyPose[PhysicalAthleteDefinition.Segments.Count];
+        private readonly Dictionary<string, int> _segmentIndexes = new Dictionary<string, int>(StringComparer.Ordinal);
         private SquatReferenceRigCalibration _referenceCalibration;
         private SquatDepthLandmarkProvider _depthLandmarkProvider;
         private const int ReferenceTargetSampleCount = 101;
@@ -105,6 +109,8 @@ namespace PowerliftingSimulator.Squat.Unity
             int index = 0;
             foreach (PhysicalAthleteRig.SegmentRuntime segment in _rig.Segments.Values)
                 _segments[index++] = segment;
+            for (int segmentIndex = 0; segmentIndex < PhysicalAthleteDefinition.Segments.Count; segmentIndex++)
+                _segmentIndexes.Add(PhysicalAthleteDefinition.Segments[segmentIndex].Id, segmentIndex);
             _observer = new SquatBalanceObserver(_rig, _segments);
             _referenceTargets = BuildReferenceTargetTable();
             CalibrateFamilyFlexionSigns();
@@ -296,9 +302,88 @@ namespace PowerliftingSimulator.Squat.Unity
             Vector3 supportCenter = CanonicalPlantarSupportCenter;
             Vector3 systemCom = _observer.MeasureCurrentSystemCom(_saddle);
             _referenceSupportCenter = supportCenter;
-            _referenceComOffsetAp = systemCom.z - supportCenter.z;
+            CaptureReferenceComOffsetSamples(supportCenter);
+            _referenceComOffsetAp = _referenceComOffsetApSamples[0];
             _referenceComOffsetMl = systemCom.x - supportCenter.x;
             _hasStandingComReference = true;
+        }
+
+        private void CaptureReferenceComOffsetSamples(Vector3 supportCenter)
+        {
+            float barMassKg = _saddle != null && _saddle.IsAttached && _saddle.Barbell != null &&
+                _saddle.Barbell.Body != null && _saddle.Barbell.Body.gameObject.activeInHierarchy
+                ? _saddle.Barbell.Body.mass
+                : 0f;
+
+            for (int sampleIndex = 0; sampleIndex < _referenceComOffsetApSamples.Length; sampleIndex++)
+            {
+                float phase = sampleIndex / (float)(_referenceComOffsetApSamples.Length - 1);
+                SquatReferenceKinematicSolution solution = SquatReferenceKinematics.Solve(
+                    _referenceCalibration,
+                    _profile.Evaluate(phase, SquatPhaseDirection.Descent),
+                    LeftReferencePlantarAnchorWorld,
+                    RightReferencePlantarAnchorWorld);
+                if (!solution.IsValid)
+                    throw new InvalidOperationException(
+                        $"Cannot derive the phase COM reference at {phase:F2}: {solution.RejectionReason}");
+
+                Vector3 systemCom = MeasureReferenceSystemCom(_referenceTargets[sampleIndex], solution, barMassKg);
+                _referenceComOffsetApSamples[sampleIndex] = systemCom.z - supportCenter.z;
+            }
+        }
+
+        private Vector3 MeasureReferenceSystemCom(
+            ReferenceTargetFrame reference,
+            SquatReferenceKinematicSolution solution,
+            float barMassKg)
+        {
+            Vector3 weightedPosition = Vector3.zero;
+            float totalMassKg = 0f;
+            for (int index = 0; index < PhysicalAthleteDefinition.Segments.Count; index++)
+            {
+                PhysicalSegmentRecipe recipe = PhysicalAthleteDefinition.Segments[index];
+                PhysicalAthleteRig.SegmentRuntime segment = _rig.Segments[recipe.Id];
+                Quaternion rotation;
+                Vector3 position;
+                if (recipe.ParentId == null)
+                {
+                    rotation = reference.PelvisBodyRotation;
+                    position = solution.PelvisBonePosition + recipe.FixedCenterOffsetMeters;
+                }
+                else
+                {
+                    ReferenceBodyPose parent = _referenceBodyPoses[_segmentIndexes[recipe.ParentId]];
+                    PoweredJointController.PoweredJointRuntime joint = _rig.PoweredController.GetJoint(recipe.Id);
+                    rotation = parent.Rotation * PoweredJointController.ToParentChildRelativeRotation(
+                        joint.NeutralParentToChild,
+                        joint.JointSpace,
+                        recipe.Id == "head_neck" ? Quaternion.identity : reference.ForJoint(recipe.Id));
+                    Vector3 parentAnchor = parent.Position + parent.Rotation * joint.Joint.connectedAnchor;
+                    position = parentAnchor - rotation * joint.Joint.anchor;
+                }
+
+                _referenceBodyPoses[index] = new ReferenceBodyPose(position, rotation);
+                weightedPosition += position * segment.Body.mass;
+                totalMassKg += segment.Body.mass;
+            }
+
+            if (barMassKg > 0f && _saddle != null)
+            {
+                ReferenceBodyPose thorax = _referenceBodyPoses[_segmentIndexes["thorax"]];
+                Vector3 barCenter = thorax.Position + thorax.Rotation * SquatBarSaddle.ThoraxLocalAnchor;
+                weightedPosition += barCenter * barMassKg;
+                totalMassKg += barMassKg;
+            }
+
+            return totalMassKg > 0f ? weightedPosition / totalMassKg : Vector3.zero;
+        }
+
+        private float ReferenceComOffsetApAtPhase(float phase)
+        {
+            float scaled = Mathf.Clamp01(phase) * (_referenceComOffsetApSamples.Length - 1);
+            int lower = Mathf.FloorToInt(scaled);
+            int upper = Mathf.Min(_referenceComOffsetApSamples.Length - 1, lower + 1);
+            return Mathf.Lerp(_referenceComOffsetApSamples[lower], _referenceComOffsetApSamples[upper], scaled - lower);
         }
 
         public void SetState(SquatState state)
@@ -355,6 +440,7 @@ namespace PowerliftingSimulator.Squat.Unity
 #endif
             _referenceComOffsetAp = 0f;
             _referenceComOffsetMl = 0f;
+            Array.Clear(_referenceComOffsetApSamples, 0, _referenceComOffsetApSamples.Length);
             _referenceSupportCenter = Vector3.zero;
             _hasStandingComReference = false;
             _composition.Clear();
@@ -430,6 +516,7 @@ namespace PowerliftingSimulator.Squat.Unity
             if (!_autoCycle && _qualificationPhaseVelocity != 0f)
                 _phaseVelocity = _qualificationPhaseVelocity;
 #endif
+            _referenceComOffsetAp = ReferenceComOffsetApAtPhase(_sq);
             ComputeComAndSupport(previousObservation);
             _lastBalanceCorrection = _balanceV2.Solve(
                 _systemCom,
@@ -1080,6 +1167,18 @@ namespace PowerliftingSimulator.Squat.Unity
         /// feed-forward target velocity the drive expects, rather than the
         /// zero the adapter used to send while the reference was moving.
         /// </summary>
+        private readonly struct ReferenceBodyPose
+        {
+            public ReferenceBodyPose(Vector3 position, Quaternion rotation)
+            {
+                Position = position;
+                Rotation = rotation;
+            }
+
+            public Vector3 Position { get; }
+            public Quaternion Rotation { get; }
+        }
+
         private readonly struct ReferenceRateFrame
         {
             public ReferenceRateFrame(

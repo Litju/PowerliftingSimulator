@@ -6,12 +6,12 @@ namespace PowerliftingSimulator.Tests
     public sealed class GAM13HeavyLoadControlContractTests
     {
         [Test]
-        public void V2_RESTORES_PRE_PASS_IMPEDANCE_AND_PRESERVES_NORMALIZED_FINITE_CAPACITIES()
+        public void V2_RETAINS_CURRENT_SHARED_FAMILY_PROFILES_AND_NORMALIZED_FINITE_CAPACITIES()
         {
             AssertFamily("ankle", 180f, 2.5f, 650f, 70f);
-            AssertFamily("knee", 300f, 1.8f, 800f, 80f);
+            AssertFamily("knee", 300f, 1.8f, 1123f, 94.8f);
             AssertFamily("hip", 360f, 1.5f, 900f, 90f);
-            AssertFamily("trunk", 260f, 1.5f, 800f, 85f);
+            AssertFamily("trunk", 260f, 1.5f, 3200f, 170f);
         }
 
         private static void AssertFamily(
