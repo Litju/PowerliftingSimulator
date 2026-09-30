@@ -142,19 +142,11 @@ namespace PowerliftingSimulator.Tests
         }
 
         [Test]
-        public void GAM13_V23I_STRENGTH_CALIBRATION_IS_ONE_SHARED_LOAD_INDEPENDENT_SCALE()
+        public void GAM13_STRENGTH_SCALE_REMAINS_PRECALIBRATION_QUALIFICATION_AUTHORITY()
         {
-            const float previousScale = 5.13f;
-            const float measuredSixtyKgPeakDemand = 0.1382715f;
-            const float athleteMassKg = 100f;
-            const float targetThreeHundredKgDemand = 1.05f;
-            float projectedThreeHundredDemandAtPreviousScale = measuredSixtyKgPeakDemand *
-                (athleteMassKg + 300f) / (athleteMassKg + 60f);
-            float derivedScale = previousScale * projectedThreeHundredDemandAtPreviousScale /
-                targetThreeHundredKgDemand;
-
-            Assert.That(SquatPhysicalAdapter.AthleteStrengthScale, Is.EqualTo(derivedScale).Within(0.001f));
-            Assert.That(SquatPhysicalAdapter.CapacityCalibrationVersion, Is.EqualTo("GAM13_SQUAT_CAPACITY_V3"));
+            Assert.That(SquatPhysicalAdapter.AthleteStrengthScale, Is.EqualTo(5.13f));
+            Assert.That(SquatPhysicalAdapter.CapacityCalibrationVersion,
+                Is.EqualTo("GAM13_SQUAT_CAPACITY_QUALIFICATION_AUTHORITY_V1"));
         }
 
         private static bool IsFinitePositive(Vector3 value) =>

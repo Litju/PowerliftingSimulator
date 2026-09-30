@@ -7,10 +7,12 @@ namespace PowerliftingSimulator.Squat.Unity
     {
         public const int ActiveScalarCount = 14;
         public static readonly SquatComStabilizerV2Calibration Default = new SquatComStabilizerV2Calibration(
-            "GAM13_SQUAT_COM_STABILIZER_V2_2",
+            "GAM13_SQUAT_COM_STABILIZER_V2_3",
             0.80f / 0.20446f, (0.80f / 0.20446f) * 0.1f, 0.65f, 0.05f,
+            // V2-3K restores the 15-degree bound. Its measured proximal
+            // allocation failed both low-load support gates and was rejected.
             1.00f, 0.20f, 0.08f, 1.00f, 0.15f,
-            0.34907f, 0.05f, 4.0f, 0.40f, 0.02f);
+            0.26180f, 0.05f, 4.0f, 0.40f, 0.02f);
 
         public SquatComStabilizerV2Calibration(
             string version,

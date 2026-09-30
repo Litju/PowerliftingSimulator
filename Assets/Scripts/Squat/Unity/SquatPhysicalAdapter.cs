@@ -14,11 +14,11 @@ namespace PowerliftingSimulator.Squat.Unity
     /// </summary>
     public sealed class SquatPhysicalAdapter : IPhysicalAthleteCommandSource
     {
-        public const string CapacityCalibrationVersion = "GAM13_SQUAT_CAPACITY_V3";
-        // One shared scale derived from the unchanged 60 kg ascent: its 0.1382715
-        // peak channel demand projects to 0.34567875 at 300 kg by total mass;
-        // calibrating that boundary to 1.05 gives 5.13 * 0.34567875 / 1.05.
-        public const float AthleteStrengthScale = 1.689f;
+        public const string CapacityCalibrationVersion = "GAM13_SQUAT_CAPACITY_QUALIFICATION_AUTHORITY_V1";
+        // Restored pre-calibration qualification authority only. This is not a
+        // final calibrated strength value; defer final calibration until 140 kg
+        // and 170 kg reach comparable squat mechanics with observable drive demand.
+        public const float AthleteStrengthScale = 5.13f;
 #if UNITY_EDITOR
         public const float MaxBalanceCorrectionRad = 0.17453f; // 10 degrees; target offset only
         private const float MaxMlBalanceCorrectionRad = 0.03491f; // 2 degrees; bounded lateral target trim
@@ -240,6 +240,12 @@ namespace PowerliftingSimulator.Squat.Unity
         /// residual without replacing the stabilizing balance loop.
         /// </summary>
         public float AnkleSagittalOffsetAdditiveRad { get; set; }
+
+        /// <summary>Test-time sagittal residual added to both hip targets.</summary>
+        public float HipSagittalOffsetAdditiveRad { get; set; }
+
+        /// <summary>Test-time sagittal residual added to abdomen and thorax targets.</summary>
+        public float TrunkSagittalOffsetAdditiveRad { get; set; }
 #endif
 
         public void SetFootContactDetectors(
@@ -329,6 +335,8 @@ namespace PowerliftingSimulator.Squat.Unity
 #if UNITY_EDITOR
             ApFeedbackContributionEnabled = true;
             AnkleSagittalOffsetAdditiveRad = 0f;
+            HipSagittalOffsetAdditiveRad = 0f;
+            TrunkSagittalOffsetAdditiveRad = 0f;
 #endif
             _isCorrectionSaturated = false;
             _isDriveSaturated = false;
@@ -459,21 +467,25 @@ namespace PowerliftingSimulator.Squat.Unity
 
             float apFeedbackScale = 1f;
             float ankleProbeResidualRad = 0f;
+            float hipProbeResidualRad = 0f;
+            float trunkProbeResidualRad = 0f;
 #if UNITY_EDITOR
             apFeedbackScale = ApFeedbackContributionEnabled ? 1f : 0f;
             ankleProbeResidualRad = AnkleSagittalOffsetAdditiveRad;
+            hipProbeResidualRad = HipSagittalOffsetAdditiveRad;
+            trunkProbeResidualRad = TrunkSagittalOffsetAdditiveRad;
 #endif
             Quaternion ankleBalance = SagittalAndFrontal(
                 _lastBalanceCorrection.AnkleApRad * apFeedbackScale + ankleProbeResidualRad,
                 _lastBalanceCorrection.AnkleMlRad);
             Quaternion hipBalance = SagittalAndFrontal(
-                _lastBalanceCorrection.HipApRad * apFeedbackScale,
+                _lastBalanceCorrection.HipApRad * apFeedbackScale + hipProbeResidualRad,
                 _lastBalanceCorrection.HipMlRad);
             Quaternion abdomenBalance = SagittalAndFrontal(
-                _lastBalanceCorrection.TrunkApRad * apFeedbackScale,
+                _lastBalanceCorrection.TrunkApRad * apFeedbackScale + trunkProbeResidualRad,
                 0f);
             Quaternion thoraxBalance = SagittalAndFrontal(
-                _lastBalanceCorrection.TrunkApRad * apFeedbackScale,
+                _lastBalanceCorrection.TrunkApRad * apFeedbackScale + trunkProbeResidualRad,
                 0f);
 
             Quaternion leftAnkleTarget = Compose("left_foot", reference.LeftFoot, Quaternion.identity, ankleBalance);
