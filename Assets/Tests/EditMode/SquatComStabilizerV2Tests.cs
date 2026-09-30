@@ -10,14 +10,14 @@ namespace PowerliftingSimulator.Tests
         public void DEFAULT_CALIBRATION_IS_VERSIONED_AND_WITHIN_THE_PARAMETER_BUDGET()
         {
             SquatComStabilizerV2Calibration calibration = SquatComStabilizerV2Calibration.Default;
-            Assert.That(calibration.Version, Is.EqualTo("GAM13_SQUAT_COM_STABILIZER_V2_1"));
+            Assert.That(calibration.Version, Is.EqualTo("GAM13_SQUAT_COM_STABILIZER_V2_2"));
             Assert.That(SquatComStabilizerV2Calibration.ActiveScalarCount, Is.EqualTo(14));
             Assert.That(calibration.AnkleApWeight, Is.GreaterThan(calibration.HipApWeight));
             Assert.That(calibration.TrunkApCounterWeight, Is.GreaterThan(0f));
             Assert.That(calibration.AnkleMlWeight, Is.GreaterThan(calibration.HipMlWeight));
             Assert.That(calibration.KpAp, Is.EqualTo(0.80f / 0.20446f).Within(1e-6f));
             Assert.That(calibration.KdAp, Is.EqualTo(calibration.KpAp * 0.1f).Within(1e-6f));
-            Assert.That(calibration.MaxApCorrectionRad, Is.EqualTo(0.26180f).Within(1e-6f));
+            Assert.That(calibration.MaxApCorrectionRad, Is.EqualTo(0.34907f).Within(1e-6f));
             Assert.That(calibration.MaxApCorrectionRateRadS, Is.EqualTo(4f).Within(1e-6f));
         }
 
@@ -64,7 +64,7 @@ namespace PowerliftingSimulator.Tests
                     0.01f);
             }
 
-            Assert.That(correction.AppliedApRad, Is.EqualTo(0.26180f).Within(1e-6f));
+            Assert.That(correction.AppliedApRad, Is.EqualTo(0.34907f).Within(1e-6f));
             Assert.That(correction.AppliedMlRad, Is.EqualTo(-0.05f).Within(1e-6f));
             Assert.That(correction.IsBoundSaturated, Is.True);
             Assert.That(correction.IsApBoundSaturated, Is.True);
