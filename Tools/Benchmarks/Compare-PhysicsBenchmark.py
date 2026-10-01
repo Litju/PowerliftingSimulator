@@ -159,6 +159,8 @@ def cmd_manifest(args):
             "solver_type": yaml_value(dynamics, "m_SolverType"),
             "friction_type": yaml_value(dynamics, "m_FrictionType"),
             "enhanced_determinism": yaml_value(dynamics, "m_EnableEnhancedDeterminism"),
+            "improved_patch_friction": yaml_value(dynamics, "m_ImprovedPatchFriction"),
+            "simulation_mode": yaml_value(dynamics, "m_SimulationMode"),
             "default_max_angular_speed": yaml_value(dynamics, "m_DefaultMaxAngularSpeed"),
             "time_manager_fixed_timestep": yaml_value(time_manager, "Fixed Timestep"),
             "simulation_owner": "AuthoritativePhysicsScene local PhysicsScene, stepped by PhysicsTickDriver.StepOne via PhysicsScene.Simulate(SimulationConstants.FixedDeltaTimeSeconds); TimeManager fixed timestep does not drive the athlete.",
