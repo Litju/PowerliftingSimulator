@@ -114,7 +114,8 @@ def scrape_constants():
         for m in re.finditer(r"(\w*AthleteStrengthScale\w*)\s*=\s*([\d.]+)f", read(path)):
             strength.append({"file": os.path.relpath(path, ROOT).replace("\\", "/"), "symbol": m.group(1), "value": float(m.group(2))})
     return {
-        "fixed_dt_s": float(re.search(r"FixedDeltaTimeSeconds = ([\d.]+)d", units).group(1)),
+        "fixed_dt_s": float(re.search(r"ProductionFixedDeltaTimeSeconds = ([\d.]+)d", units).group(1)),
+        "physics_substeps_per_tick": int(re.search(r"PhysicsSubstepsPerTick = (\d+);", units).group(1)),
         "athlete_position_iterations": int(re.search(r"PositionIterations = (\d+);", solver).group(1)),
         "athlete_velocity_iterations": int(re.search(r"VelocityIterations = (\d+);", solver).group(1)),
         "barbell_position_iterations": 12,

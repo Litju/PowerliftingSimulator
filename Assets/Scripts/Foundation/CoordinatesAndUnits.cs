@@ -251,6 +251,17 @@ namespace PowerliftingSimulator.Foundation
         public static readonly double FixedDeltaTimeSeconds = ResolveFixedDeltaTime();
         public static readonly double MaxAccumulatedTimeSeconds = FixedDeltaTimeSeconds * MaxCatchUpTicksPerRenderFrame;
 
+        /// <summary>
+        /// PhysX steps per authoritative tick. Commands, observation and every
+        /// tick-denominated authority stay at FixedStepHz; only the engine
+        /// integrates at the finer step. GAM-50: at one 10 ms step the grounded
+        /// athlete's ankle drives stop short of independent statics by 5-12 N m
+        /// at PhysX's 255-iteration per-body cap; at 5 ms they agree within
+        /// 0.6-4.2 N m, with every other benchmark metric unchanged.
+        /// </summary>
+        public const int PhysicsSubstepsPerTick = 2;
+        public static readonly double PhysicsSubstepSeconds = FixedDeltaTimeSeconds / PhysicsSubstepsPerTick;
+
         public static bool IsFixedDeltaTimeOverridden => FixedDeltaTimeSeconds != ProductionFixedDeltaTimeSeconds;
 
         private static double ResolveFixedDeltaTime()

@@ -182,7 +182,7 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
             var cells = new List<(string arm, float dt, int pos, int vel)>
             {
                 ("CJ", ProductionDt, ProductionPositionIterations, ProductionVelocityIterations),
-                ("CJ", ProductionDt, 4 * ProductionPositionIterations, ProductionVelocityIterations),
+                ("CJ", ProductionDt, Math.Min(255, 4 * ProductionPositionIterations), ProductionVelocityIterations),
                 ("CJ", 0.02f, ProductionPositionIterations, ProductionVelocityIterations),
                 ("CJ", 0.005f, ProductionPositionIterations, ProductionVelocityIterations),
                 ("AB", ProductionDt, ProductionPositionIterations, ProductionVelocityIterations),

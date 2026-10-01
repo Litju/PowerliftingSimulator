@@ -449,7 +449,7 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
                 double[] reference = null;
                 var grid = new List<(float dt, int pos, int vel, string tag)>
                 {
-                    (0.005f, 56, 4, "reference"),
+                    (0.0025f, 255, 4, "reference"),
                     (ProductionDt, ProductionPositionIterations, ProductionVelocityIterations, "production")
                 };
                 foreach (float dt in SweepDt) grid.Add((dt, ProductionPositionIterations, ProductionVelocityIterations, "dt_sweep"));
@@ -482,7 +482,7 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
                                     CausalLayer.ConstraintConvergence);
                                 rec.Record(spec.Family[j] + "_vs_refined_reference_rad", cfg, reference[j], errors[j],
                                     RealizationTolerance(reference[j]), ToleranceKind.Absolute,
-                                    "numerical convergence: production within the 5% realization band of dt=0.005/56/4",
+                                    "numerical convergence: production within the 5% realization band of dt=0.0025/255/4",
                                     "Production timestep/iterations are not converged for this load.",
                                     CausalLayer.NumericalConvergence);
                             }

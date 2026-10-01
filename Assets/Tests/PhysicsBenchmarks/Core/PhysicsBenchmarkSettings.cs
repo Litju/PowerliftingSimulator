@@ -12,7 +12,8 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
     /// </summary>
     public static class PhysicsBenchmarkSettings
     {
-        public static float ProductionDt => (float)SimulationConstants.FixedDeltaTimeSeconds;
+        /// <summary>The production PhysX step: one authoritative tick is PhysicsSubstepsPerTick of these.</summary>
+        public static float ProductionDt => (float)SimulationConstants.PhysicsSubstepSeconds;
         public static int ProductionPositionIterations => PhysicalAthleteSolverProfile.PositionIterations;
         public static int ProductionVelocityIterations => PhysicalAthleteSolverProfile.VelocityIterations;
 

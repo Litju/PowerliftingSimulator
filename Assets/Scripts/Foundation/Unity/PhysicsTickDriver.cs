@@ -117,7 +117,8 @@ namespace PowerliftingSimulator.Foundation.Unity
 
                 _prePhysicsStep?.Invoke(time, LastIntentFrame);
 
-                _authoritativeScene.PhysicsSceneHandle.Simulate((float)SimulationConstants.FixedDeltaTimeSeconds);
+                for (int substep = 0; substep < SimulationConstants.PhysicsSubstepsPerTick; substep++)
+                    _authoritativeScene.PhysicsSceneHandle.Simulate((float)SimulationConstants.PhysicsSubstepSeconds);
 
                 _attemptTrace.ConfigureRegisteredBodyCount(_authoritativeScene.RegisteredBodyCount);
                 PhysicalObservation observation = _authoritativeScene.CaptureObservation(
