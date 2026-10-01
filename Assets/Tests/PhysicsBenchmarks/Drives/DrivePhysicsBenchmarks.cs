@@ -131,6 +131,27 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
             return target * (1 + (r2 * Math.Exp(r1 * t) - r1 * Math.Exp(r2 * t)) / (r1 - r2));
         }
 
+        private static double ImplicitDrivePeak(double k, double d, double inertia, double dt, double target, double seconds)
+        {
+            double x = 0, v = 0, peak = 0;
+            int steps = (int)Math.Round(seconds / dt);
+            for (int n = 0; n < steps; n++)
+            {
+                v = (inertia * v + dt * k * (target - x)) / (inertia + d * dt + k * dt * dt);
+                x += dt * v;
+                peak = Math.Max(peak, x);
+            }
+            return peak;
+        }
+
+        private static double ContinuousPeak(double target, double wn, double zeta)
+        {
+            double peak = 0;
+            for (double t = 0; t < 1.5; t += 1e-4)
+                peak = Math.Max(peak, ContinuousStep(t, target, wn, zeta));
+            return peak;
+        }
+
         [UnityTest]
         public IEnumerator B05_ConfigurableJointPd_StepResponse()
         {
@@ -148,6 +169,7 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
                 double wn = Math.Sqrt(c.k / c.inertia);
                 double zeta = c.d / (2 * Math.Sqrt(c.k * c.inertia));
                 double previousRms = double.NaN;
+                var overshootError = new double[SweepDt.Length];
                 foreach (float dt in SweepDt)
                 {
                     using (var world = new IsolatedPhysicsWorld("pd_step", dt, ProductionPositionIterations, ProductionVelocityIterations))
@@ -185,21 +207,38 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
                             double analyticPeak = 0;
                             for (double t = 0; t < 1.5; t += 1e-4)
                                 analyticPeak = Math.Max(analyticPeak, ContinuousStep(t, target, wn, zeta));
-                            rec.Record("overshoot_fraction", cfg, analyticPeak / target - 1, peak / target - 1, 0.02, ToleranceKind.Absolute,
-                                "continuous analytic overshoot; 2% of amplitude", "Drive damping semantics differ from D.",
-                                CausalLayer.DriveSemantics);
+                            // Like B01, the gate is the exact solution of the documented
+                            // integrator (PhysX solves the drive implicitly), plus a
+                            // convergence check below; the continuous overshoot error at
+                            // production dt is first-order discretization, characterised.
+                            double implicitPeak = ImplicitDrivePeak(c.k, c.d, c.inertia, dt, target, 1.5) / target - 1;
+                            rec.Record("overshoot_vs_implicit_drive_model", cfg, implicitPeak, peak / target - 1, 0.01, ToleranceKind.Absolute,
+                                "exact implicit-Euler PD drive recurrence at this dt; 1% of amplitude",
+                                "Drive damping semantics differ from an implicit K/D drive.", CausalLayer.DriveSemantics);
+                            rec.Info("overshoot_continuous_error_fraction", cfg, Math.Abs(peak / target - 1 - (analyticPeak / target - 1)),
+                                "Overshoot deviation from the continuous system at production dt (first-order discretization).",
+                                CausalLayer.NumericalConvergence);
                         }
                         else
                         {
                             rec.Info("trajectory_rms_error_fraction", cfg, rms, "Step-response deviation off production dt.",
                                 CausalLayer.NumericalConvergence);
                         }
+                        overshootError[Array.IndexOf(SweepDt, dt)] = Math.Abs(peak / target - 1 - (ContinuousPeak(target, wn, zeta) / target - 1));
                         if (!double.IsNaN(previousRms) && previousRms > 1e-3)
                             rec.Info("rms_error_reduction_per_dt_halving", cfg, previousRms / Math.Max(rms, 1e-12),
                                 "Convergence order evidence (2 = first order).", CausalLayer.NumericalConvergence);
                         previousRms = rms;
                     }
                 }
+                // SweepDt = 0.020/0.010/0.005: the continuous overshoot error must
+                // shrink with dt. The asymptotic first-order ratio of 2 is only
+                // reached for wn dt << 1, so the gate is monotone convergence
+                // (ratio > 1) and the observed ratio is reported.
+                if (overshootError[2] > 1e-4)
+                    rec.Record("overshoot_error_reduction_0p01_to_0p005", $"{c.label}", double.NaN, overshootError[1] / overshootError[2], 1.0,
+                        ToleranceKind.LowerBound, "numerical convergence: transient error decreases when dt is halved (ratio > 1)",
+                        "Drive transient error does not converge with timestep.", CausalLayer.NumericalConvergence);
                 yield return null;
             }
             rec.WriteAndAssert();
