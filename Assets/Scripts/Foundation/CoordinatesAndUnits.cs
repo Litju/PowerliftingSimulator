@@ -237,9 +237,34 @@ namespace PowerliftingSimulator.Foundation
     public static class SimulationConstants
     {
         public const int FixedStepHz = 100;
-        public const double FixedDeltaTimeSeconds = 0.01d;
+        public const double ProductionFixedDeltaTimeSeconds = 0.01d;
         public const int MaxCatchUpTicksPerRenderFrame = 4;
-        public const double MaxAccumulatedTimeSeconds = FixedDeltaTimeSeconds * MaxCatchUpTicksPerRenderFrame;
+
+        /// <summary>
+        /// The authoritative physics step. Always 0.01 s in builds and in
+        /// normal editor runs. GAM-50 numerical-convergence benchmarks may set
+        /// GAM50_FIXED_DT_OVERRIDE (editor only, read once at load) to sweep
+        /// the timestep of the whole production stack; tick-denominated
+        /// authorities then change their meaning, so only seconds-denominated
+        /// benchmark metrics are valid under an override.
+        /// </summary>
+        public static readonly double FixedDeltaTimeSeconds = ResolveFixedDeltaTime();
+        public static readonly double MaxAccumulatedTimeSeconds = FixedDeltaTimeSeconds * MaxCatchUpTicksPerRenderFrame;
+
+        public static bool IsFixedDeltaTimeOverridden => FixedDeltaTimeSeconds != ProductionFixedDeltaTimeSeconds;
+
+        private static double ResolveFixedDeltaTime()
+        {
+#if UNITY_EDITOR
+            string text = System.Environment.GetEnvironmentVariable("GAM50_FIXED_DT_OVERRIDE");
+            if (!string.IsNullOrWhiteSpace(text) &&
+                double.TryParse(text, System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out double value) &&
+                value >= 0.001d && value <= 0.05d)
+                return value;
+#endif
+            return ProductionFixedDeltaTimeSeconds;
+        }
 
         public static double TimeForTick(ulong tick) => tick * FixedDeltaTimeSeconds;
     }
