@@ -26,7 +26,9 @@ $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 if (!(Test-Path -LiteralPath $UnityExecutable)) { throw "Unity executable not found: $UnityExecutable" }
 
 $sha = (git -C $projectRoot rev-parse --short=7 HEAD).Trim()
-$dirty = [bool](git -C $projectRoot status --porcelain -- Assets ProjectSettings Packages)
+# Physics-relevant inputs only: every batch run rewrites ProjectSettings.asset
+# (scripting defines), which must not mislabel a clean commit as dirty.
+$dirty = [bool](git -C $projectRoot status --porcelain -- Assets Packages ProjectSettings/DynamicsManager.asset ProjectSettings/TimeManager.asset ProjectSettings/ProjectVersion.txt)
 $shaDir = if ($dirty) { "$sha-dirty" } else { $sha }
 $runId = (Get-Date -Format 'yyyyMMdd-HHmmss')
 if ($Label) { $runId = "$runId-$Label" }
