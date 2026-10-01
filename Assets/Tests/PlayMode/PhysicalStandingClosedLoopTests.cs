@@ -251,7 +251,6 @@ namespace PowerliftingSimulator.Tests
             SquatBalanceObserver finalBalance = _controller.Adapter.Balance;
             float kGravity = finalBalance.SystemMassKg *
                 SquatBalanceObserver.GravityMagnitudeMps2 * finalBalance.ComHeightM;
-            float ankleSpring = PoweredJointController.FindFamilyProfile("ankle").Value.Spring;
 
             var report = new StringBuilder();
             report.AppendLine(trace.ToString());
@@ -266,9 +265,9 @@ namespace PowerliftingSimulator.Tests
             report.AppendLine(string.Format(CultureInfo.InvariantCulture,
                 "# G_target_cop_m_per_rad,{0:F5}", gTargetCop));
             report.AppendLine(string.Format(CultureInfo.InvariantCulture,
-                "# authored_ankle_spring_per_joint_Nm_per_rad,{0:F1}", ankleSpring));
+                "# authored_ankle_spring_per_joint_Nm_per_rad,{0:F1}", 650f));
             report.AppendLine(string.Format(CultureInfo.InvariantCulture,
-                "# G_target_tau_over_authored_pair_spring,{0:F4}", gTargetTau / (2f * ankleSpring)));
+                "# G_target_tau_over_authored_pair_spring,{0:F4}", gTargetTau / 1300f));
 
             WriteMeasurement("GAM11-ankle-system-identification.csv", report.ToString());
             Debug.Log("[S1 ANKLE SYSTEM IDENTIFICATION]" + Environment.NewLine + report);
