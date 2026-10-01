@@ -141,6 +141,9 @@ namespace PowerliftingSimulator.Tests
             Assert.That(controller.AttemptLifecycle.State, Is.EqualTo(SquatAttemptLifecycleState.IDLE));
             Assert.That(controller.AttemptRecord, Is.Null);
 
+            // GAM-50 determinism benchmark: optional bit-exact per-tick state hashes.
+            string stateHashPath = Environment.GetEnvironmentVariable("GAM50_STATE_HASH_PATH");
+            var stateHashes = string.IsNullOrWhiteSpace(stateHashPath) ? null : new PhysicsStateHashLog();
             SquatObservationSnapshot standingReference = default;
             int consecutiveStandingSamples = 0;
             int setupTicks = 0;
@@ -156,6 +159,7 @@ namespace PowerliftingSimulator.Tests
             {
                 Assert.That(runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds), Is.EqualTo(1));
                 TickFeet(controller, dt);
+                stateHashes?.AppendState(runtime.CurrentTime.Tick, "SETUP", rig, barbell);
                 Assert.That(controller.ObservationCollector.HasLastSnapshot, Is.True);
                 standingReference = controller.ObservationCollector.LastSnapshot;
                 bool sampleQualified = IsPhysicalStandingQualified(
@@ -318,6 +322,7 @@ namespace PowerliftingSimulator.Tests
                 Assert.That(runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds), Is.EqualTo(1));
                 TickFeet(controller, dt);
                 mechanicsTicks++;
+                stateHashes?.AppendState(runtime.CurrentTime.Tick, controller.Adapter.State.ToString(), rig, barbell);
 
                 Assert.That(controller.AttemptOrchestrator.HasStarted, Is.False,
                     "The mechanics probe must not start the GAM-12 attempt lifecycle.");
@@ -487,6 +492,19 @@ namespace PowerliftingSimulator.Tests
                 if (mechanicsTicks % 50 == 0)
                     yield return null;
             }
+
+            // GAM-50 section 7: measurement only. The verdict above is final
+            // and unchanged; when it is a lockout-settling timeout, keep
+            // stepping the identical physical simulation and record whether
+            // the sealed lockout predicates become true naturally.
+            int lockoutExtensionTicks = ReadLockoutExtensionTicks();
+            if (lockoutExtensionTicks > 0 && physicalFailureReason == "PHYSICAL_LOCKOUT_NOT_REACHED" && lockoutStartTick.HasValue)
+            {
+                yield return ContinueLockoutExtension(controller, runtime, rig, barbell, standingReference, failureCalibration,
+                    loadKg, dt, lockoutExtensionTicks, lockoutStartTick.Value, tracePath, stateHashes);
+            }
+            if (stateHashes != null)
+                stateHashes.Save(stateHashPath);
 
             if (peakAscentDemandTick.HasValue)
                 actuatorTrace.Mark(peakAscentDemandTick.Value, "PEAK_ASCENT_DEMAND");
@@ -1431,6 +1449,125 @@ namespace PowerliftingSimulator.Tests
                 Format(saddle != null ? saddle.CurrentLinearLimitOccupancy : float.NaN),
                 Format(saddle != null ? saddle.RelativeRotationDegrees : float.NaN), failureReason
             }));
+        }
+
+        private static int ReadLockoutExtensionTicks()
+        {
+            string value = Environment.GetEnvironmentVariable("GAM50_LOCKOUT_EXTENSION_TICKS");
+            return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int ticks)
+                ? Mathf.Clamp(ticks, 0, 300)
+                : 0;
+        }
+
+        private static IEnumerator ContinueLockoutExtension(
+            SquatPhysicalPrototypeController controller,
+            FoundationRuntime runtime,
+            PhysicalAthleteRig rig,
+            PhysicalBarbell barbell,
+            SquatObservationSnapshot standingReference,
+            SquatFailureCalibration calibration,
+            float loadKg,
+            float dt,
+            int extensionTicks,
+            ulong lockoutStartTick,
+            string tracePath,
+            PhysicsStateHashLog stateHashes)
+        {
+            var csv = new StringBuilder();
+            csv.AppendLine("load_kg,tick,ticks_since_lockout_start,state,is_lockout,consecutive_lockout,failed_predicates," +
+                "bar_speed_mps,bar_angular_speed_rad_s,bar_vy_mps,max_knee_rad,max_hip_rad,max_trunk_rad," +
+                "com_vx_mps,com_vz_mps,com_speed_mps,support_margin_m,max_demand_nm,max_demand_fraction,max_demand_joint," +
+                "max_anchor_separation_m,saddle_separation_m,both_feet");
+            int consecutive = 0;
+            ulong? naturalLockoutTick = null;
+            for (int i = 0; i < extensionTicks; i++)
+            {
+                SquatState phase = controller.Adapter.State;
+                double inputTime = runtime.CurrentTime.SimulationTimeSeconds + 0.25d * SimulationConstants.FixedDeltaTimeSeconds;
+                bool yieldInput = phase == SquatState.SQUAT_COMMAND || phase == SquatState.DESCENT;
+                bool driveInput = phase == SquatState.BOTTOM || phase == SquatState.REVERSAL ||
+                    phase == SquatState.ASCENT || phase == SquatState.STICKING;
+                runtime.InputBuffer.SetContinuous(IntentAction.Yield, yieldInput ? 1f : 0f, inputTime);
+                runtime.InputBuffer.SetContinuous(IntentAction.Drive, driveInput ? 1f : 0f, inputTime);
+                Assert.That(runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds), Is.EqualTo(1));
+                TickFeet(controller, dt);
+                stateHashes?.AppendState(runtime.CurrentTime.Tick, "EXTENSION", rig, barbell);
+                SquatObservationSnapshot snapshot = controller.ObservationCollector.LastSnapshot;
+                SquatPhysicalLockoutDiagnostic lockout = SquatAttemptPhysicalEvidence.MeasureLockout(
+                    snapshot, standingReference.Bar.IsAvailable, standingReference.Bar.PositionWorldMeters.Y, calibration);
+                consecutive = lockout.IsLockout ? consecutive + 1 : 0;
+                if (!naturalLockoutTick.HasValue && consecutive >= RequiredLockoutSamples)
+                    naturalLockoutTick = snapshot.SimulationTick;
+                MeasureMaximumActiveJointDemand(rig.PoweredController, out float demandNm, out string demandJoint, out _,
+                    out float demandFraction);
+                GAM13V2StandingQualificationTests.MeasureConstraintHealth(rig, out float anchorSeparation, out _, out _);
+                Vector3Value comVelocity = snapshot.Support.SystemComVelocityWorldMetersPerSecond;
+                float margin = Mathf.Min(
+                    Mathf.Min(snapshot.Support.ComToSupportApFrontMarginM, snapshot.Support.ComToSupportApRearMarginM),
+                    Mathf.Min(snapshot.Support.ComToSupportMlLeftMarginM, snapshot.Support.ComToSupportMlRightMarginM));
+                csv.AppendLine(string.Join(",", new[]
+                {
+                    Format(loadKg), Tick(snapshot.SimulationTick),
+                    (snapshot.SimulationTick - lockoutStartTick).ToString(CultureInfo.InvariantCulture),
+                    snapshot.State.ToString(), lockout.IsLockout ? "true" : "false",
+                    consecutive.ToString(CultureInfo.InvariantCulture), LockoutFailurePredicates(lockout),
+                    Format(lockout.BarSpeed), Format(lockout.BarAngularSpeed),
+                    Format(snapshot.Bar.LinearVelocityWorldMetersPerSecond.Y),
+                    Format(lockout.MaximumKneeAngle), Format(lockout.MaximumHipAngle), Format(lockout.MaximumTrunkAngle),
+                    Format(comVelocity.X), Format(comVelocity.Z),
+                    Format(Mathf.Sqrt(comVelocity.X * comVelocity.X + comVelocity.Z * comVelocity.Z)), Format(margin),
+                    Format(demandNm), Format(demandFraction), demandJoint, Format(anchorSeparation),
+                    Format(controller.Saddle != null ? controller.Saddle.SaddleSeparationMeters : float.NaN),
+                    snapshot.LeftFoot.IsInContact && snapshot.RightFoot.IsInContact ? "true" : "false"
+                }));
+                if (i % 50 == 0)
+                    yield return null;
+            }
+            string path = Path.ChangeExtension(tracePath, ".lockout-extension.csv");
+            File.WriteAllText(path, csv.ToString(), new UTF8Encoding(false));
+            Debug.Log(string.Format(CultureInfo.InvariantCulture,
+                "GAM50_LOCKOUT_EXTENSION load={0:F1}kg extension_ticks={1} natural_lockout_tick={2} lockout_start_tick={3} trace={4}",
+                loadKg, extensionTicks, Tick(naturalLockoutTick), lockoutStartTick, path));
+        }
+
+        /// <summary>Bit-exact per-tick hash of every athlete and bar body state (GAM-50 determinism).</summary>
+        private sealed class PhysicsStateHashLog
+        {
+            private readonly StringBuilder _rows = new StringBuilder("tick,stage,state_hash\n");
+
+            public void AppendState(ulong tick, string stage, PhysicalAthleteRig rig, PhysicalBarbell barbell)
+            {
+                ulong hash = 1469598103934665603UL;
+                void Mix(float value)
+                {
+                    uint bits = BitConverter.ToUInt32(BitConverter.GetBytes(value), 0);
+                    for (int i = 0; i < 4; i++)
+                    {
+                        hash ^= (bits >> (8 * i)) & 0xFF;
+                        hash *= 1099511628211UL;
+                    }
+                }
+                void MixBody(Rigidbody body)
+                {
+                    Vector3 p = body.position; Quaternion r = body.rotation;
+                    Vector3 v = body.linearVelocity; Vector3 w = body.angularVelocity;
+                    Mix(p.x); Mix(p.y); Mix(p.z); Mix(r.x); Mix(r.y); Mix(r.z); Mix(r.w);
+                    Mix(v.x); Mix(v.y); Mix(v.z); Mix(w.x); Mix(w.y); Mix(w.z);
+                }
+                foreach (PhysicalSegmentRecipe recipe in PhysicalAthleteDefinition.Segments)
+                    MixBody(rig.Segments[recipe.Id].Body);
+                if (barbell.Body != null && barbell.Body.gameObject.activeInHierarchy)
+                    MixBody(barbell.Body);
+                _rows.Append(tick.ToString(CultureInfo.InvariantCulture)).Append(',').Append(stage).Append(',')
+                    .Append(hash.ToString("x16", CultureInfo.InvariantCulture)).Append('\n');
+            }
+
+            public void Save(string path)
+            {
+                string fullPath = Path.GetFullPath(path);
+                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                File.WriteAllText(fullPath, _rows.ToString(), new UTF8Encoding(false));
+            }
         }
 
         private static bool ReadEnvironmentFlag(string variableName)
