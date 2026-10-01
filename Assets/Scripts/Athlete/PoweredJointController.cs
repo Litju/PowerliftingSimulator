@@ -168,11 +168,11 @@ namespace PowerliftingSimulator.Athlete
         public const float PulseRadians = 20f * Mathf.Deg2Rad;
         public const float ModeledDemandSaturationThreshold = 0.95f;
 
-        // GAM-13 V2-3M phase-zero 140 kg: K = max(K_old, |requested torque at tick 71| / 0.10 rad);
-        // damping scales by sqrt(K_new / K_old). Ankle already met the same error bound.
+        // GAM-13 V2-3M final calibration: ankle drive compliance remained the downstream limiter.
+        // K=2300 targets <=0.10 rad error at the measured 225-230 N*m drive; D preserves damping ratio.
         private static readonly JointFamilyProfile[] Profiles =
         {
-            new JointFamilyProfile("ankle", 650f, 70f, 450f, 2.0f),
+            new JointFamilyProfile("ankle", 2300f, 132f, 450f, 2.0f),
             new JointFamilyProfile("knee", 2900f, 152f, 540f, 2.5f),
             new JointFamilyProfile("hip", 3150f, 168f, 540f, 2.2f),
             new JointFamilyProfile("trunk", 7850f, 266f, 390f, 1.8f),
