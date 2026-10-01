@@ -168,12 +168,14 @@ namespace PowerliftingSimulator.Athlete
         public const float PulseRadians = 20f * Mathf.Deg2Rad;
         public const float ModeledDemandSaturationThreshold = 0.95f;
 
+        // GAM-13 V2-3M phase-zero 140 kg: K = max(K_old, |requested torque at tick 71| / 0.10 rad);
+        // damping scales by sqrt(K_new / K_old). Ankle already met the same error bound.
         private static readonly JointFamilyProfile[] Profiles =
         {
             new JointFamilyProfile("ankle", 650f, 70f, 450f, 2.0f),
-            new JointFamilyProfile("knee", 1123f, 94.8f, 540f, 2.5f),
-            new JointFamilyProfile("hip", 900f, 90f, 540f, 2.2f),
-            new JointFamilyProfile("trunk", 3200f, 170f, 390f, 1.8f),
+            new JointFamilyProfile("knee", 2900f, 152f, 540f, 2.5f),
+            new JointFamilyProfile("hip", 3150f, 168f, 540f, 2.2f),
+            new JointFamilyProfile("trunk", 7850f, 266f, 390f, 1.8f),
             new JointFamilyProfile("shoulder", 500f, 55f, 130f, 2.5f),
             new JointFamilyProfile("elbow", 450f, 45f, 100f, 3.0f),
             new JointFamilyProfile("wrist", 250f, 30f, 45f, 2.5f),
