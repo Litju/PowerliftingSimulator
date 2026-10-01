@@ -59,6 +59,51 @@ namespace PowerliftingSimulator.Tests
         }
 
         [Test]
+        public void STREAMING_BALANCE_EVENT_REQUIRES_GAM12_PERSISTENCE_AND_PRESERVES_ONSET_CONTEXT()
+        {
+            SquatFailureCalibration calibration = SquatFailureCalibration.Default;
+            Assert.That(calibration.BalanceSupportMarginFailureM, Is.EqualTo(-0.01f));
+            Assert.That(calibration.BalanceOutwardComVelocityMps, Is.EqualTo(0.03f));
+            Assert.That(calibration.BalancePersistenceTicks, Is.EqualTo(12));
+
+            List<SampleSpec> transientSamples = GoodAttemptSamples();
+            transientSamples[6].ComZ = 0.33f;
+            transientSamples[6].ComVelocityZ = calibration.BalanceOutwardComVelocityMps + 0.01f;
+            SquatFailureDetector transientDetector = new SquatFailureDetector();
+            for (int index = 0; index < transientSamples.Count; index++)
+            {
+                transientDetector.Process(Snapshot(transientSamples[index]));
+                Assert.That(
+                    transientDetector.TryGetLatchedFailureEvent(SquatFailureKind.BALANCE_LOSS, out _),
+                    Is.False,
+                    "A transient support-edge crossing must not terminate mechanics qualification.");
+            }
+
+            SquatTrace persistentTrace = BuildBalanceLoss(forward: true);
+            SquatFailureDetector persistentDetector = new SquatFailureDetector();
+            SquatFailureEvent balanceLoss = null;
+            for (int index = 0; index < persistentTrace.Count; index++)
+            {
+                persistentDetector.Process(persistentTrace[index]);
+                if (persistentDetector.TryGetLatchedFailureEvent(SquatFailureKind.BALANCE_LOSS, out balanceLoss))
+                    break;
+            }
+
+            Assert.That(balanceLoss, Is.Not.Null, "Persistent GAM-12 balance loss must terminate qualification.");
+            Assert.That(balanceLoss.Direction, Is.EqualTo(SquatFailureDirection.FORWARD));
+            Assert.That(balanceLoss.OnsetTick, Is.EqualTo(3ul));
+            Assert.That(balanceLoss.LatchedTick, Is.EqualTo(
+                balanceLoss.OnsetTick + (ulong)calibration.BalancePersistenceTicks - 1ul));
+            Assert.That(balanceLoss.OnsetContext.SimulationTick, Is.EqualTo(balanceLoss.OnsetTick));
+            Assert.That(balanceLoss.LatchedContext.SimulationTick, Is.EqualTo(balanceLoss.LatchedTick));
+
+            SquatFailureResult productionResult = Evaluate(persistentTrace);
+            Assert.That(productionResult.FailureRecord.PrimaryFailureKind, Is.EqualTo(SquatFailureKind.BALANCE_LOSS));
+            Assert.That(productionResult.FailureRecord.OnsetTick, Is.EqualTo(balanceLoss.OnsetTick));
+            Assert.That(productionResult.FailureRecord.LatchedTick, Is.EqualTo(balanceLoss.LatchedTick));
+        }
+
+        [Test]
         public void OUTSIDE_SUPPORT_BUT_RECOVERING_VELOCITY_DOES_NOT_IMMEDIATELY_FAIL()
         {
             List<SampleSpec> samples = GoodAttemptSamples();

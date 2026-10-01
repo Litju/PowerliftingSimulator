@@ -86,7 +86,7 @@ namespace PowerliftingSimulator.Tests
                 "bar_x_m,bar_y_m,bar_z_m,bar_vx_mps,bar_vy_mps,bar_vz_mps," +
                 "maximum_active_joint_demand_nm,worst_demand_joint,worst_demand_channel,worst_demand_fraction," +
                 "maximum_joint_anchor_separation_m,saddle_attached,saddle_broken,saddle_separation_m,saddle_limit_occupancy,saddle_relative_rotation_deg");
-            trace.AppendLine("load_kg,tick,time_s,state,phase_s,direction,legal_depth,legal_depth_reached,depth_left_m,depth_right_m,worst_side_depth_m,descent_tick,reversal_tick,ascent_tick,lockout,physical_failure,physical_failure_reason,bar_y_m,bar_vx_mps,bar_vy_mps,bar_vz_mps,support_available,support_present,support_contact_count,left_foot_contact,right_foot_contact,left_foot_slip_mps,right_foot_slip_mps,ap_front_margin_m,ap_rear_margin_m,ml_left_margin_m,ml_right_margin_m,joint_limit_proximity,worst_limit_joint,saddle_attached,saddle_separation_m,saddle_initial_anchor_error_m,saddle_linear_limit_occupancy,saddle_relative_rotation_deg,saddle_is_broken,lockout_qualified,lockout_failed_predicates,lockout_reference_bar_y_m,lockout_bar_linear_speed_mps,lockout_bar_angular_speed_rad_s,lockout_max_knee_angle_rad,lockout_max_hip_angle_rad,lockout_max_local_trunk_angle_rad,lockout_height_tolerance_m,lockout_bar_speed_tolerance_mps,lockout_bar_angular_speed_tolerance_rad_s,lockout_knee_tolerance_rad,lockout_hip_tolerance_rad,lockout_trunk_tolerance_rad,ap_reference_error_m,raw_balance_ap_rad,applied_balance_ap_rad,ap_correction_saturated,ankle_target_error_x_rad,knee_target_error_x_rad,hip_target_error_x_rad,abdomen_target_error_x_rad,thorax_target_error_x_rad,max_active_drive_demand_nm,max_active_drive_demand_fraction,worst_active_drive_joint,worst_active_drive_channel,max_joint_anchor_separation_m");
+            trace.AppendLine("load_kg,tick,time_s,state,phase_s,direction,legal_depth,legal_depth_reached,depth_left_m,depth_right_m,worst_side_depth_m,descent_tick,reversal_tick,ascent_tick,lockout,physical_failure,physical_failure_reason,bar_x_m,bar_y_m,bar_z_m,bar_q_w,bar_q_x,bar_q_y,bar_q_z,bar_vx_mps,bar_vy_mps,bar_vz_mps,bar_wx_rad_s,bar_wy_rad_s,bar_wz_rad_s,support_available,support_present,support_contact_count,left_foot_contact,right_foot_contact,left_foot_slip_mps,right_foot_slip_mps,ap_front_margin_m,ap_rear_margin_m,ml_left_margin_m,ml_right_margin_m,joint_limit_proximity,worst_limit_joint,saddle_attached,saddle_separation_m,saddle_initial_anchor_error_m,saddle_linear_limit_occupancy,saddle_relative_rotation_deg,saddle_is_broken,lockout_qualified,lockout_failed_predicates,lockout_reference_bar_y_m,lockout_bar_linear_speed_mps,lockout_bar_angular_speed_rad_s,lockout_max_knee_angle_rad,lockout_max_hip_angle_rad,lockout_max_local_trunk_angle_rad,lockout_height_tolerance_m,lockout_bar_speed_tolerance_mps,lockout_bar_angular_speed_tolerance_rad_s,lockout_knee_tolerance_rad,lockout_hip_tolerance_rad,lockout_trunk_tolerance_rad,ap_reference_error_m,raw_balance_ap_rad,applied_balance_ap_rad,ap_correction_saturated,ankle_target_error_x_rad,knee_target_error_x_rad,hip_target_error_x_rad,abdomen_target_error_x_rad,thorax_target_error_x_rad,max_active_drive_demand_nm,max_active_drive_demand_fraction,worst_active_drive_joint,worst_active_drive_channel,max_joint_anchor_separation_m,authoritative_balance_loss_onset_tick,authoritative_balance_loss_latched_tick,last_valid_pre_failure_tick,progress_valid,com_x_m,com_y_m,com_z_m,com_vx_mps,com_vy_mps,com_vz_mps,support_center_x_m,support_center_y_m,support_center_z_m,support_ap_min_m,support_ap_max_m,support_ml_min_m,support_ml_max_m,cop_available,cop_estimate_x_m,cop_estimate_y_m,cop_estimate_z_m");
 
             AsyncOperation loadScene = SceneManager.LoadSceneAsync(QualificationScene, LoadSceneMode.Single);
             Assert.That(loadScene, Is.Not.Null, "The GAM-13 qualification scene is missing.");
@@ -257,6 +257,7 @@ namespace PowerliftingSimulator.Tests
             ulong? ascentTick = null;
             ulong? bottomOrReversalContextTick = null;
             ulong? lockoutStartTick = null;
+            ulong? legalDepthTick = null;
             int consecutiveLockoutSamples = 0;
             float lowestBarY = float.PositiveInfinity;
             float peakAscentDemand = float.NegativeInfinity;
@@ -266,6 +267,12 @@ namespace PowerliftingSimulator.Tests
             string firstComOutsideSupportLatchPath = Path.Combine(
                 Path.GetDirectoryName(Path.GetFullPath(tracePath)), "first-com-outside-support-latch.csv");
             bool capturedComOutsideSupportLatch = false;
+            var balanceFailureDetector = new SquatFailureDetector(failureCalibration);
+            SquatFailureEvent balanceLossEvent = null;
+            ulong? balanceLossOnsetTick = null;
+            ulong? balanceLossLatchedTick = null;
+            ulong? lastValidPreFailureTick = null;
+            var mechanicsSnapshots = new List<SquatObservationSnapshot>(MaximumMechanicsTicks);
 
             while (!lockout && !physicalFailure && mechanicsTicks < MaximumMechanicsTicks)
             {
@@ -320,6 +327,7 @@ namespace PowerliftingSimulator.Tests
                 Assert.That(controller.AttemptRecord, Is.Null);
 
                 SquatObservationSnapshot snapshot = controller.ObservationCollector.LastSnapshot;
+                mechanicsSnapshots.Add(snapshot);
                 float barY = snapshot.Bar.PositionWorldMeters.Y;
                 float barVelocityY = snapshot.Bar.LinearVelocityWorldMetersPerSecond.Y;
                 bool captureBottom = !bottomCaptured && hasDescent && snapshot.State == SquatState.BOTTOM;
@@ -348,7 +356,9 @@ namespace PowerliftingSimulator.Tests
                     ascentTick = snapshot.SimulationTick;
                 }
 
-                legalDepthReached |= controller.Adapter.LegalDepth;
+                if (controller.Adapter.LegalDepth && !legalDepthTick.HasValue)
+                    legalDepthTick = snapshot.SimulationTick;
+                legalDepthReached = legalDepthTick.HasValue;
                 float maximumDemand = actuatorTrace.Append(loadKg, snapshot, controller);
                 if (captureBottom)
                     actuatorTrace.Mark(snapshot.SimulationTick, "BOTTOM");
@@ -361,7 +371,60 @@ namespace PowerliftingSimulator.Tests
                     peakAscentDemandTick = snapshot.SimulationTick;
                 }
 
-                physicalFailureReason = FindPhysicalFailure(controller, snapshot);
+                balanceFailureDetector.Process(snapshot);
+                if (balanceLossEvent == null && balanceFailureDetector.TryGetLatchedFailureEvent(
+                    SquatFailureKind.BALANCE_LOSS, out SquatFailureEvent latchedBalanceLoss))
+                {
+                    balanceLossEvent = latchedBalanceLoss;
+                    balanceLossOnsetTick = balanceLossEvent.OnsetTick;
+                    balanceLossLatchedTick = balanceLossEvent.LatchedTick;
+                    lastValidPreFailureTick = balanceLossEvent.OnsetTick > 0ul
+                        ? balanceLossEvent.OnsetTick - 1ul
+                        : (ulong?)null;
+                    if (lastValidPreFailureTick.HasValue)
+                        actuatorTrace.Mark(lastValidPreFailureTick.Value, "GAM12_LAST_VALID_PRE_FAILURE");
+
+                    if (descentTick.HasValue && descentTick.Value >= balanceLossEvent.OnsetTick)
+                    {
+                        hasDescent = false;
+                        descentTick = null;
+                    }
+                    if (bottomOrReversalContextTick.HasValue &&
+                        bottomOrReversalContextTick.Value >= balanceLossEvent.OnsetTick)
+                        bottomOrReversalContextTick = null;
+                    if (reversalTick.HasValue && reversalTick.Value >= balanceLossEvent.OnsetTick)
+                    {
+                        hasReversal = false;
+                        reversalTick = null;
+                    }
+                    if (ascentTick.HasValue && ascentTick.Value >= balanceLossEvent.OnsetTick)
+                    {
+                        hasAscent = false;
+                        ascentTick = null;
+                    }
+                    if (legalDepthTick.HasValue && legalDepthTick.Value >= balanceLossEvent.OnsetTick)
+                    {
+                        legalDepthTick = null;
+                        legalDepthReached = false;
+                    }
+                    if (lockoutStartTick.HasValue && lockoutStartTick.Value >= balanceLossEvent.OnsetTick)
+                    {
+                        lockoutStartTick = null;
+                        lockout = false;
+                        consecutiveLockoutSamples = 0;
+                    }
+                    lowestBarY = float.PositiveInfinity;
+                    foreach (SquatObservationSnapshot observed in mechanicsSnapshots)
+                    {
+                        if (observed.SimulationTick >= balanceLossEvent.OnsetTick || !observed.Bar.IsAvailable)
+                            continue;
+                        lowestBarY = Mathf.Min(lowestBarY, observed.Bar.PositionWorldMeters.Y);
+                    }
+                }
+
+                physicalFailureReason = balanceLossEvent != null
+                    ? "BALANCE_LOSS"
+                    : FindPhysicalFailure(controller, snapshot, ignoreComOutsideSupport: true);
                 physicalFailure = physicalFailureReason != "NONE";
                 if (!capturedComOutsideSupportLatch &&
                     string.Equals(controller.Adapter.FailureReason, "COM_OUTSIDE_SUPPORT", StringComparison.Ordinal))
@@ -418,16 +481,23 @@ namespace PowerliftingSimulator.Tests
 
                 AppendSample(trace, loadKg, standingReference, snapshot, controller, rig, failureCalibration,
                     legalDepthReached, descentTick, reversalTick, ascentTick, lockout,
-                    physicalFailure, physicalFailureReason);
+                    physicalFailure, physicalFailureReason,
+                    balanceLossOnsetTick, balanceLossLatchedTick, lastValidPreFailureTick,
+                    !balanceLossOnsetTick.HasValue || snapshot.SimulationTick < balanceLossOnsetTick.Value);
                 if (mechanicsTicks % 50 == 0)
                     yield return null;
             }
 
             if (peakAscentDemandTick.HasValue)
                 actuatorTrace.Mark(peakAscentDemandTick.Value, "PEAK_ASCENT_DEMAND");
+            if (balanceLossOnsetTick.HasValue)
+                InvalidateMechanicsProgressAtOrAfterOnset(trace, balanceLossOnsetTick.Value);
             SaveTrace(tracePath, trace);
             actuatorTrace.Save(actuatorTracePath);
             File.WriteAllText(firstComOutsideSupportLatchPath, firstComOutsideSupportLatch.ToString(), new UTF8Encoding(false));
+            if (balanceLossEvent != null)
+                SaveBalanceLossTerminationContext(tracePath, actuatorTracePath, failureCalibration,
+                    balanceLossEvent, lastValidPreFailureTick);
             Assert.That(lockout || physicalFailure, Is.True,
                 "The adapter did not reach a physical lockout or report a physical mechanics failure.");
             if (reversalTick.HasValue)
@@ -438,9 +508,12 @@ namespace PowerliftingSimulator.Tests
                     "An upward bar-velocity event before adapter bottom/reversal context is not squat reversal.");
             }
             Debug.Log(string.Format(CultureInfo.InvariantCulture,
-                "GAM13_V2_SQUAT_MECHANICS load={0:F1}kg PHYSICAL_STANDING_QUALIFIED=true legal_physical_depth={1} descent_tick={2} reversal_tick={3} ascent_tick={4} lockout={5} physical_failure={6} physical_failure_reason={7} trace={8} actuators={9}",
+                "GAM13_V2_SQUAT_MECHANICS load={0:F1}kg PHYSICAL_STANDING_QUALIFIED=true legal_physical_depth={1} descent_tick={2} reversal_tick={3} ascent_tick={4} lockout={5} physical_failure={6} physical_failure_reason={7} authoritative_balance_loss_direction={8} authoritative_onset_tick={9} authoritative_latched_tick={10} last_valid_pre_failure_tick={11} trace={12} actuators={13}",
                 loadKg, legalDepthReached, Tick(descentTick), Tick(reversalTick), Tick(ascentTick),
-                lockout, physicalFailure, physicalFailureReason, tracePath, actuatorTracePath));
+                lockout, physicalFailure, physicalFailureReason,
+                balanceLossEvent != null ? balanceLossEvent.Direction.ToString() : "NA",
+                Tick(balanceLossOnsetTick), Tick(balanceLossLatchedTick), Tick(lastValidPreFailureTick),
+                tracePath, actuatorTracePath));
         }
 
         private static void AppendComOutsideSupportLatch(
@@ -570,9 +643,12 @@ namespace PowerliftingSimulator.Tests
 
         private static string FindPhysicalFailure(
             SquatPhysicalPrototypeController controller,
-            SquatObservationSnapshot snapshot)
+            SquatObservationSnapshot snapshot,
+            bool ignoreComOutsideSupport = false)
         {
-            if (!string.Equals(controller.Adapter.FailureReason, "NONE", StringComparison.Ordinal))
+            if (!string.Equals(controller.Adapter.FailureReason, "NONE", StringComparison.Ordinal) &&
+                !(ignoreComOutsideSupport && string.Equals(
+                    controller.Adapter.FailureReason, "COM_OUTSIDE_SUPPORT", StringComparison.Ordinal)))
                 return controller.Adapter.FailureReason;
             if (controller.Saddle == null || !controller.Saddle.IsAttached || controller.Saddle.IsBroken)
                 return "BAR_SADDLE_FAILURE";
@@ -613,7 +689,11 @@ namespace PowerliftingSimulator.Tests
             ulong? ascentTick,
             bool lockout,
             bool physicalFailure,
-            string physicalFailureReason)
+            string physicalFailureReason,
+            ulong? balanceLossOnsetTick = null,
+            ulong? balanceLossLatchedTick = null,
+            ulong? lastValidPreFailureTick = null,
+            bool progressValid = true)
         {
             float maximumLimitProximity = 0f;
             string worstLimitJoint = "NONE";
@@ -676,7 +756,14 @@ namespace PowerliftingSimulator.Tests
             SquatBarObservation bar = snapshot.Bar;
             SquatSupportObservation support = snapshot.Support;
             SquatBalanceCorrectionV2 balanceCorrection = controller.Adapter.BalanceCorrectionV2;
+            bool copAvailable = controller.Adapter.Balance.HasCopEstimate;
+            Vector3 cop = controller.Adapter.Balance.CopEstimate;
+            Vector3Value systemCom = support.SystemComWorldMeters;
+            Vector3Value systemComVelocity = support.SystemComVelocityWorldMetersPerSecond;
+            Vector3Value supportCenter = support.SupportCenterWorldMeters;
+            QuaternionValue barOrientation = bar.OrientationWorldFromBar;
             Vector3Value velocity = bar.LinearVelocityWorldMetersPerSecond;
+            Vector3Value angularVelocity = bar.AngularVelocityBarRadiansPerSecond;
             float saddleSeparation = controller.Saddle == null
                 ? float.NaN
                 : controller.Saddle.SaddleSeparationMeters;
@@ -710,8 +797,13 @@ namespace PowerliftingSimulator.Tests
                 .Append(Tick(descentTick)).Append(',').Append(Tick(reversalTick)).Append(',')
                 .Append(Tick(ascentTick)).Append(',').Append(lockout ? "true" : "false").Append(',')
                 .Append(physicalFailure ? "true" : "false").Append(',').Append(physicalFailureReason).Append(',')
+                .Append(Format(bar.PositionWorldMeters.X)).Append(',')
                 .Append(Format(bar.PositionWorldMeters.Y)).Append(',')
+                .Append(Format(bar.PositionWorldMeters.Z)).Append(',')
+                .Append(Format(barOrientation.W)).Append(',').Append(Format(barOrientation.X)).Append(',')
+                .Append(Format(barOrientation.Y)).Append(',').Append(Format(barOrientation.Z)).Append(',')
                 .Append(Format(velocity.X)).Append(',').Append(Format(velocity.Y)).Append(',').Append(Format(velocity.Z)).Append(',')
+                .Append(Format(angularVelocity.X)).Append(',').Append(Format(angularVelocity.Y)).Append(',').Append(Format(angularVelocity.Z)).Append(',')
                 .Append(support.SupportAvailability == SquatTelemetryAvailability.AVAILABLE ? "true" : "false").Append(',')
                 .Append(support.HasSupport ? "true" : "false").Append(',')
                 .Append(support.SupportContactCount.ToString(CultureInfo.InvariantCulture)).Append(',')
@@ -755,6 +847,19 @@ namespace PowerliftingSimulator.Tests
                 .Append(',').Append(worstActiveDriveJoint)
                 .Append(',').Append(worstActiveDriveChannel)
                 .Append(',').Append(Format(maximumJointAnchorSeparationM))
+                .Append(',').Append(Tick(balanceLossOnsetTick))
+                .Append(',').Append(Tick(balanceLossLatchedTick))
+                .Append(',').Append(Tick(lastValidPreFailureTick))
+                .Append(',').Append(progressValid ? "true" : "false")
+                .Append(',').Append(Format(systemCom.X)).Append(',').Append(Format(systemCom.Y)).Append(',').Append(Format(systemCom.Z))
+                .Append(',').Append(Format(systemComVelocity.X)).Append(',').Append(Format(systemComVelocity.Y)).Append(',').Append(Format(systemComVelocity.Z))
+                .Append(',').Append(Format(supportCenter.X)).Append(',').Append(Format(supportCenter.Y)).Append(',').Append(Format(supportCenter.Z))
+                .Append(',').Append(Format(support.SupportApMinM)).Append(',').Append(Format(support.SupportApMaxM))
+                .Append(',').Append(Format(support.SupportMlMinM)).Append(',').Append(Format(support.SupportMlMaxM))
+                .Append(',').Append(copAvailable ? "true" : "false")
+                .Append(',').Append(copAvailable ? Format(cop.x) : "NA")
+                .Append(',').Append(copAvailable ? Format(cop.y) : "NA")
+                .Append(',').Append(copAvailable ? Format(cop.z) : "NA")
                 .AppendLine();
         }
 
@@ -790,6 +895,7 @@ namespace PowerliftingSimulator.Tests
                     "requested_target_q_w,requested_target_q_x,requested_target_q_y,requested_target_q_z," +
                     "applied_target_q_w,applied_target_q_x,applied_target_q_y,applied_target_q_z," +
                     "actual_relative_q_w,actual_relative_q_x,actual_relative_q_y,actual_relative_q_z," +
+                    "q_ref_target_angle_x_rad,q_ref_target_angle_y_rad,q_ref_target_angle_z_rad," +
                     "requested_target_angle_x_rad,requested_target_angle_y_rad,requested_target_angle_z_rad," +
                     "target_angle_x_rad,target_angle_y_rad,target_angle_z_rad," +
                     "actual_angle_x_rad,actual_angle_y_rad,actual_angle_z_rad,e_x_rad,e_y_rad,e_z_rad," +
@@ -817,6 +923,11 @@ namespace PowerliftingSimulator.Tests
                         throw new InvalidOperationException($"Missing post-physics diagnostic for powered joint '{joint.Id}'.");
 
                     PoweredJointDiagnostic diagnostic = joint.PostPhysicsDiagnostic;
+                    Vector3 referenceAngle = controller.Adapter.TryGetTargetComposition(joint.Id, out
+                        SquatPhysicalAdapter.JointTargetComposition composition)
+                        ? RotationVector(composition.Nominal)
+                        : RotationVector(controller.Adapter.ReferenceLogicalTarget(
+                            joint.Id, snapshot.Sq, snapshot.Direction));
                     Vector3 requestedAngle = RotationVector(joint.RequestedCommand.TargetRelativeRotation);
                     Vector3 appliedAngle = RotationVector(diagnostic.AppliedTarget);
                     Vector3 actualAngle = RotationVector(diagnostic.ActualRelative);
@@ -831,13 +942,13 @@ namespace PowerliftingSimulator.Tests
                     maximumDemand = Mathf.Max(maximumDemand, AppendChannel(
                         loadKg, snapshot, joint, diagnostic,
                         "twist_x", true, joint.Joint.angularXDrive,
-                        requestedAngle, appliedAngle, actualAngle, error, targetVelocity, actualVelocity,
+                        referenceAngle, requestedAngle, appliedAngle, actualAngle, error, targetVelocity, actualVelocity,
                         velocityError, anchorSeparation));
                     bool hasSwingDrive = joint.Recipe.Kind == PhysicalJointKind.Ball;
                     maximumDemand = Mathf.Max(maximumDemand, AppendChannel(
                         loadKg, snapshot, joint, diagnostic,
                         "swing_yz", hasSwingDrive, joint.Joint.angularYZDrive,
-                        requestedAngle, appliedAngle, actualAngle, error, targetVelocity, actualVelocity,
+                        referenceAngle, requestedAngle, appliedAngle, actualAngle, error, targetVelocity, actualVelocity,
                         velocityError, anchorSeparation));
                 }
 
@@ -883,6 +994,7 @@ namespace PowerliftingSimulator.Tests
                 string channel,
                 bool active,
                 JointDrive drive,
+                Vector3 referenceAngle,
                 Vector3 requestedAngle,
                 Vector3 appliedAngle,
                 Vector3 actualAngle,
@@ -909,6 +1021,7 @@ namespace PowerliftingSimulator.Tests
                 QuaternionValue(joint.RequestedCommand.TargetRelativeRotation);
                 QuaternionValue(diagnostic.AppliedTarget);
                 QuaternionValue(diagnostic.ActualRelative);
+                VectorValue(referenceAngle);
                 VectorValue(requestedAngle); VectorValue(appliedAngle); VectorValue(actualAngle); VectorValue(error);
                 VectorValue(targetVelocity); VectorValue(actualVelocity); VectorValue(velocityError);
                 Value(active ? drive.positionSpring : 0f); Value(active ? drive.positionDamper : 0f);
@@ -1340,6 +1453,64 @@ namespace PowerliftingSimulator.Tests
             string fullPath = Path.GetFullPath(path);
             Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
             File.WriteAllText(fullPath, trace.ToString());
+        }
+
+        private static void InvalidateMechanicsProgressAtOrAfterOnset(StringBuilder trace, ulong onsetTick)
+        {
+            string[] lines = trace.ToString().Split(new[] { '\n' }, StringSplitOptions.None);
+            if (lines.Length == 0)
+                return;
+            string[] header = lines[0].TrimEnd('\r').Split(',');
+            int tickColumn = Array.IndexOf(header, "tick");
+            int progressColumn = Array.IndexOf(header, "progress_valid");
+            if (tickColumn < 0 || progressColumn < 0)
+                throw new InvalidOperationException("The mechanics trace is missing balance-progress columns.");
+
+            for (int index = 1; index < lines.Length; index++)
+            {
+                string line = lines[index].TrimEnd('\r');
+                if (line.Length == 0)
+                    continue;
+                string[] columns = line.Split(',');
+                if (columns.Length <= Math.Max(tickColumn, progressColumn) ||
+                    !ulong.TryParse(columns[tickColumn], NumberStyles.None, CultureInfo.InvariantCulture, out ulong tick) ||
+                    tick < onsetTick)
+                    continue;
+                columns[progressColumn] = "false";
+                lines[index] = string.Join(",", columns);
+            }
+
+            trace.Clear();
+            trace.Append(string.Join("\n", lines));
+        }
+
+        private static void SaveBalanceLossTerminationContext(
+            string tracePath,
+            string actuatorTracePath,
+            SquatFailureCalibration calibration,
+            SquatFailureEvent balanceLoss,
+            ulong? lastValidTick)
+        {
+            string contextPath = Path.Combine(
+                Path.GetDirectoryName(Path.GetFullPath(tracePath)), "authoritative-failure-context.txt");
+            var context = new StringBuilder(1024);
+            context.AppendLine("authority=GAM12_SQUAT_FAILURE_DETECTOR");
+            context.AppendLine("failure_kind=BALANCE_LOSS");
+            context.AppendLine("direction=" + balanceLoss.Direction);
+            context.AppendLine("support_margin_threshold_m=" + calibration.BalanceSupportMarginFailureM.ToString("R", CultureInfo.InvariantCulture));
+            context.AppendLine("outward_com_velocity_threshold_mps=" + calibration.BalanceOutwardComVelocityMps.ToString("R", CultureInfo.InvariantCulture));
+            context.AppendLine("persistence_ticks=" + calibration.BalancePersistenceTicks.ToString(CultureInfo.InvariantCulture));
+            context.AppendLine("onset_tick=" + Tick(balanceLoss.OnsetTick));
+            context.AppendLine("latched_tick=" + Tick(balanceLoss.LatchedTick));
+            context.AppendLine("last_valid_pre_failure_tick=" + Tick(lastValidTick));
+            context.AppendLine("onset_phase=" + balanceLoss.OnsetContext.State);
+            context.AppendLine("onset_phase_s=" + balanceLoss.OnsetContext.Sq.ToString("R", CultureInfo.InvariantCulture));
+            context.AppendLine("onset_context_tick=" + Tick(balanceLoss.OnsetContext.SimulationTick));
+            context.AppendLine("latched_context_tick=" + Tick(balanceLoss.LatchedContext.SimulationTick));
+            context.AppendLine("qualification_trace=" + Path.GetFullPath(tracePath));
+            context.AppendLine("actuator_trace=" + Path.GetFullPath(actuatorTracePath));
+            context.AppendLine("last_valid_actuator_capture=GAM12_LAST_VALID_PRE_FAILURE");
+            File.WriteAllText(contextPath, context.ToString(), new UTF8Encoding(false));
         }
 
         private static string Tick(ulong? tick) =>

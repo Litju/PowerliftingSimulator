@@ -1197,6 +1197,36 @@ namespace PowerliftingSimulator.Squat
         public bool HasLatchedFailure => _hasPrimary;
         public SquatFailureCandidate PrimaryCandidate => _primaryCandidate;
 
+        /// <summary>
+        /// Reads a physical failure event already latched by this detector.
+        /// This is an observation seam; it does not change candidate ordering,
+        /// classification, or the production failure authority.
+        /// </summary>
+        public bool TryGetLatchedFailureEvent(SquatFailureKind kind, out SquatFailureEvent failureEvent)
+        {
+            if (kind == SquatFailureKind.NONE)
+                throw new ArgumentOutOfRangeException(nameof(kind));
+
+            if (_hasPrimary && _primaryCandidate.Kind == kind)
+            {
+                failureEvent = CreateEvent(_primaryCandidate);
+                return true;
+            }
+
+            for (int index = 0; index < _secondaryEventCount; index++)
+            {
+                SquatFailureEvent candidate = _secondaryEvents[index];
+                if (candidate.Kind != kind)
+                    continue;
+
+                failureEvent = candidate;
+                return true;
+            }
+
+            failureEvent = null;
+            return false;
+        }
+
         // GAM-47 read-only P3 stage diagnostics. These expose the detector's
         // existing physical-context state without changing classification.
         public bool PhysicalDescentSeen => _hasPhysicalDescent;
