@@ -60,19 +60,6 @@ namespace PowerliftingSimulator.Squat.Unity
 #endif
         private const float SupportFailureApErrorM = 0.30f;
         private const float SupportFailureMlErrorM = 0.30f;
-        private const float StaticTrimGravityMps2 = 9.81f;
-        // Effective sagittal lever arms fitted from the valid GAM12 pre-failure
-        // sample at tick 121: mean K*e per family divided by m_bar*g*cos(q_ref).
-        private const float StaticTrimAnkleLeverArmM = -0.3434521f;
-        private const float StaticTrimKneeLeverArmM = -0.07379986f;
-        private const float StaticTrimHipLeverArmM = -0.21260457f;
-        private const float StaticTrimAbdomenLeverArmM = 0.26612754f;
-        private const float StaticTrimThoraxLeverArmM = 0.17270656f;
-        private const float StaticTrimAnkleBoundRad = 2f * Mathf.Deg2Rad;
-        private const float StaticTrimKneeBoundRad = 1.5f * Mathf.Deg2Rad;
-        private const float StaticTrimHipBoundRad = 2f * Mathf.Deg2Rad;
-        private const float StaticTrimAbdomenBoundRad = 1.5f * Mathf.Deg2Rad;
-        private const float StaticTrimThoraxBoundRad = 1f * Mathf.Deg2Rad;
 
         private readonly PhysicalAthleteRig _rig;
         private readonly PhysicalAthleteRig.SegmentRuntime[] _segments;
@@ -940,44 +927,116 @@ namespace PowerliftingSimulator.Squat.Unity
             return final;
         }
 
+        // Segments carried by both legs at once; for a leg joint the free
+        // (non-grounded) side is half of this set plus that leg's distal-from-
+        // pelvis segments above the joint.
+        private static readonly string[] UpperBodySegments =
+        {
+            "pelvis", "abdomen", "thorax", "head_neck", "left_upper_arm", "right_upper_arm",
+            "left_forearm", "right_forearm", "left_hand", "right_hand"
+        };
+
+        /// <summary>
+        /// Static gravity compensation, physically derived (GAM-50 R9). The
+        /// target is offset about the joint's logical flexion axis by
+        /// tau_g / K, where tau_g is the gravity moment the drive must hold:
+        /// the weight of the joint's free subtree (child side for the trunk
+        /// joints; parent side, with the upper body and bar shared equally by
+        /// the two grounded legs, for hips and knees) about the joint anchor,
+        /// from the measured configuration and the bar actually on the saddle.
+        /// At equilibrium the drive then holds q_ref instead of sagging by
+        /// tau_g / K, and gravity's destabilising stiffness is cancelled
+        /// rather than fought. Bounded by the joint's finite capacity. The
+        /// ankles carry no compensation: they are the balance loop's actuator.
+        ///
+        /// Replaces the GAM-13 fitted lever-arm trim, whose constants were
+        /// fitted while the unconverged solve delivered 20-60% of K e and so
+        /// supplied under a quarter of the knee offset a deep heavy hold needs
+        /// once the drives converge.
+        /// </summary>
         private Quaternion StaticGravityTrim(string jointId, Quaternion nominal, float barMassKg)
         {
-            float leverArmM;
-            float boundRad;
-            switch (jointId)
+            bool leg = jointId == "left_shank" || jointId == "right_shank" ||
+                jointId == "left_thigh" || jointId == "right_thigh";
+            bool trunk = jointId == "abdomen" || jointId == "thorax";
+            if (!leg && !trunk)
+                return Quaternion.identity;
+
+            PoweredJointController.PoweredJointRuntime joint = _rig.PoweredController.GetJoint(jointId);
+            ConfigurableJoint configurable = joint.Joint;
+            Vector3 pivot = configurable.transform.TransformPoint(configurable.anchor);
+            Vector3 axis = configurable.transform.TransformDirection(configurable.axis).normalized;
+            Vector3 gravity = Physics.gravity;
+            Vector3 moment = Vector3.zero;
+            float upperShare = leg ? 0.5f : 1f;
+
+            void Add(Rigidbody body, float share)
             {
-                case "left_foot":
-                case "right_foot":
-                    leverArmM = StaticTrimAnkleLeverArmM;
-                    boundRad = StaticTrimAnkleBoundRad;
-                    break;
-                case "left_shank":
-                case "right_shank":
-                    leverArmM = StaticTrimKneeLeverArmM;
-                    boundRad = StaticTrimKneeBoundRad;
-                    break;
-                case "left_thigh":
-                case "right_thigh":
-                    leverArmM = StaticTrimHipLeverArmM;
-                    boundRad = StaticTrimHipBoundRad;
-                    break;
-                case "abdomen":
-                    leverArmM = StaticTrimAbdomenLeverArmM;
-                    boundRad = StaticTrimAbdomenBoundRad;
-                    break;
-                case "thorax":
-                    leverArmM = StaticTrimThoraxLeverArmM;
-                    boundRad = StaticTrimThoraxBoundRad;
-                    break;
-                default:
-                    return Quaternion.identity;
+                if (body == null)
+                    return;
+                moment += Vector3.Cross(body.worldCenterOfMass - pivot, body.mass * share * gravity);
             }
 
-            float springNmPerRad = _rig.PoweredController.GetJoint(jointId).Profile.Value.Spring;
-            float qRefRadians = SignedSagittalRadians(nominal);
-            float equilibriumTorqueNm = barMassKg * StaticTrimGravityMps2 * leverArmM * Mathf.Cos(qRefRadians);
-            float trimRad = Mathf.Clamp(equilibriumTorqueNm / springNmPerRad, -boundRad, boundRad);
-            return SagittalAndFrontal(trimRad, 0f);
+            bool carriesBar;
+            if (leg)
+            {
+                foreach (string id in UpperBodySegments)
+                    Add(_rig.Segments[id].Body, upperShare);
+                if (jointId == "left_shank")
+                    Add(_rig.Segments["left_thigh"].Body, 1f);
+                else if (jointId == "right_shank")
+                    Add(_rig.Segments["right_thigh"].Body, 1f);
+                carriesBar = true;
+            }
+            else
+            {
+                carriesBar = false;
+                foreach (PhysicalSegmentRecipe recipe in PhysicalAthleteDefinition.Segments)
+                {
+                    if (IsInSubtree(recipe.Id, jointId))
+                    {
+                        Add(_rig.Segments[recipe.Id].Body, 1f);
+                        carriesBar |= recipe.Id == "thorax";
+                    }
+                }
+            }
+
+            if (carriesBar && barMassKg > 0f && _saddle != null && _saddle.IsAttached &&
+                _saddle.Barbell != null && _saddle.Barbell.Body != null)
+            {
+                Rigidbody bar = _saddle.Barbell.Body;
+                moment += Vector3.Cross(bar.worldCenterOfMass - pivot, barMassKg * upperShare * gravity);
+            }
+
+            // Drive torque on the child about +axis equals K e. Free child side:
+            // K e = -G . a; free parent side: K e = +G . a.
+            float requiredTorqueNm = (leg ? 1f : -1f) * Vector3.Dot(moment, axis);
+            JointFamilyProfile profile = joint.Profile.Value;
+            float capacityNm = profile.BaseCapacityNm * AthleteStrengthScale;
+            requiredTorqueNm = Mathf.Clamp(requiredTorqueNm, -capacityNm, capacityNm);
+            return SagittalAndFrontal(requiredTorqueNm / profile.Spring, 0f);
+        }
+
+        private static bool IsInSubtree(string segmentId, string rootId)
+        {
+            string current = segmentId;
+            while (current != null)
+            {
+                if (current == rootId)
+                    return true;
+                current = ParentOf(current);
+            }
+            return false;
+        }
+
+        private static string ParentOf(string segmentId)
+        {
+            foreach (PhysicalSegmentRecipe recipe in PhysicalAthleteDefinition.Segments)
+            {
+                if (recipe.Id == segmentId)
+                    return recipe.ParentId;
+            }
+            return null;
         }
 
         private float LowestFootBodyY()
