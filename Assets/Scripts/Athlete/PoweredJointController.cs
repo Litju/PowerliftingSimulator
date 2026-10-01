@@ -371,7 +371,7 @@ namespace PowerliftingSimulator.Athlete
                 if (configurable.configuredInWorldSpace ||
                     configurable.rotationDriveMode != RotationDriveMode.XYAndZ ||
                     Quaternion.Angle(configurable.targetRotation, ToUnityTargetRotation(joint.AppliedTarget)) > 0.001f ||
-                    Vector3.Distance(configurable.targetAngularVelocity, -targetVelocity) > 0.00001f ||
+                    Vector3.Distance(configurable.targetAngularVelocity, ToUnityTargetAngularVelocity(targetVelocity)) > 0.00001f ||
                     targetVelocity.magnitude > profile.MaxTargetRateRadS + 0.00001f ||
                     !DriveMatches(configurable.angularXDrive, profile, maximumForce) ||
                     !DriveMatches(configurable.angularYZDrive, profile, maximumForce,
@@ -421,6 +421,18 @@ namespace PowerliftingSimulator.Athlete
 
         public static Quaternion ToUnityTargetRotation(Quaternion targetRelativeInJointFrame) =>
             NormalizeCanonical(Quaternion.Inverse(NormalizeCanonical(targetRelativeInJointFrame)));
+
+        /// <summary>
+        /// Logical joint-space target angular velocity to the value written to
+        /// ConfigurableJoint.targetAngularVelocity. Unlike targetRotation, Unity
+        /// applies the velocity target with its own sign: Physics Benchmark V1
+        /// B07 measures a raw +w realised as +w about every axis of a rotated
+        /// ball-joint frame. GAM-7 negated it by analogy with targetRotation,
+        /// which pointed the drive damper at -w and made it resist commanded
+        /// motion with 2 D w.
+        /// </summary>
+        public static Vector3 ToUnityTargetAngularVelocity(Vector3 targetRelativeAngularVelocityRadS) =>
+            targetRelativeAngularVelocityRadS;
 
         public static Quaternion ToLogicalTargetRotation(
             Quaternion neutralParentToChild,
@@ -522,7 +534,7 @@ namespace PowerliftingSimulator.Athlete
             JointFamilyProfile profile = joint.Profile.Value;
             configurable.configuredInWorldSpace = false;
             configurable.targetRotation = ToUnityTargetRotation(joint.AppliedTarget);
-            configurable.targetAngularVelocity = -targetVelocity;
+            configurable.targetAngularVelocity = ToUnityTargetAngularVelocity(targetVelocity);
 
             // Every powered joint drives through the per-axis drives. Slerp
             // realises only a quarter of the authored positionSpring: once the

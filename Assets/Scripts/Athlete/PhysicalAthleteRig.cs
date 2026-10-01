@@ -952,7 +952,7 @@ namespace PowerliftingSimulator.Athlete
                 driveWriterCount = 1,
                 sourceClass = PoweredJointController.SourceClass,
                 targetRotationConversion = PoweredJointController.CalibrationVersion + ": logical q_target_J -> inverse(q_target_J); neutral identity; local joint targets",
-                targetAngularVelocityConversion = "logical omega_target_J rad/s -> -omega_target_J in Unity local target convention",
+                targetAngularVelocityConversion = "logical omega_target_J rad/s -> +omega_target_J (Unity applies targetAngularVelocity with its own sign; GAM-50 B07)",
                 useAcceleration = false,
                 projectionMode = "None",
                 poweredJointCount = _poweredController.PoweredJointCount,

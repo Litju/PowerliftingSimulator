@@ -379,10 +379,12 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
                     var (parent, child, joint) = Lever(world, 1f, 1f, 0f, gravity: false);
                     joint.angularXDrive = IsolatedPhysicsWorld.Drive(0f, 50f, 1e6f);
                     var logical = new Vector3(1.0f, 0f, 0f);
-                    joint.targetAngularVelocity = production ? -logical : logical;
+                    joint.targetAngularVelocity = production
+                        ? PoweredJointController.ToUnityTargetAngularVelocity(logical)
+                        : logical;
                     world.Step(Mathf.RoundToInt(1f / world.Dt));
                     double observed = child.angularVelocity.x - parent.angularVelocity.x;
-                    string cfg = Cfg(production ? "production targetAngularVelocity=-w" : "raw targetAngularVelocity=+w", world);
+                    string cfg = Cfg(production ? "production ToUnityTargetAngularVelocity(+w)" : "raw targetAngularVelocity=+w", world);
                     if (production)
                         rec.Record("hinge_relative_velocity_rad_s", cfg, 1.0, observed, 0.01, ToleranceKind.Absolute,
                             "production mapping must realise the logical +w about the joint axis",
