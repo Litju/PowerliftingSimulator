@@ -19,7 +19,28 @@ namespace PowerliftingSimulator.Squat.Unity
         // Restored pre-calibration qualification authority only. This is not a
         // final calibrated strength value; defer final calibration until 140 kg
         // and 170 kg reach comparable squat mechanics with observable drive demand.
-        public const float AthleteStrengthScale = 5.13f;
+        public const float ProductionAthleteStrengthScale = 5.13f;
+
+        /// <summary>
+        /// The one intrinsic, load-independent strength scalar. Equals
+        /// <see cref="ProductionAthleteStrengthScale"/> in builds and normal
+        /// editor runs; GAM50_STRENGTH_SCALE_OVERRIDE (editor only, read once)
+        /// exists solely for the GAM-50 calibration sweep.
+        /// </summary>
+        public static readonly float AthleteStrengthScale = ResolveAthleteStrengthScale();
+
+        private static float ResolveAthleteStrengthScale()
+        {
+#if UNITY_EDITOR
+            string text = System.Environment.GetEnvironmentVariable("GAM50_STRENGTH_SCALE_OVERRIDE");
+            if (!string.IsNullOrWhiteSpace(text) &&
+                float.TryParse(text, System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out float value) &&
+                value > 0f && value <= 20f)
+                return value;
+#endif
+            return ProductionAthleteStrengthScale;
+        }
 #if UNITY_EDITOR
         public const float MaxBalanceCorrectionRad = 0.17453f; // 10 degrees; target offset only
         private const float MaxMlBalanceCorrectionRad = 0.03491f; // 2 degrees; bounded lateral target trim
