@@ -122,11 +122,13 @@ namespace PowerliftingSimulator.Tests
                 controller.Adapter.PhaseRate = phaseRate;
             }
             bool gateCStaticHold = ReadEnvironmentFlag("GAM13_V2_GATE_C_STATIC_HOLD");
+            bool phase0StandingHold = ReadEnvironmentFlag("GAM13_V2_PHASE0_STANDING_HOLD");
             Debug.Log(string.Format(CultureInfo.InvariantCulture,
-                "GAM13_V23M_CAPTURE load={0:F1}kg ap_reference={1} phase_rate={2:R} gate_c_static_hold={3}",
-                loadKg, apReferenceMode, controller.Adapter.PhaseRate, gateCStaticHold));
+                "GAM13_V23M_CAPTURE load={0:F1}kg ap_reference={1} phase_rate={2:R} gate_c_static_hold={3} phase0_standing_hold={4}",
+                loadKg, apReferenceMode, controller.Adapter.PhaseRate, gateCStaticHold, phase0StandingHold));
 #else
             bool gateCStaticHold = false;
+            bool phase0StandingHold = false;
 #endif
 
             FoundationRuntime runtime = bootstrap.Runtime;
@@ -142,6 +144,10 @@ namespace PowerliftingSimulator.Tests
             SquatObservationSnapshot standingReference = default;
             int consecutiveStandingSamples = 0;
             int setupTicks = 0;
+            var phase0Capture = phase0StandingHold ? new PhaseZeroStandingCapture() : null;
+            string phase0TracePath = phase0StandingHold
+                ? Path.ChangeExtension(tracePath, ".phase0-standing.csv")
+                : null;
             string physicsContractPath = Environment.GetEnvironmentVariable("GAM13_V2_PHYSICS_CONTRACT_PATH");
             GAM13V23BSubstrateAuditTests.WriteRuntimeReceipt(
                 controller, runtime, loadKg, physicsContractPath, "GAM-13 V2-3I");
@@ -168,6 +174,10 @@ namespace PowerliftingSimulator.Tests
                     descentTick: null, reversalTick: null, ascentTick: null, lockout: false,
                     physicalFailure: setupTimedOut,
                     physicalFailureReason: setupTimedOut ? "SETUP_NOT_PHYSICALLY_QUALIFIED" : "NONE");
+                if (phase0Capture != null)
+                    CapturePhaseZeroStandingSample(
+                        phase0Capture, "SETUP", standingReference, controller, rig,
+                        actuatorTrace, consecutiveStandingSamples == RequiredSetupQualificationSamples);
                 if (setupTicks % 50 == 0)
                     yield return null;
             }
@@ -177,7 +187,34 @@ namespace PowerliftingSimulator.Tests
             {
                 SaveTrace(tracePath, trace);
                 actuatorTrace.Save(actuatorTracePath);
+                if (phase0Capture != null)
+                    SavePhaseZeroStandingTrace(phase0Capture, phase0TracePath);
                 Debug.Log($"GAM13_V2_SQUAT_MECHANICS load={loadKg:F1}kg PHYSICAL_STANDING_QUALIFIED=false setup_samples={consecutiveStandingSamples}/{RequiredSetupQualificationSamples} setup_ticks={setupTicks} physical_failure=SETUP_NOT_PHYSICALLY_QUALIFIED trace={tracePath}");
+                yield break;
+            }
+
+            if (phase0StandingHold)
+            {
+                Assert.That(loadKg, Is.EqualTo(140f), "The corrected V2-3M phase-zero hold is 140 kg only.");
+                Assert.That(controller.Adapter.State, Is.EqualTo(SquatState.SETUP),
+                    "Phase-zero standing must not issue a squat command.");
+                Assert.That(controller.Adapter.Sq, Is.EqualTo(0f));
+                Assert.That(controller.Adapter.UsePhaseDependentApComReferenceForQualification, Is.False,
+                    "The corrected hold uses production AP reference A.");
+                Assert.That(controller.Adapter.BalanceCorrectionsEnabled, Is.True,
+                    "Normal V2 balance feedback must remain active.");
+                Assert.That(controller.Adapter.ApFeedbackContributionEnabled, Is.True,
+                    "Normal AP balance feedback must remain active.");
+                Assert.That(controller.AttemptOrchestrator.HasSquatCommand, Is.False);
+
+                yield return ContinuePhaseZeroStandingHold(
+                    controller, runtime, rig, loadKg, dt, phase0Capture, actuatorTrace,
+                    trace, phase0TracePath);
+                SaveTrace(tracePath, trace);
+                actuatorTrace.Save(actuatorTracePath);
+                string latchPath = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(tracePath)),
+                    "first-com-outside-support-latch.csv");
+                File.WriteAllText(latchPath, firstComOutsideSupportLatch.ToString(), new UTF8Encoding(false));
                 yield break;
             }
 
@@ -927,6 +964,207 @@ namespace PowerliftingSimulator.Tests
                 public int Start { get; }
                 public int Length { get; }
             }
+        }
+
+        private sealed class PhaseZeroStandingCapture
+        {
+            public readonly StringBuilder Trace = new StringBuilder(64 * 1024);
+            public bool ApSaturationCaptured;
+            public bool RearMarginCaptured;
+            public bool SetupQualificationCaptured;
+            public ulong SetupQualificationTick;
+            public bool SupportLossReached;
+            public bool HasLastValidTick;
+            public ulong LastValidTick;
+
+            public PhaseZeroStandingCapture()
+            {
+                Trace.AppendLine(
+                    "stage,capture_points,tick,time_s,state,phase_s,phase_velocity,support_available,support_present,left_foot_contact,right_foot_contact," +
+                    "com_z_m,com_vz_mps,ap_front_margin_m,ap_rear_margin_m,ml_left_margin_m,ml_right_margin_m," +
+                    "cop_available,cop_ap_m,cop_front_margin_m,cop_rear_margin_m,cop_left_margin_m,cop_right_margin_m," +
+                    "ap_reference_error_m,raw_ap_command_rad,applied_ap_correction_rad,ap_saturated,max_joint_anchor_separation_m," +
+                    "saddle_attached,saddle_broken,saddle_separation_m,saddle_limit_occupancy,saddle_relative_rotation_deg," +
+                    "bar_x_m,bar_y_m,bar_z_m,bar_vx_mps,bar_vy_mps,bar_vz_mps");
+            }
+        }
+
+        private static IEnumerator ContinuePhaseZeroStandingHold(
+            SquatPhysicalPrototypeController controller,
+            FoundationRuntime runtime,
+            PhysicalAthleteRig rig,
+            float loadKg,
+            float dt,
+            PhaseZeroStandingCapture capture,
+            GAM13V2ActuatorTrace actuatorTrace,
+            StringBuilder qualificationTrace,
+            string phaseZeroTracePath)
+        {
+            const int maximumAdditionalTicks = 300;
+            int additionalTicks = 0;
+            while (additionalTicks < maximumAdditionalTicks && !capture.SupportLossReached)
+            {
+                Assert.That(controller.Adapter.State, Is.EqualTo(SquatState.SETUP),
+                    "The phase-zero observation must remain in setup without a squat command.");
+                Assert.That(controller.Adapter.Sq, Is.EqualTo(0f), "The phase must remain at standing lockout.");
+                double inputTime = runtime.CurrentTime.SimulationTimeSeconds +
+                    0.25d * SimulationConstants.FixedDeltaTimeSeconds;
+                runtime.InputBuffer.SetContinuous(IntentAction.Yield, 0f, inputTime);
+                runtime.InputBuffer.SetContinuous(IntentAction.Drive, 0f, inputTime);
+                Assert.That(runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds), Is.EqualTo(1));
+                TickFeet(controller, dt);
+                additionalTicks++;
+
+                SquatObservationSnapshot snapshot = controller.ObservationCollector.LastSnapshot;
+                Assert.That(snapshot.Sq, Is.EqualTo(0f), "The observed phase must remain at zero.");
+                actuatorTrace.Append(loadKg, snapshot, controller);
+                bool supportLost = CapturePhaseZeroStandingSample(
+                    capture, "PHASE0_HOLD", snapshot, controller, rig, actuatorTrace, false);
+                string failureReason = supportLost ? "AUTHORITATIVE_SUPPORT_LOSS" : "NONE";
+                AppendSample(qualificationTrace, loadKg, snapshot, snapshot, controller, rig,
+                    SquatFailureCalibration.Default, legalDepthReached: false,
+                    descentTick: null, reversalTick: null, ascentTick: null, lockout: false,
+                    physicalFailure: supportLost, physicalFailureReason: failureReason);
+                if (additionalTicks % 50 == 0)
+                    yield return null;
+            }
+
+            if (!capture.SupportLossReached && capture.HasLastValidTick)
+                actuatorTrace.Mark(capture.LastValidTick, "FINAL_VALID_SAMPLE_300_TICKS");
+            SavePhaseZeroStandingTrace(capture, phaseZeroTracePath);
+            Debug.Log(string.Format(CultureInfo.InvariantCulture,
+                "GAM13_V23M_PHASE0_STANDING setup_qualified={0} setup_tick={1} additional_ticks={2} support_loss={3} last_valid_tick={4} trace={5}",
+                capture.SetupQualificationCaptured,
+                Tick(capture.SetupQualificationCaptured ? (ulong?)capture.SetupQualificationTick : null),
+                additionalTicks, capture.SupportLossReached,
+                capture.HasLastValidTick ? Tick(capture.LastValidTick) : "NA", phaseZeroTracePath));
+        }
+
+        private static bool CapturePhaseZeroStandingSample(
+            PhaseZeroStandingCapture capture,
+            string stage,
+            SquatObservationSnapshot snapshot,
+            SquatPhysicalPrototypeController controller,
+            PhysicalAthleteRig rig,
+            GAM13V2ActuatorTrace actuatorTrace,
+            bool setupQualified)
+        {
+            var markers = new List<string>(4);
+            if (snapshot.SimulationTick == 50ul)
+                markers.Add("TICK_50");
+            if (setupQualified && !capture.SetupQualificationCaptured)
+            {
+                capture.SetupQualificationCaptured = true;
+                capture.SetupQualificationTick = snapshot.SimulationTick;
+                markers.Add("END_SETUP_QUALIFICATION");
+            }
+
+            SquatBalanceCorrectionV2 correction = controller.Adapter.BalanceCorrectionV2;
+            if (!capture.ApSaturationCaptured && correction.IsApBoundSaturated)
+            {
+                capture.ApSaturationCaptured = true;
+                markers.Add("FIRST_AP_SATURATION");
+            }
+
+            SquatSupportObservation support = snapshot.Support;
+            bool supportAvailable = support.SupportAvailability == SquatTelemetryAvailability.AVAILABLE;
+            if (!capture.RearMarginCaptured && supportAvailable && support.HasSupport &&
+                support.ComToSupportApRearMarginM < 0f)
+            {
+                capture.RearMarginCaptured = true;
+                markers.Add("FIRST_NEGATIVE_REAR_MARGIN");
+            }
+
+            bool supportLost = IsPhaseZeroSupportLost(snapshot);
+            if (supportLost && !capture.SupportLossReached)
+            {
+                capture.SupportLossReached = true;
+                markers.Add("AUTHORITATIVE_SUPPORT_LOSS");
+                if (capture.HasLastValidTick)
+                    actuatorTrace.Mark(capture.LastValidTick, "FINAL_VALID_BEFORE_SUPPORT_LOSS");
+            }
+            else if (!capture.SupportLossReached)
+            {
+                capture.LastValidTick = snapshot.SimulationTick;
+                capture.HasLastValidTick = true;
+            }
+
+            actuatorTrace.Mark(snapshot.SimulationTick, "PHASE0_STANDING_EVERY_TICK");
+            foreach (string marker in markers)
+                actuatorTrace.Mark(snapshot.SimulationTick, marker);
+            AppendPhaseZeroStandingRow(capture.Trace, stage, string.Join("|", markers),
+                snapshot, controller, rig);
+            return supportLost;
+        }
+
+        private static bool IsPhaseZeroSupportLost(SquatObservationSnapshot snapshot)
+        {
+            SquatSupportObservation support = snapshot.Support;
+            if (support.SupportAvailability != SquatTelemetryAvailability.AVAILABLE)
+                return false;
+            if (!support.HasSupport || !snapshot.LeftFoot.IsInContact || !snapshot.RightFoot.IsInContact)
+                return true;
+
+            float minimumMargin = Mathf.Min(
+                support.ComToSupportApFrontMarginM,
+                support.ComToSupportApRearMarginM,
+                support.ComToSupportMlLeftMarginM,
+                support.ComToSupportMlRightMarginM);
+            return minimumMargin < 0f;
+        }
+
+        private static void AppendPhaseZeroStandingRow(
+            StringBuilder trace,
+            string stage,
+            string capturePoints,
+            SquatObservationSnapshot snapshot,
+            SquatPhysicalPrototypeController controller,
+            PhysicalAthleteRig rig)
+        {
+            SquatSupportObservation support = snapshot.Support;
+            SquatBalanceCorrectionV2 correction = controller.Adapter.BalanceCorrectionV2;
+            bool copAvailable = support.EngineContactPointAvailability == SquatTelemetryAvailability.AVAILABLE &&
+                support.HasSupport;
+            Vector3Value cop = support.EngineContactPointWorldMeters;
+            SquatBarSaddle saddle = controller.Saddle;
+            GAM13V2StandingQualificationTests.MeasureConstraintHealth(
+                rig, out float maximumAnchorSeparation, out _, out _);
+            trace.AppendLine(string.Join(",", new[]
+            {
+                stage, capturePoints, Tick(snapshot.SimulationTick), Format((float)snapshot.SimulationTimeSeconds),
+                snapshot.State.ToString(), Format(snapshot.Sq), Format(0f),
+                support.SupportAvailability == SquatTelemetryAvailability.AVAILABLE ? "true" : "false",
+                support.HasSupport ? "true" : "false",
+                snapshot.LeftFoot.IsInContact ? "true" : "false",
+                snapshot.RightFoot.IsInContact ? "true" : "false",
+                Format(support.SystemComWorldMeters.Z), Format(support.SystemComVelocityWorldMetersPerSecond.Z),
+                Format(support.ComToSupportApFrontMarginM), Format(support.ComToSupportApRearMarginM),
+                Format(support.ComToSupportMlLeftMarginM), Format(support.ComToSupportMlRightMarginM),
+                copAvailable ? "true" : "false", copAvailable ? Format(cop.Z) : "NA",
+                copAvailable ? Format(support.SupportApMaxM - cop.Z) : "NA",
+                copAvailable ? Format(cop.Z - support.SupportApMinM) : "NA",
+                copAvailable ? Format(support.SupportMlMaxM - cop.X) : "NA",
+                copAvailable ? Format(cop.X - support.SupportMlMinM) : "NA",
+                Format(correction.ErrorApM), Format(correction.CommandApRad), Format(correction.AppliedApRad),
+                correction.IsApBoundSaturated ? "true" : "false", Format(maximumAnchorSeparation),
+                saddle != null && saddle.IsAttached ? "true" : "false",
+                saddle == null || saddle.IsBroken ? "true" : "false",
+                Format(saddle != null ? saddle.SaddleSeparationMeters : float.NaN),
+                Format(saddle != null ? saddle.CurrentLinearLimitOccupancy : float.NaN),
+                Format(saddle != null ? saddle.RelativeRotationDegrees : float.NaN),
+                Format(snapshot.Bar.PositionWorldMeters.X), Format(snapshot.Bar.PositionWorldMeters.Y),
+                Format(snapshot.Bar.PositionWorldMeters.Z),
+                Format(snapshot.Bar.LinearVelocityWorldMetersPerSecond.X),
+                Format(snapshot.Bar.LinearVelocityWorldMetersPerSecond.Y),
+                Format(snapshot.Bar.LinearVelocityWorldMetersPerSecond.Z)
+            }));
+        }
+
+        private static void SavePhaseZeroStandingTrace(PhaseZeroStandingCapture capture, string path)
+        {
+            string fullPath = Path.GetFullPath(path);
+            Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+            File.WriteAllText(fullPath, capture.Trace.ToString(), new UTF8Encoding(false));
         }
 
         private static IEnumerator RunGateCStaticHold(
