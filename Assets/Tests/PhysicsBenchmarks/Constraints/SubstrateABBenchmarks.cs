@@ -209,7 +209,7 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
                     {
                         using (var world = new IsolatedPhysicsWorld("ab_" + cell.arm, cell.dt, cell.pos, cell.vel))
                         {
-                            int steps = Mathf.RoundToInt(4f / cell.dt);
+                            int steps = Mathf.RoundToInt(ConstraintPhysicsBenchmarks.SettleSeconds / cell.dt);
                             int tailStart = steps - Mathf.RoundToInt(0.5f / cell.dt);
                             var sums = new double[3];
                             int count = 0;
@@ -293,7 +293,7 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
                                     "Absolute deviation from the analytic equilibrium.", CausalLayer.NumericalConvergence);
                             }
                             rec.Info($"{cell.arm}_max_stretch_m", cfg, separation, "Constraint stretch (second half of run).", CausalLayer.ConstraintConvergence);
-                            rec.Info($"{cell.arm}_settled_speed_rad_s", cfg, speed, "Residual angular speed after 4 s.", CausalLayer.ConstraintConvergence);
+                            rec.Info($"{cell.arm}_settled_speed_rad_s", cfg, speed, "Residual angular speed at the end of the window.", CausalLayer.ConstraintConvergence);
                             rec.Info($"{cell.arm}_cpu_ms_per_step", cfg, watch.Elapsed.TotalMilliseconds / steps,
                                 "Wall time per PhysicsScene.Simulate (whole isolated scene).", CausalLayer.NumericalConvergence);
                             if (repeat == 0)

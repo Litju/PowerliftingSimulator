@@ -84,6 +84,14 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
         public static readonly float[] Loads = { 25f, 60f, 140f, 170f, 300f };
         private const double LockoutBarStillVelocityMps = 0.020;
 
+        /// <summary>
+        /// Observation window for chain statics. Heavy loads sit close to the
+        /// static stability limit, where the slowest mode is soft and slow; a
+        /// 4 s window averaged a transient in both ConfigurableJoint and
+        /// ArticulationBody alike.
+        /// </summary>
+        public const float SettleSeconds = 12f;
+
         [UnityTest]
         public IEnumerator B10_SquatBarSaddle_SpringDamperLoadPath()
         {
@@ -170,6 +178,44 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
                         "spring statics sag = m g / k on a dynamic carrier; realization band 5%",
                         "Saddle spring is under-realised when its carrier is dynamic (mass ratio).", CausalLayer.BarSaddleLoadPath);
                 }
+
+                // B10b angular release: the bar given a small rotation rate on
+                // a kinematic carrier. How fast does the saddle's angular
+                // spring/damper bring it to the sealed GAM-12 angular
+                // stillness (0.20 rad/s), and to 0.02 rad/s?
+                using (IsolatedPhysicsWorld world = ProductionWorld("saddle_angular"))
+                {
+                    Rigidbody thorax = world.CreateBody("thorax_carrier", new Vector3(0f, 1.4f, 0f), Quaternion.identity, 21.6f,
+                        Vector3.one * 0.3f, kinematic: true, gravity: false);
+                    Vector3 anchorWorld = thorax.transform.TransformPoint(SquatBarSaddle.ThoraxLocalAnchor);
+                    Rigidbody bar = SaddleReplica.CreateBar(world, load, anchorWorld);
+                    SaddleReplica.Attach(bar, thorax, SquatBarSaddle.ThoraxLocalAnchor);
+                    world.Step(50);
+                    bar.angularVelocity = new Vector3(0.3f, 0.3f, 0.3f);
+                    double stillLockout = double.NaN, stillFine = double.NaN;
+                    int steps = Mathf.RoundToInt(4f / world.Dt);
+                    for (int i = 0; i < steps; i++)
+                    {
+                        world.Step();
+                        double w = bar.angularVelocity.magnitude;
+                        double t = (i + 1) * (double)world.Dt;
+                        if (w > 0.20) stillLockout = double.NaN; else if (double.IsNaN(stillLockout)) stillLockout = t;
+                        if (w > 0.02) stillFine = double.NaN; else if (double.IsNaN(stillFine)) stillFine = t;
+                        rec.Series("angular_load" + load, "t,bar_w_rad_s", Inv(t) + "," + Inv(w));
+                    }
+                    Vector3 inertia = bar.inertiaTensor;
+                    double kTheta = SquatBarSaddle.DefaultAngularSpring, cTheta = SquatBarSaddle.DefaultAngularDamper;
+                    string cfg = Cfg($"load={load};w0=0.52rad/s", world);
+                    rec.Record("time_to_lockout_angular_stillness_s", cfg, 0, double.IsNaN(stillLockout) ? double.PositiveInfinity : stillLockout,
+                        0.5, ToleranceKind.UpperBound,
+                        "bar angular speed below the sealed GAM-12 lockout 0.20 rad/s within 0.5 s of a 0.52 rad/s disturbance",
+                        "The saddle lets the bar rock long enough to defeat lockout angular stillness.", CausalLayer.BarSaddleLoadPath);
+                    rec.Info("time_to_0p02_rad_s_s", cfg, double.IsNaN(stillFine) ? double.PositiveInfinity : stillFine,
+                        "Time until bar angular speed stays below 0.02 rad/s.", CausalLayer.BarSaddleLoadPath);
+                    for (int axis = 0; axis < 3; axis++)
+                        rec.Info("angular_damping_ratio_axis" + axis, cfg, cTheta / (2 * Math.Sqrt(kTheta * inertia[axis])),
+                            "Analytic saddle angular damping ratio about each bar principal axis.", CausalLayer.BarSaddleLoadPath);
+                }
                 yield return null;
             }
             rec.WriteAndAssert();
@@ -253,21 +299,55 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
             var k = new double[3];
             for (int i = 0; i < 3; i++)
                 k[i] = PoweredJointController.FindFamilyProfile(spec.Family[i]).Value.Spring * spec.DriveMultiplier;
+            // Newton on r(e) = K e - tau(e). A damped fixed point contracts
+            // ever more slowly as gravitational stiffness approaches K (heavy
+            // loads), and stopped short of the equilibrium at 170 kg.
             var e = new double[3];
-            for (int iteration = 0; iteration < 500; iteration++)
+            for (int iteration = 0; iteration < 100; iteration++)
             {
-                double[] tau = GravityTorques(spec, e, barMassKg, g);
-                double change = 0;
-                for (int j = 0; j < 3; j++)
+                double[] r = Residual(spec, k, e, barMassKg, g);
+                double norm = Math.Max(Math.Abs(r[0]), Math.Max(Math.Abs(r[1]), Math.Abs(r[2])));
+                if (norm < 1e-9)
+                    return e;
+                var jacobian = new double[3, 3];
+                const double h = 1e-7;
+                for (int c = 0; c < 3; c++)
                 {
-                    double next = tau[j] / k[j];
-                    change = Math.Max(change, Math.Abs(next - e[j]));
-                    e[j] = 0.5 * e[j] + 0.5 * next;
+                    var shifted = (double[])e.Clone();
+                    shifted[c] += h;
+                    double[] rs = Residual(spec, k, shifted, barMassKg, g);
+                    for (int row = 0; row < 3; row++)
+                        jacobian[row, c] = (rs[row] - r[row]) / h;
                 }
-                if (change < 1e-12)
-                    break;
+                double[] step = Solve3(jacobian, r);
+                for (int j = 0; j < 3; j++)
+                    e[j] -= step[j];
             }
-            return e;
+            throw new InvalidOperationException("Chain statics did not converge.");
+        }
+
+        private static double[] Residual(ChainSpec spec, double[] k, double[] e, float barMassKg, double g)
+        {
+            double[] tau = GravityTorques(spec, e, barMassKg, g);
+            return new[] { k[0] * e[0] - tau[0], k[1] * e[1] - tau[1], k[2] * e[2] - tau[2] };
+        }
+
+        private static double[] Solve3(double[,] a, double[] b)
+        {
+            double Det(double[,] m) =>
+                m[0, 0] * (m[1, 1] * m[2, 2] - m[1, 2] * m[2, 1]) -
+                m[0, 1] * (m[1, 0] * m[2, 2] - m[1, 2] * m[2, 0]) +
+                m[0, 2] * (m[1, 0] * m[2, 1] - m[1, 1] * m[2, 0]);
+            double d = Det(a);
+            var x = new double[3];
+            for (int c = 0; c < 3; c++)
+            {
+                var m = (double[,])a.Clone();
+                for (int row = 0; row < 3; row++)
+                    m[row, c] = b[row];
+                x[c] = Det(m) / d;
+            }
+            return x;
         }
 
         public static double[] GravityTorques(ChainSpec spec, double[] e, float barMassKg, double g)
@@ -381,7 +461,7 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
                     using (var world = new IsolatedPhysicsWorld("chain", cell.dt, cell.pos, cell.vel))
                     {
                         ChainState state = BuildChain(world, spec, load, 1e7f);
-                        var (errors, separation, speed, sag) = SettleChain(world, state, spec, 4f);
+                        var (errors, separation, speed, sag) = SettleChain(world, state, spec, SettleSeconds);
                         string cfg = Cfg($"load={load};{cell.tag}", world);
                         if (cell.tag == "reference")
                             reference = errors;
@@ -418,7 +498,7 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
                                 "locked hinge anchors: 2 mm engineering tolerance",
                                 "Joint constraints stretch under the chain's mass ratios.", CausalLayer.ConstraintConvergence);
                             rec.Record("settled_max_angular_speed_rad_s", cfg, 0, speed, 0.01, ToleranceKind.UpperBound,
-                                "static chain settles within 4 s", "The chain does not settle.", CausalLayer.ConstraintConvergence);
+                                "static chain settles within the 12 s window (near-unstable heavy cases have a slow mode)", "The chain does not settle.", CausalLayer.ConstraintConvergence);
                             if (state.Bar != null)
                                 rec.Record("saddle_sag_m", cfg, barMass * g / SquatBarSaddle.DefaultLinearSpring, sag, 0.10,
                                     ToleranceKind.Relative, "saddle statics m g / k on a dynamic carrier; 10%",
@@ -428,7 +508,7 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
                         {
                             rec.Info("max_anchor_separation_m", cfg, separation, "Constraint stretch off production settings.",
                                 CausalLayer.NumericalConvergence);
-                            rec.Info("settled_max_angular_speed_rad_s", cfg, speed, "Residual motion after 4 s.",
+                            rec.Info("settled_max_angular_speed_rad_s", cfg, speed, "Residual motion at the end of the 12 s window.",
                                 CausalLayer.NumericalConvergence);
                         }
                     }

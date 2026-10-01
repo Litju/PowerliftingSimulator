@@ -327,10 +327,15 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
                     double droop = Vector3.Angle(Vector3.up, child.rotation * Vector3.up) * Mathf.Deg2Rad;
                     double factor = world.Dt * world.Dt * steps * (steps + 1) / 2.0;
                     double modelAlpha = Math.Max(0, tauG - modelAuthority) / ip;
+                    // A held case relaxes to its static droop tau/K (per-axis
+                    // torques tau/sqrt2 each balanced by K e_axis), not to the
+                    // pre-deflection.
+                    double heldDroop = tauG / stiffK;
                     double perAxisAlpha = Math.Max(0, tauG - Math.Sqrt(2) * maxForce) / ip;
                     double magnitudeAlpha = Math.Max(0, tauG - maxForce) / ip;
                     string cfg = Cfg($"swing45deg;tau_g/maxForce={ratio:F2}", world);
-                    rec.Record("swing_droop_vs_production_demand_model_rad", cfg, theta0 + modelAlpha * factor, droop, 0.05,
+                    rec.Record("swing_droop_vs_production_demand_model_rad", cfg,
+                        modelAlpha > 0 ? theta0 + modelAlpha * factor : heldDroop, droop, 0.05,
                         ToleranceKind.Relative,
                         "production PoweredJointController.ModelDriveDemand swing authority at 45 deg, saturated start; 5%",
                         "PhysX clamps the swing drive differently from the production demand model: swing demand telemetry misstates available authority.",

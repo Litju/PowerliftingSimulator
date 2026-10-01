@@ -66,7 +66,9 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
                             BoxInertia(mass, size), colliderBoxSize: size, material: FootGrip());
                         world.Step(20);
                         Vector3 start = block.position;
-                        Vector3 downSlope = tilt * Vector3.back;
+                        // AngleAxis(theta, +X) carries +Z downhill: (0,0,1) -> (0,-sin,cos).
+                        Vector3 downSlope = tilt * Vector3.forward;
+                        double startVelocity = Vector3.Dot(block.linearVelocity, downSlope);
                         int steps = Mathf.RoundToInt(1f / world.Dt);
                         world.Step(steps);
                         double displacement = Vector3.Dot(block.position - start, downSlope);
@@ -82,7 +84,7 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
                             double a = g * (Math.Sin(theta) - mu * Math.Cos(theta));
                             double t = steps * (double)world.Dt;
                             double velocity = Vector3.Dot(block.linearVelocity, downSlope);
-                            rec.Record("slide_velocity_after_1s_mps", cfg, a * t, velocity, 0.05, ToleranceKind.Relative,
+                            rec.Record("slide_velocity_gain_over_1s_mps", cfg, a * t, velocity - startVelocity, 0.05, ToleranceKind.Relative,
                                 "Coulomb sliding a = g (sin - mu cos); 5% engineering tolerance",
                                 "Dynamic friction coefficient is not the authored value.", CausalLayer.ContactFriction);
                         }
@@ -123,6 +125,35 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
                         rec.Record("slide_velocity_after_1s_mps", cfg, a * t, block.linearVelocity.z, 0.10, ToleranceKind.Relative,
                             "Coulomb: a = (F - mu m g)/m; 10% (small net force)", "Friction cone limit is not mu N.",
                             CausalLayer.ContactFriction);
+                    }
+                }
+                yield return null;
+            }
+
+            // Characterisation: sub-threshold creep. Constant push at a
+            // fraction of mu N; creep speed after 1 s, at production and 4x
+            // velocity iterations.
+            foreach (int velocityIterations in new[] { ProductionVelocityIterations, 4 })
+            {
+                foreach (double pushRatio in new[] { 0.3, 0.5, 0.7, 0.9 })
+                {
+                    using (var world = new IsolatedPhysicsWorld("creep", ProductionDt, ProductionPositionIterations, velocityIterations))
+                    {
+                        world.CreateStaticBox("ground", new Vector3(20f, 0.2f, 20f), new Vector3(0f, -0.1f, 0f), Quaternion.identity, PlatformReplica());
+                        const float mass = 50f;
+                        var size = new Vector3(0.13f, 0.10f, 0.29f);
+                        Rigidbody block = world.CreateBody("foot", new Vector3(0f, size.y * 0.5f, 0f), Quaternion.identity, mass,
+                            BoxInertia(mass, size), colliderBoxSize: size, material: FootGrip());
+                        world.Step(20);
+                        Vector3 start = block.position;
+                        float force = (float)(pushRatio * mu * mass * g);
+                        for (int i = 0; i < 100; i++)
+                        {
+                            block.AddForce(new Vector3(0f, 0f, force), ForceMode.Force);
+                            world.Step();
+                        }
+                        rec.Info("sub_threshold_creep_mps", Cfg($"F/(mu m g)={pushRatio:F2}", world), block.position.z - start.z,
+                            "Displacement per second under a constant sub-threshold push.", CausalLayer.ContactFriction);
                     }
                 }
                 yield return null;
