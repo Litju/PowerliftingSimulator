@@ -8,7 +8,7 @@ namespace PowerliftingSimulator.Tests
         [Test]
         public void V2_RETAINS_CURRENT_SHARED_FAMILY_PROFILES_AND_NORMALIZED_FINITE_CAPACITIES()
         {
-            AssertFamily("ankle", 180f, 2.5f, 650f, 70f);
+            AssertFamily("ankle", 180f, 2.5f, 1600f, 110f);
             AssertFamily("knee", 300f, 1.8f, 1123f, 94.8f);
             AssertFamily("hip", 360f, 1.5f, 900f, 90f);
             AssertFamily("trunk", 260f, 1.5f, 3200f, 170f);

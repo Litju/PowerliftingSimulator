@@ -170,7 +170,9 @@ namespace PowerliftingSimulator.Athlete
 
         private static readonly JointFamilyProfile[] Profiles =
         {
-            new JointFamilyProfile("ankle", 650f, 70f, 450f, 2.0f),
+            // GAM-13 V2-3M static hold: 159.2 Nm at 0.2449 rad error and 6.9% of maximum force.
+            // Set K to 159.2 / 0.10 rad; scale D by sqrt(K_new / K_old) to preserve damping ratio.
+            new JointFamilyProfile("ankle", 1600f, 110f, 450f, 2.0f),
             new JointFamilyProfile("knee", 1123f, 94.8f, 540f, 2.5f),
             new JointFamilyProfile("hip", 900f, 90f, 540f, 2.2f),
             new JointFamilyProfile("trunk", 3200f, 170f, 390f, 1.8f),
