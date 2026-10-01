@@ -41,6 +41,12 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
         private const float SettledComSpeedMps = 0.020f;
         private const float ReleaseWindowSeconds = 0.5f;
 
+        // GAM-13 V2-5 envelope: 170 kg is near-max and 300 kg supra-max at the
+        // calibrated intrinsic strength, so their held poses are characterised
+        // (capacity is meant to bind) while 0-140 kg must qualify. The oracle's
+        // physics rows stay gated at every load.
+        private const float QualifiedHoldLoadCeilingKg = 140f;
+
         [UnityTest]
         public IEnumerator B12_SharedAthlete_Standing([ValueSource(nameof(Loads))] float loadKg)
         {
@@ -67,7 +73,7 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
                 if (i % 100 == 0)
                     yield return null;
             }
-            RecordHold(rec, session, samples, "standing_hold_10s", qualifying: true);
+            RecordHold(rec, session, samples, "standing_hold_10s", qualifying: loadKg <= QualifiedHoldLoadCeilingKg);
             rec.Info("cpu_ms_per_tick", session.Cfg("standing_hold_10s"), session.MeanStepMilliseconds,
                 "Mean wall time per authoritative tick in the batch editor (budget context: 10 ms real time per tick).",
                 CausalLayer.NumericalConvergence);
@@ -112,7 +118,8 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
                             yield return null;
                     }
                     OracleExport.Write(session, caseId, "settled", phase, variant);
-                    RecordHold(rec, session, samples, label, qualifying: variant == "production");
+                    RecordHold(rec, session, samples, label,
+                        qualifying: variant == "production" && loadKg <= QualifiedHoldLoadCeilingKg);
                 }
             }
             rec.WriteAndAssert();
