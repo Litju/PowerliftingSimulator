@@ -87,7 +87,9 @@ namespace PowerliftingSimulator.Tests
                 PhysicalJointKind.Ball, trunk, error, Vector3.zero, maximumForce);
 
             float expectedTwistNm = trunk.Spring * 0.1f;
-            float expectedSwingNm = Mathf.Sqrt(2f) * expectedTwistNm;
+            // PhysX clamps each swing axis separately (GAM-50 B06), so the
+            // binding swing channel is the larger axis, not the YZ magnitude.
+            float expectedSwingNm = expectedTwistNm;
             Assert.That(hingeDemand.MaximumChannelFraction, Is.EqualTo(expectedTwistNm / maximumForce).Within(1e-4f));
             Assert.That(ballDemand.TwistNm, Is.EqualTo(expectedTwistNm).Within(1e-4f));
             Assert.That(ballDemand.SwingNm, Is.EqualTo(expectedSwingNm).Within(1e-4f));

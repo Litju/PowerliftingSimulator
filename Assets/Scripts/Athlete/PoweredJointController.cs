@@ -671,7 +671,12 @@ namespace PowerliftingSimulator.Athlete
             if (kind == PhysicalJointKind.Hinge)
                 return new PoweredDriveDemand(twistNm, float.NaN, twistFraction, float.NaN, twistFraction);
 
-            float swingNm = Mathf.Sqrt(torqueByAxis.y * torqueByAxis.y + torqueByAxis.z * torqueByAxis.z);
+            // PhysX clamps each swing axis of angularYZDrive to maximumForce
+            // independently (Physics Benchmark V1 B06: a 45 deg swing load
+            // holds up to sqrt(2) F and saturates exactly as the per-axis
+            // prediction says). The binding swing channel is the larger axis,
+            // not the vector magnitude.
+            float swingNm = Mathf.Max(Mathf.Abs(torqueByAxis.y), Mathf.Abs(torqueByAxis.z));
             float swingFraction = swingNm / denominator;
             return new PoweredDriveDemand(
                 twistNm, swingNm, twistFraction, swingFraction, Mathf.Max(twistFraction, swingFraction));
