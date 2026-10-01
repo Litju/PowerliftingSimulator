@@ -87,9 +87,54 @@ namespace PowerliftingSimulator.Squat.Unity
         /// <summary>
         /// Raw ConfigurableJoint.currentForce/currentTorque diagnostics. The
         /// engine frame/interpretation is intentionally not promoted here to
-        /// a biological or world-space force claim.
+        /// a biological or world-space force claim. Physics Benchmark V1 B10
+        /// measures currentForce reading exactly zero for this drive-only
+        /// saddle at every load: it is not load-path evidence. Use
+        /// <see cref="ModeledLoadPathForceWorld"/> for the force the saddle
+        /// carries.
         /// </summary>
         public Vector3 CurrentForceEngine => _joint == null ? Vector3.zero : _joint.currentForce;
+
+        /// <summary>
+        /// World-space force the saddle applies to the bar, from the authored
+        /// linear spring and damper acting on the anchor separation and its
+        /// rate, each joint axis clamped to the drive's maximumForce. B10
+        /// verifies it equals the bar weight at static equilibrium.
+        /// </summary>
+        public Vector3 ModeledLoadPathForceWorld =>
+            _joint == null || _barbell == null || _barbell.Body == null || _thoraxBody == null
+                ? Vector3.zero
+                : ModeledLinearForceOnBar(_joint, _barbell.Body, _thoraxBody);
+
+        /// <summary>
+        /// The saddle's linear drive force on the bar: k (thorax anchor - bar
+        /// anchor) + c (relative anchor velocity), clamped per joint axis.
+        /// Shared by production telemetry and the benchmark replica.
+        /// </summary>
+        public static Vector3 ModeledLinearForceOnBar(ConfigurableJoint joint, Rigidbody bar, Rigidbody carrier)
+        {
+            if (joint == null || bar == null || carrier == null)
+                return Vector3.zero;
+            Vector3 barAnchor = bar.transform.TransformPoint(joint.anchor);
+            Vector3 carrierAnchor = carrier.transform.TransformPoint(joint.connectedAnchor);
+            Vector3 separation = carrierAnchor - barAnchor;
+            Vector3 relativeVelocity = carrier.GetPointVelocity(carrierAnchor) - bar.GetPointVelocity(barAnchor);
+            Quaternion jointFrame = bar.rotation * Quaternion.LookRotation(
+                Vector3.Cross(joint.axis, joint.secondaryAxis).normalized,
+                Vector3.Cross(Vector3.Cross(joint.axis, joint.secondaryAxis), joint.axis).normalized);
+            Vector3 localSeparation = Quaternion.Inverse(jointFrame) * separation;
+            Vector3 localVelocity = Quaternion.Inverse(jointFrame) * relativeVelocity;
+            // jointFrame columns: x = axis, y = secondary, z = axis x secondary.
+            Vector3 force = new Vector3(
+                Axis(joint.xDrive, localSeparation.x, localVelocity.x),
+                Axis(joint.yDrive, localSeparation.y, localVelocity.y),
+                Axis(joint.zDrive, localSeparation.z, localVelocity.z));
+            return jointFrame * force;
+        }
+
+        private static float Axis(JointDrive drive, float separation, float velocity) =>
+            Mathf.Clamp(drive.positionSpring * separation + drive.positionDamper * velocity,
+                -drive.maximumForce, drive.maximumForce);
         public Vector3 CurrentTorqueEngine => _joint == null ? Vector3.zero : _joint.currentTorque;
         public float CurrentLinearLimitOccupancy => LinearLimitOccupancy();
         public float CurrentAngularXLimitOccupancy => AngularLimitOccupancy(AxisComponent.X);

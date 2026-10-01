@@ -155,10 +155,13 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
                     world.Step(Mathf.RoundToInt(2f / world.Dt));
                     double m = bar.mass;
                     string cfg = Cfg($"load={load};dynamic_thorax={thoraxMass}", world);
-                    rec.Record("saddle_reported_force_n", cfg, m * g, saddle.currentForce.magnitude, 0.02, ToleranceKind.Relative,
-                        "static load path: Joint.currentForce equals the bar weight m g; 2%",
-                        "The engine-reported saddle force (production telemetry CurrentForceEngine) is not the load the saddle carries.",
+                    rec.Record("saddle_load_path_telemetry_n", cfg, m * g,
+                        SquatBarSaddle.ModeledLinearForceOnBar(saddle, bar, thorax).magnitude, 0.02, ToleranceKind.Relative,
+                        "static load path: production saddle load telemetry equals the bar weight m g; 2%",
+                        "Production saddle load telemetry is not the load the saddle carries.",
                         CausalLayer.BarSaddleLoadPath);
+                    rec.Info("engine_reported_saddle_force_n", cfg, saddle.currentForce.magnitude,
+                        "Raw Joint.currentForce for the drive-only saddle (characterization).", CausalLayer.BarSaddleLoadPath);
                     rec.Record("carrier_reported_force_n", cfg, (m + thoraxMass) * g, hold.currentForce.magnitude, 0.02,
                         ToleranceKind.Relative, "static load path below the saddle carries bar + thorax weight; 2%",
                         "Load is not transmitted through the dynamic thorax.", CausalLayer.BarSaddleLoadPath);
