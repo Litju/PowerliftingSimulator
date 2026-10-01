@@ -923,11 +923,17 @@ namespace PowerliftingSimulator.Tests
                         throw new InvalidOperationException($"Missing post-physics diagnostic for powered joint '{joint.Id}'.");
 
                     PoweredJointDiagnostic diagnostic = joint.PostPhysicsDiagnostic;
-                    Vector3 referenceAngle = controller.Adapter.TryGetTargetComposition(joint.Id, out
-                        SquatPhysicalAdapter.JointTargetComposition composition)
+                    bool hasReference = controller.Adapter.TryGetTargetComposition(
+                        joint.Id, out SquatPhysicalAdapter.JointTargetComposition composition);
+                    bool referenceRequired = joint.Id == "left_foot" || joint.Id == "right_foot" ||
+                        joint.Id == "left_shank" || joint.Id == "right_shank" ||
+                        joint.Id == "left_thigh" || joint.Id == "right_thigh" ||
+                        joint.Id == "abdomen" || joint.Id == "thorax";
+                    if (referenceRequired && !hasReference)
+                        throw new InvalidOperationException($"Missing nominal squat reference target for '{joint.Id}'.");
+                    Vector3 referenceAngle = hasReference
                         ? RotationVector(composition.Nominal)
-                        : RotationVector(controller.Adapter.ReferenceLogicalTarget(
-                            joint.Id, snapshot.Sq, snapshot.Direction));
+                        : new Vector3(float.NaN, float.NaN, float.NaN);
                     Vector3 requestedAngle = RotationVector(joint.RequestedCommand.TargetRelativeRotation);
                     Vector3 appliedAngle = RotationVector(diagnostic.AppliedTarget);
                     Vector3 actualAngle = RotationVector(diagnostic.ActualRelative);
