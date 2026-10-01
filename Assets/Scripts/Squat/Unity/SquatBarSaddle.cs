@@ -39,7 +39,12 @@ namespace PowerliftingSimulator.Squat.Unity
         public const float DefaultLinearDamper = 6500f;
         public const float DefaultLinearMaxForce = 60000f;
         public const float DefaultAngularSpring = 1200f;
-        public const float DefaultAngularDamper = 100f;
+        // GAM-50: one load-independent damper giving damping ratio >= 0.77 about
+        // every bar tipping axis up to 300 kg (plate inertia 14-224 kg m^2).
+        // At 100 the ratio fell to 0.38 at 25 kg and 0.10 at 300 kg, and B10b
+        // measured the bar rocking for 0.95-2.73 s (140-300 kg) before it
+        // reached the GAM-12 0.20 rad/s lockout angular stillness.
+        public const float DefaultAngularDamper = 800f;
         public const float DefaultAngularMaxForce = 1200f;
         public const float DefaultBreakForce = 60000f;
         public const float DefaultBreakTorque = 15000f;
