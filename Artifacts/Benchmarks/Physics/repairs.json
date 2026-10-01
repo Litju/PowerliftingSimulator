@@ -1,0 +1,18 @@
+[
+  {
+    "repair": "R1",
+    "case": "B07_target_sign_frame",
+    "metric": "hinge_relative_velocity_rad_s",
+    "root_cause": "PoweredJointController negated targetAngularVelocity by analogy with targetRotation; Unity applies it with its own sign.",
+    "repair_commit": "58a24f5",
+    "post_repair_result": "PASS: B07 12/12 (Artifacts/Benchmarks/Physics/58a24f5/repairs/R1); drive layer otherwise unchanged."
+  },
+  {
+    "repair": "R2",
+    "case": "B06_maximum_force_saturation",
+    "metric": "swing_droop_vs_production_demand_model_rad",
+    "root_cause": "Swing demand modeled as |YZ torque| / F; PhysX clamps each swing axis to F independently.",
+    "repair_commit": "68d63a7",
+    "post_repair_result": "PASS: B06 8/8 (Artifacts/Benchmarks/Physics/68d63a7/repairs/R2); PoweredJointActuatorContractTests 4/4."
+  }
+]

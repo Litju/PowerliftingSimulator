@@ -16,6 +16,10 @@ param(
     # Separate bench root for sweeps/experiments, so they never replace the
     # baseline rows the failure matrix is built from: <sha>/<Scope>.
     [string]$Scope = '',
+    # Experiment only: run with the PhysX solver type patched in
+    # DynamicsManager.asset for this invocation (restored afterwards).
+    [ValidateSet('', 'PGS', 'TGS')]
+    [string]$SolverType = '',
     [string]$UnityExecutable = 'D:\Dev\Unity\6000.3.22f1\Editor\Unity.exe',
     [int]$TimeoutMinutes = 60,
     [switch]$NoCompare
@@ -71,7 +75,18 @@ function Invoke-UnityTests {
     return $result
 }
 
+$dynamicsPath = Join-Path $projectRoot 'ProjectSettings/DynamicsManager.asset'
+$dynamicsOriginal = $null
+if ($SolverType) {
+    $dynamicsOriginal = [IO.File]::ReadAllText($dynamicsPath)
+    $value = if ($SolverType -eq 'TGS') { 1 } else { 0 }
+    if ($dynamicsOriginal -notmatch 'm_SolverType: \d') { throw 'DynamicsManager.asset has no m_SolverType.' }
+    [IO.File]::WriteAllText($dynamicsPath, ($dynamicsOriginal -replace 'm_SolverType: \d', "m_SolverType: $value"))
+    $Environment['PHYSICS_BENCHMARK_SOLVER_LABEL'] = $SolverType
+}
+
 $started = Get-Date
+try {
 $summary = [ordered]@{
     run_id = $runId; tier = $Tier; git_sha = $sha; working_tree_dirty = $dirty
     started_utc = $started.ToUniversalTime().ToString('o'); environment = $Environment; invocations = @()
@@ -114,6 +129,11 @@ if ($Tier -in @('Squat', 'All')) {
         }
     }
     python (Join-Path $PSScriptRoot 'SquatBenchmark.py') --squat-root $squatRoot --raw-dir $rawDir
+}
+
+}
+finally {
+    if ($null -ne $dynamicsOriginal) { [IO.File]::WriteAllText($dynamicsPath, $dynamicsOriginal) }
 }
 
 $summary.finished_utc = (Get-Date).ToUniversalTime().ToString('o')

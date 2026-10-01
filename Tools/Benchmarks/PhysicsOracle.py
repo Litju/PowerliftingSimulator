@@ -145,6 +145,23 @@ def run(raw_dir):
         speeds = [math.sqrt(dot(b["velocity"], b["velocity"])) for b in export["bodies"]]
         static = max(speeds) < 0.02
         cfg = "%s;stage=%s;load=%g;phase=%.2f;%s" % (export["case"], export["stage"], export["load_kg"], export["phase"], export["variant"])
+        gate_case = settled and grounded and static and export["variant"] == "production"
+        joints_by_id = {j["id"]: j for j in export["joints"]}
+        # The left/right split of the upper body between two grounded legs is
+        # statically indeterminate; their sum about a common flexion axis is
+        # not. Bilateral leg joints gate on the pair sum.
+        for left, right in (("left_foot", "right_foot"), ("left_shank", "right_shank"), ("left_thigh", "right_thigh")):
+            jl, jr = joints_by_id.get(left), joints_by_id.get(right)
+            if not jl or not jr or "modeled_twist_torque" not in jl or "modeled_twist_torque" not in jr:
+                continue
+            parallel = dot(jl["axis_world"], jr["axis_world"]) > 0.98
+            oracle = predicted[left] + predicted[right]
+            unity = jl["modeled_twist_torque"] + jr["modeled_twist_torque"]
+            tol = max(REL_TOL * abs(oracle), ABS_FLOOR_NM)
+            rows.append(metric(case, "%s_pair_sum_unity_vs_oracle_torque_nm" % left.split("_", 1)[1], cfg, oracle, unity, tol,
+                               "Absolute", "independent quasi-static Newton-Euler, bilateral sum; max(10%%, 10 N m)",
+                               "Unity's modeled bilateral drive torque disagrees with independent statics: frame, mass, or drive-model error.",
+                               1, gated=gate_case and parallel))
         for joint in export["joints"]:
             jid = joint["id"]
             if jid not in SAGITTAL or "modeled_twist_torque" not in joint:
@@ -152,9 +169,10 @@ def run(raw_dir):
             oracle = predicted[jid]
             unity = joint["modeled_twist_torque"]
             tol = max(REL_TOL * abs(oracle), ABS_FLOOR_NM)
-            gate = settled and grounded and static and export["variant"] == "production"
+            bilateral = jid.startswith("left_") or jid.startswith("right_")
+            gate = gate_case and not bilateral
             rows.append(metric(case, "%s_unity_vs_oracle_torque_nm" % jid, cfg, oracle, unity, tol, "Absolute",
-                               "independent quasi-static Newton-Euler; max(10%% of oracle, 10 N m)",
+                               "independent quasi-static Newton-Euler (bilateral joints: equal-split characterization only); max(10%% of oracle, 10 N m)",
                                "Unity's modeled drive torque disagrees with independent statics: frame, mass, or drive-model error.",
                                1, gated=gate))
             rows.append(metric(case, "%s_solver_vs_oracle_torque_nm" % jid, cfg, oracle, joint.get("solver_twist_torque"),
