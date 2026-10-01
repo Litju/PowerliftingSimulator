@@ -15,11 +15,15 @@ namespace PowerliftingSimulator.Squat.Unity
     /// </summary>
     public sealed class SquatPhysicalAdapter : IPhysicalAthleteCommandSource
     {
-        public const string CapacityCalibrationVersion = "GAM13_SQUAT_CAPACITY_QUALIFICATION_AUTHORITY_V1";
-        // Restored pre-calibration qualification authority only. This is not a
-        // final calibrated strength value; defer final calibration until 140 kg
-        // and 170 kg reach comparable squat mechanics with observable drive demand.
-        public const float ProductionAthleteStrengthScale = 5.13f;
+        public const string CapacityCalibrationVersion = "GAM50_INTRINSIC_STRENGTH_V1";
+        // GAM-50 single intrinsic-strength calibration, made once 140 and 170 kg
+        // reached comparable valid mechanics on the qualified substrate. The
+        // binding drive is the knee in ascent; capacity-limit scales measured
+        // at 5.13 were 140 kg 0.70, 170 kg 0.79, 300 kg 1.18. At 0.75 the peak
+        // ascent demand is 25 kg ~0.48, 60 kg ~0.61, 140 kg 0.93 (heavy),
+        // 170 kg 1.07 (near-max, saturating and completing), and 300 kg cannot
+        // hold the loaded setup (supra-max): the GAM-13 V2-5 envelope.
+        public const float ProductionAthleteStrengthScale = 0.75f;
 
         /// <summary>
         /// The one intrinsic, load-independent strength scalar. Equals

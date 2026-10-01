@@ -142,11 +142,11 @@ namespace PowerliftingSimulator.Tests
         }
 
         [Test]
-        public void GAM13_STRENGTH_SCALE_REMAINS_PRECALIBRATION_QUALIFICATION_AUTHORITY()
+        public void GAM50_STRENGTH_SCALE_IS_THE_SINGLE_INTRINSIC_CALIBRATION()
         {
-            Assert.That(SquatPhysicalAdapter.AthleteStrengthScale, Is.EqualTo(5.13f));
+            Assert.That(SquatPhysicalAdapter.AthleteStrengthScale, Is.EqualTo(0.75f));
             Assert.That(SquatPhysicalAdapter.CapacityCalibrationVersion,
-                Is.EqualTo("GAM13_SQUAT_CAPACITY_QUALIFICATION_AUTHORITY_V1"));
+                Is.EqualTo("GAM50_INTRINSIC_STRENGTH_V1"));
         }
 
         private static bool IsFinitePositive(Vector3 value) =>
