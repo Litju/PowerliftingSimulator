@@ -86,7 +86,7 @@ namespace PowerliftingSimulator.Tests
                 "bar_x_m,bar_y_m,bar_z_m,bar_vx_mps,bar_vy_mps,bar_vz_mps," +
                 "maximum_active_joint_demand_nm,worst_demand_joint,worst_demand_channel,worst_demand_fraction," +
                 "maximum_joint_anchor_separation_m,saddle_attached,saddle_broken,saddle_separation_m,saddle_limit_occupancy,saddle_relative_rotation_deg");
-            trace.AppendLine("load_kg,tick,time_s,phase,direction,legal_depth,legal_depth_reached,depth_left_m,depth_right_m,worst_side_depth_m,descent_tick,reversal_tick,ascent_tick,lockout,physical_failure,physical_failure_reason,bar_y_m,bar_vx_mps,bar_vy_mps,bar_vz_mps,support_available,support_present,support_contact_count,left_foot_contact,right_foot_contact,left_foot_slip_mps,right_foot_slip_mps,ap_front_margin_m,ap_rear_margin_m,ml_left_margin_m,ml_right_margin_m,joint_limit_proximity,worst_limit_joint,saddle_attached,saddle_separation_m,saddle_initial_anchor_error_m,saddle_linear_limit_occupancy,saddle_relative_rotation_deg,saddle_is_broken,lockout_qualified,lockout_failed_predicates,lockout_reference_bar_y_m,lockout_bar_linear_speed_mps,lockout_bar_angular_speed_rad_s,lockout_max_knee_angle_rad,lockout_max_hip_angle_rad,lockout_max_local_trunk_angle_rad,lockout_height_tolerance_m,lockout_bar_speed_tolerance_mps,lockout_bar_angular_speed_tolerance_rad_s,lockout_knee_tolerance_rad,lockout_hip_tolerance_rad,lockout_trunk_tolerance_rad");
+            trace.AppendLine("load_kg,tick,time_s,state,phase_s,direction,legal_depth,legal_depth_reached,depth_left_m,depth_right_m,worst_side_depth_m,descent_tick,reversal_tick,ascent_tick,lockout,physical_failure,physical_failure_reason,bar_y_m,bar_vx_mps,bar_vy_mps,bar_vz_mps,support_available,support_present,support_contact_count,left_foot_contact,right_foot_contact,left_foot_slip_mps,right_foot_slip_mps,ap_front_margin_m,ap_rear_margin_m,ml_left_margin_m,ml_right_margin_m,joint_limit_proximity,worst_limit_joint,saddle_attached,saddle_separation_m,saddle_initial_anchor_error_m,saddle_linear_limit_occupancy,saddle_relative_rotation_deg,saddle_is_broken,lockout_qualified,lockout_failed_predicates,lockout_reference_bar_y_m,lockout_bar_linear_speed_mps,lockout_bar_angular_speed_rad_s,lockout_max_knee_angle_rad,lockout_max_hip_angle_rad,lockout_max_local_trunk_angle_rad,lockout_height_tolerance_m,lockout_bar_speed_tolerance_mps,lockout_bar_angular_speed_tolerance_rad_s,lockout_knee_tolerance_rad,lockout_hip_tolerance_rad,lockout_trunk_tolerance_rad,ap_reference_error_m,raw_balance_ap_rad,applied_balance_ap_rad,ap_correction_saturated,ankle_target_error_x_rad,knee_target_error_x_rad,hip_target_error_x_rad,abdomen_target_error_x_rad,thorax_target_error_x_rad,max_active_drive_demand_nm,max_active_drive_demand_fraction,worst_active_drive_joint,worst_active_drive_channel,max_joint_anchor_separation_m");
 
             AsyncOperation loadScene = SceneManager.LoadSceneAsync(QualificationScene, LoadSceneMode.Single);
             Assert.That(loadScene, Is.Not.Null, "The GAM-13 qualification scene is missing.");
@@ -109,6 +109,25 @@ namespace PowerliftingSimulator.Tests
             controller.enabled = false;
             bootstrap.enabled = false;
             controller.SetLoad(loadKg);
+#if UNITY_EDITOR
+            string apReferenceMode = Environment.GetEnvironmentVariable("GAM13_V2_AP_REFERENCE") ?? "A";
+            Assert.That(apReferenceMode == "A" || apReferenceMode == "B", Is.True,
+                "AP-reference mode must be A or B.");
+            controller.Adapter.UsePhaseDependentApComReferenceForQualification = apReferenceMode == "B";
+            string phaseRateText = Environment.GetEnvironmentVariable("GAM13_V2_PHASE_RATE");
+            if (!string.IsNullOrWhiteSpace(phaseRateText))
+            {
+                Assert.That(float.TryParse(phaseRateText, NumberStyles.Float, CultureInfo.InvariantCulture, out float phaseRate),
+                    Is.True, "GAM13_V2_PHASE_RATE must be invariant-culture numeric text.");
+                controller.Adapter.PhaseRate = phaseRate;
+            }
+            bool gateCStaticHold = ReadEnvironmentFlag("GAM13_V2_GATE_C_STATIC_HOLD");
+            Debug.Log(string.Format(CultureInfo.InvariantCulture,
+                "GAM13_V23M_CAPTURE load={0:F1}kg ap_reference={1} phase_rate={2:R} gate_c_static_hold={3}",
+                loadKg, apReferenceMode, controller.Adapter.PhaseRate, gateCStaticHold));
+#else
+            bool gateCStaticHold = false;
+#endif
 
             FoundationRuntime runtime = bootstrap.Runtime;
             float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
@@ -168,6 +187,25 @@ namespace PowerliftingSimulator.Tests
             Assert.That(controller.AttemptOrchestrator.SquatCommandTick, Is.EqualTo(lifecycleSquatCommandTick));
             Assert.That(controller.AttemptLifecycle.State, Is.EqualTo(SquatAttemptLifecycleState.IDLE));
             Assert.That(controller.AttemptRecord, Is.Null);
+
+            if (gateCStaticHold)
+            {
+                Assert.That(loadKg, Is.EqualTo(140f), "Gate C is only defined for the 140 kg discriminator.");
+                Assert.That(controller.Adapter.BalanceCorrectionsEnabled, Is.True,
+                    "Gate C must keep normal COM balance feedback active.");
+                controller.BeginPhysicalSquatMotionForQualification();
+                var gateCTrace = new StringBuilder();
+                string gateCTracePath = Path.ChangeExtension(tracePath, ".quasi-static-hold.csv");
+                yield return RunGateCStaticHold(
+                    controller, runtime, rig, standingReference, loadKg, dt,
+                    trace, actuatorTrace, gateCTrace, gateCTracePath);
+                SaveTrace(tracePath, trace);
+                actuatorTrace.Save(actuatorTracePath);
+                string latchPath = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(tracePath)),
+                    "first-com-outside-support-latch.csv");
+                File.WriteAllText(latchPath, firstComOutsideSupportLatch.ToString(), new UTF8Encoding(false));
+                yield break;
+            }
 
             SquatFailureCalibration failureCalibration = SquatFailureCalibration.Default;
             bool hasDescent = false;
@@ -542,20 +580,65 @@ namespace PowerliftingSimulator.Tests
         {
             float maximumLimitProximity = 0f;
             string worstLimitJoint = "NONE";
+            float ankleTargetError = 0f;
+            float kneeTargetError = 0f;
+            float hipTargetError = 0f;
+            float abdomenTargetError = 0f;
+            float thoraxTargetError = 0f;
+            float maximumActiveDriveDemandNm = 0f;
+            float maximumActiveDriveDemandFraction = 0f;
+            string worstActiveDriveJoint = "NONE";
+            string worstActiveDriveChannel = "NONE";
+            float maximumJointAnchorSeparationM = 0f;
             foreach (PoweredJointController.PoweredJointRuntime joint in rig.PoweredController.Joints)
             {
                 if (!joint.Profile.HasValue || !joint.HasPostPhysicsDiagnostic)
                     continue;
-                float proximity = joint.PostPhysicsDiagnostic.LimitProximity;
+                PoweredJointDiagnostic diagnostic = joint.PostPhysicsDiagnostic;
+                float proximity = diagnostic.LimitProximity;
                 if (proximity > maximumLimitProximity)
                 {
                     maximumLimitProximity = proximity;
                     worstLimitJoint = joint.Id;
                 }
+
+                float targetErrorX = Mathf.Abs(diagnostic.ErrorRad.x);
+                switch (joint.Id)
+                {
+                    case "left_foot":
+                    case "right_foot": ankleTargetError = Mathf.Max(ankleTargetError, targetErrorX); break;
+                    case "left_shank":
+                    case "right_shank": kneeTargetError = Mathf.Max(kneeTargetError, targetErrorX); break;
+                    case "left_thigh":
+                    case "right_thigh": hipTargetError = Mathf.Max(hipTargetError, targetErrorX); break;
+                    case "abdomen": abdomenTargetError = targetErrorX; break;
+                    case "thorax": thoraxTargetError = targetErrorX; break;
+                }
+
+                if (diagnostic.TwistDriveDemandNm > maximumActiveDriveDemandNm)
+                {
+                    maximumActiveDriveDemandNm = diagnostic.TwistDriveDemandNm;
+                    maximumActiveDriveDemandFraction = diagnostic.TwistDriveDemandFraction;
+                    worstActiveDriveJoint = joint.Id;
+                    worstActiveDriveChannel = "twist_x";
+                }
+                if (joint.Recipe.Kind == PhysicalJointKind.Ball &&
+                    float.IsFinite(diagnostic.SwingDriveDemandNm) &&
+                    diagnostic.SwingDriveDemandNm > maximumActiveDriveDemandNm)
+                {
+                    maximumActiveDriveDemandNm = diagnostic.SwingDriveDemandNm;
+                    maximumActiveDriveDemandFraction = diagnostic.SwingDriveDemandFraction;
+                    worstActiveDriveJoint = joint.Id;
+                    worstActiveDriveChannel = "swing_yz";
+                }
+
             }
+            GAM13V2StandingQualificationTests.MeasureConstraintHealth(
+                rig, out maximumJointAnchorSeparationM, out _, out _);
 
             SquatBarObservation bar = snapshot.Bar;
             SquatSupportObservation support = snapshot.Support;
+            SquatBalanceCorrectionV2 balanceCorrection = controller.Adapter.BalanceCorrectionV2;
             Vector3Value velocity = bar.LinearVelocityWorldMetersPerSecond;
             float saddleSeparation = controller.Saddle == null
                 ? float.NaN
@@ -581,7 +664,7 @@ namespace PowerliftingSimulator.Tests
             trace.Append(Format(loadKg)).Append(',')
                 .Append(snapshot.SimulationTick.ToString(CultureInfo.InvariantCulture)).Append(',')
                 .Append(snapshot.SimulationTimeSeconds.ToString("R", CultureInfo.InvariantCulture)).Append(',')
-                .Append(snapshot.State).Append(',').Append(snapshot.Direction).Append(',')
+                .Append(snapshot.State).Append(',').Append(Format(snapshot.Sq)).Append(',').Append(snapshot.Direction).Append(',')
                 .Append(controller.Adapter.LegalDepth ? "true" : "false").Append(',')
                 .Append(legalDepthReached ? "true" : "false").Append(',')
                 .Append(Format(controller.Adapter.RuleDepthLeftM)).Append(',')
@@ -620,7 +703,21 @@ namespace PowerliftingSimulator.Tests
                 .Append(Format(failureCalibration.LockoutBarStillAngularVelocityRadS)).Append(',')
                 .Append(Format(failureCalibration.LockoutKneeToleranceRadians)).Append(',')
                 .Append(Format(failureCalibration.LockoutHipToleranceRadians)).Append(',')
-                .Append(Format(failureCalibration.LockoutTrunkToleranceRadians))
+                .Append(Format(failureCalibration.LockoutTrunkToleranceRadians)).Append(',')
+                .Append(Format(balanceCorrection.ErrorApM)).Append(',')
+                .Append(Format(balanceCorrection.CommandApRad)).Append(',')
+                .Append(Format(balanceCorrection.AppliedApRad)).Append(',')
+                .Append(balanceCorrection.IsApBoundSaturated ? "true" : "false")
+                .Append(',').Append(Format(ankleTargetError))
+                .Append(',').Append(Format(kneeTargetError))
+                .Append(',').Append(Format(hipTargetError))
+                .Append(',').Append(Format(abdomenTargetError))
+                .Append(',').Append(Format(thoraxTargetError))
+                .Append(',').Append(Format(maximumActiveDriveDemandNm))
+                .Append(',').Append(Format(maximumActiveDriveDemandFraction))
+                .Append(',').Append(worstActiveDriveJoint)
+                .Append(',').Append(worstActiveDriveChannel)
+                .Append(',').Append(Format(maximumJointAnchorSeparationM))
                 .AppendLine();
         }
 
@@ -830,6 +927,160 @@ namespace PowerliftingSimulator.Tests
                 public int Start { get; }
                 public int Length { get; }
             }
+        }
+
+        private static IEnumerator RunGateCStaticHold(
+            SquatPhysicalPrototypeController controller,
+            FoundationRuntime runtime,
+            PhysicalAthleteRig rig,
+            SquatObservationSnapshot standingReference,
+            float loadKg,
+            float dt,
+            StringBuilder qualificationTrace,
+            GAM13V2ActuatorTrace actuatorTrace,
+            StringBuilder gateCTrace,
+            string gateCTracePath)
+        {
+            const float targetPhase = 0.21f;
+            const int maximumRampTicks = 1000;
+            const int boundedSettleTicks = 300;
+            gateCTrace.AppendLine(
+                "stage,load_kg,tick,state,phase,phase_velocity,ap_reference_error_m,raw_ap_correction_rad,applied_ap_correction_rad,ap_saturated," +
+                "bar_ap_velocity_mps,com_vx_mps,com_vy_mps,com_vz_mps,com_support_front_margin_m,com_support_rear_margin_m," +
+                "com_support_left_margin_m,com_support_right_margin_m,cop_available,cop_ap_m,cop_ml_m," +
+                "cop_support_front_margin_m,cop_support_rear_margin_m,cop_support_left_margin_m,cop_support_right_margin_m," +
+                "maximum_active_drive_demand_nm,worst_demand_joint,worst_demand_channel,worst_demand_fraction,max_joint_anchor_separation_m," +
+                "saddle_attached,saddle_broken,saddle_separation_m,saddle_limit_occupancy,saddle_relative_rotation_deg,physical_failure_reason");
+
+            int rampTicks = 0;
+            while (controller.Adapter.Sq < targetPhase && rampTicks < maximumRampTicks &&
+                (controller.Saddle == null || !controller.Saddle.IsBroken))
+            {
+                double inputTime = runtime.CurrentTime.SimulationTimeSeconds +
+                    0.25d * SimulationConstants.FixedDeltaTimeSeconds;
+                runtime.InputBuffer.SetContinuous(IntentAction.Yield, 1f, inputTime);
+                runtime.InputBuffer.SetContinuous(IntentAction.Drive, 0f, inputTime);
+                Assert.That(runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds), Is.EqualTo(1));
+                TickFeet(controller, dt);
+                rampTicks++;
+
+                SquatObservationSnapshot snapshot = controller.ObservationCollector.LastSnapshot;
+                actuatorTrace.Append(loadKg, snapshot, controller);
+                GAM13V2StandingQualificationTests.MeasureConstraintHealth(
+                    rig, out float anchorSeparation, out _, out _);
+                MeasureMaximumActiveJointDemand(rig.PoweredController,
+                    out float demandNm, out string demandJoint, out string demandChannel, out float demandFraction);
+                string failureReason = FindPhysicalFailure(controller, snapshot);
+                AppendGateCStaticSample(gateCTrace, "RAMP", loadKg, controller.Adapter.PhaseRate,
+                    snapshot, controller, demandNm, demandJoint, demandChannel, demandFraction,
+                    anchorSeparation, failureReason);
+                AppendSample(qualificationTrace, loadKg, standingReference, snapshot, controller, rig,
+                    SquatFailureCalibration.Default, controller.Adapter.LegalDepth, null, null, null,
+                    false, failureReason != "NONE", failureReason);
+                if (rampTicks % 50 == 0)
+                    yield return null;
+            }
+
+            float heldPhase = controller.Adapter.Sq;
+            bool reachedHoldPhase = heldPhase >= 0.20f && heldPhase <= 0.22f;
+            Debug.Log(string.Format(CultureInfo.InvariantCulture,
+                "GAM13_V23M_GATE_C_RAMP phase={0:R} ramp_ticks={1} reached_target_band={2} failure={3}",
+                heldPhase, rampTicks, reachedHoldPhase, controller.Adapter.FailureReason));
+            if (reachedHoldPhase)
+            {
+                controller.Adapter.HoldReferencePhaseForQualification(
+                    heldPhase, SquatPhaseDirection.Descent, SquatState.DESCENT, 0f);
+                actuatorTrace.Mark(runtime.CurrentTime.Tick, "GATE_C_HOLD_START");
+
+                for (int settleTick = 0; settleTick < boundedSettleTicks; settleTick++)
+                {
+                    double inputTime = runtime.CurrentTime.SimulationTimeSeconds +
+                        0.25d * SimulationConstants.FixedDeltaTimeSeconds;
+                    runtime.InputBuffer.SetContinuous(IntentAction.Yield, 0f, inputTime);
+                    runtime.InputBuffer.SetContinuous(IntentAction.Drive, 0f, inputTime);
+                    Assert.That(runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds), Is.EqualTo(1));
+                    TickFeet(controller, dt);
+
+                    SquatObservationSnapshot snapshot = controller.ObservationCollector.LastSnapshot;
+                    actuatorTrace.Append(loadKg, snapshot, controller);
+                    actuatorTrace.Mark(snapshot.SimulationTick, "GATE_C_HOLD_TICK");
+                    GAM13V2StandingQualificationTests.MeasureConstraintHealth(
+                        rig, out float anchorSeparation, out _, out _);
+                    MeasureMaximumActiveJointDemand(rig.PoweredController,
+                        out float demandNm, out string demandJoint, out string demandChannel, out float demandFraction);
+                    string failureReason = FindPhysicalFailure(controller, snapshot);
+                    AppendGateCStaticSample(gateCTrace, "HOLD", loadKg, 0f,
+                        snapshot, controller, demandNm, demandJoint, demandChannel, demandFraction,
+                        anchorSeparation, failureReason);
+                    AppendSample(qualificationTrace, loadKg, standingReference, snapshot, controller, rig,
+                        SquatFailureCalibration.Default, controller.Adapter.LegalDepth, null, null, null,
+                        false, failureReason != "NONE", failureReason);
+                    if ((settleTick + 1) % 50 == 0)
+                        yield return null;
+                }
+
+                actuatorTrace.Mark(runtime.CurrentTime.Tick, "GATE_C_HOLD_END");
+            }
+
+            string fullPath = Path.GetFullPath(gateCTracePath);
+            Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+            File.WriteAllText(fullPath, gateCTrace.ToString(), new UTF8Encoding(false));
+            Debug.Log(string.Format(CultureInfo.InvariantCulture,
+                "GAM13_V23M_GATE_C_STATIC_HOLD reached_target_band={0} held_phase={1:R} settle_ticks={2} trace={3}",
+                reachedHoldPhase, heldPhase, reachedHoldPhase ? boundedSettleTicks : 0, gateCTracePath));
+        }
+
+        private static void AppendGateCStaticSample(
+            StringBuilder trace,
+            string stage,
+            float loadKg,
+            float phaseVelocity,
+            SquatObservationSnapshot snapshot,
+            SquatPhysicalPrototypeController controller,
+            float demandNm,
+            string demandJoint,
+            string demandChannel,
+            float demandFraction,
+            float anchorSeparation,
+            string failureReason)
+        {
+            SquatSupportObservation support = snapshot.Support;
+            bool copAvailable = support.EngineContactPointAvailability == SquatTelemetryAvailability.AVAILABLE &&
+                support.HasSupport;
+            Vector3Value cop = support.EngineContactPointWorldMeters;
+            SquatBalanceCorrectionV2 correction = controller.Adapter.BalanceCorrectionV2;
+            SquatBarSaddle saddle = controller.Saddle;
+            trace.AppendLine(string.Join(",", new[]
+            {
+                stage, Format(loadKg), Tick(snapshot.SimulationTick), snapshot.State.ToString(),
+                Format(snapshot.Sq), Format(phaseVelocity), Format(correction.ErrorApM),
+                Format(correction.CommandApRad), Format(correction.AppliedApRad),
+                correction.IsApBoundSaturated ? "true" : "false",
+                Format(snapshot.Bar.LinearVelocityWorldMetersPerSecond.Z),
+                Format(support.SystemComVelocityWorldMetersPerSecond.X),
+                Format(support.SystemComVelocityWorldMetersPerSecond.Y),
+                Format(support.SystemComVelocityWorldMetersPerSecond.Z),
+                Format(support.ComToSupportApFrontMarginM), Format(support.ComToSupportApRearMarginM),
+                Format(support.ComToSupportMlLeftMarginM), Format(support.ComToSupportMlRightMarginM),
+                copAvailable ? "true" : "false", copAvailable ? Format(cop.Z) : "NA", copAvailable ? Format(cop.X) : "NA",
+                copAvailable ? Format(support.SupportApMaxM - cop.Z) : "NA",
+                copAvailable ? Format(cop.Z - support.SupportApMinM) : "NA",
+                copAvailable ? Format(support.SupportMlMaxM - cop.X) : "NA",
+                copAvailable ? Format(cop.X - support.SupportMlMinM) : "NA",
+                Format(demandNm), demandJoint, demandChannel, Format(demandFraction), Format(anchorSeparation),
+                saddle != null && saddle.IsAttached ? "true" : "false",
+                saddle == null || saddle.IsBroken ? "true" : "false",
+                Format(saddle != null ? saddle.SaddleSeparationMeters : float.NaN),
+                Format(saddle != null ? saddle.CurrentLinearLimitOccupancy : float.NaN),
+                Format(saddle != null ? saddle.RelativeRotationDegrees : float.NaN), failureReason
+            }));
+        }
+
+        private static bool ReadEnvironmentFlag(string variableName)
+        {
+            string value = Environment.GetEnvironmentVariable(variableName);
+            return string.Equals(value, "1", StringComparison.Ordinal) ||
+                bool.TryParse(value, out bool enabled) && enabled;
         }
 
         private static void TickFeet(SquatPhysicalPrototypeController controller, float dt)

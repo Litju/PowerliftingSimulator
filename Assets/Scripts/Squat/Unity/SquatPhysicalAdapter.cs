@@ -226,6 +226,9 @@ namespace PowerliftingSimulator.Squat.Unity
         /// </summary>
         public bool ApFeedbackContributionEnabled { get; set; } = true;
 
+        /// <summary>Qualification-only selector for the GAM-13 V2-3M AP-reference comparison.</summary>
+        public bool UsePhaseDependentApComReferenceForQualification { get; set; }
+
         /// <summary>
         /// Reversible GAM-43 diagnostic seam. Production uses the canonical
         /// pose error; the historical target-deflection input is available
@@ -516,7 +519,13 @@ namespace PowerliftingSimulator.Squat.Unity
             if (!_autoCycle && _qualificationPhaseVelocity != 0f)
                 _phaseVelocity = _qualificationPhaseVelocity;
 #endif
-            _referenceComOffsetAp = ReferenceComOffsetApAtPhase(_sq);
+#if UNITY_EDITOR
+            _referenceComOffsetAp = UsePhaseDependentApComReferenceForQualification
+                ? ReferenceComOffsetApAtPhase(_sq)
+                : _referenceComOffsetApSamples[0];
+#else
+            _referenceComOffsetAp = _referenceComOffsetApSamples[0];
+#endif
             ComputeComAndSupport(previousObservation);
             _lastBalanceCorrection = _balanceV2.Solve(
                 _systemCom,
