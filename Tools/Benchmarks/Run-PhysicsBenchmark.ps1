@@ -20,6 +20,8 @@ param(
     # DynamicsManager.asset for this invocation (restored afterwards).
     [ValidateSet('', 'PGS', 'TGS')]
     [string]$SolverType = '',
+    # Experiment only: other DynamicsManager keys patched for this run, e.g. @{ m_FrictionType = '2' }.
+    [hashtable]$DynamicsOverrides = @{},
     [string]$UnityExecutable = 'D:\Dev\Unity\6000.3.22f1\Editor\Unity.exe',
     [int]$TimeoutMinutes = 60,
     [switch]$NoCompare
@@ -78,11 +80,18 @@ function Invoke-UnityTests {
 $dynamicsPath = Join-Path $projectRoot 'ProjectSettings/DynamicsManager.asset'
 $dynamicsOriginal = $null
 if ($SolverType) {
-    $dynamicsOriginal = [IO.File]::ReadAllText($dynamicsPath)
-    $value = if ($SolverType -eq 'TGS') { 1 } else { 0 }
-    if ($dynamicsOriginal -notmatch 'm_SolverType: \d') { throw 'DynamicsManager.asset has no m_SolverType.' }
-    [IO.File]::WriteAllText($dynamicsPath, ($dynamicsOriginal -replace 'm_SolverType: \d', "m_SolverType: $value"))
+    $DynamicsOverrides['m_SolverType'] = if ($SolverType -eq 'TGS') { '1' } else { '0' }
     $Environment['PHYSICS_BENCHMARK_SOLVER_LABEL'] = $SolverType
+}
+if ($DynamicsOverrides.Count -gt 0) {
+    $dynamicsOriginal = [IO.File]::ReadAllText($dynamicsPath)
+    $patched = $dynamicsOriginal
+    foreach ($key in $DynamicsOverrides.Keys) {
+        $pattern = [regex]::Escape($key) + ': [^\r\n]*'
+        if ($patched -notmatch $pattern) { throw "DynamicsManager.asset has no $key." }
+        $patched = $patched -replace $pattern, "$key`: $($DynamicsOverrides[$key])"
+    }
+    [IO.File]::WriteAllText($dynamicsPath, $patched)
 }
 
 $started = Get-Date
