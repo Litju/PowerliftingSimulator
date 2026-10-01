@@ -39,6 +39,19 @@ namespace PowerliftingSimulator.Squat.Unity
 #endif
         private const float SupportFailureApErrorM = 0.30f;
         private const float SupportFailureMlErrorM = 0.30f;
+        private const float StaticTrimGravityMps2 = 9.81f;
+        // Effective sagittal lever arms fitted from the valid GAM12 pre-failure
+        // sample at tick 121: mean K*e per family divided by m_bar*g*cos(q_ref).
+        private const float StaticTrimAnkleLeverArmM = -0.3434521f;
+        private const float StaticTrimKneeLeverArmM = -0.07379986f;
+        private const float StaticTrimHipLeverArmM = -0.21260457f;
+        private const float StaticTrimAbdomenLeverArmM = 0.26612754f;
+        private const float StaticTrimThoraxLeverArmM = 0.17270656f;
+        private const float StaticTrimAnkleBoundRad = 2f * Mathf.Deg2Rad;
+        private const float StaticTrimKneeBoundRad = 1.5f * Mathf.Deg2Rad;
+        private const float StaticTrimHipBoundRad = 2f * Mathf.Deg2Rad;
+        private const float StaticTrimAbdomenBoundRad = 1.5f * Mathf.Deg2Rad;
+        private const float StaticTrimThoraxBoundRad = 1f * Mathf.Deg2Rad;
 
         private readonly PhysicalAthleteRig _rig;
         private readonly PhysicalAthleteRig.SegmentRuntime[] _segments;
@@ -557,6 +570,9 @@ namespace PowerliftingSimulator.Squat.Unity
             EvaluateRuleDepth();
             ReferenceTargetFrame reference = EvaluateReferenceTarget();
             _nominalReferenceTarget = reference;
+            float barMassKg = _saddle != null && _saddle.Barbell != null
+                ? _saddle.Barbell.LoadedMassKg
+                : 0f;
             _balanceCorrectionRad = _lastBalanceCorrection.AppliedApRad;
             _mlBalanceCorrectionRad = _lastBalanceCorrection.AppliedMlRad;
             _isCorrectionSaturated = _lastBalanceCorrection.IsBoundSaturated;
@@ -584,14 +600,23 @@ namespace PowerliftingSimulator.Squat.Unity
                 _lastBalanceCorrection.TrunkApRad * apFeedbackScale + trunkProbeResidualRad,
                 0f);
 
-            Quaternion leftAnkleTarget = Compose("left_foot", reference.LeftFoot, Quaternion.identity, ankleBalance);
-            Quaternion rightAnkleTarget = Compose("right_foot", reference.RightFoot, Quaternion.identity, ankleBalance);
-            Quaternion leftKneeTarget = Compose("left_shank", reference.LeftShank, Quaternion.identity, Quaternion.identity);
-            Quaternion rightKneeTarget = Compose("right_shank", reference.RightShank, Quaternion.identity, Quaternion.identity);
-            Quaternion leftHipTarget = Compose("left_thigh", reference.LeftThigh, Quaternion.identity, hipBalance);
-            Quaternion rightHipTarget = Compose("right_thigh", reference.RightThigh, Quaternion.identity, hipBalance);
-            Quaternion abdomenTarget = Compose("abdomen", reference.Abdomen, Quaternion.identity, abdomenBalance);
-            Quaternion thoraxTarget = Compose("thorax", reference.Thorax, Quaternion.identity, thoraxBalance);
+            Quaternion leftAnkleTrim = StaticGravityTrim("left_foot", reference.LeftFoot, barMassKg);
+            Quaternion rightAnkleTrim = StaticGravityTrim("right_foot", reference.RightFoot, barMassKg);
+            Quaternion leftKneeTrim = StaticGravityTrim("left_shank", reference.LeftShank, barMassKg);
+            Quaternion rightKneeTrim = StaticGravityTrim("right_shank", reference.RightShank, barMassKg);
+            Quaternion leftHipTrim = StaticGravityTrim("left_thigh", reference.LeftThigh, barMassKg);
+            Quaternion rightHipTrim = StaticGravityTrim("right_thigh", reference.RightThigh, barMassKg);
+            Quaternion abdomenTrim = StaticGravityTrim("abdomen", reference.Abdomen, barMassKg);
+            Quaternion thoraxTrim = StaticGravityTrim("thorax", reference.Thorax, barMassKg);
+
+            Quaternion leftAnkleTarget = Compose("left_foot", reference.LeftFoot, leftAnkleTrim, ankleBalance);
+            Quaternion rightAnkleTarget = Compose("right_foot", reference.RightFoot, rightAnkleTrim, ankleBalance);
+            Quaternion leftKneeTarget = Compose("left_shank", reference.LeftShank, leftKneeTrim, Quaternion.identity);
+            Quaternion rightKneeTarget = Compose("right_shank", reference.RightShank, rightKneeTrim, Quaternion.identity);
+            Quaternion leftHipTarget = Compose("left_thigh", reference.LeftThigh, leftHipTrim, hipBalance);
+            Quaternion rightHipTarget = Compose("right_thigh", reference.RightThigh, rightHipTrim, hipBalance);
+            Quaternion abdomenTarget = Compose("abdomen", reference.Abdomen, abdomenTrim, abdomenBalance);
+            Quaternion thoraxTarget = Compose("thorax", reference.Thorax, thoraxTrim, thoraxBalance);
 
             ReferenceRateFrame rate = Mathf.Abs(_phaseVelocity) > 1e-5f
                 ? EvaluateReferenceRatePerPhase(_sq, _direction)
@@ -892,6 +917,46 @@ namespace PowerliftingSimulator.Squat.Unity
             Quaternion final = nominal * gravityBias * balanceOffset;
             _composition[jointId] = new JointTargetComposition(nominal, gravityBias, balanceOffset, final);
             return final;
+        }
+
+        private Quaternion StaticGravityTrim(string jointId, Quaternion nominal, float barMassKg)
+        {
+            float leverArmM;
+            float boundRad;
+            switch (jointId)
+            {
+                case "left_foot":
+                case "right_foot":
+                    leverArmM = StaticTrimAnkleLeverArmM;
+                    boundRad = StaticTrimAnkleBoundRad;
+                    break;
+                case "left_shank":
+                case "right_shank":
+                    leverArmM = StaticTrimKneeLeverArmM;
+                    boundRad = StaticTrimKneeBoundRad;
+                    break;
+                case "left_thigh":
+                case "right_thigh":
+                    leverArmM = StaticTrimHipLeverArmM;
+                    boundRad = StaticTrimHipBoundRad;
+                    break;
+                case "abdomen":
+                    leverArmM = StaticTrimAbdomenLeverArmM;
+                    boundRad = StaticTrimAbdomenBoundRad;
+                    break;
+                case "thorax":
+                    leverArmM = StaticTrimThoraxLeverArmM;
+                    boundRad = StaticTrimThoraxBoundRad;
+                    break;
+                default:
+                    return Quaternion.identity;
+            }
+
+            float springNmPerRad = _rig.PoweredController.GetJoint(jointId).Profile.Value.Spring;
+            float qRefRadians = SignedSagittalRadians(nominal);
+            float equilibriumTorqueNm = barMassKg * StaticTrimGravityMps2 * leverArmM * Mathf.Cos(qRefRadians);
+            float trimRad = Mathf.Clamp(equilibriumTorqueNm / springNmPerRad, -boundRad, boundRad);
+            return SagittalAndFrontal(trimRad, 0f);
         }
 
         private float LowestFootBodyY()
