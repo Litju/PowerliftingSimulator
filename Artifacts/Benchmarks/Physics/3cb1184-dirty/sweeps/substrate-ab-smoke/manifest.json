@@ -1,0 +1,167 @@
+{
+  "schema": "PHYSICS_BENCHMARK_V1_MANIFEST",
+  "created_utc": "2026-10-01T21:38:30.627015+00:00",
+  "git_sha": "3cb11848f8260cf40d8f576ecf182478e0fc63f0",
+  "git_branch": "work/gam-13-squat-load-calibration",
+  "working_tree_physics_dirty": true,
+  "unity_version": "6000.3.22f1 (1c726e1fb402)",
+  "project_physics": {
+    "gravity": "{x: 0, y: -9.81, z: 0}",
+    "default_solver_iterations": "6",
+    "default_solver_velocity_iterations": "1",
+    "default_contact_offset": "0.01",
+    "bounce_threshold": "2",
+    "sleep_threshold": "0.005",
+    "auto_simulation": "1",
+    "auto_sync_transforms": "0",
+    "solver_type": "0",
+    "friction_type": "0",
+    "enhanced_determinism": "0",
+    "default_max_angular_speed": "50",
+    "time_manager_fixed_timestep": "0.02",
+    "simulation_owner": "AuthoritativePhysicsScene local PhysicsScene, stepped by PhysicsTickDriver.StepOne via PhysicsScene.Simulate(SimulationConstants.FixedDeltaTimeSeconds); TimeManager fixed timestep does not drive the athlete."
+  },
+  "production_constants": {
+    "fixed_dt_s": 0.01,
+    "athlete_position_iterations": 28,
+    "athlete_velocity_iterations": 1,
+    "barbell_position_iterations": 12,
+    "barbell_velocity_iterations": 6,
+    "island_effective_iterations_note": "PhysX solves an island at the max per-body iteration count: bar-on-athlete island runs 28 position / 6 velocity.",
+    "athlete_prototype_body_mass_kg": 100.0,
+    "athlete_segment_mass_fractions": {
+      "pelvis": 0.142,
+      "abdomen": 0.139,
+      "thorax": 0.216,
+      "head_neck": 0.081,
+      "left_upper_arm": 0.028,
+      "right_upper_arm": 0.028,
+      "left_forearm": 0.016,
+      "right_forearm": 0.016,
+      "left_hand": 0.006,
+      "right_hand": 0.006,
+      "left_thigh": 0.1,
+      "right_thigh": 0.1,
+      "left_shank": 0.0465,
+      "right_shank": 0.0465,
+      "left_foot": 0.0145,
+      "right_foot": 0.0145
+    },
+    "athlete_body_linear_damping": 0.04,
+    "athlete_body_angular_damping": 0.08,
+    "athlete_body_max_angular_velocity": 35.0,
+    "joint_family_profiles": {
+      "ankle": {
+        "spring_nm_per_rad": 2300.0,
+        "damper_nm_s_per_rad": 132.0,
+        "base_capacity_nm": 450.0,
+        "max_target_rate_rad_s": 2.0
+      },
+      "knee": {
+        "spring_nm_per_rad": 2900.0,
+        "damper_nm_s_per_rad": 152.0,
+        "base_capacity_nm": 540.0,
+        "max_target_rate_rad_s": 2.5
+      },
+      "hip": {
+        "spring_nm_per_rad": 3150.0,
+        "damper_nm_s_per_rad": 168.0,
+        "base_capacity_nm": 540.0,
+        "max_target_rate_rad_s": 2.2
+      },
+      "trunk": {
+        "spring_nm_per_rad": 7850.0,
+        "damper_nm_s_per_rad": 266.0,
+        "base_capacity_nm": 390.0,
+        "max_target_rate_rad_s": 1.8
+      },
+      "shoulder": {
+        "spring_nm_per_rad": 500.0,
+        "damper_nm_s_per_rad": 55.0,
+        "base_capacity_nm": 130.0,
+        "max_target_rate_rad_s": 2.5
+      },
+      "elbow": {
+        "spring_nm_per_rad": 450.0,
+        "damper_nm_s_per_rad": 45.0,
+        "base_capacity_nm": 100.0,
+        "max_target_rate_rad_s": 3.0
+      },
+      "wrist": {
+        "spring_nm_per_rad": 250.0,
+        "damper_nm_s_per_rad": 30.0,
+        "base_capacity_nm": 45.0,
+        "max_target_rate_rad_s": 2.5
+      },
+      "neck": {
+        "spring_nm_per_rad": 300.0,
+        "damper_nm_s_per_rad": 11.0,
+        "base_capacity_nm": 40.0,
+        "max_target_rate_rad_s": 2.0
+      }
+    },
+    "saddle": {
+      "InitialAnchorToleranceM": 0.0001,
+      "DefaultLinearLimitM": 0.012,
+      "DefaultLinearSpring": 500000.0,
+      "DefaultLinearDamper": 6500.0,
+      "DefaultLinearMaxForce": 60000.0,
+      "DefaultAngularSpring": 1200.0,
+      "DefaultAngularDamper": 100.0,
+      "DefaultAngularMaxForce": 1200.0,
+      "DefaultBreakForce": 60000.0,
+      "DefaultBreakTorque": 15000.0,
+      "MaxPlausibleSeparationM": 0.12
+    },
+    "contact_materials": {
+      "foot": {
+        "static": 1.0,
+        "dynamic": 1.0,
+        "combine": "Maximum"
+      },
+      "platform": {
+        "static": 0.85,
+        "dynamic": 0.75,
+        "combine": "Average"
+      },
+      "effective_foot_platform": {
+        "static": 1.0,
+        "dynamic": 1.0,
+        "rule": "PhysX combine priority Maximum > Average"
+      }
+    },
+    "athlete_strength_scale_assignments": [
+      {
+        "file": "Assets/Scripts/Squat/Unity/SquatPhysicalAdapter.cs",
+        "symbol": "AthleteStrengthScale",
+        "value": 5.13
+      }
+    ]
+  },
+  "source_hashes": {
+    "ProjectSettings/DynamicsManager.asset": "b7c9a9dc08b98990109d4346f68745e15e238de400f96c583e53e1c83c743a78",
+    "ProjectSettings/TimeManager.asset": "1a83e54adbbda7c9f4851103a0c6ab7f6448a3343d4ea5b7620452fa08416ecd",
+    "ProjectSettings/ProjectVersion.txt": "b93d6e5a5d55f79651ebd5f7adbe5e5da3c6ab46235ae051fced4bf9314c6c35",
+    "Assets/Scripts/Foundation/CoordinatesAndUnits.cs": "3d6c019ae290e34a0832422921034245ffb92e0d5c1b02ddb86e1af59f3db16b",
+    "Assets/Scripts/Foundation/Unity/PhysicsTickDriver.cs": "b29155839f4197ac44eecf24202397955b0b1246bba40165a61eadd974f230f5",
+    "Assets/Scripts/Foundation/Unity/AuthoritativePhysicsScene.cs": "0d042137e8e2898e0dc51a4360842365ba88dd142a0cd26a7ec1ebe1e8b57896",
+    "Assets/Scripts/Foundation/Unity/FoundationRuntime.cs": "0e3e17da18a7a99e83f12e0a725b7df3e31d4bcab3d072a39bc5619a940ccb9c",
+    "Assets/Scripts/Athlete/PhysicalAthleteDefinition.cs": "2f53572e21b786857e942c3cf4cf49f4eb12dc4c566995991cdee8cf51653d22",
+    "Assets/Scripts/Athlete/PhysicalAthleteRig.cs": "5cde0295dfb50364e553731e115470e66c6daa0b1f47da9922e8cff2c0e09c6e",
+    "Assets/Scripts/Athlete/PhysicalAthleteSolverProfile.cs": "4fc15778f431110a1b20ef78ec6d99ecb1589fe19716f90d5cdb148dbc3923b6",
+    "Assets/Scripts/Athlete/PhysicalAthleteSelfCollisionPolicy.cs": "acf5dcc09e48164c04260da762661d3e2d177a1f4ca737f48b00cceb99664d4c",
+    "Assets/Scripts/Athlete/PoweredJointController.cs": "3e5b30672b368e76051173661dbc11915a5fc09ea1f8f97b6381ae099fb84454",
+    "Assets/Scripts/Equipment/BarbellConfiguration.cs": "c8c81e40a77241dc5964f5660fe81dac2e5fa641346a5bb77d65888b021eea96",
+    "Assets/Scripts/Equipment/PhysicalBarbell.cs": "099eaa56e223bbcae7e573dc17cd676dd5c4a0229ab13fcdb7bd6ac69f2f8319",
+    "Assets/Scripts/Squat/Unity/SquatBarSaddle.cs": "f9964ea025e8645cb5276311969fd0b27e5b737e844f25c05cd51655a7b1efad",
+    "Assets/Scripts/Squat/Unity/SquatPhysicalAdapter.cs": "bf10bc1383ee3d771d48d780b9b5693cfeaf40ee89581e668aa00a42c5f43085",
+    "Assets/Scripts/Squat/Unity/SquatPhysicalPrototypeController.cs": "0f54ed3a97a3061898a5c77ccc9cfea2696ca75e287db0d9c548466f8ec5fbca",
+    "Assets/Scripts/Squat/Unity/SquatComStabilizerV2.cs": "fe96c12b1f58c7f4b64d6c68802e2441ff3b90fd91bcdbf24dce473e0eebe268",
+    "Assets/Scripts/Squat/Unity/SquatEquilibriumPreload.cs": "91128798f2af948a4c6349c72b858847abdafd2726224f51b6d673bb419be90c",
+    "Assets/Scripts/Squat/Unity/SquatReferenceKinematics.cs": "06acd63eb2559ce4044c951d41c12460c5e51be14a12e12aca4fb05335d980ee",
+    "Assets/Scripts/Squat/SquatReferenceMotion.cs": "d2ee174f2fbbc087076c00ebfc57099620a385ed09d004d1872fb944615c5165",
+    "Assets/Scripts/Squat/SquatStaticTrimSolver.cs": "c8a65e231b2a2bce3fad003acd0f9e733aa54ac9c12acfc195c6fee6e5418f08",
+    "Assets/Scripts/Squat/SquatFailureDetector.cs": "4813771f029164ec948a530a2f28d556f5a8978597a8f078596baa014fb1ccd3",
+    "Assets/Scripts/Squat/SquatAttemptLifecycle.cs": "a6334226569f97ca16a9f342c85d3f9919a28b8c8be7bc8f9e4c3ff8388d0b5c"
+  }
+}

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Failed(Child)" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-01 21:38:22Z" end-time="2026-10-01 21:38:26Z" duration="4.5164216">
+  <test-suite type="TestSuite" id="1371" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="275" result="Failed" site="Child" start-time="2026-10-01 21:38:22Z" end-time="2026-10-01 21:38:26Z" duration="4.516422" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1365" name="PowerliftingSimulator.PhysicsBenchmarks.dll" fullname="E:/Data/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.PhysicsBenchmarks.dll" runstate="Runnable" testcasecount="24" result="Failed" site="Child" start-time="2026-10-01 21:38:22Z" end-time="2026-10-01 21:38:26Z" duration="4.494154" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="15660" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1366" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="24" result="Failed" site="Child" start-time="2026-10-01 21:38:22Z" end-time="2026-10-01 21:38:26Z" duration="4.491258" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1367" name="PhysicsBenchmarks" fullname="PowerliftingSimulator.PhysicsBenchmarks" runstate="Runnable" testcasecount="24" result="Failed" site="Child" start-time="2026-10-01 21:38:22Z" end-time="2026-10-01 21:38:26Z" duration="4.489563" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestFixture" id="1355" name="SubstrateABBenchmarks" fullname="PowerliftingSimulator.PhysicsBenchmarks.SubstrateABBenchmarks" classname="PowerliftingSimulator.PhysicsBenchmarks.SubstrateABBenchmarks" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-10-01 21:38:22Z" end-time="2026-10-01 21:38:26Z" duration="4.486001" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="Category" value="PhysicsBenchmark" />
+              <property name="Category" value="PhysicsBenchmarkIsolated" />
+              <property name="Category" value="PhysicsBenchmarkSubstrateAB" />
+            </properties>
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1356" name="B16_ChainSubstrate_ConfigurableJointVsArticulation" fullname="PowerliftingSimulator.PhysicsBenchmarks.SubstrateABBenchmarks.B16_ChainSubstrate_ConfigurableJointVsArticulation" methodname="B16_ChainSubstrate_ConfigurableJointVsArticulation" classname="PowerliftingSimulator.PhysicsBenchmarks.SubstrateABBenchmarks" runstate="Runnable" seed="428304766" result="Failed" start-time="2026-10-01 21:38:22Z" end-time="2026-10-01 21:38:26Z" duration="4.456470" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Benchmark B16_substrate_ab_PGS failed:
+CJ_ankle_static_error_rad[PGS;CJ;load=0;rep=0;dt=0.01;pos_iter=28;vel_iter=1] expected=0.00058266775227759984 observed=-0.0097872412204742434 tol=0.002 (Absolute) -> The CJ chain does not reach its static PD equilibrium at production dt/iterations.
+CJ_knee_static_error_rad[PGS;CJ;load=0;rep=0;dt=0.01;pos_iter=28;vel_iter=1] expected=0.03557328719397649 observed=0.058198702558875083 tol=0.002 (Absolute) -> The CJ chain does not reach its static PD equilibrium at production dt/iterations.
+CJ_hip_static_error_rad[PGS;CJ;load=0;rep=0;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.015536419455225461 observed=-0.019095138423144819 tol=0.002 (Absolute) -> The CJ chain does not reach its static PD equilibrium at production dt/iterations.
+CJ_ankle_static_error_rad[PGS;CJ;load=25;rep=0;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.00757803670705059 observed=-0.018897551409900189 tol=0.002 (Absolute) -> The CJ chain does not reach its static PD equilibrium at production dt/iterations.
+CJ_knee_static_error_rad[PGS;CJ;load=25;rep=0;dt=0.01;pos_iter=28;vel_iter=1] expected=0.03918865047155836 observed=0.063966962397098537 tol=0.002 (Absolute) -> The CJ chain does not reach its static PD equilibrium at production dt/iterations.
+CJ_hip_static_error_rad[PGS;CJ;load=25;rep=0;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.027606140544980829 observed=-0.0333024337887764 tol=0.002 (Absolute) -> The CJ chain does not reach its static PD equilibrium at production dt/iterations.
+CJ_ankle_static_error_rad[PGS;CJ;load=60;rep=0;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.021809116346510116 observed=-0.036806528121232987 tol=0.002 (Absolute) -> The CJ chain does not reach its static PD equilibrium at production dt/iterations.
+CJ_knee_static_error_rad[PGS;CJ;load=60;rep=0;dt=0.01;pos_iter=28;vel_iter=1] expected=0.042704050412773066 observed=0.073444342017173772 tol=0.0021352025206386534 (Absolute) -> The CJ chain does not reach its static PD equilibrium at production dt/iterations.
+CJ_hip_static_error_rad[PGS;CJ;load=60;rep=0;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.045672190703251708 observed=-0.053125664219260217 tol=0.0022836095351625855 (Absolute) -> The CJ chain does not reach its static PD equilibrium at production dt/iterations.
+CJ_ankle_static_error_rad[PGS;CJ;load=140;rep=0;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.077173757904559409 observed=-0.10693105712532996 tol=0.0038586878952279707 (Absolute) -> The CJ chain does not reach its static PD equilibrium at production dt/iterations.
+CJ_knee_static_error_rad[PGS;CJ;load=140;rep=0;dt=0.01;pos_iter=28;vel_iter=1] expected=0.0380071502668112 observed=0.07350834727287292 tol=0.002 (Absolute) -> The CJ chain does not reach its static PD equilibrium at production dt/iterations.
+CJ_hip_static_error_rad[PGS;CJ;load=140;rep=0;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.095685414549197489 observed=-0.1084810246527195 tol=0.0047842707274598746 (Absolute) -> The CJ chain does not reach its static PD equilibrium at production dt/iterations.
+CJ_ankle_static_error_rad[PGS;CJ;load=170;rep=0;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.11410558394867894 observed=-0.15279203206300734 tol=0.0057052791974339474 (Absolute) -> The CJ chain does not reach its static PD equilibrium at production dt/iterations.
+CJ_knee_static_error_rad[PGS;CJ;load=170;rep=0;dt=0.01;pos_iter=28;vel_iter=1] expected=0.027151144509551695 observed=0.058420844078063965 tol=0.002 (Absolute) -> The CJ chain does not reach its static PD equilibrium at production dt/iterations.
+CJ_hip_static_error_rad[PGS;CJ;load=170;rep=0;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.11999112846827101 observed=-0.13542128592729569 tol=0.00599955642341355 (Absolute) -> The CJ chain does not reach its static PD equilibrium at production dt/iterations.
+AB_ankle_static_error_rad[PGS;AB;load=170;rep=0;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.11410558394867894 observed=-0.12418894425034523 tol=0.0057052791974339474 (Absolute) -> The AB chain does not reach its static PD equilibrium at production dt/iterations.
+AB_knee_static_error_rad[PGS;AB;load=170;rep=0;dt=0.01;pos_iter=28;vel_iter=1] expected=0.027151144509551695 observed=0.022014396525919439 tol=0.002 (Absolute) -> The AB chain does not reach its static PD equilibrium at production dt/iterations.
+
+  Expected: 0
+  But was:  4288
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.PhysicsBenchmarks.PhysicsBenchmarkRecorder.WriteAndAssert () [0x0017f] in E:\Data\Projects\PowerliftingSimulator\Assets\Tests\PhysicsBenchmarks\Core\PhysicsBenchmarkRecorder.cs:185
+at PowerliftingSimulator.PhysicsBenchmarks.SubstrateABBenchmarks+<B16_ChainSubstrate_ConfigurableJointVsArticulation>d__7.MoveNext () [0x0079b] in E:\Data\Projects\PowerliftingSimulator\Assets\Tests\PhysicsBenchmarks\Constraints\SubstrateABBenchmarks.cs:314
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B16_substrate_ab_PGS metrics=858 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\3cb1184-dirty\sweeps\substrate-ab-smoke\runs\20261001-183752-ab-smoke\raw\B16_substrate_ab_PGS.json
+Saving results to: C:/Users/Usuario/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

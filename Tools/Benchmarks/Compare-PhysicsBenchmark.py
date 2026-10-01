@@ -228,12 +228,27 @@ def cmd_aggregate(args):
         with open(repairs_path, encoding="utf-8") as handle:
             for row in json.load(handle):
                 repairs[(row["case"], row["metric"])] = row
+    # Evidence-based localization overlay: a metric's built-in layer is where
+    # its symptom shows; when a discriminating experiment proves an earlier or
+    # different root-cause layer, the reassignment and its evidence are
+    # recorded here, never by editing the metric.
+    localization_path = os.path.join(ROOT, "Artifacts", "Benchmarks", "Physics", "localization.json")
+    localization = []
+    if os.path.exists(localization_path):
+        with open(localization_path, encoding="utf-8") as handle:
+            localization = json.load(handle)
     results = []
     failures = []
     for key in sorted(cases):
         data = cases[key]
         for metric in data["metrics"]:
             metric = dict(metric)
+            metric["symptom_layer"] = metric["layer"]
+            for rule in localization:
+                if re.match(rule["case"], metric["case"]) and re.match(rule["metric"], metric["metric"]) and                         re.search(rule.get("configuration", ""), metric["configuration"]):
+                    metric["layer"] = rule["layer"]
+                    metric["localization_evidence"] = rule["evidence"]
+                    break
             metric["run_id"] = data["run_id"]
             metric["raw_path"] = data["raw_path"]
             results.append(metric)
@@ -257,6 +272,8 @@ def cmd_aggregate(args):
             "severity": severity(f),
             "earliest_causal_layer": f["layer"],
             "earliest_causal_layer_name": LAYERS.get(f["layer"], f["layer_name"]),
+            "symptom_layer": f.get("symptom_layer"),
+            "localization_evidence": f.get("localization_evidence"),
             "failure_meaning": f["failure_meaning"],
             "evidence": f["raw_path"],
             "repair_authorized": f["layer"] == earliest,

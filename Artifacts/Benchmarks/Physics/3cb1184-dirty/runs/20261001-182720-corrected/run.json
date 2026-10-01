@@ -1,0 +1,18 @@
+﻿{
+    "run_id":  "20261001-182720-corrected",
+    "tier":  "Isolated",
+    "test_filter":  "",
+    "category":  "PhysicsBenchmarkIsolated",
+    "git_sha":  "3cb1184",
+    "working_tree_dirty":  true,
+    "unity_exit_code":  2,
+    "started_utc":  "2026-10-01T21:27:21.0231233Z",
+    "finished_utc":  "2026-10-01T21:28:14.3751596Z",
+    "environment":  {
+                        "PHYSICS_BENCHMARK_RAW_DIR":  "E:\\Data\\Projects\\PowerliftingSimulator\\Artifacts\\Benchmarks\\Physics\\3cb1184-dirty\\runs\\20261001-182720-corrected\\raw"
+                    },
+    "nunit_result":  "Failed(Child)",
+    "nunit_total":  11,
+    "nunit_passed":  4,
+    "nunit_failed":  7
+}

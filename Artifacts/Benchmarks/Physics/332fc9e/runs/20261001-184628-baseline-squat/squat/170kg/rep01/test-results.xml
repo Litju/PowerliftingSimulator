@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Passed" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-01 21:48:04Z" end-time="2026-10-01 21:48:06Z" duration="1.8211928">
+  <test-suite type="TestSuite" id="1371" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="275" result="Passed" start-time="2026-10-01 21:48:04Z" end-time="2026-10-01 21:48:06Z" duration="1.821193" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1330" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="E:/Data/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="251" result="Passed" start-time="2026-10-01 21:48:04Z" end-time="2026-10-01 21:48:06Z" duration="1.802434" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="27008" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1331" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="251" result="Passed" start-time="2026-10-01 21:48:04Z" end-time="2026-10-01 21:48:06Z" duration="1.800088" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1332" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="251" result="Passed" start-time="2026-10-01 21:48:04Z" end-time="2026-10-01 21:48:06Z" duration="1.797050" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1113" name="GAM13V2SquatMechanicsQualificationTests" fullname="PowerliftingSimulator.Tests.GAM13V2SquatMechanicsQualificationTests" classname="PowerliftingSimulator.Tests.GAM13V2SquatMechanicsQualificationTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-01 21:48:04Z" end-time="2026-10-01 21:48:06Z" duration="1.785719" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1115" name="GAM13_V2_PHYSICAL_SQUAT_MECHANICS" fullname="PowerliftingSimulator.Tests.GAM13V2SquatMechanicsQualificationTests.GAM13_V2_PHYSICAL_SQUAT_MECHANICS" methodname="GAM13_V2_PHYSICAL_SQUAT_MECHANICS" classname="PowerliftingSimulator.Tests.GAM13V2SquatMechanicsQualificationTests" runstate="Runnable" seed="1037946351" result="Passed" start-time="2026-10-01 21:48:04Z" end-time="2026-10-01 21:48:06Z" duration="1.748250" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[GAM13_V23M_CAPTURE load=170.0kg ap_reference=A phase_rate=0.3 gate_c_static_hold=False phase0_standing_hold=False
+GAM13_V23B_TICK0_RECEIPT load=170.0kg path=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\332fc9e\runs\20261001-184628-baseline-squat\squat\170kg\rep01\runtime-physics-contract.json
+GAM13_V2_SQUAT_MECHANICS load=170.0kg PHYSICAL_STANDING_QUALIFIED=true legal_physical_depth=False descent_tick=100 reversal_tick=NA ascent_tick=NA lockout=False physical_failure=True physical_failure_reason=BALANCE_LOSS authoritative_balance_loss_direction=LEFT authoritative_onset_tick=228 authoritative_latched_tick=239 last_valid_pre_failure_tick=227 trace=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\332fc9e\runs\20261001-184628-baseline-squat\squat\170kg\rep01\qualification-trace.csv actuators=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\332fc9e\runs\20261001-184628-baseline-squat\squat\170kg\rep01\actuator-diagnostics.csv
+Saving results to: C:/Users/Usuario/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

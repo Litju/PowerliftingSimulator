@@ -1,0 +1,45 @@
+[
+  {
+    "case": "B13_oracle_static_torque",
+    "metric": ".*_unity_vs_oracle_torque_nm",
+    "layer": 5,
+    "evidence": "Thorax agrees with the oracle at 1.02-1.07 at 28 iterations; with every athlete body at 255 position iterations (nothing else changed) all sagittal joints agree at 1.00-1.03 (ankles 1.1-1.2): Artifacts/Benchmarks/Physics/3cb1184-dirty/sweeps/athlete-pos255. The mismatch is drives under-delivering K e in the unconverged closed-chain solve, not frames, masses or equations."
+  },
+  {
+    "case": "B11_driven_chain",
+    "metric": ".*",
+    "layer": 5,
+    "evidence": "Velocity iterations 1/2/4 change nothing; position iterations 56 and dt 0.005 move realization toward 1.0; dt 0.005 + 56 + 4 reference matches the independent planar statics (knee 1.015, hip 1.007); B16 ConfigurableJoint at 112 iterations and ArticulationBody at any setting converge."
+  },
+  {
+    "case": "B16_substrate_ab_.*",
+    "metric": "CJ_.*",
+    "layer": 5,
+    "evidence": "Same chain converges with ConfigurableJoint at 4x position iterations and with ArticulationBody: production solver budget, not the joint type, is the limiter."
+  },
+  {
+    "case": "B04_pd_static_known_load",
+    "metric": "static_error_rad",
+    "configuration": "trunk;demand=0.10",
+    "layer": 5,
+    "evidence": "Realization 1.07 at 28 position iterations, 1.001 at 56, 1.011 at dt 0.005: iteration convergence of a stiff drive on a light lever (K dt^2/I = 0.59)."
+  },
+  {
+    "case": "B05_pd_step_response",
+    "metric": "overshoot_fraction",
+    "layer": 8,
+    "evidence": "Observed 0.0358 equals the implicit-Euler drive model 0.0359 at dt 0.01 (drive semantics exact); that model converges 0.0234/0.0359/0.0457/0.0518 -> 0.0587 for dt 0.02/0.01/0.005/0.0025 -> 0: first-order timestep discretization."
+  },
+  {
+    "case": "B12_standing_(170|300)kg",
+    "metric": ".*",
+    "layer": 5,
+    "evidence": "At 255 position iterations 170 kg settles (COM 0.000 m/s, bar 0.0003 m/s) and 300 kg stands (pelvis drop 3.3 mm): sweeps/athlete-pos255."
+  },
+  {
+    "case": "B14_squat_140kg",
+    "metric": "lockout_extension_settles|mechanics_valid_lockout",
+    "layer": 5,
+    "evidence": "Continuation shows a steady +0.009 m/s bar creep (knee error drifting 0.041 -> 0.019 rad) plus ~0.09 m/s, ~3 s COM sway: the same unconverged-drive creep that keeps the 140 kg standing bar at 0.016 m/s at 28 iterations and 0.0003 m/s at 255."
+  }
+]

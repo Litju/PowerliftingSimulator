@@ -1,0 +1,313 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="11" result="Failed(Child)" total="11" passed="3" failed="8" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-01 21:20:59Z" end-time="2026-10-01 21:21:04Z" duration="5.2091144">
+  <test-suite type="TestSuite" id="1354" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="262" result="Failed" site="Child" start-time="2026-10-01 21:20:59Z" end-time="2026-10-01 21:21:04Z" duration="5.209114" total="11" passed="3" failed="8" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1348" name="PowerliftingSimulator.PhysicsBenchmarks.dll" fullname="E:/Data/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.PhysicsBenchmarks.dll" runstate="Runnable" testcasecount="11" result="Failed" site="Child" start-time="2026-10-01 21:20:59Z" end-time="2026-10-01 21:21:04Z" duration="5.180370" total="11" passed="3" failed="8" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="21436" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1349" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="11" result="Failed" site="Child" start-time="2026-10-01 21:20:59Z" end-time="2026-10-01 21:21:04Z" duration="5.178791" total="11" passed="3" failed="8" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1350" name="PhysicsBenchmarks" fullname="PowerliftingSimulator.PhysicsBenchmarks" runstate="Runnable" testcasecount="11" result="Failed" site="Child" start-time="2026-10-01 21:20:59Z" end-time="2026-10-01 21:21:04Z" duration="5.177918" total="11" passed="3" failed="8" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestFixture" id="1333" name="AnalyticalPhysicsBenchmarks" fullname="PowerliftingSimulator.PhysicsBenchmarks.AnalyticalPhysicsBenchmarks" classname="PowerliftingSimulator.PhysicsBenchmarks.AnalyticalPhysicsBenchmarks" runstate="Runnable" testcasecount="3" result="Failed" site="Child" start-time="2026-10-01 21:20:59Z" end-time="2026-10-01 21:21:00Z" duration="0.606356" total="3" passed="2" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="Category" value="PhysicsBenchmark" />
+              <property name="Category" value="PhysicsBenchmarkIsolated" />
+            </properties>
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1334" name="B01_FreeFall_MatchesAnalyticMotion" fullname="PowerliftingSimulator.PhysicsBenchmarks.AnalyticalPhysicsBenchmarks.B01_FreeFall_MatchesAnalyticMotion" methodname="B01_FreeFall_MatchesAnalyticMotion" classname="PowerliftingSimulator.PhysicsBenchmarks.AnalyticalPhysicsBenchmarks" runstate="Runnable" seed="1278612755" result="Passed" start-time="2026-10-01 21:20:59Z" end-time="2026-10-01 21:20:59Z" duration="0.130030" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B01_free_fall metrics=15 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\3cb1184-dirty\runs\20261001-181717-first\raw\B01_free_fall.json
+]]></output>
+            </test-case>
+            <test-case id="1335" name="B02_ConstantTorque_MatchesAlphaEqualsTauOverI" fullname="PowerliftingSimulator.PhysicsBenchmarks.AnalyticalPhysicsBenchmarks.B02_ConstantTorque_MatchesAlphaEqualsTauOverI" methodname="B02_ConstantTorque_MatchesAlphaEqualsTauOverI" classname="PowerliftingSimulator.PhysicsBenchmarks.AnalyticalPhysicsBenchmarks" runstate="Runnable" seed="1746301516" result="Passed" start-time="2026-10-01 21:20:59Z" end-time="2026-10-01 21:20:59Z" duration="0.030859" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B02_constant_torque metrics=10 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\3cb1184-dirty\runs\20261001-181717-first\raw\B02_constant_torque.json
+]]></output>
+            </test-case>
+            <test-case id="1336" name="B03_Pendulum_PeriodAndEnergy" fullname="PowerliftingSimulator.PhysicsBenchmarks.AnalyticalPhysicsBenchmarks.B03_Pendulum_PeriodAndEnergy" methodname="B03_Pendulum_PeriodAndEnergy" classname="PowerliftingSimulator.PhysicsBenchmarks.AnalyticalPhysicsBenchmarks" runstate="Runnable" seed="476161856" result="Failed" start-time="2026-10-01 21:20:59Z" end-time="2026-10-01 21:21:00Z" duration="0.413056" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Benchmark B03_pendulum failed:
+max_energy_deviation_fraction[theta0=5deg;L=1m;dt=0.02;pos_iter=28;vel_iter=1] expected=0 observed=0.035716102124392468 tol=0.02 (UpperBound) -> The joint constraint injects or dissipates energy.
+
+  Expected: 0
+  But was:  196
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.PhysicsBenchmarks.PhysicsBenchmarkRecorder.WriteAndAssert () [0x0017f] in E:\Data\Projects\PowerliftingSimulator\Assets\Tests\PhysicsBenchmarks\Core\PhysicsBenchmarkRecorder.cs:185
+at PowerliftingSimulator.PhysicsBenchmarks.AnalyticalPhysicsBenchmarks+<B03_Pendulum_PeriodAndEnergy>d__2.MoveNext () [0x004ab] in E:\Data\Projects\PowerliftingSimulator\Assets\Tests\PhysicsBenchmarks\Analytical\AnalyticalPhysicsBenchmarks.cs:206
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B03_pendulum metrics=9 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\3cb1184-dirty\runs\20261001-181717-first\raw\B03_pendulum.json
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1337" name="ConstraintPhysicsBenchmarks" fullname="PowerliftingSimulator.PhysicsBenchmarks.ConstraintPhysicsBenchmarks" classname="PowerliftingSimulator.PhysicsBenchmarks.ConstraintPhysicsBenchmarks" runstate="Runnable" testcasecount="2" result="Failed" site="Child" start-time="2026-10-01 21:21:00Z" end-time="2026-10-01 21:21:03Z" duration="3.114183" total="2" passed="0" failed="2" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="Category" value="PhysicsBenchmark" />
+              <property name="Category" value="PhysicsBenchmarkIsolated" />
+            </properties>
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1338" name="B10_SquatBarSaddle_SpringDamperLoadPath" fullname="PowerliftingSimulator.PhysicsBenchmarks.ConstraintPhysicsBenchmarks.B10_SquatBarSaddle_SpringDamperLoadPath" methodname="B10_SquatBarSaddle_SpringDamperLoadPath" classname="PowerliftingSimulator.PhysicsBenchmarks.ConstraintPhysicsBenchmarks" runstate="Runnable" seed="361220883" result="Failed" start-time="2026-10-01 21:21:00Z" end-time="2026-10-01 21:21:00Z" duration="0.127770" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Benchmark B10_saddle_load_path failed:
+joint_force_n[load=25;m=25.00;wn_dt=1.414;zeta=0.919;dt=0.01;pos_iter=28;vel_iter=1] expected=245.25001049041748 observed=0 tol=0.02 (Relative) -> Saddle does not carry the bar's weight.
+joint_force_n[load=60;m=60.00;wn_dt=0.913;zeta=0.593;dt=0.01;pos_iter=28;vel_iter=1] expected=588.600025177002 observed=0 tol=0.02 (Relative) -> Saddle does not carry the bar's weight.
+joint_force_n[load=140;m=140.00;wn_dt=0.598;zeta=0.388;dt=0.01;pos_iter=28;vel_iter=1] expected=1373.4000587463379 observed=0 tol=0.02 (Relative) -> Saddle does not carry the bar's weight.
+joint_force_n[load=170;m=170.00;wn_dt=0.542;zeta=0.353;dt=0.01;pos_iter=28;vel_iter=1] expected=1667.7000713348389 observed=0 tol=0.02 (Relative) -> Saddle does not carry the bar's weight.
+joint_force_n[load=300;m=300.00;wn_dt=0.408;zeta=0.265;dt=0.01;pos_iter=28;vel_iter=1] expected=2943.0001258850098 observed=0 tol=0.02 (Relative) -> Saddle does not carry the bar's weight.
+
+  Expected: 0
+  But was:  939
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.PhysicsBenchmarks.PhysicsBenchmarkRecorder.WriteAndAssert () [0x0017f] in E:\Data\Projects\PowerliftingSimulator\Assets\Tests\PhysicsBenchmarks\Core\PhysicsBenchmarkRecorder.cs:185
+at PowerliftingSimulator.PhysicsBenchmarks.ConstraintPhysicsBenchmarks+<B10_SquatBarSaddle_SpringDamperLoadPath>d__2.MoveNext () [0x00409] in E:\Data\Projects\PowerliftingSimulator\Assets\Tests\PhysicsBenchmarks\Constraints\ConstraintPhysicsBenchmarks.cs:141
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B10_saddle_load_path metrics=20 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\3cb1184-dirty\runs\20261001-181717-first\raw\B10_saddle_load_path.json
+]]></output>
+            </test-case>
+            <test-case id="1339" name="B11_DrivenChain_StaticLoadAndConvergence" fullname="PowerliftingSimulator.PhysicsBenchmarks.ConstraintPhysicsBenchmarks.B11_DrivenChain_StaticLoadAndConvergence" methodname="B11_DrivenChain_StaticLoadAndConvergence" classname="PowerliftingSimulator.PhysicsBenchmarks.ConstraintPhysicsBenchmarks" runstate="Runnable" seed="1806943437" result="Failed" start-time="2026-10-01 21:21:00Z" end-time="2026-10-01 21:21:03Z" duration="2.983119" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Benchmark B11_driven_chain failed:
+ankle_static_error_rad[load=0;production;dt=0.01;pos_iter=28;vel_iter=1] expected=0.00058266775227759984 observed=-0.0097872412204742434 tol=0.05 (Relative) -> A driven chain carrying the athlete's mass ratios does not reach its static PD equilibrium.
+ankle_vs_refined_reference_rad[load=0;production;dt=0.01;pos_iter=28;vel_iter=1] expected=0.00028076600574422628 observed=-0.0097872412204742434 tol=0.05 (Relative) -> Production timestep/iterations are not converged for this load.
+knee_static_error_rad[load=0;production;dt=0.01;pos_iter=28;vel_iter=1] expected=0.03557328719397649 observed=0.058198702558875083 tol=0.05 (Relative) -> A driven chain carrying the athlete's mass ratios does not reach its static PD equilibrium.
+knee_vs_refined_reference_rad[load=0;production;dt=0.01;pos_iter=28;vel_iter=1] expected=0.036117612309753896 observed=0.058198702558875083 tol=0.05 (Relative) -> Production timestep/iterations are not converged for this load.
+hip_static_error_rad[load=0;production;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.015536419455225461 observed=-0.019095138423144819 tol=0.05 (Relative) -> A driven chain carrying the athlete's mass ratios does not reach its static PD equilibrium.
+hip_vs_refined_reference_rad[load=0;production;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.015642234962433575 observed=-0.019095138423144819 tol=0.05 (Relative) -> Production timestep/iterations are not converged for this load.
+settled_max_angular_speed_rad_s[load=0;production;dt=0.01;pos_iter=28;vel_iter=1] expected=0 observed=0.050849124789237976 tol=0.01 (UpperBound) -> The chain does not settle.
+ankle_static_error_rad[load=25;production;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.00757803670705059 observed=-0.018897551409900189 tol=0.05 (Relative) -> A driven chain carrying the athlete's mass ratios does not reach its static PD equilibrium.
+ankle_vs_refined_reference_rad[load=25;production;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.00794498337432742 observed=-0.018897551409900189 tol=0.05 (Relative) -> Production timestep/iterations are not converged for this load.
+knee_static_error_rad[load=25;production;dt=0.01;pos_iter=28;vel_iter=1] expected=0.03918865047155836 observed=0.063966962397098537 tol=0.05 (Relative) -> A driven chain carrying the athlete's mass ratios does not reach its static PD equilibrium.
+knee_vs_refined_reference_rad[load=25;production;dt=0.01;pos_iter=28;vel_iter=1] expected=0.039903196804225445 observed=0.063966962397098537 tol=0.05 (Relative) -> Production timestep/iterations are not converged for this load.
+hip_static_error_rad[load=25;production;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.027606140544980829 observed=-0.0333024337887764 tol=0.05 (Relative) -> A driven chain carrying the athlete's mass ratios does not reach its static PD equilibrium.
+hip_vs_refined_reference_rad[load=25;production;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.027755771223455669 observed=-0.0333024337887764 tol=0.05 (Relative) -> Production timestep/iterations are not converged for this load.
+settled_max_angular_speed_rad_s[load=25;production;dt=0.01;pos_iter=28;vel_iter=1] expected=0 observed=0.040661722421646118 tol=0.01 (UpperBound) -> The chain does not settle.
+ankle_static_error_rad[load=60;production;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.021809116346510116 observed=-0.036806528121232987 tol=0.05 (Relative) -> A driven chain carrying the athlete's mass ratios does not reach its static PD equilibrium.
+ankle_vs_refined_reference_rad[load=60;production;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.022254243232309817 observed=-0.036806528121232987 tol=0.05 (Relative) -> Production timestep/iterations are not converged for this load.
+knee_static_error_rad[load=60;production;dt=0.01;pos_iter=28;vel_iter=1] expected=0.042704050412773066 observed=0.073444342017173772 tol=0.05 (Relative) -> A driven chain carrying the athlete's mass ratios does not reach its static PD equilibrium.
+knee_vs_refined_reference_rad[load=60;production;dt=0.01;pos_iter=28;vel_iter=1] expected=0.043674748018383981 observed=0.073444342017173772 tol=0.05 (Relative) -> Production timestep/iterations are not converged for this load.
+hip_static_error_rad[load=60;production;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.045672190703251708 observed=-0.053125664219260217 tol=0.05 (Relative) -> A driven chain carrying the athlete's mass ratios does not reach its static PD equilibrium.
+hip_vs_refined_reference_rad[load=60;production;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.045857081152498723 observed=-0.053125664219260217 tol=0.05 (Relative) -> Production timestep/iterations are not converged for this load.
+settled_max_angular_speed_rad_s[load=60;production;dt=0.01;pos_iter=28;vel_iter=1] expected=0 observed=0.050409819930791855 tol=0.01 (UpperBound) -> The chain does not settle.
+ankle_static_error_rad[load=140;production;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.077173757904559409 observed=-0.10693105712532996 tol=0.05 (Relative) -> A driven chain carrying the athlete's mass ratios does not reach its static PD equilibrium.
+ankle_vs_refined_reference_rad[load=140;production;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.078739752545952793 observed=-0.10693105712532996 tol=0.05 (Relative) -> Production timestep/iterations are not converged for this load.
+knee_static_error_rad[load=140;production;dt=0.01;pos_iter=28;vel_iter=1] expected=0.0380071502668112 observed=0.07350834727287292 tol=0.05 (Relative) -> A driven chain carrying the athlete's mass ratios does not reach its static PD equilibrium.
+knee_vs_refined_reference_rad[load=140;production;dt=0.01;pos_iter=28;vel_iter=1] expected=0.039004460871219636 observed=0.07350834727287292 tol=0.05 (Relative) -> Production timestep/iterations are not converged for this load.
+hip_static_error_rad[load=140;production;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.095685414549197489 observed=-0.1084810246527195 tol=0.05 (Relative) -> A driven chain carrying the athlete's mass ratios does not reach its static PD equilibrium.
+hip_vs_refined_reference_rad[load=140;production;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.096234274730086333 observed=-0.1084810246527195 tol=0.05 (Relative) -> Production timestep/iterations are not converged for this load.
+settled_max_angular_speed_rad_s[load=140;production;dt=0.01;pos_iter=28;vel_iter=1] expected=0 observed=0.074255242943763733 tol=0.01 (UpperBound) -> The chain does not settle.
+ankle_static_error_rad[load=170;production;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.11410558394867894 observed=-0.15279203206300734 tol=0.05 (Relative) -> A driven chain carrying the athlete's mass ratios does not reach its static PD equilibrium.
+ankle_vs_refined_reference_rad[load=170;production;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.12697538256645202 observed=-0.15279203206300734 tol=0.05 (Relative) -> Production timestep/iterations are not converged for this load.
+knee_static_error_rad[load=170;production;dt=0.01;pos_iter=28;vel_iter=1] expected=0.027151144509551695 observed=0.058420844078063965 tol=0.05 (Relative) -> A driven chain carrying the athlete's mass ratios does not reach its static PD equilibrium.
+knee_vs_refined_reference_rad[load=170;production;dt=0.01;pos_iter=28;vel_iter=1] expected=0.022596233859658241 observed=0.058420844078063965 tol=0.05 (Relative) -> Production timestep/iterations are not converged for this load.
+hip_static_error_rad[load=170;production;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.11999112846827101 observed=-0.13542128592729569 tol=0.05 (Relative) -> A driven chain carrying the athlete's mass ratios does not reach its static PD equilibrium.
+hip_vs_refined_reference_rad[load=170;production;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.12408023878932 observed=-0.13542128592729569 tol=0.05 (Relative) -> Production timestep/iterations are not converged for this load.
+settled_max_angular_speed_rad_s[load=170;production;dt=0.01;pos_iter=28;vel_iter=1] expected=0 observed=0.097354568541049957 tol=0.01 (UpperBound) -> The chain does not settle.
+ankle_vs_refined_reference_rad[load=300;production;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.41627223074436187 observed=-0.507044450044632 tol=0.05 (Relative) -> Production timestep/iterations are not converged for this load.
+knee_vs_refined_reference_rad[load=300;production;dt=0.01;pos_iter=28;vel_iter=1] expected=-0.10193161509931087 observed=-0.1484032753109932 tol=0.05 (Relative) -> Production timestep/iterations are not converged for this load.
+max_anchor_separation_m[load=300;production;dt=0.01;pos_iter=28;vel_iter=1] expected=0 observed=0.0050083370879292488 tol=0.002 (UpperBound) -> Joint constraints stretch under the chain's mass ratios.
+settled_max_angular_speed_rad_s[load=300;production;dt=0.01;pos_iter=28;vel_iter=1] expected=0 observed=0.28371697664260864 tol=0.01 (UpperBound) -> The chain does not settle.
+
+  Expected: 0
+  But was:  8875
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.PhysicsBenchmarks.PhysicsBenchmarkRecorder.WriteAndAssert () [0x0017f] in E:\Data\Projects\PowerliftingSimulator\Assets\Tests\PhysicsBenchmarks\Core\PhysicsBenchmarkRecorder.cs:185
+at PowerliftingSimulator.PhysicsBenchmarks.ConstraintPhysicsBenchmarks+<B11_DrivenChain_StaticLoadAndConvergence>d__11.MoveNext () [0x0051e] in E:\Data\Projects\PowerliftingSimulator\Assets\Tests\PhysicsBenchmarks\Constraints\ConstraintPhysicsBenchmarks.cs:393
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B11_driven_chain metrics=317 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\3cb1184-dirty\runs\20261001-181717-first\raw\B11_driven_chain.json
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1340" name="ContactPhysicsBenchmarks" fullname="PowerliftingSimulator.PhysicsBenchmarks.ContactPhysicsBenchmarks" classname="PowerliftingSimulator.PhysicsBenchmarks.ContactPhysicsBenchmarks" runstate="Runnable" testcasecount="2" result="Failed" site="Child" start-time="2026-10-01 21:21:03Z" end-time="2026-10-01 21:21:03Z" duration="0.156062" total="2" passed="1" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="Category" value="PhysicsBenchmark" />
+              <property name="Category" value="PhysicsBenchmarkIsolated" />
+            </properties>
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1341" name="B08_Friction_InclineAndPushSlipTransition" fullname="PowerliftingSimulator.PhysicsBenchmarks.ContactPhysicsBenchmarks.B08_Friction_InclineAndPushSlipTransition" methodname="B08_Friction_InclineAndPushSlipTransition" classname="PowerliftingSimulator.PhysicsBenchmarks.ContactPhysicsBenchmarks" runstate="Runnable" seed="403525823" result="Failed" start-time="2026-10-01 21:21:03Z" end-time="2026-10-01 21:21:03Z" duration="0.090568" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Benchmark B08_friction failed:
+slide_velocity_after_1s_mps[tan/mu=1.25;m=2;dt=0.01;pos_iter=28;vel_iter=1] expected=1.5320646354160294 observed=0.00038848852273076773 tol=0.05 (Relative) -> Dynamic friction coefficient is not the authored value.
+slide_velocity_after_1s_mps[tan/mu=1.25;m=400;dt=0.01;pos_iter=28;vel_iter=1] expected=1.5320646354160294 observed=0.00038849705015309155 tol=0.05 (Relative) -> Dynamic friction coefficient is not the authored value.
+slide_velocity_after_1s_mps[F/(mu m g)=1.10;dt=0.01;pos_iter=28;vel_iter=1] expected=0.98100053501872964 observed=-0.000548437237739563 tol=0.1 (Relative) -> Friction cone limit is not mu N.
+
+  Expected: 0
+  But was:  623
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.PhysicsBenchmarks.PhysicsBenchmarkRecorder.WriteAndAssert () [0x0017f] in E:\Data\Projects\PowerliftingSimulator\Assets\Tests\PhysicsBenchmarks\Core\PhysicsBenchmarkRecorder.cs:185
+at PowerliftingSimulator.PhysicsBenchmarks.ContactPhysicsBenchmarks+<B08_Friction_InclineAndPushSlipTransition>d__1.MoveNext () [0x005bd] in E:\Data\Projects\PowerliftingSimulator\Assets\Tests\PhysicsBenchmarks\Contact\ContactPhysicsBenchmarks.cs:130
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B08_friction metrics=6 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\3cb1184-dirty\runs\20261001-181717-first\raw\B08_friction.json
+]]></output>
+            </test-case>
+            <test-case id="1342" name="B09_DropContact_ImpulseAndResting" fullname="PowerliftingSimulator.PhysicsBenchmarks.ContactPhysicsBenchmarks.B09_DropContact_ImpulseAndResting" methodname="B09_DropContact_ImpulseAndResting" classname="PowerliftingSimulator.PhysicsBenchmarks.ContactPhysicsBenchmarks" runstate="Runnable" seed="559311543" result="Passed" start-time="2026-10-01 21:21:03Z" end-time="2026-10-01 21:21:03Z" duration="0.063137" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B09_drop_contact metrics=8 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\3cb1184-dirty\runs\20261001-181717-first\raw\B09_drop_contact.json
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1343" name="DrivePhysicsBenchmarks" fullname="PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks" classname="PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks" runstate="Runnable" testcasecount="4" result="Failed" site="Child" start-time="2026-10-01 21:21:03Z" end-time="2026-10-01 21:21:04Z" duration="1.297741" total="4" passed="0" failed="4" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="Category" value="PhysicsBenchmark" />
+              <property name="Category" value="PhysicsBenchmarkIsolated" />
+            </properties>
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1344" name="B04_ConfigurableJointPd_StaticKnownLoad" fullname="PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks.B04_ConfigurableJointPd_StaticKnownLoad" methodname="B04_ConfigurableJointPd_StaticKnownLoad" classname="PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks" runstate="Runnable" seed="1093993632" result="Failed" start-time="2026-10-01 21:21:03Z" end-time="2026-10-01 21:21:04Z" duration="1.070063" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Benchmark B04_pd_static_known_load failed:
+static_error_rad[trunk;demand=0.10;K=7850;m=13.25;dt=0.01;pos_iter=28;vel_iter=1] expected=0.0049680917683964411 observed=0.00532168872654438 tol=0.05 (Relative) -> The drive does not realise its authored spring under a known static load.
+
+  Expected: 0
+  But was:  239
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.PhysicsBenchmarks.PhysicsBenchmarkRecorder.WriteAndAssert () [0x0017f] in E:\Data\Projects\PowerliftingSimulator\Assets\Tests\PhysicsBenchmarks\Core\PhysicsBenchmarkRecorder.cs:185
+at PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks+<B04_ConfigurableJointPd_StaticKnownLoad>d__4.MoveNext () [0x00433] in E:\Data\Projects\PowerliftingSimulator\Assets\Tests\PhysicsBenchmarks\Drives\DrivePhysicsBenchmarks.cs:116
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B04_pd_static_known_load metrics=84 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\3cb1184-dirty\runs\20261001-181717-first\raw\B04_pd_static_known_load.json
+]]></output>
+            </test-case>
+            <test-case id="1345" name="B05_ConfigurableJointPd_StepResponse" fullname="PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks.B05_ConfigurableJointPd_StepResponse" methodname="B05_ConfigurableJointPd_StepResponse" classname="PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks" runstate="Runnable" seed="467038778" result="Failed" start-time="2026-10-01 21:21:04Z" end-time="2026-10-01 21:21:04Z" duration="0.111543" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Benchmark B05_pd_step_response failed:
+overshoot_fraction[hip_family_inertia_5;K=3150;D=168.0;I=5.000;wn_dt=0.251;zeta=0.669;dt=0.01;pos_iter=28;vel_iter=1] expected=0.0590001783604972 observed=0.0358186811208725 tol=0.02 (Absolute) -> Drive damping semantics differ from D.
+
+  Expected: 0
+  But was:  236
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.PhysicsBenchmarks.PhysicsBenchmarkRecorder.WriteAndAssert () [0x0017f] in E:\Data\Projects\PowerliftingSimulator\Assets\Tests\PhysicsBenchmarks\Core\PhysicsBenchmarkRecorder.cs:185
+at PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks+<B05_ConfigurableJointPd_StepResponse>d__6.MoveNext () [0x00513] in E:\Data\Projects\PowerliftingSimulator\Assets\Tests\PhysicsBenchmarks\Drives\DrivePhysicsBenchmarks.cs:205
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B05_pd_step_response metrics=28 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\3cb1184-dirty\runs\20261001-181717-first\raw\B05_pd_step_response.json
+]]></output>
+            </test-case>
+            <test-case id="1346" name="B06_MaximumForce_SaturationIsATorqueLimit" fullname="PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks.B06_MaximumForce_SaturationIsATorqueLimit" methodname="B06_MaximumForce_SaturationIsATorqueLimit" classname="PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks" runstate="Runnable" seed="1203249768" result="Failed" start-time="2026-10-01 21:21:04Z" end-time="2026-10-01 21:21:04Z" duration="0.050592" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Benchmark B06_maximum_force_saturation failed:
+saturated_droop_after_0p1s_rad[tau_g/maxForce=1.25;maxForce=157.0;dt=0.01;pos_iter=28;vel_iter=1] expected=0.025390590078059327 observed=0.031963545829057693 tol=0.1 (Relative) -> maximumForce does not act as a torque limit (e.g. it is applied as an impulse or scaled by dt).
+swing_droop_vs_magnitude_clamp_model_rad[swing45deg;tau_g/maxForce=1.25;dt=0.01;pos_iter=28;vel_iter=1] expected=0.025390590078059327 observed=0.0018593198403352856 tol=0.15 (Relative) -> PhysX clamps each swing axis separately: swing demand fraction telemetry under-reports available authority by up to sqrt(2).
+swing_droop_vs_magnitude_clamp_model_rad[swing45deg;tau_g/maxForce=1.60;dt=0.01;pos_iter=28;vel_iter=1] expected=0.0476073531983749 observed=0.023251634856067405 tol=0.15 (Relative) -> PhysX clamps each swing axis separately: swing demand fraction telemetry under-reports available authority by up to sqrt(2).
+
+  Expected: 0
+  But was:  899
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.PhysicsBenchmarks.PhysicsBenchmarkRecorder.WriteAndAssert () [0x0017f] in E:\Data\Projects\PowerliftingSimulator\Assets\Tests\PhysicsBenchmarks\Core\PhysicsBenchmarkRecorder.cs:185
+at PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks+<B06_MaximumForce_SaturationIsATorqueLimit>d__7.MoveNext () [0x00599] in E:\Data\Projects\PowerliftingSimulator\Assets\Tests\PhysicsBenchmarks\Drives\DrivePhysicsBenchmarks.cs:295
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B06_maximum_force_saturation metrics=9 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\3cb1184-dirty\runs\20261001-181717-first\raw\B06_maximum_force_saturation.json
+]]></output>
+            </test-case>
+            <test-case id="1347" name="B07_TargetRotationAndVelocity_SignAndFrame" fullname="PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks.B07_TargetRotationAndVelocity_SignAndFrame" methodname="B07_TargetRotationAndVelocity_SignAndFrame" classname="PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks" runstate="Runnable" seed="1732154341" result="Failed" start-time="2026-10-01 21:21:04Z" end-time="2026-10-01 21:21:04Z" duration="0.061404" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Benchmark B07_target_sign_frame failed:
+hinge_relative_velocity_rad_s[production targetAngularVelocity=-w;dt=0.01;pos_iter=28;vel_iter=1] expected=1 observed=-0.99999988079071045 tol=0.01 (Absolute) -> targetAngularVelocity sign differs from PoweredJointController's convention: the damper fights commanded motion.
+hinge_relative_velocity_rad_s[raw targetAngularVelocity=+w;dt=0.01;pos_iter=28;vel_iter=1] expected=-1 observed=0.99999988079071045 tol=0.01 (Absolute) -> targetAngularVelocity sign differs from PoweredJointController's convention: the damper fights commanded motion.
+
+  Expected: 0
+  But was:  543
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.PhysicsBenchmarks.PhysicsBenchmarkRecorder.WriteAndAssert () [0x0017f] in E:\Data\Projects\PowerliftingSimulator\Assets\Tests\PhysicsBenchmarks\Core\PhysicsBenchmarkRecorder.cs:185
+at PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks+<B07_TargetRotationAndVelocity_SignAndFrame>d__8.MoveNext () [0x005fe] in E:\Data\Projects\PowerliftingSimulator\Assets\Tests\PhysicsBenchmarks\Drives\DrivePhysicsBenchmarks.cs:390
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B07_target_sign_frame metrics=10 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\3cb1184-dirty\runs\20261001-181717-first\raw\B07_target_sign_frame.json
+Saving results to: C:/Users/Usuario/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

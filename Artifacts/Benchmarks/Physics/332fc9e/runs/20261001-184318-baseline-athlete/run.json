@@ -1,0 +1,23 @@
+﻿{
+    "run_id":  "20261001-184318-baseline-athlete",
+    "tier":  "Athlete",
+    "git_sha":  "332fc9e",
+    "working_tree_dirty":  false,
+    "started_utc":  "2026-10-01T21:43:18.2307495Z",
+    "environment":  {
+
+                    },
+    "invocations":  [
+                        {
+                            "selector":  "-testCategory PhysicsBenchmarkAthlete",
+                            "result":  {
+                                           "exit":  2,
+                                           "result":  "Failed(Child)",
+                                           "total":  12,
+                                           "passed":  4,
+                                           "failed":  8
+                                       }
+                        }
+                    ],
+    "finished_utc":  "2026-10-01T21:46:27.2885625Z"
+}

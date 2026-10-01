@@ -76,7 +76,12 @@ def analyze_extension(case, cfg, path, metrics, notes):
     mean_vy = sum(vy) / len(vy)
     amplitude = math.sqrt(sum((v - mean_vy) ** 2 for v in vy) / len(vy))
     still_fraction = sum(1 for s in speeds if s is not None and s <= BAR_STILL_MPS) / len(speeds)
-    classification = "QUALIFICATION_WINDOW_TOO_SHORT" if natural else "PHYSICS_NOT_SETTLING"
+    # Settling means the sealed predicates hold and keep holding: a natural
+    # lockout counts only if every tick of the final second is lockout. A
+    # threshold crossing that is lost again is oscillation, not settling.
+    settled_tail = all(r["is_lockout"] == "true" for r in tail)
+    classification = "QUALIFICATION_WINDOW_TOO_SHORT" if natural and settled_tail else "PHYSICS_NOT_SETTLING"
+    notes["extension_final_second_all_lockout"] = str(settled_tail)
     notes["lockout_extension_classification"] = classification
     notes["natural_lockout_ticks_since_lockout_start"] = natural["ticks_since_lockout_start"] if natural else "none"
     failing = {}
@@ -84,8 +89,8 @@ def analyze_extension(case, cfg, path, metrics, notes):
         for p in r["failed_predicates"].split("|"):
             failing[p] = failing.get(p, 0) + 1
     notes["extension_failed_predicate_counts"] = json.dumps(failing)
-    metrics.append(metric(case, "lockout_extension_natural_lockout", cfg, 1, 1 if natural else 0, 0, "Absolute",
-                          "sealed GAM-12 lockout predicates (0.020 m/s unchanged) become true within the bounded 3 s continuation",
+    metrics.append(metric(case, "lockout_extension_settles", cfg, 1, 1 if natural and settled_tail else 0, 0, "Absolute",
+                          "sealed GAM-12 lockout predicates (0.020 m/s unchanged) become true within the bounded 3 s continuation and hold through its final second",
                           "PHYSICS_NOT_SETTLING: the unchanged simulation never satisfies the existing lockout predicates.", 9))
     metrics.append(metric(case, "extension_tail_max_bar_speed_mps", cfg, None, tail_speed, None, "Informational",
                           "", "Max bar speed over the last second of the continuation.", 9, gated=False))

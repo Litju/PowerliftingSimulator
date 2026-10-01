@@ -1,0 +1,23 @@
+﻿{
+    "run_id":  "20261001-183947-baseline-isolated",
+    "tier":  "Isolated",
+    "git_sha":  "332fc9e",
+    "working_tree_dirty":  false,
+    "started_utc":  "2026-10-01T21:39:47.6355551Z",
+    "environment":  {
+
+                    },
+    "invocations":  [
+                        {
+                            "selector":  "-testCategory PhysicsBenchmarkIsolated",
+                            "result":  {
+                                           "exit":  2,
+                                           "result":  "Failed(Child)",
+                                           "total":  12,
+                                           "passed":  4,
+                                           "failed":  8
+                                       }
+                        }
+                    ],
+    "finished_utc":  "2026-10-01T21:43:16.6833825Z"
+}
