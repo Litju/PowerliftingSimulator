@@ -114,6 +114,8 @@ try {
         }
     }
 
+    & (Join-Path $PSScriptRoot 'Verify-TrackedArtifactHygiene.ps1') -RepositoryRoot $RepositoryRoot
+
     Write-Output "MASTER_SPEC_FILES=$($actualFiles.Count)"
     Write-Output 'HASHES=PASS'
     Write-Output 'DEPENDENCIES=PASS'
