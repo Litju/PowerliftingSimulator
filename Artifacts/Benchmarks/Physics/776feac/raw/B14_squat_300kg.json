@@ -1,0 +1,79 @@
+{
+ "schema": "PHYSICS_BENCHMARK_V1",
+ "case": "B14_squat_300kg",
+ "unity_version": "see runtime-physics-contract.json",
+ "platform": "WindowsEditor",
+ "notes": {
+  "outcome": "SETUP_NOT_PHYSICALLY_QUALIFIED"
+ },
+ "metrics": [
+  {
+   "case": "B14_squat_300kg",
+   "metric": "supra_max_fails_physically",
+   "configuration": "load=300kg;rep=rep01",
+   "expected": 1,
+   "observed": 1,
+   "abs_error": 0,
+   "rel_error": 0.0,
+   "tolerance": 0,
+   "tolerance_kind": "Absolute",
+   "tolerance_source": "GAM-13 V2-5 envelope: 300 kg supra-max physical stall/failure",
+   "pass": true,
+   "gated": true,
+   "failure_meaning": "A supra-max load completes, or fails for a non-physical reason: SETUP_NOT_PHYSICALLY_QUALIFIED",
+   "layer": 11,
+   "layer_name": ""
+  },
+  {
+   "case": "B14_squat_300kg",
+   "metric": "descent_tick",
+   "configuration": "load=300kg;rep=rep01",
+   "expected": null,
+   "observed": null,
+   "abs_error": null,
+   "rel_error": null,
+   "tolerance": null,
+   "tolerance_kind": "Informational",
+   "tolerance_source": "",
+   "pass": true,
+   "gated": false,
+   "failure_meaning": "Event tick from the mechanics probe.",
+   "layer": 11,
+   "layer_name": ""
+  },
+  {
+   "case": "B14_squat_300kg",
+   "metric": "reversal_tick",
+   "configuration": "load=300kg;rep=rep01",
+   "expected": null,
+   "observed": null,
+   "abs_error": null,
+   "rel_error": null,
+   "tolerance": null,
+   "tolerance_kind": "Informational",
+   "tolerance_source": "",
+   "pass": true,
+   "gated": false,
+   "failure_meaning": "Event tick from the mechanics probe.",
+   "layer": 11,
+   "layer_name": ""
+  },
+  {
+   "case": "B14_squat_300kg",
+   "metric": "ascent_tick",
+   "configuration": "load=300kg;rep=rep01",
+   "expected": null,
+   "observed": null,
+   "abs_error": null,
+   "rel_error": null,
+   "tolerance": null,
+   "tolerance_kind": "Informational",
+   "tolerance_source": "",
+   "pass": true,
+   "gated": false,
+   "failure_meaning": "Event tick from the mechanics probe.",
+   "layer": 11,
+   "layer_name": ""
+  }
+ ]
+}

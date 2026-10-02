@@ -1,0 +1,46 @@
+﻿{
+    "run_id":  "20261001-214459-final2-squat",
+    "tier":  "Squat",
+    "git_sha":  "68d3085",
+    "working_tree_dirty":  false,
+    "started_utc":  "2026-10-02T00:44:59.5816509Z",
+    "environment":  {
+
+                    },
+    "invocations":  [
+                        {
+                            "load":  "60",
+                            "rep":  1,
+                            "result":  {
+                                           "exit":  0,
+                                           "result":  "Passed",
+                                           "total":  1,
+                                           "passed":  1,
+                                           "failed":  0
+                                       }
+                        },
+                        {
+                            "load":  "170",
+                            "rep":  1,
+                            "result":  {
+                                           "exit":  0,
+                                           "result":  "Passed",
+                                           "total":  1,
+                                           "passed":  1,
+                                           "failed":  0
+                                       }
+                        },
+                        {
+                            "load":  "300",
+                            "rep":  1,
+                            "result":  {
+                                           "exit":  0,
+                                           "result":  "Passed",
+                                           "total":  1,
+                                           "passed":  1,
+                                           "failed":  0
+                                       }
+                        }
+                    ],
+    "finished_utc":  "2026-10-02T00:47:42.8549406Z"
+}

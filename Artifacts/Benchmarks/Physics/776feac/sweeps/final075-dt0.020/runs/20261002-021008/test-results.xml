@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="6" result="Passed" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-02 05:10:31Z" end-time="2026-10-02 05:10:41Z" duration="10.2044942">
+  <test-suite type="TestSuite" id="1375" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="277" result="Passed" start-time="2026-10-02 05:10:31Z" end-time="2026-10-02 05:10:41Z" duration="10.204494" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1369" name="PowerliftingSimulator.PhysicsBenchmarks.dll" fullname="E:/Data/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.PhysicsBenchmarks.dll" runstate="Runnable" testcasecount="26" result="Passed" start-time="2026-10-02 05:10:31Z" end-time="2026-10-02 05:10:41Z" duration="10.189947" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="9252" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1370" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="26" result="Passed" start-time="2026-10-02 05:10:31Z" end-time="2026-10-02 05:10:41Z" duration="10.188821" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1371" name="PhysicsBenchmarks" fullname="PowerliftingSimulator.PhysicsBenchmarks" runstate="Runnable" testcasecount="26" result="Passed" start-time="2026-10-02 05:10:31Z" end-time="2026-10-02 05:10:41Z" duration="10.188267" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1337" name="AthletePhysicsBenchmarks" fullname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks" classname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks" runstate="Runnable" testcasecount="12" result="Passed" start-time="2026-10-02 05:10:31Z" end-time="2026-10-02 05:10:41Z" duration="10.186932" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="Category" value="PhysicsBenchmark" />
+              <property name="Category" value="PhysicsBenchmarkAthlete" />
+            </properties>
+            <test-suite type="ParameterizedMethod" id="1344" name="B12_SharedAthlete_Standing" fullname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks.B12_SharedAthlete_Standing" classname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-10-02 05:10:31Z" end-time="2026-10-02 05:10:41Z" duration="10.182491" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+              </properties>
+              <test-case id="1338" name="B12_SharedAthlete_Standing(0.0f)" fullname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks.B12_SharedAthlete_Standing(0.0f)" methodname="B12_SharedAthlete_Standing" classname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks" runstate="Runnable" seed="1546648914" result="Passed" start-time="2026-10-02 05:10:31Z" end-time="2026-10-02 05:10:33Z" duration="1.829457" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[GAM13_V23B_TICK0_RECEIPT load=0.0kg path=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\776feac\sweeps\final075-dt0.020\runs\20261002-021008\raw\runtime-receipt-000kg.json
+PHYSICS_BENCHMARK case=B12_standing_000kg metrics=14 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\776feac\sweeps\final075-dt0.020\runs\20261002-021008\raw\B12_standing_000kg.json
+]]></output>
+              </test-case>
+              <test-case id="1339" name="B12_SharedAthlete_Standing(25.0f)" fullname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks.B12_SharedAthlete_Standing(25.0f)" methodname="B12_SharedAthlete_Standing" classname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks" runstate="Runnable" seed="743703811" result="Passed" start-time="2026-10-02 05:10:33Z" end-time="2026-10-02 05:10:34Z" duration="1.670339" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[GAM13_V23B_TICK0_RECEIPT load=25.0kg path=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\776feac\sweeps\final075-dt0.020\runs\20261002-021008\raw\runtime-receipt-025kg.json
+PHYSICS_BENCHMARK case=B12_standing_025kg metrics=26 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\776feac\sweeps\final075-dt0.020\runs\20261002-021008\raw\B12_standing_025kg.json
+]]></output>
+              </test-case>
+              <test-case id="1340" name="B12_SharedAthlete_Standing(60.0f)" fullname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks.B12_SharedAthlete_Standing(60.0f)" methodname="B12_SharedAthlete_Standing" classname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks" runstate="Runnable" seed="1836452149" result="Passed" start-time="2026-10-02 05:10:34Z" end-time="2026-10-02 05:10:36Z" duration="1.664961" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[GAM13_V23B_TICK0_RECEIPT load=60.0kg path=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\776feac\sweeps\final075-dt0.020\runs\20261002-021008\raw\runtime-receipt-060kg.json
+PHYSICS_BENCHMARK case=B12_standing_060kg metrics=26 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\776feac\sweeps\final075-dt0.020\runs\20261002-021008\raw\B12_standing_060kg.json
+]]></output>
+              </test-case>
+              <test-case id="1341" name="B12_SharedAthlete_Standing(140.0f)" fullname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks.B12_SharedAthlete_Standing(140.0f)" methodname="B12_SharedAthlete_Standing" classname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks" runstate="Runnable" seed="747748122" result="Passed" start-time="2026-10-02 05:10:36Z" end-time="2026-10-02 05:10:38Z" duration="1.649619" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[GAM13_V23B_TICK0_RECEIPT load=140.0kg path=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\776feac\sweeps\final075-dt0.020\runs\20261002-021008\raw\runtime-receipt-140kg.json
+PHYSICS_BENCHMARK case=B12_standing_140kg metrics=26 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\776feac\sweeps\final075-dt0.020\runs\20261002-021008\raw\B12_standing_140kg.json
+]]></output>
+              </test-case>
+              <test-case id="1342" name="B12_SharedAthlete_Standing(170.0f)" fullname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks.B12_SharedAthlete_Standing(170.0f)" methodname="B12_SharedAthlete_Standing" classname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks" runstate="Runnable" seed="507433224" result="Passed" start-time="2026-10-02 05:10:38Z" end-time="2026-10-02 05:10:39Z" duration="1.643984" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[GAM13_V23B_TICK0_RECEIPT load=170.0kg path=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\776feac\sweeps\final075-dt0.020\runs\20261002-021008\raw\runtime-receipt-170kg.json
+PHYSICS_BENCHMARK case=B12_standing_170kg metrics=26 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\776feac\sweeps\final075-dt0.020\runs\20261002-021008\raw\B12_standing_170kg.json
+]]></output>
+              </test-case>
+              <test-case id="1343" name="B12_SharedAthlete_Standing(300.0f)" fullname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks.B12_SharedAthlete_Standing(300.0f)" methodname="B12_SharedAthlete_Standing" classname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks" runstate="Runnable" seed="952204323" result="Passed" start-time="2026-10-02 05:10:39Z" end-time="2026-10-02 05:10:41Z" duration="1.704423" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[GAM13_V23B_TICK0_RECEIPT load=300.0kg path=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\776feac\sweeps\final075-dt0.020\runs\20261002-021008\raw\runtime-receipt-300kg.json
+PHYSICS_BENCHMARK case=B12_standing_300kg metrics=26 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\776feac\sweeps\final075-dt0.020\runs\20261002-021008\raw\B12_standing_300kg.json
+Saving results to: C:/Users/Usuario/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

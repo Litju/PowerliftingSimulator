@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="6" result="Passed" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-02 05:14:20Z" end-time="2026-10-02 05:15:43Z" duration="83.0225265">
+  <test-suite type="TestSuite" id="1375" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="277" result="Passed" start-time="2026-10-02 05:14:20Z" end-time="2026-10-02 05:15:43Z" duration="83.022527" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1369" name="PowerliftingSimulator.PhysicsBenchmarks.dll" fullname="E:/Data/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.PhysicsBenchmarks.dll" runstate="Runnable" testcasecount="26" result="Passed" start-time="2026-10-02 05:14:20Z" end-time="2026-10-02 05:15:43Z" duration="83.002797" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="27304" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1370" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="26" result="Passed" start-time="2026-10-02 05:14:20Z" end-time="2026-10-02 05:15:43Z" duration="83.000901" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1371" name="PhysicsBenchmarks" fullname="PowerliftingSimulator.PhysicsBenchmarks" runstate="Runnable" testcasecount="26" result="Passed" start-time="2026-10-02 05:14:20Z" end-time="2026-10-02 05:15:43Z" duration="82.999202" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1337" name="AthletePhysicsBenchmarks" fullname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks" classname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks" runstate="Runnable" testcasecount="12" result="Passed" start-time="2026-10-02 05:14:20Z" end-time="2026-10-02 05:15:43Z" duration="82.995576" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="Category" value="PhysicsBenchmark" />
+              <property name="Category" value="PhysicsBenchmarkAthlete" />
+            </properties>
+            <test-suite type="ParameterizedMethod" id="1351" name="B13_SharedAthlete_StaticPoseMatrix" fullname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks.B13_SharedAthlete_StaticPoseMatrix" classname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-10-02 05:14:20Z" end-time="2026-10-02 05:15:43Z" duration="82.985307" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+              </properties>
+              <test-case id="1345" name="B13_SharedAthlete_StaticPoseMatrix(0.0f)" fullname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks.B13_SharedAthlete_StaticPoseMatrix(0.0f)" methodname="B13_SharedAthlete_StaticPoseMatrix" classname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks" runstate="Runnable" seed="1203548892" result="Passed" start-time="2026-10-02 05:14:20Z" end-time="2026-10-02 05:14:35Z" duration="14.640832" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[PHYSICS_BENCHMARK case=B13_static_matrix_000kg metrics=180 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\776feac\sweeps\final075-pos56\runs\20261002-021213\raw\B13_static_matrix_000kg.json
+]]></output>
+              </test-case>
+              <test-case id="1346" name="B13_SharedAthlete_StaticPoseMatrix(25.0f)" fullname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks.B13_SharedAthlete_StaticPoseMatrix(25.0f)" methodname="B13_SharedAthlete_StaticPoseMatrix" classname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks" runstate="Runnable" seed="469125221" result="Passed" start-time="2026-10-02 05:14:35Z" end-time="2026-10-02 05:14:49Z" duration="13.847015" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[PHYSICS_BENCHMARK case=B13_static_matrix_025kg metrics=216 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\776feac\sweeps\final075-pos56\runs\20261002-021213\raw\B13_static_matrix_025kg.json
+]]></output>
+              </test-case>
+              <test-case id="1347" name="B13_SharedAthlete_StaticPoseMatrix(60.0f)" fullname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks.B13_SharedAthlete_StaticPoseMatrix(60.0f)" methodname="B13_SharedAthlete_StaticPoseMatrix" classname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks" runstate="Runnable" seed="232333675" result="Passed" start-time="2026-10-02 05:14:49Z" end-time="2026-10-02 05:15:01Z" duration="12.594036" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[PHYSICS_BENCHMARK case=B13_static_matrix_060kg metrics=216 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\776feac\sweeps\final075-pos56\runs\20261002-021213\raw\B13_static_matrix_060kg.json
+]]></output>
+              </test-case>
+              <test-case id="1348" name="B13_SharedAthlete_StaticPoseMatrix(140.0f)" fullname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks.B13_SharedAthlete_StaticPoseMatrix(140.0f)" methodname="B13_SharedAthlete_StaticPoseMatrix" classname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks" runstate="Runnable" seed="1504926647" result="Passed" start-time="2026-10-02 05:15:01Z" end-time="2026-10-02 05:15:13Z" duration="12.201916" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[PHYSICS_BENCHMARK case=B13_static_matrix_140kg metrics=216 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\776feac\sweeps\final075-pos56\runs\20261002-021213\raw\B13_static_matrix_140kg.json
+]]></output>
+              </test-case>
+              <test-case id="1349" name="B13_SharedAthlete_StaticPoseMatrix(170.0f)" fullname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks.B13_SharedAthlete_StaticPoseMatrix(170.0f)" methodname="B13_SharedAthlete_StaticPoseMatrix" classname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks" runstate="Runnable" seed="1090652355" result="Passed" start-time="2026-10-02 05:15:13Z" end-time="2026-10-02 05:15:29Z" duration="15.417576" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[PHYSICS_BENCHMARK case=B13_static_matrix_170kg metrics=216 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\776feac\sweeps\final075-pos56\runs\20261002-021213\raw\B13_static_matrix_170kg.json
+]]></output>
+              </test-case>
+              <test-case id="1350" name="B13_SharedAthlete_StaticPoseMatrix(300.0f)" fullname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks.B13_SharedAthlete_StaticPoseMatrix(300.0f)" methodname="B13_SharedAthlete_StaticPoseMatrix" classname="PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks" runstate="Runnable" seed="77539066" result="Passed" start-time="2026-10-02 05:15:29Z" end-time="2026-10-02 05:15:43Z" duration="14.263289" asserts="0">
+                <properties>
+                  <property name="retryIteration" value="0" />
+                  <property name="repeatIteration" value="0" />
+                </properties>
+                <output><![CDATA[PHYSICS_BENCHMARK case=B13_static_matrix_300kg metrics=216 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\776feac\sweeps\final075-pos56\runs\20261002-021213\raw\B13_static_matrix_300kg.json
+Saving results to: C:/Users/Usuario/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+              </test-case>
+            </test-suite>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

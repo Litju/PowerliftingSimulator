@@ -1,0 +1,52 @@
+{
+  "schema": "PHYSICS_BENCHMARK_V1_FAILURE_MATRIX",
+  "earliest_failing_layer": 5,
+  "rows": [
+    {
+      "benchmark": "B13_oracle_static_torque",
+      "metric": "foot_pair_sum_unity_vs_oracle_torque_nm",
+      "configuration": "B13_140kg_s0.25_production;stage=settled;load=140;phase=0.25;production",
+      "expected": -17.703503223330237,
+      "observed": -6.993681192863733,
+      "error": 10.709822030466505,
+      "relative_error": 0.6049549569574886,
+      "tolerance": 10.0,
+      "tolerance_kind": "Absolute",
+      "tolerance_source": "independent quasi-static Newton-Euler, bilateral sum; max(10%%, 10 N m)",
+      "severity": "minor",
+      "earliest_causal_layer": 5,
+      "earliest_causal_layer_name": "constraint convergence",
+      "symptom_layer": 1,
+      "localization_evidence": "Thorax agrees with the oracle at 1.02-1.07 at 28 iterations; with every athlete body at 255 position iterations (nothing else changed) all sagittal joints agree at 1.00-1.03 (ankles 1.1-1.2): Artifacts/Benchmarks/Physics/3cb1184-dirty/sweeps/athlete-pos255. The mismatch is drives under-delivering K e in the unconverged closed-chain solve, not frames, masses or equations.",
+      "failure_meaning": "Unity's modeled bilateral drive torque disagrees with independent statics: frame, mass, or drive-model error.",
+      "evidence": "Artifacts/Benchmarks/Physics/776feac/sweeps/final075-pos128/runs/20261002-021550/raw/B13_oracle_static_torque.json",
+      "repair_authorized": true,
+      "repair_blocked_by_layer": null,
+      "repair_commit": "67fc307",
+      "post_repair_result": "PASS: oracle 170/170, B01-B10/B16 green, B14 all loads lock out, B15 identical (67fc307). B13 deep heavy release holds regressed (topple) -> layer 9/10."
+    },
+    {
+      "benchmark": "B13_oracle_static_torque",
+      "metric": "foot_pair_sum_unity_vs_oracle_torque_nm",
+      "configuration": "B13_170kg_s0.25_production;stage=settled;load=170;phase=0.25;production",
+      "expected": -34.20356379167396,
+      "observed": -22.470064591616392,
+      "error": 11.733499200057565,
+      "relative_error": 0.3430490247017419,
+      "tolerance": 10.0,
+      "tolerance_kind": "Absolute",
+      "tolerance_source": "independent quasi-static Newton-Euler, bilateral sum; max(10%%, 10 N m)",
+      "severity": "minor",
+      "earliest_causal_layer": 5,
+      "earliest_causal_layer_name": "constraint convergence",
+      "symptom_layer": 1,
+      "localization_evidence": "Thorax agrees with the oracle at 1.02-1.07 at 28 iterations; with every athlete body at 255 position iterations (nothing else changed) all sagittal joints agree at 1.00-1.03 (ankles 1.1-1.2): Artifacts/Benchmarks/Physics/3cb1184-dirty/sweeps/athlete-pos255. The mismatch is drives under-delivering K e in the unconverged closed-chain solve, not frames, masses or equations.",
+      "failure_meaning": "Unity's modeled bilateral drive torque disagrees with independent statics: frame, mass, or drive-model error.",
+      "evidence": "Artifacts/Benchmarks/Physics/776feac/sweeps/final075-pos128/runs/20261002-021550/raw/B13_oracle_static_torque.json",
+      "repair_authorized": true,
+      "repair_blocked_by_layer": null,
+      "repair_commit": "67fc307",
+      "post_repair_result": "PASS: oracle 170/170, B01-B10/B16 green, B14 all loads lock out, B15 identical (67fc307). B13 deep heavy release holds regressed (topple) -> layer 9/10."
+    }
+  ]
+}

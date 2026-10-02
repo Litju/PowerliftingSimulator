@@ -1,0 +1,24 @@
+{
+  "run_id": "20261002-022138",
+  "tier": "Athlete",
+  "git_sha": "776feac",
+  "working_tree_dirty": false,
+  "started_utc": "2026-10-02T05:21:38.2853908Z",
+  "environment": {
+    "PHYSICS_BENCHMARK_VEL_ITERS": "2",
+    "GAM50_STRENGTH_SCALE_OVERRIDE": "0.75"
+  },
+  "invocations": [
+    {
+      "selector": "-testFilter PowerliftingSimulator.PhysicsBenchmarks.AthletePhysicsBenchmarks.B12_SharedAthlete_Standing",
+      "result": {
+        "exit": 2,
+        "result": "Failed(Child)",
+        "total": 6,
+        "passed": 1,
+        "failed": 5
+      }
+    }
+  ],
+  "finished_utc": "2026-10-02T05:24:17.9178937Z"
+}

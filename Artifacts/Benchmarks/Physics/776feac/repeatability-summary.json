@@ -1,0 +1,1533 @@
+{
+  "schema": "GAM50_REPEATABILITY_SUMMARY_V1",
+  "tested_sha": "68d30852f02f4005a9e915a2dbb18c4c27abb941",
+  "unity_version": "6000.3.22f1",
+  "platform": "Windows Editor",
+  "fresh_processes_per_load": 10,
+  "source_run": "20261001-214743-final2-squat-repeat",
+  "loads": [
+    {
+      "load_kg": 25,
+      "process_count": 10,
+      "outcome_categories": [
+        "PHYSICAL_LOCKOUT"
+      ],
+      "categorical_agreement": true,
+      "event_tick_statistics": {
+        "lockout_phase_entry": {
+          "min": 726.0,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": 726.0,
+          "mean": 726.0
+        },
+        "lockout_terminal": {
+          "min": 731.0,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": 731.0,
+          "mean": 731.0
+        },
+        "legal_depth": {
+          "min": 347.0,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": 347.0,
+          "mean": 347.0
+        },
+        "lockout_predicates_qualified": {
+          "min": 729.0,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": 729.0,
+          "mean": 729.0
+        },
+        "ascent": {
+          "min": 405.0,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": 405.0,
+          "mean": 405.0
+        },
+        "reversal": {
+          "min": 390.0,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": 390.0,
+          "mean": 390.0
+        }
+      },
+      "state_hash_identical_across_processes": true,
+      "distinct_state_hash_sequences": 1,
+      "state_hash_rows_per_process": 731,
+      "state_hash_sequence_sha256": "6f9cd363818b8bf18116b6253709a9b9fdf63438b433f86f3b34e1a8e6e6f714",
+      "key_metric_statistics": {
+        "bar_x_lockout_m": {
+          "min": -1.283661E-05,
+          "range": 0.0,
+          "population_stddev": 1.6940658945086007E-21,
+          "count": 10,
+          "max": -1.283661E-05,
+          "mean": -1.2836610000000002E-05
+        },
+        "bar_y_lockout_m": {
+          "min": 1.41273856,
+          "range": 0.0,
+          "population_stddev": 2.220446049250313E-16,
+          "count": 10,
+          "max": 1.41273856,
+          "mean": 1.4127385599999998
+        },
+        "bar_z_lockout_m": {
+          "min": -0.141244546,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": -0.141244546,
+          "mean": -0.141244546
+        },
+        "bar_linear_speed_lockout_mps": {
+          "min": 0.008188362,
+          "range": 0.0,
+          "population_stddev": 1.734723475976807E-18,
+          "count": 10,
+          "max": 0.008188362,
+          "mean": 0.008188362000000001
+        },
+        "bar_angular_speed_lockout_rad_s": {
+          "min": 0.00356949447,
+          "range": 0.0,
+          "population_stddev": 8.673617379884035E-19,
+          "count": 10,
+          "max": 0.00356949447,
+          "mean": 0.003569494470000001
+        },
+        "com_x_lockout_m": {
+          "min": -9.975942E-06,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": -9.975942E-06,
+          "mean": -9.975942E-06
+        },
+        "com_y_lockout_m": {
+          "min": 1.12221074,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": 1.12221074,
+          "mean": 1.12221074
+        },
+        "com_z_lockout_m": {
+          "min": -0.0521631427,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": -0.0521631427,
+          "mean": -0.0521631427
+        },
+        "support_ap_front_margin_m": {
+          "min": 0.187444121,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": 0.187444121,
+          "mean": 0.187444121
+        },
+        "support_ap_rear_margin_m": {
+          "min": 0.1025559,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": 0.1025559,
+          "mean": 0.1025559
+        },
+        "support_ml_left_margin_m": {
+          "min": 0.179295182,
+          "range": 0.0,
+          "population_stddev": 2.7755575615628914E-17,
+          "count": 10,
+          "max": 0.179295182,
+          "mean": 0.17929518199999997
+        },
+        "support_ml_right_margin_m": {
+          "min": 0.1793151,
+          "range": 0.0,
+          "population_stddev": 2.7755575615628914E-17,
+          "count": 10,
+          "max": 0.1793151,
+          "mean": 0.17931509999999998
+        },
+        "peak_active_drive_demand_nm": {
+          "min": 859.3883,
+          "range": 0.0,
+          "population_stddev": 1.1368683772161603E-13,
+          "count": 10,
+          "max": 859.3883,
+          "mean": 859.3882999999998
+        },
+        "peak_active_drive_demand_fraction": {
+          "min": 8.8142395,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": 8.8142395,
+          "mean": 8.8142395
+        }
+      },
+      "runs": [
+        {
+          "run": "rep01",
+          "test": {
+            "total": 1,
+            "result": "Passed",
+            "passed": 1,
+            "skipped": 0,
+            "failed": 0
+          },
+          "outcome": "PHYSICAL_LOCKOUT",
+          "legal_depth_tick": 347,
+          "reversal_tick": 390,
+          "ascent_tick": 405,
+          "lockout_phase_entry_tick": 726,
+          "lockout_predicates_qualified_tick": 729,
+          "lockout_terminal_tick": 731,
+          "physical_failure_kind": "NONE",
+          "physical_failure_tick": null,
+          "balance_loss_onset_tick": null,
+          "balance_loss_latched_tick": null,
+          "bar_at_lockout": {
+            "vy_mps": 0.000794138759,
+            "vz_mps": -0.008149758,
+            "linear_speed_mps": 0.008188362,
+            "vx_mps": -7.794059E-06,
+            "y_m": 1.41273856,
+            "x_m": -1.283661E-05,
+            "z_m": -0.141244546,
+            "angular_speed_rad_s": 0.00356949447
+          },
+          "com_at_lockout": {
+            "vz_mps": -0.008048325,
+            "y_m": 1.12221074,
+            "z_m": -0.0521631427,
+            "x_m": -9.975942E-06,
+            "vx_mps": -1.04027231E-05,
+            "vy_mps": -0.000169292645
+          },
+          "support_at_lockout": {
+            "present": true,
+            "ap_front_margin_m": 0.187444121,
+            "ml_min_m": -0.179305151,
+            "ap_min_m": -0.15471904,
+            "ml_left_margin_m": 0.179295182,
+            "ml_right_margin_m": 0.1793151,
+            "ap_rear_margin_m": 0.1025559,
+            "contact_count": 16,
+            "ml_max_m": 0.179305136,
+            "ap_max_m": 0.135280982
+          },
+          "peak_active_drive_demand_nm": 859.3883,
+          "peak_active_drive_demand_fraction": 8.8142395,
+          "peak_demand_joint": "right_upper_arm",
+          "peak_demand_channel": "swing_yz",
+          "state_hash_rows": 731,
+          "state_hash_start": "584bcce97b706a1d",
+          "state_hash_end": "8d5b431f2db21e9e"
+        },
+        {
+          "run": "rep02",
+          "test": {
+            "total": 1,
+            "result": "Passed",
+            "passed": 1,
+            "skipped": 0,
+            "failed": 0
+          },
+          "outcome": "PHYSICAL_LOCKOUT",
+          "legal_depth_tick": 347,
+          "reversal_tick": 390,
+          "ascent_tick": 405,
+          "lockout_phase_entry_tick": 726,
+          "lockout_predicates_qualified_tick": 729,
+          "lockout_terminal_tick": 731,
+          "physical_failure_kind": "NONE",
+          "physical_failure_tick": null,
+          "balance_loss_onset_tick": null,
+          "balance_loss_latched_tick": null,
+          "bar_at_lockout": {
+            "vy_mps": 0.000794138759,
+            "vz_mps": -0.008149758,
+            "linear_speed_mps": 0.008188362,
+            "vx_mps": -7.794059E-06,
+            "y_m": 1.41273856,
+            "x_m": -1.283661E-05,
+            "z_m": -0.141244546,
+            "angular_speed_rad_s": 0.00356949447
+          },
+          "com_at_lockout": {
+            "vz_mps": -0.008048325,
+            "y_m": 1.12221074,
+            "z_m": -0.0521631427,
+            "x_m": -9.975942E-06,
+            "vx_mps": -1.04027231E-05,
+            "vy_mps": -0.000169292645
+          },
+          "support_at_lockout": {
+            "present": true,
+            "ap_front_margin_m": 0.187444121,
+            "ml_min_m": -0.179305151,
+            "ap_min_m": -0.15471904,
+            "ml_left_margin_m": 0.179295182,
+            "ml_right_margin_m": 0.1793151,
+            "ap_rear_margin_m": 0.1025559,
+            "contact_count": 16,
+            "ml_max_m": 0.179305136,
+            "ap_max_m": 0.135280982
+          },
+          "peak_active_drive_demand_nm": 859.3883,
+          "peak_active_drive_demand_fraction": 8.8142395,
+          "peak_demand_joint": "right_upper_arm",
+          "peak_demand_channel": "swing_yz",
+          "state_hash_rows": 731,
+          "state_hash_start": "584bcce97b706a1d",
+          "state_hash_end": "8d5b431f2db21e9e"
+        },
+        {
+          "run": "rep03",
+          "test": {
+            "total": 1,
+            "result": "Passed",
+            "passed": 1,
+            "skipped": 0,
+            "failed": 0
+          },
+          "outcome": "PHYSICAL_LOCKOUT",
+          "legal_depth_tick": 347,
+          "reversal_tick": 390,
+          "ascent_tick": 405,
+          "lockout_phase_entry_tick": 726,
+          "lockout_predicates_qualified_tick": 729,
+          "lockout_terminal_tick": 731,
+          "physical_failure_kind": "NONE",
+          "physical_failure_tick": null,
+          "balance_loss_onset_tick": null,
+          "balance_loss_latched_tick": null,
+          "bar_at_lockout": {
+            "vy_mps": 0.000794138759,
+            "vz_mps": -0.008149758,
+            "linear_speed_mps": 0.008188362,
+            "vx_mps": -7.794059E-06,
+            "y_m": 1.41273856,
+            "x_m": -1.283661E-05,
+            "z_m": -0.141244546,
+            "angular_speed_rad_s": 0.00356949447
+          },
+          "com_at_lockout": {
+            "vz_mps": -0.008048325,
+            "y_m": 1.12221074,
+            "z_m": -0.0521631427,
+            "x_m": -9.975942E-06,
+            "vx_mps": -1.04027231E-05,
+            "vy_mps": -0.000169292645
+          },
+          "support_at_lockout": {
+            "present": true,
+            "ap_front_margin_m": 0.187444121,
+            "ml_min_m": -0.179305151,
+            "ap_min_m": -0.15471904,
+            "ml_left_margin_m": 0.179295182,
+            "ml_right_margin_m": 0.1793151,
+            "ap_rear_margin_m": 0.1025559,
+            "contact_count": 16,
+            "ml_max_m": 0.179305136,
+            "ap_max_m": 0.135280982
+          },
+          "peak_active_drive_demand_nm": 859.3883,
+          "peak_active_drive_demand_fraction": 8.8142395,
+          "peak_demand_joint": "right_upper_arm",
+          "peak_demand_channel": "swing_yz",
+          "state_hash_rows": 731,
+          "state_hash_start": "584bcce97b706a1d",
+          "state_hash_end": "8d5b431f2db21e9e"
+        },
+        {
+          "run": "rep04",
+          "test": {
+            "total": 1,
+            "result": "Passed",
+            "passed": 1,
+            "skipped": 0,
+            "failed": 0
+          },
+          "outcome": "PHYSICAL_LOCKOUT",
+          "legal_depth_tick": 347,
+          "reversal_tick": 390,
+          "ascent_tick": 405,
+          "lockout_phase_entry_tick": 726,
+          "lockout_predicates_qualified_tick": 729,
+          "lockout_terminal_tick": 731,
+          "physical_failure_kind": "NONE",
+          "physical_failure_tick": null,
+          "balance_loss_onset_tick": null,
+          "balance_loss_latched_tick": null,
+          "bar_at_lockout": {
+            "vy_mps": 0.000794138759,
+            "vz_mps": -0.008149758,
+            "linear_speed_mps": 0.008188362,
+            "vx_mps": -7.794059E-06,
+            "y_m": 1.41273856,
+            "x_m": -1.283661E-05,
+            "z_m": -0.141244546,
+            "angular_speed_rad_s": 0.00356949447
+          },
+          "com_at_lockout": {
+            "vz_mps": -0.008048325,
+            "y_m": 1.12221074,
+            "z_m": -0.0521631427,
+            "x_m": -9.975942E-06,
+            "vx_mps": -1.04027231E-05,
+            "vy_mps": -0.000169292645
+          },
+          "support_at_lockout": {
+            "present": true,
+            "ap_front_margin_m": 0.187444121,
+            "ml_min_m": -0.179305151,
+            "ap_min_m": -0.15471904,
+            "ml_left_margin_m": 0.179295182,
+            "ml_right_margin_m": 0.1793151,
+            "ap_rear_margin_m": 0.1025559,
+            "contact_count": 16,
+            "ml_max_m": 0.179305136,
+            "ap_max_m": 0.135280982
+          },
+          "peak_active_drive_demand_nm": 859.3883,
+          "peak_active_drive_demand_fraction": 8.8142395,
+          "peak_demand_joint": "right_upper_arm",
+          "peak_demand_channel": "swing_yz",
+          "state_hash_rows": 731,
+          "state_hash_start": "584bcce97b706a1d",
+          "state_hash_end": "8d5b431f2db21e9e"
+        },
+        {
+          "run": "rep05",
+          "test": {
+            "total": 1,
+            "result": "Passed",
+            "passed": 1,
+            "skipped": 0,
+            "failed": 0
+          },
+          "outcome": "PHYSICAL_LOCKOUT",
+          "legal_depth_tick": 347,
+          "reversal_tick": 390,
+          "ascent_tick": 405,
+          "lockout_phase_entry_tick": 726,
+          "lockout_predicates_qualified_tick": 729,
+          "lockout_terminal_tick": 731,
+          "physical_failure_kind": "NONE",
+          "physical_failure_tick": null,
+          "balance_loss_onset_tick": null,
+          "balance_loss_latched_tick": null,
+          "bar_at_lockout": {
+            "vy_mps": 0.000794138759,
+            "vz_mps": -0.008149758,
+            "linear_speed_mps": 0.008188362,
+            "vx_mps": -7.794059E-06,
+            "y_m": 1.41273856,
+            "x_m": -1.283661E-05,
+            "z_m": -0.141244546,
+            "angular_speed_rad_s": 0.00356949447
+          },
+          "com_at_lockout": {
+            "vz_mps": -0.008048325,
+            "y_m": 1.12221074,
+            "z_m": -0.0521631427,
+            "x_m": -9.975942E-06,
+            "vx_mps": -1.04027231E-05,
+            "vy_mps": -0.000169292645
+          },
+          "support_at_lockout": {
+            "present": true,
+            "ap_front_margin_m": 0.187444121,
+            "ml_min_m": -0.179305151,
+            "ap_min_m": -0.15471904,
+            "ml_left_margin_m": 0.179295182,
+            "ml_right_margin_m": 0.1793151,
+            "ap_rear_margin_m": 0.1025559,
+            "contact_count": 16,
+            "ml_max_m": 0.179305136,
+            "ap_max_m": 0.135280982
+          },
+          "peak_active_drive_demand_nm": 859.3883,
+          "peak_active_drive_demand_fraction": 8.8142395,
+          "peak_demand_joint": "right_upper_arm",
+          "peak_demand_channel": "swing_yz",
+          "state_hash_rows": 731,
+          "state_hash_start": "584bcce97b706a1d",
+          "state_hash_end": "8d5b431f2db21e9e"
+        },
+        {
+          "run": "rep06",
+          "test": {
+            "total": 1,
+            "result": "Passed",
+            "passed": 1,
+            "skipped": 0,
+            "failed": 0
+          },
+          "outcome": "PHYSICAL_LOCKOUT",
+          "legal_depth_tick": 347,
+          "reversal_tick": 390,
+          "ascent_tick": 405,
+          "lockout_phase_entry_tick": 726,
+          "lockout_predicates_qualified_tick": 729,
+          "lockout_terminal_tick": 731,
+          "physical_failure_kind": "NONE",
+          "physical_failure_tick": null,
+          "balance_loss_onset_tick": null,
+          "balance_loss_latched_tick": null,
+          "bar_at_lockout": {
+            "vy_mps": 0.000794138759,
+            "vz_mps": -0.008149758,
+            "linear_speed_mps": 0.008188362,
+            "vx_mps": -7.794059E-06,
+            "y_m": 1.41273856,
+            "x_m": -1.283661E-05,
+            "z_m": -0.141244546,
+            "angular_speed_rad_s": 0.00356949447
+          },
+          "com_at_lockout": {
+            "vz_mps": -0.008048325,
+            "y_m": 1.12221074,
+            "z_m": -0.0521631427,
+            "x_m": -9.975942E-06,
+            "vx_mps": -1.04027231E-05,
+            "vy_mps": -0.000169292645
+          },
+          "support_at_lockout": {
+            "present": true,
+            "ap_front_margin_m": 0.187444121,
+            "ml_min_m": -0.179305151,
+            "ap_min_m": -0.15471904,
+            "ml_left_margin_m": 0.179295182,
+            "ml_right_margin_m": 0.1793151,
+            "ap_rear_margin_m": 0.1025559,
+            "contact_count": 16,
+            "ml_max_m": 0.179305136,
+            "ap_max_m": 0.135280982
+          },
+          "peak_active_drive_demand_nm": 859.3883,
+          "peak_active_drive_demand_fraction": 8.8142395,
+          "peak_demand_joint": "right_upper_arm",
+          "peak_demand_channel": "swing_yz",
+          "state_hash_rows": 731,
+          "state_hash_start": "584bcce97b706a1d",
+          "state_hash_end": "8d5b431f2db21e9e"
+        },
+        {
+          "run": "rep07",
+          "test": {
+            "total": 1,
+            "result": "Passed",
+            "passed": 1,
+            "skipped": 0,
+            "failed": 0
+          },
+          "outcome": "PHYSICAL_LOCKOUT",
+          "legal_depth_tick": 347,
+          "reversal_tick": 390,
+          "ascent_tick": 405,
+          "lockout_phase_entry_tick": 726,
+          "lockout_predicates_qualified_tick": 729,
+          "lockout_terminal_tick": 731,
+          "physical_failure_kind": "NONE",
+          "physical_failure_tick": null,
+          "balance_loss_onset_tick": null,
+          "balance_loss_latched_tick": null,
+          "bar_at_lockout": {
+            "vy_mps": 0.000794138759,
+            "vz_mps": -0.008149758,
+            "linear_speed_mps": 0.008188362,
+            "vx_mps": -7.794059E-06,
+            "y_m": 1.41273856,
+            "x_m": -1.283661E-05,
+            "z_m": -0.141244546,
+            "angular_speed_rad_s": 0.00356949447
+          },
+          "com_at_lockout": {
+            "vz_mps": -0.008048325,
+            "y_m": 1.12221074,
+            "z_m": -0.0521631427,
+            "x_m": -9.975942E-06,
+            "vx_mps": -1.04027231E-05,
+            "vy_mps": -0.000169292645
+          },
+          "support_at_lockout": {
+            "present": true,
+            "ap_front_margin_m": 0.187444121,
+            "ml_min_m": -0.179305151,
+            "ap_min_m": -0.15471904,
+            "ml_left_margin_m": 0.179295182,
+            "ml_right_margin_m": 0.1793151,
+            "ap_rear_margin_m": 0.1025559,
+            "contact_count": 16,
+            "ml_max_m": 0.179305136,
+            "ap_max_m": 0.135280982
+          },
+          "peak_active_drive_demand_nm": 859.3883,
+          "peak_active_drive_demand_fraction": 8.8142395,
+          "peak_demand_joint": "right_upper_arm",
+          "peak_demand_channel": "swing_yz",
+          "state_hash_rows": 731,
+          "state_hash_start": "584bcce97b706a1d",
+          "state_hash_end": "8d5b431f2db21e9e"
+        },
+        {
+          "run": "rep08",
+          "test": {
+            "total": 1,
+            "result": "Passed",
+            "passed": 1,
+            "skipped": 0,
+            "failed": 0
+          },
+          "outcome": "PHYSICAL_LOCKOUT",
+          "legal_depth_tick": 347,
+          "reversal_tick": 390,
+          "ascent_tick": 405,
+          "lockout_phase_entry_tick": 726,
+          "lockout_predicates_qualified_tick": 729,
+          "lockout_terminal_tick": 731,
+          "physical_failure_kind": "NONE",
+          "physical_failure_tick": null,
+          "balance_loss_onset_tick": null,
+          "balance_loss_latched_tick": null,
+          "bar_at_lockout": {
+            "vy_mps": 0.000794138759,
+            "vz_mps": -0.008149758,
+            "linear_speed_mps": 0.008188362,
+            "vx_mps": -7.794059E-06,
+            "y_m": 1.41273856,
+            "x_m": -1.283661E-05,
+            "z_m": -0.141244546,
+            "angular_speed_rad_s": 0.00356949447
+          },
+          "com_at_lockout": {
+            "vz_mps": -0.008048325,
+            "y_m": 1.12221074,
+            "z_m": -0.0521631427,
+            "x_m": -9.975942E-06,
+            "vx_mps": -1.04027231E-05,
+            "vy_mps": -0.000169292645
+          },
+          "support_at_lockout": {
+            "present": true,
+            "ap_front_margin_m": 0.187444121,
+            "ml_min_m": -0.179305151,
+            "ap_min_m": -0.15471904,
+            "ml_left_margin_m": 0.179295182,
+            "ml_right_margin_m": 0.1793151,
+            "ap_rear_margin_m": 0.1025559,
+            "contact_count": 16,
+            "ml_max_m": 0.179305136,
+            "ap_max_m": 0.135280982
+          },
+          "peak_active_drive_demand_nm": 859.3883,
+          "peak_active_drive_demand_fraction": 8.8142395,
+          "peak_demand_joint": "right_upper_arm",
+          "peak_demand_channel": "swing_yz",
+          "state_hash_rows": 731,
+          "state_hash_start": "584bcce97b706a1d",
+          "state_hash_end": "8d5b431f2db21e9e"
+        },
+        {
+          "run": "rep09",
+          "test": {
+            "total": 1,
+            "result": "Passed",
+            "passed": 1,
+            "skipped": 0,
+            "failed": 0
+          },
+          "outcome": "PHYSICAL_LOCKOUT",
+          "legal_depth_tick": 347,
+          "reversal_tick": 390,
+          "ascent_tick": 405,
+          "lockout_phase_entry_tick": 726,
+          "lockout_predicates_qualified_tick": 729,
+          "lockout_terminal_tick": 731,
+          "physical_failure_kind": "NONE",
+          "physical_failure_tick": null,
+          "balance_loss_onset_tick": null,
+          "balance_loss_latched_tick": null,
+          "bar_at_lockout": {
+            "vy_mps": 0.000794138759,
+            "vz_mps": -0.008149758,
+            "linear_speed_mps": 0.008188362,
+            "vx_mps": -7.794059E-06,
+            "y_m": 1.41273856,
+            "x_m": -1.283661E-05,
+            "z_m": -0.141244546,
+            "angular_speed_rad_s": 0.00356949447
+          },
+          "com_at_lockout": {
+            "vz_mps": -0.008048325,
+            "y_m": 1.12221074,
+            "z_m": -0.0521631427,
+            "x_m": -9.975942E-06,
+            "vx_mps": -1.04027231E-05,
+            "vy_mps": -0.000169292645
+          },
+          "support_at_lockout": {
+            "present": true,
+            "ap_front_margin_m": 0.187444121,
+            "ml_min_m": -0.179305151,
+            "ap_min_m": -0.15471904,
+            "ml_left_margin_m": 0.179295182,
+            "ml_right_margin_m": 0.1793151,
+            "ap_rear_margin_m": 0.1025559,
+            "contact_count": 16,
+            "ml_max_m": 0.179305136,
+            "ap_max_m": 0.135280982
+          },
+          "peak_active_drive_demand_nm": 859.3883,
+          "peak_active_drive_demand_fraction": 8.8142395,
+          "peak_demand_joint": "right_upper_arm",
+          "peak_demand_channel": "swing_yz",
+          "state_hash_rows": 731,
+          "state_hash_start": "584bcce97b706a1d",
+          "state_hash_end": "8d5b431f2db21e9e"
+        },
+        {
+          "run": "rep10",
+          "test": {
+            "total": 1,
+            "result": "Passed",
+            "passed": 1,
+            "skipped": 0,
+            "failed": 0
+          },
+          "outcome": "PHYSICAL_LOCKOUT",
+          "legal_depth_tick": 347,
+          "reversal_tick": 390,
+          "ascent_tick": 405,
+          "lockout_phase_entry_tick": 726,
+          "lockout_predicates_qualified_tick": 729,
+          "lockout_terminal_tick": 731,
+          "physical_failure_kind": "NONE",
+          "physical_failure_tick": null,
+          "balance_loss_onset_tick": null,
+          "balance_loss_latched_tick": null,
+          "bar_at_lockout": {
+            "vy_mps": 0.000794138759,
+            "vz_mps": -0.008149758,
+            "linear_speed_mps": 0.008188362,
+            "vx_mps": -7.794059E-06,
+            "y_m": 1.41273856,
+            "x_m": -1.283661E-05,
+            "z_m": -0.141244546,
+            "angular_speed_rad_s": 0.00356949447
+          },
+          "com_at_lockout": {
+            "vz_mps": -0.008048325,
+            "y_m": 1.12221074,
+            "z_m": -0.0521631427,
+            "x_m": -9.975942E-06,
+            "vx_mps": -1.04027231E-05,
+            "vy_mps": -0.000169292645
+          },
+          "support_at_lockout": {
+            "present": true,
+            "ap_front_margin_m": 0.187444121,
+            "ml_min_m": -0.179305151,
+            "ap_min_m": -0.15471904,
+            "ml_left_margin_m": 0.179295182,
+            "ml_right_margin_m": 0.1793151,
+            "ap_rear_margin_m": 0.1025559,
+            "contact_count": 16,
+            "ml_max_m": 0.179305136,
+            "ap_max_m": 0.135280982
+          },
+          "peak_active_drive_demand_nm": 859.3883,
+          "peak_active_drive_demand_fraction": 8.8142395,
+          "peak_demand_joint": "right_upper_arm",
+          "peak_demand_channel": "swing_yz",
+          "state_hash_rows": 731,
+          "state_hash_start": "584bcce97b706a1d",
+          "state_hash_end": "8d5b431f2db21e9e"
+        }
+      ]
+    },
+    {
+      "load_kg": 140,
+      "process_count": 10,
+      "outcome_categories": [
+        "PHYSICAL_LOCKOUT"
+      ],
+      "categorical_agreement": true,
+      "event_tick_statistics": {
+        "lockout_phase_entry": {
+          "min": 726.0,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": 726.0,
+          "mean": 726.0
+        },
+        "lockout_terminal": {
+          "min": 733.0,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": 733.0,
+          "mean": 733.0
+        },
+        "legal_depth": {
+          "min": 335.0,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": 335.0,
+          "mean": 335.0
+        },
+        "lockout_predicates_qualified": {
+          "min": 731.0,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": 731.0,
+          "mean": 731.0
+        },
+        "ascent": {
+          "min": 406.0,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": 406.0,
+          "mean": 406.0
+        },
+        "reversal": {
+          "min": 392.0,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": 392.0,
+          "mean": 392.0
+        }
+      },
+      "state_hash_identical_across_processes": true,
+      "distinct_state_hash_sequences": 1,
+      "state_hash_rows_per_process": 733,
+      "state_hash_sequence_sha256": "56158c44889b03c9c79b7415d7eeb6a948bfed055a5876c2179bc507ae6f6872",
+      "key_metric_statistics": {
+        "bar_x_lockout_m": {
+          "min": -0.00020719679,
+          "range": 0.0,
+          "population_stddev": 2.710505431213761E-20,
+          "count": 10,
+          "max": -0.00020719679,
+          "mean": -0.00020719679000000003
+        },
+        "bar_y_lockout_m": {
+          "min": 1.41003788,
+          "range": 0.0,
+          "population_stddev": 2.220446049250313E-16,
+          "count": 10,
+          "max": 1.41003788,
+          "mean": 1.4100378800000002
+        },
+        "bar_z_lockout_m": {
+          "min": -0.144713849,
+          "range": 0.0,
+          "population_stddev": 2.7755575615628914E-17,
+          "count": 10,
+          "max": -0.144713849,
+          "mean": -0.14471384899999998
+        },
+        "bar_linear_speed_lockout_mps": {
+          "min": 0.0134355044,
+          "range": 0.0,
+          "population_stddev": 3.469446951953614E-18,
+          "count": 10,
+          "max": 0.0134355044,
+          "mean": 0.013435504399999996
+        },
+        "bar_angular_speed_lockout_rad_s": {
+          "min": 0.0152189564,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": 0.0152189564,
+          "mean": 0.0152189564
+        },
+        "com_x_lockout_m": {
+          "min": -0.00018711001,
+          "range": 0.0,
+          "population_stddev": 2.710505431213761E-20,
+          "count": 10,
+          "max": -0.00018711001,
+          "mean": -0.00018711001000000003
+        },
+        "com_y_lockout_m": {
+          "min": 1.25987387,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": 1.25987387,
+          "mean": 1.25987387
+        },
+        "com_z_lockout_m": {
+          "min": -0.0978766,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": -0.0978766,
+          "mean": -0.0978766
+        },
+        "support_ap_front_margin_m": {
+          "min": 0.233157575,
+          "range": 0.0,
+          "population_stddev": 5.551115123125783E-17,
+          "count": 10,
+          "max": 0.233157575,
+          "mean": 0.23315757499999995
+        },
+        "support_ap_rear_margin_m": {
+          "min": 0.05684244,
+          "range": 0.0,
+          "population_stddev": 6.938893903907228E-18,
+          "count": 10,
+          "max": 0.05684244,
+          "mean": 0.05684244000000001
+        },
+        "support_ml_left_margin_m": {
+          "min": 0.179118037,
+          "range": 0.0,
+          "population_stddev": 2.7755575615628914E-17,
+          "count": 10,
+          "max": 0.179118037,
+          "mean": 0.17911803700000004
+        },
+        "support_ml_right_margin_m": {
+          "min": 0.17949225,
+          "range": 0.0,
+          "population_stddev": 0.0,
+          "count": 10,
+          "max": 0.17949225,
+          "mean": 0.17949225
+        },
+        "peak_active_drive_demand_nm": {
+          "min": 859.384338,
+          "range": 0.0,
+          "population_stddev": 1.1368683772161603E-13,
+          "count": 10,
+          "max": 859.384338,
+          "mean": 859.3843380000001
+        },
+        "peak_active_drive_demand_fraction": {
+          "min": 8.81419849,
+          "range": 0.0,
+          "population_stddev": 1.7763568394002505E-15,
+          "count": 10,
+          "max": 8.81419849,
+          "mean": 8.814198489999999
+        }
+      },
+      "runs": [
+        {
+          "run": "rep01",
+          "test": {
+            "total": 1,
+            "result": "Passed",
+            "passed": 1,
+            "skipped": 0,
+            "failed": 0
+          },
+          "outcome": "PHYSICAL_LOCKOUT",
+          "legal_depth_tick": 335,
+          "reversal_tick": 392,
+          "ascent_tick": 406,
+          "lockout_phase_entry_tick": 726,
+          "lockout_predicates_qualified_tick": 731,
+          "lockout_terminal_tick": 733,
+          "physical_failure_kind": "NONE",
+          "physical_failure_tick": null,
+          "balance_loss_onset_tick": null,
+          "balance_loss_latched_tick": null,
+          "bar_at_lockout": {
+            "vy_mps": -5.459413E-05,
+            "vz_mps": -0.0134335337,
+            "linear_speed_mps": 0.0134355044,
+            "vx_mps": 0.000223523632,
+            "y_m": 1.41003788,
+            "x_m": -0.00020719679,
+            "z_m": -0.144713849,
+            "angular_speed_rad_s": 0.0152189564
+          },
+          "com_at_lockout": {
+            "vz_mps": -0.0117280176,
+            "y_m": 1.25987387,
+            "z_m": -0.0978766,
+            "x_m": -0.00018711001,
+            "vx_mps": 0.0001974113,
+            "vy_mps": -0.000270966761
+          },
+          "support_at_lockout": {
+            "present": true,
+            "ap_front_margin_m": 0.233157575,
+            "ml_min_m": -0.179305151,
+            "ap_min_m": -0.15471904,
+            "ml_left_margin_m": 0.179118037,
+            "ml_right_margin_m": 0.17949225,
+            "ap_rear_margin_m": 0.05684244,
+            "contact_count": 16,
+            "ml_max_m": 0.179305136,
+            "ap_max_m": 0.135280982
+          },
+          "peak_active_drive_demand_nm": 859.384338,
+          "peak_active_drive_demand_fraction": 8.81419849,
+          "peak_demand_joint": "right_upper_arm",
+          "peak_demand_channel": "swing_yz",
+          "state_hash_rows": 733,
+          "state_hash_start": "e6368181f4c8a2bd",
+          "state_hash_end": "0054b97e015e7650"
+        },
+        {
+          "run": "rep02",
+          "test": {
+            "total": 1,
+            "result": "Passed",
+            "passed": 1,
+            "skipped": 0,
+            "failed": 0
+          },
+          "outcome": "PHYSICAL_LOCKOUT",
+          "legal_depth_tick": 335,
+          "reversal_tick": 392,
+          "ascent_tick": 406,
+          "lockout_phase_entry_tick": 726,
+          "lockout_predicates_qualified_tick": 731,
+          "lockout_terminal_tick": 733,
+          "physical_failure_kind": "NONE",
+          "physical_failure_tick": null,
+          "balance_loss_onset_tick": null,
+          "balance_loss_latched_tick": null,
+          "bar_at_lockout": {
+            "vy_mps": -5.459413E-05,
+            "vz_mps": -0.0134335337,
+            "linear_speed_mps": 0.0134355044,
+            "vx_mps": 0.000223523632,
+            "y_m": 1.41003788,
+            "x_m": -0.00020719679,
+            "z_m": -0.144713849,
+            "angular_speed_rad_s": 0.0152189564
+          },
+          "com_at_lockout": {
+            "vz_mps": -0.0117280176,
+            "y_m": 1.25987387,
+            "z_m": -0.0978766,
+            "x_m": -0.00018711001,
+            "vx_mps": 0.0001974113,
+            "vy_mps": -0.000270966761
+          },
+          "support_at_lockout": {
+            "present": true,
+            "ap_front_margin_m": 0.233157575,
+            "ml_min_m": -0.179305151,
+            "ap_min_m": -0.15471904,
+            "ml_left_margin_m": 0.179118037,
+            "ml_right_margin_m": 0.17949225,
+            "ap_rear_margin_m": 0.05684244,
+            "contact_count": 16,
+            "ml_max_m": 0.179305136,
+            "ap_max_m": 0.135280982
+          },
+          "peak_active_drive_demand_nm": 859.384338,
+          "peak_active_drive_demand_fraction": 8.81419849,
+          "peak_demand_joint": "right_upper_arm",
+          "peak_demand_channel": "swing_yz",
+          "state_hash_rows": 733,
+          "state_hash_start": "e6368181f4c8a2bd",
+          "state_hash_end": "0054b97e015e7650"
+        },
+        {
+          "run": "rep03",
+          "test": {
+            "total": 1,
+            "result": "Passed",
+            "passed": 1,
+            "skipped": 0,
+            "failed": 0
+          },
+          "outcome": "PHYSICAL_LOCKOUT",
+          "legal_depth_tick": 335,
+          "reversal_tick": 392,
+          "ascent_tick": 406,
+          "lockout_phase_entry_tick": 726,
+          "lockout_predicates_qualified_tick": 731,
+          "lockout_terminal_tick": 733,
+          "physical_failure_kind": "NONE",
+          "physical_failure_tick": null,
+          "balance_loss_onset_tick": null,
+          "balance_loss_latched_tick": null,
+          "bar_at_lockout": {
+            "vy_mps": -5.459413E-05,
+            "vz_mps": -0.0134335337,
+            "linear_speed_mps": 0.0134355044,
+            "vx_mps": 0.000223523632,
+            "y_m": 1.41003788,
+            "x_m": -0.00020719679,
+            "z_m": -0.144713849,
+            "angular_speed_rad_s": 0.0152189564
+          },
+          "com_at_lockout": {
+            "vz_mps": -0.0117280176,
+            "y_m": 1.25987387,
+            "z_m": -0.0978766,
+            "x_m": -0.00018711001,
+            "vx_mps": 0.0001974113,
+            "vy_mps": -0.000270966761
+          },
+          "support_at_lockout": {
+            "present": true,
+            "ap_front_margin_m": 0.233157575,
+            "ml_min_m": -0.179305151,
+            "ap_min_m": -0.15471904,
+            "ml_left_margin_m": 0.179118037,
+            "ml_right_margin_m": 0.17949225,
+            "ap_rear_margin_m": 0.05684244,
+            "contact_count": 16,
+            "ml_max_m": 0.179305136,
+            "ap_max_m": 0.135280982
+          },
+          "peak_active_drive_demand_nm": 859.384338,
+          "peak_active_drive_demand_fraction": 8.81419849,
+          "peak_demand_joint": "right_upper_arm",
+          "peak_demand_channel": "swing_yz",
+          "state_hash_rows": 733,
+          "state_hash_start": "e6368181f4c8a2bd",
+          "state_hash_end": "0054b97e015e7650"
+        },
+        {
+          "run": "rep04",
+          "test": {
+            "total": 1,
+            "result": "Passed",
+            "passed": 1,
+            "skipped": 0,
+            "failed": 0
+          },
+          "outcome": "PHYSICAL_LOCKOUT",
+          "legal_depth_tick": 335,
+          "reversal_tick": 392,
+          "ascent_tick": 406,
+          "lockout_phase_entry_tick": 726,
+          "lockout_predicates_qualified_tick": 731,
+          "lockout_terminal_tick": 733,
+          "physical_failure_kind": "NONE",
+          "physical_failure_tick": null,
+          "balance_loss_onset_tick": null,
+          "balance_loss_latched_tick": null,
+          "bar_at_lockout": {
+            "vy_mps": -5.459413E-05,
+            "vz_mps": -0.0134335337,
+            "linear_speed_mps": 0.0134355044,
+            "vx_mps": 0.000223523632,
+            "y_m": 1.41003788,
+            "x_m": -0.00020719679,
+            "z_m": -0.144713849,
+            "angular_speed_rad_s": 0.0152189564
+          },
+          "com_at_lockout": {
+            "vz_mps": -0.0117280176,
+            "y_m": 1.25987387,
+            "z_m": -0.0978766,
+            "x_m": -0.00018711001,
+            "vx_mps": 0.0001974113,
+            "vy_mps": -0.000270966761
+          },
+          "support_at_lockout": {
+            "present": true,
+            "ap_front_margin_m": 0.233157575,
+            "ml_min_m": -0.179305151,
+            "ap_min_m": -0.15471904,
+            "ml_left_margin_m": 0.179118037,
+            "ml_right_margin_m": 0.17949225,
+            "ap_rear_margin_m": 0.05684244,
+            "contact_count": 16,
+            "ml_max_m": 0.179305136,
+            "ap_max_m": 0.135280982
+          },
+          "peak_active_drive_demand_nm": 859.384338,
+          "peak_active_drive_demand_fraction": 8.81419849,
+          "peak_demand_joint": "right_upper_arm",
+          "peak_demand_channel": "swing_yz",
+          "state_hash_rows": 733,
+          "state_hash_start": "e6368181f4c8a2bd",
+          "state_hash_end": "0054b97e015e7650"
+        },
+        {
+          "run": "rep05",
+          "test": {
+            "total": 1,
+            "result": "Passed",
+            "passed": 1,
+            "skipped": 0,
+            "failed": 0
+          },
+          "outcome": "PHYSICAL_LOCKOUT",
+          "legal_depth_tick": 335,
+          "reversal_tick": 392,
+          "ascent_tick": 406,
+          "lockout_phase_entry_tick": 726,
+          "lockout_predicates_qualified_tick": 731,
+          "lockout_terminal_tick": 733,
+          "physical_failure_kind": "NONE",
+          "physical_failure_tick": null,
+          "balance_loss_onset_tick": null,
+          "balance_loss_latched_tick": null,
+          "bar_at_lockout": {
+            "vy_mps": -5.459413E-05,
+            "vz_mps": -0.0134335337,
+            "linear_speed_mps": 0.0134355044,
+            "vx_mps": 0.000223523632,
+            "y_m": 1.41003788,
+            "x_m": -0.00020719679,
+            "z_m": -0.144713849,
+            "angular_speed_rad_s": 0.0152189564
+          },
+          "com_at_lockout": {
+            "vz_mps": -0.0117280176,
+            "y_m": 1.25987387,
+            "z_m": -0.0978766,
+            "x_m": -0.00018711001,
+            "vx_mps": 0.0001974113,
+            "vy_mps": -0.000270966761
+          },
+          "support_at_lockout": {
+            "present": true,
+            "ap_front_margin_m": 0.233157575,
+            "ml_min_m": -0.179305151,
+            "ap_min_m": -0.15471904,
+            "ml_left_margin_m": 0.179118037,
+            "ml_right_margin_m": 0.17949225,
+            "ap_rear_margin_m": 0.05684244,
+            "contact_count": 16,
+            "ml_max_m": 0.179305136,
+            "ap_max_m": 0.135280982
+          },
+          "peak_active_drive_demand_nm": 859.384338,
+          "peak_active_drive_demand_fraction": 8.81419849,
+          "peak_demand_joint": "right_upper_arm",
+          "peak_demand_channel": "swing_yz",
+          "state_hash_rows": 733,
+          "state_hash_start": "e6368181f4c8a2bd",
+          "state_hash_end": "0054b97e015e7650"
+        },
+        {
+          "run": "rep06",
+          "test": {
+            "total": 1,
+            "result": "Passed",
+            "passed": 1,
+            "skipped": 0,
+            "failed": 0
+          },
+          "outcome": "PHYSICAL_LOCKOUT",
+          "legal_depth_tick": 335,
+          "reversal_tick": 392,
+          "ascent_tick": 406,
+          "lockout_phase_entry_tick": 726,
+          "lockout_predicates_qualified_tick": 731,
+          "lockout_terminal_tick": 733,
+          "physical_failure_kind": "NONE",
+          "physical_failure_tick": null,
+          "balance_loss_onset_tick": null,
+          "balance_loss_latched_tick": null,
+          "bar_at_lockout": {
+            "vy_mps": -5.459413E-05,
+            "vz_mps": -0.0134335337,
+            "linear_speed_mps": 0.0134355044,
+            "vx_mps": 0.000223523632,
+            "y_m": 1.41003788,
+            "x_m": -0.00020719679,
+            "z_m": -0.144713849,
+            "angular_speed_rad_s": 0.0152189564
+          },
+          "com_at_lockout": {
+            "vz_mps": -0.0117280176,
+            "y_m": 1.25987387,
+            "z_m": -0.0978766,
+            "x_m": -0.00018711001,
+            "vx_mps": 0.0001974113,
+            "vy_mps": -0.000270966761
+          },
+          "support_at_lockout": {
+            "present": true,
+            "ap_front_margin_m": 0.233157575,
+            "ml_min_m": -0.179305151,
+            "ap_min_m": -0.15471904,
+            "ml_left_margin_m": 0.179118037,
+            "ml_right_margin_m": 0.17949225,
+            "ap_rear_margin_m": 0.05684244,
+            "contact_count": 16,
+            "ml_max_m": 0.179305136,
+            "ap_max_m": 0.135280982
+          },
+          "peak_active_drive_demand_nm": 859.384338,
+          "peak_active_drive_demand_fraction": 8.81419849,
+          "peak_demand_joint": "right_upper_arm",
+          "peak_demand_channel": "swing_yz",
+          "state_hash_rows": 733,
+          "state_hash_start": "e6368181f4c8a2bd",
+          "state_hash_end": "0054b97e015e7650"
+        },
+        {
+          "run": "rep07",
+          "test": {
+            "total": 1,
+            "result": "Passed",
+            "passed": 1,
+            "skipped": 0,
+            "failed": 0
+          },
+          "outcome": "PHYSICAL_LOCKOUT",
+          "legal_depth_tick": 335,
+          "reversal_tick": 392,
+          "ascent_tick": 406,
+          "lockout_phase_entry_tick": 726,
+          "lockout_predicates_qualified_tick": 731,
+          "lockout_terminal_tick": 733,
+          "physical_failure_kind": "NONE",
+          "physical_failure_tick": null,
+          "balance_loss_onset_tick": null,
+          "balance_loss_latched_tick": null,
+          "bar_at_lockout": {
+            "vy_mps": -5.459413E-05,
+            "vz_mps": -0.0134335337,
+            "linear_speed_mps": 0.0134355044,
+            "vx_mps": 0.000223523632,
+            "y_m": 1.41003788,
+            "x_m": -0.00020719679,
+            "z_m": -0.144713849,
+            "angular_speed_rad_s": 0.0152189564
+          },
+          "com_at_lockout": {
+            "vz_mps": -0.0117280176,
+            "y_m": 1.25987387,
+            "z_m": -0.0978766,
+            "x_m": -0.00018711001,
+            "vx_mps": 0.0001974113,
+            "vy_mps": -0.000270966761
+          },
+          "support_at_lockout": {
+            "present": true,
+            "ap_front_margin_m": 0.233157575,
+            "ml_min_m": -0.179305151,
+            "ap_min_m": -0.15471904,
+            "ml_left_margin_m": 0.179118037,
+            "ml_right_margin_m": 0.17949225,
+            "ap_rear_margin_m": 0.05684244,
+            "contact_count": 16,
+            "ml_max_m": 0.179305136,
+            "ap_max_m": 0.135280982
+          },
+          "peak_active_drive_demand_nm": 859.384338,
+          "peak_active_drive_demand_fraction": 8.81419849,
+          "peak_demand_joint": "right_upper_arm",
+          "peak_demand_channel": "swing_yz",
+          "state_hash_rows": 733,
+          "state_hash_start": "e6368181f4c8a2bd",
+          "state_hash_end": "0054b97e015e7650"
+        },
+        {
+          "run": "rep08",
+          "test": {
+            "total": 1,
+            "result": "Passed",
+            "passed": 1,
+            "skipped": 0,
+            "failed": 0
+          },
+          "outcome": "PHYSICAL_LOCKOUT",
+          "legal_depth_tick": 335,
+          "reversal_tick": 392,
+          "ascent_tick": 406,
+          "lockout_phase_entry_tick": 726,
+          "lockout_predicates_qualified_tick": 731,
+          "lockout_terminal_tick": 733,
+          "physical_failure_kind": "NONE",
+          "physical_failure_tick": null,
+          "balance_loss_onset_tick": null,
+          "balance_loss_latched_tick": null,
+          "bar_at_lockout": {
+            "vy_mps": -5.459413E-05,
+            "vz_mps": -0.0134335337,
+            "linear_speed_mps": 0.0134355044,
+            "vx_mps": 0.000223523632,
+            "y_m": 1.41003788,
+            "x_m": -0.00020719679,
+            "z_m": -0.144713849,
+            "angular_speed_rad_s": 0.0152189564
+          },
+          "com_at_lockout": {
+            "vz_mps": -0.0117280176,
+            "y_m": 1.25987387,
+            "z_m": -0.0978766,
+            "x_m": -0.00018711001,
+            "vx_mps": 0.0001974113,
+            "vy_mps": -0.000270966761
+          },
+          "support_at_lockout": {
+            "present": true,
+            "ap_front_margin_m": 0.233157575,
+            "ml_min_m": -0.179305151,
+            "ap_min_m": -0.15471904,
+            "ml_left_margin_m": 0.179118037,
+            "ml_right_margin_m": 0.17949225,
+            "ap_rear_margin_m": 0.05684244,
+            "contact_count": 16,
+            "ml_max_m": 0.179305136,
+            "ap_max_m": 0.135280982
+          },
+          "peak_active_drive_demand_nm": 859.384338,
+          "peak_active_drive_demand_fraction": 8.81419849,
+          "peak_demand_joint": "right_upper_arm",
+          "peak_demand_channel": "swing_yz",
+          "state_hash_rows": 733,
+          "state_hash_start": "e6368181f4c8a2bd",
+          "state_hash_end": "0054b97e015e7650"
+        },
+        {
+          "run": "rep09",
+          "test": {
+            "total": 1,
+            "result": "Passed",
+            "passed": 1,
+            "skipped": 0,
+            "failed": 0
+          },
+          "outcome": "PHYSICAL_LOCKOUT",
+          "legal_depth_tick": 335,
+          "reversal_tick": 392,
+          "ascent_tick": 406,
+          "lockout_phase_entry_tick": 726,
+          "lockout_predicates_qualified_tick": 731,
+          "lockout_terminal_tick": 733,
+          "physical_failure_kind": "NONE",
+          "physical_failure_tick": null,
+          "balance_loss_onset_tick": null,
+          "balance_loss_latched_tick": null,
+          "bar_at_lockout": {
+            "vy_mps": -5.459413E-05,
+            "vz_mps": -0.0134335337,
+            "linear_speed_mps": 0.0134355044,
+            "vx_mps": 0.000223523632,
+            "y_m": 1.41003788,
+            "x_m": -0.00020719679,
+            "z_m": -0.144713849,
+            "angular_speed_rad_s": 0.0152189564
+          },
+          "com_at_lockout": {
+            "vz_mps": -0.0117280176,
+            "y_m": 1.25987387,
+            "z_m": -0.0978766,
+            "x_m": -0.00018711001,
+            "vx_mps": 0.0001974113,
+            "vy_mps": -0.000270966761
+          },
+          "support_at_lockout": {
+            "present": true,
+            "ap_front_margin_m": 0.233157575,
+            "ml_min_m": -0.179305151,
+            "ap_min_m": -0.15471904,
+            "ml_left_margin_m": 0.179118037,
+            "ml_right_margin_m": 0.17949225,
+            "ap_rear_margin_m": 0.05684244,
+            "contact_count": 16,
+            "ml_max_m": 0.179305136,
+            "ap_max_m": 0.135280982
+          },
+          "peak_active_drive_demand_nm": 859.384338,
+          "peak_active_drive_demand_fraction": 8.81419849,
+          "peak_demand_joint": "right_upper_arm",
+          "peak_demand_channel": "swing_yz",
+          "state_hash_rows": 733,
+          "state_hash_start": "e6368181f4c8a2bd",
+          "state_hash_end": "0054b97e015e7650"
+        },
+        {
+          "run": "rep10",
+          "test": {
+            "total": 1,
+            "result": "Passed",
+            "passed": 1,
+            "skipped": 0,
+            "failed": 0
+          },
+          "outcome": "PHYSICAL_LOCKOUT",
+          "legal_depth_tick": 335,
+          "reversal_tick": 392,
+          "ascent_tick": 406,
+          "lockout_phase_entry_tick": 726,
+          "lockout_predicates_qualified_tick": 731,
+          "lockout_terminal_tick": 733,
+          "physical_failure_kind": "NONE",
+          "physical_failure_tick": null,
+          "balance_loss_onset_tick": null,
+          "balance_loss_latched_tick": null,
+          "bar_at_lockout": {
+            "vy_mps": -5.459413E-05,
+            "vz_mps": -0.0134335337,
+            "linear_speed_mps": 0.0134355044,
+            "vx_mps": 0.000223523632,
+            "y_m": 1.41003788,
+            "x_m": -0.00020719679,
+            "z_m": -0.144713849,
+            "angular_speed_rad_s": 0.0152189564
+          },
+          "com_at_lockout": {
+            "vz_mps": -0.0117280176,
+            "y_m": 1.25987387,
+            "z_m": -0.0978766,
+            "x_m": -0.00018711001,
+            "vx_mps": 0.0001974113,
+            "vy_mps": -0.000270966761
+          },
+          "support_at_lockout": {
+            "present": true,
+            "ap_front_margin_m": 0.233157575,
+            "ml_min_m": -0.179305151,
+            "ap_min_m": -0.15471904,
+            "ml_left_margin_m": 0.179118037,
+            "ml_right_margin_m": 0.17949225,
+            "ap_rear_margin_m": 0.05684244,
+            "contact_count": 16,
+            "ml_max_m": 0.179305136,
+            "ap_max_m": 0.135280982
+          },
+          "peak_active_drive_demand_nm": 859.384338,
+          "peak_active_drive_demand_fraction": 8.81419849,
+          "peak_demand_joint": "right_upper_arm",
+          "peak_demand_channel": "swing_yz",
+          "state_hash_rows": 733,
+          "state_hash_start": "e6368181f4c8a2bd",
+          "state_hash_end": "0054b97e015e7650"
+        }
+      ]
+    }
+  ],
+  "final_candidate_sha": "776feac0d13dec34c43e02ba88abd576713cf93d",
+  "physics_measurement_source_sha": "68d30852f02f4005a9e915a2dbb18c4c27abb941",
+  "production_physics_unchanged_between_measurement_and_final_candidate": true,
+  "final_test_only_commits": [
+    "4330bca4e3cc62f6a83ea9c87908e15836509990",
+    "776feac0d13dec34c43e02ba88abd576713cf93d"
+  ]
+}

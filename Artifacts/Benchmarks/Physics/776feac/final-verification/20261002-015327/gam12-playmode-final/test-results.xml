@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="4" result="Passed" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-02 04:55:09Z" end-time="2026-10-02 04:55:18Z" duration="8.5779899">
+  <test-suite type="TestSuite" id="1375" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="277" result="Passed" start-time="2026-10-02 04:55:09Z" end-time="2026-10-02 04:55:18Z" duration="8.577990" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1330" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="E:/Data/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="251" result="Passed" start-time="2026-10-02 04:55:09Z" end-time="2026-10-02 04:55:18Z" duration="8.559735" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="14160" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1331" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="251" result="Passed" start-time="2026-10-02 04:55:09Z" end-time="2026-10-02 04:55:18Z" duration="8.556081" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1332" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="251" result="Passed" start-time="2026-10-02 04:55:09Z" end-time="2026-10-02 04:55:18Z" duration="8.553708" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1056" name="GAM12ObservationTraceIntegrationTests" fullname="PowerliftingSimulator.Tests.GAM12ObservationTraceIntegrationTests" classname="PowerliftingSimulator.Tests.GAM12ObservationTraceIntegrationTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-02 04:55:09Z" end-time="2026-10-02 04:55:12Z" duration="3.317857" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1057" name="GAM12_P1_POST_PHYSICS_TRACE_QUALIFICATION_0KG_AND_25KG" fullname="PowerliftingSimulator.Tests.GAM12ObservationTraceIntegrationTests.GAM12_P1_POST_PHYSICS_TRACE_QUALIFICATION_0KG_AND_25KG" methodname="GAM12_P1_POST_PHYSICS_TRACE_QUALIFICATION_0KG_AND_25KG" classname="PowerliftingSimulator.Tests.GAM12ObservationTraceIntegrationTests" runstate="Runnable" seed="607497955" result="Passed" start-time="2026-10-02 04:55:09Z" end-time="2026-10-02 04:55:12Z" duration="3.288521" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1062" name="GAM12SquatAttemptLifecycleIntegrationTests" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleIntegrationTests" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleIntegrationTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-02 04:55:12Z" end-time="2026-10-02 04:55:16Z" duration="3.926311" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1063" name="COMPLETE_25KG_ATTEMPT_RECORD_IS_DETERMINISTIC" fullname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleIntegrationTests.COMPLETE_25KG_ATTEMPT_RECORD_IS_DETERMINISTIC" methodname="COMPLETE_25KG_ATTEMPT_RECORD_IS_DETERMINISTIC" classname="PowerliftingSimulator.Tests.GAM12SquatAttemptLifecycleIntegrationTests" runstate="Runnable" seed="2065756136" result="Passed" start-time="2026-10-02 04:55:12Z" end-time="2026-10-02 04:55:16Z" duration="3.924807" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[
+IgnoreFailingMessages:true
+25KG_RUN=1 START_WINDOW=12-14 SQUAT=15 DESCENT=29 BOTTOM=355 ASCENT=370 LOCKOUT=694 RACK=697 RERACK=698 TRACE_FREEZE=698 TRACE_COUNT=687 P2=EVALUABLE/GOOD_LIFT VIOLATIONS=NONE P3=EVALUABLE/NO_PHYSICAL_FAILURE PRIMARY=NONE FAILURE_ONSET=18446744073709551615 FAILURE_LATCH=18446744073709551615 TERMINAL=PHYSICAL_LOCKOUT@694 TERMINAL_CONTEXT=TRACE_COVERED
+25KG_RUN=2 START_WINDOW=12-14 SQUAT=15 DESCENT=29 BOTTOM=355 ASCENT=370 LOCKOUT=694 RACK=697 RERACK=698 TRACE_FREEZE=698 TRACE_COUNT=687 P2=EVALUABLE/GOOD_LIFT VIOLATIONS=NONE P3=EVALUABLE/NO_PHYSICAL_FAILURE PRIMARY=NONE FAILURE_ONSET=18446744073709551615 FAILURE_LATCH=18446744073709551615 TERMINAL=PHYSICAL_LOCKOUT@694 TERMINAL_CONTEXT=TRACE_COVERED
+25KG_RUN=3 START_WINDOW=12-14 SQUAT=15 DESCENT=29 BOTTOM=355 ASCENT=370 LOCKOUT=694 RACK=697 RERACK=698 TRACE_FREEZE=698 TRACE_COUNT=687 P2=EVALUABLE/GOOD_LIFT VIOLATIONS=NONE P3=EVALUABLE/NO_PHYSICAL_FAILURE PRIMARY=NONE FAILURE_ONSET=18446744073709551615 FAILURE_LATCH=18446744073709551615 TERMINAL=PHYSICAL_LOCKOUT@694 TERMINAL_CONTEXT=TRACE_COVERED
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1064" name="GAM12SquatFailureDetectorIntegrationTests" fullname="PowerliftingSimulator.Tests.GAM12SquatFailureDetectorIntegrationTests" classname="PowerliftingSimulator.Tests.GAM12SquatFailureDetectorIntegrationTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-02 04:55:16Z" end-time="2026-10-02 04:55:17Z" duration="0.638970" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1065" name="GAM12_P3_25KG_REAL_FROZEN_P1_TRACE_IS_DETERMINISTIC_AND_NO_FAILURE_IS_FABRICATED" fullname="PowerliftingSimulator.Tests.GAM12SquatFailureDetectorIntegrationTests.GAM12_P3_25KG_REAL_FROZEN_P1_TRACE_IS_DETERMINISTIC_AND_NO_FAILURE_IS_FABRICATED" methodname="GAM12_P3_25KG_REAL_FROZEN_P1_TRACE_IS_DETERMINISTIC_AND_NO_FAILURE_IS_FABRICATED" classname="PowerliftingSimulator.Tests.GAM12SquatFailureDetectorIntegrationTests" runstate="Runnable" seed="1441310759" result="Passed" start-time="2026-10-02 04:55:16Z" end-time="2026-10-02 04:55:17Z" duration="0.638068" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1066" name="GAM12SquatRuleProcessorIntegrationTests" fullname="PowerliftingSimulator.Tests.GAM12SquatRuleProcessorIntegrationTests" classname="PowerliftingSimulator.Tests.GAM12SquatRuleProcessorIntegrationTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-02 04:55:17Z" end-time="2026-10-02 04:55:18Z" duration="0.655839" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1067" name="GAM12_P2_RULE_INTEGRATION_FIXTURE_CONSUMES_REAL_FROZEN_P1_TRACE" fullname="PowerliftingSimulator.Tests.GAM12SquatRuleProcessorIntegrationTests.GAM12_P2_RULE_INTEGRATION_FIXTURE_CONSUMES_REAL_FROZEN_P1_TRACE" methodname="GAM12_P2_RULE_INTEGRATION_FIXTURE_CONSUMES_REAL_FROZEN_P1_TRACE" classname="PowerliftingSimulator.Tests.GAM12SquatRuleProcessorIntegrationTests" runstate="Runnable" seed="2133601965" result="Passed" start-time="2026-10-02 04:55:17Z" end-time="2026-10-02 04:55:18Z" duration="0.655003" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: C:/Users/Usuario/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

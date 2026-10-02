@@ -123,8 +123,13 @@ Editor/standalone parity: build with `-executeMethod GAM50ParityBuild.BuildWindo
 run the player with `-gam50Parity -gam50ParityLoad 140 -gam50ParityOutput <csv>`, run
 `-testCategory PhysicsBenchmarkParity` in the Editor, then `Compare-Parity.py`.
 
-Outputs, per commit: `Artifacts/Benchmarks/Physics/<sha>/` with `manifest.json`,
-`results.json`, `failure-matrix.json`, `summary.md` and `runs/<run>/raw/`.
+Outputs, per measured candidate: `Artifacts/Benchmarks/Physics/<sha>/` with
+`manifest.json`, `results.json`, `failure-matrix.json`, `summary.md`,
+`raw/B*.json` and `runs/<run>/raw/`. Final GAM-50 closeout may also retain
+`repeatability-summary.json`, `convergence-summary.json`, `raw/canonical-mechanics.json`,
+and qualification-suite evidence under `final-verification/`; its manifest names
+the measurement source SHA when final test-only verification commits leave all
+physics inputs unchanged. These records do not relabel the original run SHA.
 `Compare-PhysicsBenchmark.py compare --before A --after B` produces before/after tables.
 Repairs are recorded in `Artifacts/Benchmarks/Physics/repairs.json` and flow into the
 failure matrix.
@@ -132,4 +137,9 @@ failure matrix.
 ## Exit states
 
 `PHYSICS_BENCHMARK_QUALIFIED` or `PHYSICS_SUBSTRATE_NOT_QUALIFIED`, as defined in GAM-50.
-The current verdict and its evidence live in `Artifacts/Receipts/GAM-50-*.md`.
+The current verdict and its evidence live in `Artifacts/Receipts/GAM-50-*.md`;
+the final GAM-50 receipt identifies the tested physics candidate and any later
+test-only evidence closeout explicitly.
+
+For this qualification, see the [GAM-50 final receipt](../Artifacts/Receipts/GAM-50-physics-benchmark.md)
+and the [776feac benchmark evidence summary](../Artifacts/Benchmarks/Physics/776feac/summary.md).

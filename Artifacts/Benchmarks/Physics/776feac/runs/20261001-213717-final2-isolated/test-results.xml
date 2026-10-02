@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="12" result="Passed" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-02 00:41:14Z" end-time="2026-10-02 00:42:09Z" duration="55.6076514">
+  <test-suite type="TestSuite" id="1375" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="277" result="Passed" start-time="2026-10-02 00:41:14Z" end-time="2026-10-02 00:42:09Z" duration="55.607651" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <test-suite type="Assembly" id="1369" name="PowerliftingSimulator.PhysicsBenchmarks.dll" fullname="E:/Data/Projects/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.PhysicsBenchmarks.dll" runstate="Runnable" testcasecount="26" result="Passed" start-time="2026-10-02 00:41:14Z" end-time="2026-10-02 00:42:09Z" duration="55.576355" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="26732" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <test-suite type="TestSuite" id="1370" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="26" result="Passed" start-time="2026-10-02 00:41:14Z" end-time="2026-10-02 00:42:09Z" duration="55.574541" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1371" name="PhysicsBenchmarks" fullname="PowerliftingSimulator.PhysicsBenchmarks" runstate="Runnable" testcasecount="26" result="Passed" start-time="2026-10-02 00:41:14Z" end-time="2026-10-02 00:42:09Z" duration="55.573473" total="12" passed="12" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1333" name="AnalyticalPhysicsBenchmarks" fullname="PowerliftingSimulator.PhysicsBenchmarks.AnalyticalPhysicsBenchmarks" classname="PowerliftingSimulator.PhysicsBenchmarks.AnalyticalPhysicsBenchmarks" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-02 00:41:14Z" end-time="2026-10-02 00:41:15Z" duration="0.840720" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="Category" value="PhysicsBenchmark" />
+              <property name="Category" value="PhysicsBenchmarkIsolated" />
+            </properties>
+            <test-case id="1334" name="B01_FreeFall_MatchesAnalyticMotion" fullname="PowerliftingSimulator.PhysicsBenchmarks.AnalyticalPhysicsBenchmarks.B01_FreeFall_MatchesAnalyticMotion" methodname="B01_FreeFall_MatchesAnalyticMotion" classname="PowerliftingSimulator.PhysicsBenchmarks.AnalyticalPhysicsBenchmarks" runstate="Runnable" seed="2011566894" result="Passed" start-time="2026-10-02 00:41:14Z" end-time="2026-10-02 00:41:14Z" duration="0.189999" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B01_free_fall metrics=15 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\68d3085\runs\20261001-213717-final2-isolated\raw\B01_free_fall.json
+]]></output>
+            </test-case>
+            <test-case id="1335" name="B02_ConstantTorque_MatchesAlphaEqualsTauOverI" fullname="PowerliftingSimulator.PhysicsBenchmarks.AnalyticalPhysicsBenchmarks.B02_ConstantTorque_MatchesAlphaEqualsTauOverI" methodname="B02_ConstantTorque_MatchesAlphaEqualsTauOverI" classname="PowerliftingSimulator.PhysicsBenchmarks.AnalyticalPhysicsBenchmarks" runstate="Runnable" seed="711989166" result="Passed" start-time="2026-10-02 00:41:14Z" end-time="2026-10-02 00:41:14Z" duration="0.054762" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B02_constant_torque metrics=10 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\68d3085\runs\20261001-213717-final2-isolated\raw\B02_constant_torque.json
+]]></output>
+            </test-case>
+            <test-case id="1336" name="B03_Pendulum_PeriodAndEnergy" fullname="PowerliftingSimulator.PhysicsBenchmarks.AnalyticalPhysicsBenchmarks.B03_Pendulum_PeriodAndEnergy" methodname="B03_Pendulum_PeriodAndEnergy" classname="PowerliftingSimulator.PhysicsBenchmarks.AnalyticalPhysicsBenchmarks" runstate="Runnable" seed="478690994" result="Passed" start-time="2026-10-02 00:41:14Z" end-time="2026-10-02 00:41:15Z" duration="0.542881" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B03_pendulum metrics=9 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\68d3085\runs\20261001-213717-final2-isolated\raw\B03_pendulum.json
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1356" name="ConstraintPhysicsBenchmarks" fullname="PowerliftingSimulator.PhysicsBenchmarks.ConstraintPhysicsBenchmarks" classname="PowerliftingSimulator.PhysicsBenchmarks.ConstraintPhysicsBenchmarks" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-02 00:41:15Z" end-time="2026-10-02 00:41:43Z" duration="28.483411" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="Category" value="PhysicsBenchmark" />
+              <property name="Category" value="PhysicsBenchmarkIsolated" />
+            </properties>
+            <test-case id="1357" name="B10_SquatBarSaddle_SpringDamperLoadPath" fullname="PowerliftingSimulator.PhysicsBenchmarks.ConstraintPhysicsBenchmarks.B10_SquatBarSaddle_SpringDamperLoadPath" methodname="B10_SquatBarSaddle_SpringDamperLoadPath" classname="PowerliftingSimulator.PhysicsBenchmarks.ConstraintPhysicsBenchmarks" runstate="Runnable" seed="882907479" result="Passed" start-time="2026-10-02 00:41:15Z" end-time="2026-10-02 00:41:16Z" duration="0.993955" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B10_saddle_load_path metrics=65 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\68d3085\runs\20261001-213717-final2-isolated\raw\B10_saddle_load_path.json
+]]></output>
+            </test-case>
+            <test-case id="1358" name="B11_DrivenChain_StaticLoadAndConvergence" fullname="PowerliftingSimulator.PhysicsBenchmarks.ConstraintPhysicsBenchmarks.B11_DrivenChain_StaticLoadAndConvergence" methodname="B11_DrivenChain_StaticLoadAndConvergence" classname="PowerliftingSimulator.PhysicsBenchmarks.ConstraintPhysicsBenchmarks" runstate="Runnable" seed="2141413845" result="Passed" start-time="2026-10-02 00:41:16Z" end-time="2026-10-02 00:41:43Z" duration="27.485261" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B11_driven_chain metrics=389 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\68d3085\runs\20261001-213717-final2-isolated\raw\B11_driven_chain.json
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1361" name="ContactPhysicsBenchmarks" fullname="PowerliftingSimulator.PhysicsBenchmarks.ContactPhysicsBenchmarks" classname="PowerliftingSimulator.PhysicsBenchmarks.ContactPhysicsBenchmarks" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-10-02 00:41:43Z" end-time="2026-10-02 00:41:44Z" duration="0.998312" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="Category" value="PhysicsBenchmark" />
+              <property name="Category" value="PhysicsBenchmarkIsolated" />
+            </properties>
+            <test-case id="1362" name="B08_Friction_InclineAndPushSlipTransition" fullname="PowerliftingSimulator.PhysicsBenchmarks.ContactPhysicsBenchmarks.B08_Friction_InclineAndPushSlipTransition" methodname="B08_Friction_InclineAndPushSlipTransition" classname="PowerliftingSimulator.PhysicsBenchmarks.ContactPhysicsBenchmarks" runstate="Runnable" seed="866817744" result="Passed" start-time="2026-10-02 00:41:43Z" end-time="2026-10-02 00:41:44Z" duration="0.834864" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B08_friction metrics=32 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\68d3085\runs\20261001-213717-final2-isolated\raw\B08_friction.json
+]]></output>
+            </test-case>
+            <test-case id="1363" name="B09_DropContact_ImpulseAndResting" fullname="PowerliftingSimulator.PhysicsBenchmarks.ContactPhysicsBenchmarks.B09_DropContact_ImpulseAndResting" methodname="B09_DropContact_ImpulseAndResting" classname="PowerliftingSimulator.PhysicsBenchmarks.ContactPhysicsBenchmarks" runstate="Runnable" seed="100920117" result="Passed" start-time="2026-10-02 00:41:44Z" end-time="2026-10-02 00:41:44Z" duration="0.159799" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B09_drop_contact metrics=8 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\68d3085\runs\20261001-213717-final2-isolated\raw\B09_drop_contact.json
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1364" name="DrivePhysicsBenchmarks" fullname="PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks" classname="PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-02 00:41:44Z" end-time="2026-10-02 00:41:48Z" duration="4.066077" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="Category" value="PhysicsBenchmark" />
+              <property name="Category" value="PhysicsBenchmarkIsolated" />
+            </properties>
+            <test-case id="1365" name="B04_ConfigurableJointPd_StaticKnownLoad" fullname="PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks.B04_ConfigurableJointPd_StaticKnownLoad" methodname="B04_ConfigurableJointPd_StaticKnownLoad" classname="PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks" runstate="Runnable" seed="1371214440" result="Passed" start-time="2026-10-02 00:41:44Z" end-time="2026-10-02 00:41:47Z" duration="3.139956" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B04_pd_static_known_load metrics=84 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\68d3085\runs\20261001-213717-final2-isolated\raw\B04_pd_static_known_load.json
+]]></output>
+            </test-case>
+            <test-case id="1366" name="B05_ConfigurableJointPd_StepResponse" fullname="PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks.B05_ConfigurableJointPd_StepResponse" methodname="B05_ConfigurableJointPd_StepResponse" classname="PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks" runstate="Runnable" seed="841921426" result="Passed" start-time="2026-10-02 00:41:47Z" end-time="2026-10-02 00:41:48Z" duration="0.306057" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B05_pd_step_response metrics=35 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\68d3085\runs\20261001-213717-final2-isolated\raw\B05_pd_step_response.json
+]]></output>
+            </test-case>
+            <test-case id="1367" name="B06_MaximumForce_SaturationIsATorqueLimit" fullname="PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks.B06_MaximumForce_SaturationIsATorqueLimit" methodname="B06_MaximumForce_SaturationIsATorqueLimit" classname="PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks" runstate="Runnable" seed="1995535381" result="Passed" start-time="2026-10-02 00:41:48Z" end-time="2026-10-02 00:41:48Z" duration="0.197418" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B06_maximum_force_saturation metrics=17 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\68d3085\runs\20261001-213717-final2-isolated\raw\B06_maximum_force_saturation.json
+]]></output>
+            </test-case>
+            <test-case id="1368" name="B07_TargetRotationAndVelocity_SignAndFrame" fullname="PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks.B07_TargetRotationAndVelocity_SignAndFrame" methodname="B07_TargetRotationAndVelocity_SignAndFrame" classname="PowerliftingSimulator.PhysicsBenchmarks.DrivePhysicsBenchmarks" runstate="Runnable" seed="2136076912" result="Passed" start-time="2026-10-02 00:41:48Z" end-time="2026-10-02 00:41:48Z" duration="0.419110" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B07_target_sign_frame metrics=13 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\68d3085\runs\20261001-213717-final2-isolated\raw\B07_target_sign_frame.json
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1359" name="SubstrateABBenchmarks" fullname="PowerliftingSimulator.PhysicsBenchmarks.SubstrateABBenchmarks" classname="PowerliftingSimulator.PhysicsBenchmarks.SubstrateABBenchmarks" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-02 00:41:48Z" end-time="2026-10-02 00:42:09Z" duration="21.175111" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties>
+              <property name="Category" value="PhysicsBenchmark" />
+              <property name="Category" value="PhysicsBenchmarkIsolated" />
+              <property name="Category" value="PhysicsBenchmarkSubstrateAB" />
+            </properties>
+            <test-case id="1360" name="B16_ChainSubstrate_ConfigurableJointVsArticulation" fullname="PowerliftingSimulator.PhysicsBenchmarks.SubstrateABBenchmarks.B16_ChainSubstrate_ConfigurableJointVsArticulation" methodname="B16_ChainSubstrate_ConfigurableJointVsArticulation" classname="PowerliftingSimulator.PhysicsBenchmarks.SubstrateABBenchmarks" runstate="Runnable" seed="1180094308" result="Passed" start-time="2026-10-02 00:41:48Z" end-time="2026-10-02 00:42:09Z" duration="21.173053" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[PHYSICS_BENCHMARK case=B16_substrate_ab_PGS metrics=858 raw=E:\Data\Projects\PowerliftingSimulator\Artifacts\Benchmarks\Physics\68d3085\runs\20261001-213717-final2-isolated\raw\B16_substrate_ab_PGS.json
+Saving results to: C:/Users/Usuario/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
