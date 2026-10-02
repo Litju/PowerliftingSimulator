@@ -1,8 +1,6 @@
 using System;
 using System.Collections;
 using System.Globalization;
-using System.IO;
-using System.Text;
 using NUnit.Framework;
 using PowerliftingSimulator.Squat.Unity;
 using UnityEngine;
@@ -26,9 +24,8 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
             var session = new AthleteBenchmarkSession();
             yield return AthleteBenchmarkSession.Load(session, 0f);
             string trace = GAM50ParityHarness.Run(loadKg, "editor");
-            string path = Path.Combine(PhysicsBenchmarkRecorder.RawDirectory(),
-                string.Format(CultureInfo.InvariantCulture, "parity-editor-{0:000}kg.csv", loadKg));
-            File.WriteAllText(path, trace, new UTF8Encoding(false));
+            string path = string.Format(CultureInfo.InvariantCulture, "parity-editor-{0:000}kg.csv", loadKg);
+            PhysicsBenchmarkEvidence.WriteRawText(path, trace);
             Assert.That(trace.Length, Is.GreaterThan(0));
         }
     }

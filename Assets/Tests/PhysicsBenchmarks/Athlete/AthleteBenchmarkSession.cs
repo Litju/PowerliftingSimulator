@@ -383,8 +383,6 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
     {
         public static void Write(AthleteBenchmarkSession s, string caseId, string stage, float phase, string variant)
         {
-            string directory = Path.Combine(PhysicsBenchmarkRecorder.RawDirectory(), "oracle");
-            Directory.CreateDirectory(directory);
             var json = new StringBuilder();
             json.Append("{\n  \"case\": ").Append(PhysicsBenchmarkRecorder.Quote(caseId));
             json.Append(",\n  \"stage\": ").Append(PhysicsBenchmarkRecorder.Quote(stage));
@@ -461,7 +459,8 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
                 .Append(s.Snapshot.LeftFoot.IsInContact ? "true" : "false")
                 .Append(", \"right_contact\": ").Append(s.Snapshot.RightFoot.IsInContact ? "true" : "false")
                 .Append("}\n}\n");
-            File.WriteAllText(Path.Combine(directory, caseId + "." + stage + ".json"), json.ToString(), new UTF8Encoding(false));
+            PhysicsBenchmarkEvidence.WriteRawText(
+                Path.Combine("oracle", caseId + "." + stage + ".json"), json.ToString());
         }
 
         private static string ParentIdOrNull(this PhysicalJointRecipe recipe)

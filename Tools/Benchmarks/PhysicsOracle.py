@@ -183,6 +183,7 @@ def run(raw_dir):
                                    "Informational", "oracle torque / maximumForce",
                                    "Static capacity demand of the pose, independent of Unity's solver.", 9, gated=False))
     out = os.path.join(raw_dir, case + ".json")
+    os.makedirs(os.path.dirname(out), exist_ok=True)
     with open(out, "w", encoding="utf-8") as handle:
         json.dump({"schema": "PHYSICS_BENCHMARK_V1", "case": case, "unity_version": "n/a (offline oracle)",
                    "platform": "python", "notes": {"exports": str(len(exports))}, "metrics": rows}, handle, indent=1)

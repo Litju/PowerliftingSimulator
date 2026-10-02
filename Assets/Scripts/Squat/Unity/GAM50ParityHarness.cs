@@ -1,6 +1,5 @@
 using System;
 using System.Globalization;
-using System.IO;
 using System.Text;
 using PowerliftingSimulator.Athlete;
 using PowerliftingSimulator.Equipment;
@@ -55,7 +54,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 float load = float.Parse(ArgumentValue(LoadArgument) ?? "140", CultureInfo.InvariantCulture);
                 string output = ArgumentValue(OutputArgument) ?? "gam50-parity.csv";
                 string trace = Run(load, "standalone");
-                File.WriteAllText(output, trace, new UTF8Encoding(false));
+                PhysicsBenchmarkEvidence.WriteText(output, trace);
                 Debug.Log("GAM50_PARITY_DONE " + output);
             }
             catch (Exception exception)
