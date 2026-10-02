@@ -18,6 +18,12 @@ import math
 import os
 
 BAR_STILL_MPS = 0.020  # sealed GAM-12 lockout bar stillness (unchanged)
+# GAM-13 V2-5: 25 easy, 60 moderate, 140 heavy, 170 near-max must complete;
+# above 170 kg (300) is supra-max and must fail physically.
+SUPRA_MAX_THRESHOLD_KG = 170
+PHYSICAL_FAILURE_REASONS = {"SETUP_NOT_PHYSICALLY_QUALIFIED", "BALANCE_LOSS", "PHYSICAL_LOCKOUT_NOT_REACHED",
+                            "NO_PHYSICAL_DESCENT", "NO_LEGAL_PHYSICAL_DEPTH", "NO_PHYSICAL_REVERSAL",
+                            "NO_PHYSICAL_ASCENT", "PLANTAR_SUPPORT_LOST", "COM_OUTSIDE_SUPPORT"}
 
 
 def rows(path):
@@ -122,13 +128,21 @@ def analyze(squat_root, raw_dir):
         last = trace[-1]
         cfg = "load=%s;rep=%s" % (load, os.path.basename(first))
         lockout = last["lockout"] == "true"
-        notes["outcome"] = "PHYSICAL_LOCKOUT" if lockout else last["physical_failure_reason"]
-        metrics.append(metric(case, "mechanics_valid_lockout", cfg, 1, 1 if lockout else 0, 0, "Absolute",
-                              "GAM-13 mechanics probe: legal depth, reversal, ascent and settled physical lockout (sealed GAM-12/GAM-49 predicates)",
-                              "The squat does not complete as valid physical mechanics: " + last["physical_failure_reason"], 11))
-        for key in ("legal_depth_reached",):
-            metrics.append(metric(case, key, cfg, 1, 1 if last[key] == "true" else 0, 0, "Absolute",
-                                  "GAM-49 sealed depth authority", "Legal depth not reached.", 11))
+        reason = last["physical_failure_reason"]
+        notes["outcome"] = "PHYSICAL_LOCKOUT" if lockout else reason
+        load_kg = int(load.rstrip("kg"))
+        if load_kg <= SUPRA_MAX_THRESHOLD_KG:
+            metrics.append(metric(case, "mechanics_valid_lockout", cfg, 1, 1 if lockout else 0, 0, "Absolute",
+                                  "GAM-13 mechanics probe: legal depth, reversal, ascent and settled physical lockout (sealed GAM-12/GAM-49 predicates)",
+                                  "The squat does not complete as valid physical mechanics: " + reason, 11))
+            metrics.append(metric(case, "legal_depth_reached", cfg, 1, 1 if last["legal_depth_reached"] == "true" else 0, 0,
+                                  "Absolute", "GAM-49 sealed depth authority", "Legal depth not reached.", 11))
+        else:
+            # GAM-13 V2-5: supra-max loads must fail, and fail physically.
+            physical = (not lockout) and reason in PHYSICAL_FAILURE_REASONS
+            metrics.append(metric(case, "supra_max_fails_physically", cfg, 1, 1 if physical else 0, 0, "Absolute",
+                                  "GAM-13 V2-5 envelope: 300 kg supra-max physical stall/failure",
+                                  "A supra-max load completes, or fails for a non-physical reason: " + reason, 11))
         for key in ("descent_tick", "reversal_tick", "ascent_tick"):
             metrics.append(metric(case, key, cfg, None, tick_of(last[key]), None, "Informational", "",
                                   "Event tick from the mechanics probe.", 11, gated=False))

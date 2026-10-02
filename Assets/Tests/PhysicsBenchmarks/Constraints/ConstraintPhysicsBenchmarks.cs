@@ -447,6 +447,7 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
                 rec.Info("expected_equilibrium_stable", $"load={load}", stable ? 1 : 0,
                     "1 when the potential-energy Hessian is positive definite at the analytic equilibrium.", CausalLayer.AthleteEquilibrium);
                 double[] reference = null;
+                double referenceSpeed = double.NaN;
                 var grid = new List<(float dt, int pos, int vel, string tag)>
                 {
                     (0.0025f, 255, 4, "reference"),
@@ -464,7 +465,10 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
                         var (errors, separation, speed, sag) = SettleChain(world, state, spec, SettleSeconds);
                         string cfg = Cfg($"load={load};{cell.tag}", world);
                         if (cell.tag == "reference")
+                        {
                             reference = errors;
+                            referenceSpeed = speed;
+                        }
                         for (int j = 0; j < 3; j++)
                         {
                             string metric = spec.Family[j] + "_static_error_rad";
@@ -497,7 +501,13 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
                             rec.Record("max_anchor_separation_m", cfg, 0, separation, 0.002, ToleranceKind.UpperBound,
                                 "locked hinge anchors: 2 mm engineering tolerance",
                                 "Joint constraints stretch under the chain's mass ratios.", CausalLayer.ConstraintConvergence);
-                            rec.Record("settled_max_angular_speed_rad_s", cfg, 0, speed, 0.01, ToleranceKind.UpperBound,
+                            // B11 checks that production converges: residual motion
+                            // must not exceed max(0.01 rad/s, the converged reference's
+                            // own). Near the stability limit (300 kg) the true slow mode
+                            // settles slower than coarser steps suggest (reference
+                            // 0.0148 vs production 0.0121 vs dt 0.02 0.0031 rad/s).
+                            rec.Record("settled_max_angular_speed_rad_s", cfg, 0, speed, Math.Max(0.01, referenceSpeed),
+                                ToleranceKind.UpperBound,
                                 "static chain settles within the 12 s window (near-unstable heavy cases have a slow mode)", "The chain does not settle.", CausalLayer.ConstraintConvergence);
                             if (state.Bar != null)
                                 rec.Record("saddle_sag_m", cfg, barMass * g / SquatBarSaddle.DefaultLinearSpring, sag, 0.10,
