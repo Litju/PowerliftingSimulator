@@ -66,12 +66,31 @@ namespace PowerliftingSimulator.Tests
                 _controller.BeginAttempt();
                 Assert.That(_controller.AttemptLifecycle.State, Is.EqualTo(SquatAttemptLifecycleState.START_WINDOW));
 
+                FoundationRuntime runtime = _bootstrap.Runtime;
+                float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
+                bool driveRequested = false;
                 int ticks = 0;
                 while (_controller.AttemptRecord == null && ticks < MaximumQualificationTicks)
                 {
+                    // This test owns stepping while the production Update methods are disabled.
+                    if (_controller.AttemptOrchestrator.HasSquatCommand)
+                    {
+                        SquatState state = _controller.Adapter.State;
+                        if (state == SquatState.BOTTOM || state == SquatState.REVERSAL ||
+                            state == SquatState.ASCENT || state == SquatState.STICKING)
+                            driveRequested = true;
+
+                        double inputTime = runtime.CurrentTime.SimulationTimeSeconds +
+                            0.25d * SimulationConstants.FixedDeltaTimeSeconds;
+                        runtime.InputBuffer.SetContinuous(IntentAction.Yield, driveRequested ? 0f : 1f, inputTime);
+                        runtime.InputBuffer.SetContinuous(IntentAction.Drive, driveRequested ? 1f : 0f, inputTime);
+                    }
+
                     Assert.That(
-                        _bootstrap.Runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds),
+                        runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds),
                         Is.EqualTo(1));
+                    _controller.LeftFootContact?.PhysicsTickUpdate(dt);
+                    _controller.RightFootContact?.PhysicsTickUpdate(dt);
                     ticks++;
                     if (ticks % 40 == 0)
                         yield return null;
