@@ -36,7 +36,7 @@ namespace PowerliftingSimulator.Squat
         NEAR_PARALLEL,
         LEGAL_BOTTOM,
         EARLY_ASCENT,
-        STICKING,
+        MID_ASCENT,
         LOCKOUT
     }
 
@@ -59,8 +59,7 @@ namespace PowerliftingSimulator.Squat
         BarSecureOnHooks,
         AbortPressed,
         CollapseDetected,
-        ShallowReversal,
-        StickingTimeout
+        ShallowReversal
     }
 
     public readonly struct SquatDomainObservation
@@ -133,12 +132,9 @@ namespace PowerliftingSimulator.Squat
 
     public sealed class SquatStateMachine
     {
-        public const double StickingTimeoutSeconds = 0.35d;
-
         private SquatState _state;
         private float _phase;
         private float _phaseRate;
-        private double _stickingElapsedSeconds;
 
         public SquatStateMachine(SquatState initialState = SquatState.SETUP)
         {
@@ -155,7 +151,6 @@ namespace PowerliftingSimulator.Squat
             _state = initialState;
             _phase = 0f;
             _phaseRate = 0f;
-            _stickingElapsedSeconds = 0d;
         }
 
         public SquatTransition Step(
@@ -214,25 +209,39 @@ namespace PowerliftingSimulator.Squat
                         return Transition(previous, SquatState.ASCENT, SquatTransitionReason.UpwardVelocity);
                     break;
                 case SquatState.ASCENT:
-                    if (observation.StickingDetected)
-                    {
-                        _stickingElapsedSeconds = 0d;
-                        return Transition(previous, SquatState.STICKING, SquatTransitionReason.StickingDetected);
-                    }
                     if (observation.LockoutReached)
                     {
                         _phase = 0f;
                         _phaseRate = 0f;
                         return Transition(previous, SquatState.LOCKOUT, SquatTransitionReason.LockoutReached);
                     }
+                    if (observation.StickingDetected)
+                    {
+                        SquatTransition transition = Transition(
+                            previous, SquatState.STICKING, SquatTransitionReason.StickingDetected);
+                        AdvancePhase(-AscentRate(intent), stepSeconds);
+                        return transition;
+                    }
                     AdvancePhase(-AscentRate(intent), stepSeconds);
                     break;
                 case SquatState.STICKING:
-                    if (observation.RecoveredFromSticking)
-                        return Transition(previous, SquatState.ASCENT, SquatTransitionReason.RecoveredFromSticking);
-                    _stickingElapsedSeconds += stepSeconds;
-                    if (_stickingElapsedSeconds >= StickingTimeoutSeconds)
-                        return Transition(previous, SquatState.FAILURE, SquatTransitionReason.StickingTimeout);
+                    SquatTransition stickingTransition = default;
+                    if (observation.LockoutReached)
+                    {
+                        _phase = 0f;
+                        _phaseRate = 0f;
+                        stickingTransition = Transition(
+                            previous, SquatState.LOCKOUT, SquatTransitionReason.LockoutReached);
+                    }
+                    else if (observation.RecoveredFromSticking)
+                    {
+                        stickingTransition = Transition(
+                            previous, SquatState.ASCENT, SquatTransitionReason.RecoveredFromSticking);
+                    }
+                    if (!observation.LockoutReached)
+                        AdvancePhase(-AscentRate(intent), stepSeconds);
+                    if (stickingTransition.Occurred)
+                        return stickingTransition;
                     break;
                 case SquatState.LOCKOUT:
                     if (observation.RackCommandReceived)
@@ -259,8 +268,6 @@ namespace PowerliftingSimulator.Squat
         private SquatTransition Transition(SquatState previous, SquatState next, SquatTransitionReason reason)
         {
             _state = next;
-            if (next == SquatState.STICKING)
-                _stickingElapsedSeconds = 0d;
             if (next == SquatState.COMPLETE || next == SquatState.FAILURE)
                 _phaseRate = 0f;
             return new SquatTransition(previous, next, reason);

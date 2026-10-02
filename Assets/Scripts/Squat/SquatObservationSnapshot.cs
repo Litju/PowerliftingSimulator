@@ -342,26 +342,26 @@ namespace PowerliftingSimulator.Squat
             float leftHipCreaseY,
             float rightHipCreaseY,
             float leftKneeTopY,
-            float rightKneeTopY,
-            float depthMarginM = SquatDepthGeometry.DefaultDepthMarginM)
+            float rightKneeTopY)
         {
-            RequireFinite(leftHipCreaseY, nameof(leftHipCreaseY));
-            RequireFinite(rightHipCreaseY, nameof(rightHipCreaseY));
-            RequireFinite(leftKneeTopY, nameof(leftKneeTopY));
-            RequireFinite(rightKneeTopY, nameof(rightKneeTopY));
-            RequireFinite(depthMarginM, nameof(depthMarginM));
-            if (depthMarginM < 0f)
-                throw new ArgumentOutOfRangeException(nameof(depthMarginM));
+            SquatDepthObservation evaluated = SquatDepthGeometry.Evaluate(
+                leftHipCreaseY,
+                rightHipCreaseY,
+                leftKneeTopY,
+                rightKneeTopY,
+                SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M);
 
             Availability = SquatTelemetryAvailability.AVAILABLE;
             LeftHipCreaseY = leftHipCreaseY;
             RightHipCreaseY = rightHipCreaseY;
             LeftKneeTopY = leftKneeTopY;
             RightKneeTopY = rightKneeTopY;
-            DepthMarginM = depthMarginM;
-            LeftDepthM = leftHipCreaseY - leftKneeTopY;
-            RightDepthM = rightHipCreaseY - rightKneeTopY;
-            WorstSideDepthM = Math.Max(LeftDepthM, RightDepthM);
+            GameJudgmentMarginM = evaluated.GameJudgmentMarginM;
+            LeftDepthM = evaluated.LeftDepthM;
+            RightDepthM = evaluated.RightDepthM;
+            WorstSideDepthM = evaluated.WorstSideDepthM;
+            IPFRulePredicateSatisfied = evaluated.IPFRulePredicateSatisfied;
+            BilateralGameJudgmentQualified = evaluated.BilateralGameJudgmentQualified;
         }
 
         private SquatDepthLandmarks(SquatTelemetryAvailability availability)
@@ -371,10 +371,12 @@ namespace PowerliftingSimulator.Squat
             RightHipCreaseY = float.NaN;
             LeftKneeTopY = float.NaN;
             RightKneeTopY = float.NaN;
-            DepthMarginM = float.NaN;
+            GameJudgmentMarginM = float.NaN;
             LeftDepthM = float.NaN;
             RightDepthM = float.NaN;
             WorstSideDepthM = float.NaN;
+            IPFRulePredicateSatisfied = false;
+            BilateralGameJudgmentQualified = false;
         }
 
         public static SquatDepthLandmarks Unavailable() =>
@@ -385,16 +387,12 @@ namespace PowerliftingSimulator.Squat
         public float RightHipCreaseY { get; }
         public float LeftKneeTopY { get; }
         public float RightKneeTopY { get; }
-        public float DepthMarginM { get; }
+        public float GameJudgmentMarginM { get; }
         public float LeftDepthM { get; }
         public float RightDepthM { get; }
         public float WorstSideDepthM { get; }
-
-        private static void RequireFinite(float value, string name)
-        {
-            if (!SquatTelemetryValue.IsFinite(value))
-                throw new ArgumentOutOfRangeException(name);
-        }
+        public bool IPFRulePredicateSatisfied { get; }
+        public bool BilateralGameJudgmentQualified { get; }
     }
 
     public readonly struct SquatSupportObservation

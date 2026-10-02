@@ -1,0 +1,14 @@
+GAM13_CAUSAL_ONSET_PREDICATES_V1
+Sampling: one post-physics row per authoritative 0.01 s tick; fresh scene per load; SETUP hold at s_q=0.
+Onset: first tick of the first run of 3 consecutive true samples.
+DRIVE_HIGH: max load-bearing modeled demand >= 0.50 (diagnostic threshold).
+DRIVE_SATURATION: max load-bearing modeled demand >= 0.95 (PoweredJointController contract).
+TRACKING_FAILURE: max load-bearing |applied target - actual| >= 10.0 deg.
+POSTURE_DEPARTURE: canonical posture error >= 10.0 deg OR |trunk pitch| >= 0.70 rad OR pelvis y <= 0.90 m (Stage-A contract).
+CAPTURE_DEPARTURE: plantar support present AND min(AP capture margin front, rear) <= 0.01 m (production AABB proxy; Stage-A contract).
+SUPPORT_LOSS: no plantar contact on either foot (production HasSupport false).
+SADDLE_LINEAR_LIMIT: saddle attached AND anchor separation / linear limit >= 0.95.
+SADDLE_GROSS_FAILURE: saddle IsBroken (detached or separation > 0.12 m).
+CONTACT_MODE_CHANGE: per-foot plantar contact count differs from the first bilateral-contact reference, OR foot slip > 0.05 m/s, OR any bar/thorax collision callback, OR any bar/athlete-body collision, OR any non-plantar athlete body touching the platform.
+Supplementary: GUARD_WITHDRAWAL guard scale <= 0.50; CAPTURE_DEPARTURE_HULL exact hull capture margin <= 0.01 m; COM_OUTSIDE_HULL COM hull margin <= 0.
+Joint currentForce/currentTorque are engine diagnostics, not biological forces.

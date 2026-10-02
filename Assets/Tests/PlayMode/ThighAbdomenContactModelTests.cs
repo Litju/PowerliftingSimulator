@@ -106,17 +106,21 @@ namespace PowerliftingSimulator.Tests
             foreach (string id in new[] { "left_thigh", "right_thigh", "abdomen" })
             {
                 PhysicalAthleteRig.SegmentRuntime segment = _rig.Segments[id];
-                Vector3 authored = PhysicalAthleteDefinition.BoxInertia(segment.Body.mass, segment.DimensionsMeters);
+                Vector3 authored = PhysicalAthleteDefinition.PrimitiveInertiaAboutBodyCenter(
+                    segment.Recipe.Collider,
+                    segment.Body.mass,
+                    segment.DimensionsMeters,
+                    segment.Collider is BoxCollider box ? box.center : ((CapsuleCollider)segment.Collider).center);
                 Vector3 actual = segment.Body.inertiaTensor;
                 bool coupled = (authored - actual).magnitude < 1e-5f;
                 report.AppendLine(string.Format(CultureInfo.InvariantCulture,
-                    "{0,-12} mass={1:F3} kg com={2} dimensions={3} BoxInertia(dimensions)={4} inertiaTensor={5} coupled={6}",
+                    "{0,-12} mass={1:F3} kg com={2} dimensions={3} colliderInertia={4} inertiaTensor={5} coupled={6}",
                     id, segment.Body.mass, V(segment.Body.centerOfMass), V(segment.DimensionsMeters),
                     V(authored), V(actual), coupled));
             }
             report.AppendLine();
             report.AppendLine("COLLIDER_GEOMETRY_COUPLED_TO_MASS_PROPERTIES = YES for inertiaTensor " +
-                              "(same dimensions vector feeds AddCollider and BoxInertia); " +
+                              "(recipe collider geometry and center feed the primitive inertia model); " +
                               "NO for mass (MassFraction) and NO for centre of mass (authored zero).");
 
             report.AppendLine();

@@ -23,6 +23,25 @@ namespace PowerliftingSimulator.Tests
         }
 
         [Test]
+        public void LOGICAL_TARGET_AND_PHYSICAL_RELATIVE_ROTATION_USE_INVERSE_PRODUCTION_MAPS()
+        {
+            Quaternion neutral = Quaternion.AngleAxis(23f, new Vector3(1f, 2f, 3f).normalized);
+            Quaternion jointSpace = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+            Quaternion desiredParentToChild = Quaternion.AngleAxis(-41f, new Vector3(-2f, 1f, 4f).normalized);
+
+            Quaternion logicalTarget = PoweredJointController.ToLogicalTargetRotation(
+                neutral,
+                jointSpace,
+                desiredParentToChild);
+            Quaternion reconstructed = PoweredJointController.ToParentChildRelativeRotation(
+                neutral,
+                jointSpace,
+                logicalTarget);
+
+            Assert.That(Quaternion.Angle(reconstructed, desiredParentToChild), Is.LessThan(0.0001f));
+        }
+
+        [Test]
         public void POWERED_DRIVE_VALIDATOR_REJECTS_ACCELERATION_NONFINITE_AND_NEGATIVE_AUTHORITY()
         {
             JointDrive valid = new JointDrive

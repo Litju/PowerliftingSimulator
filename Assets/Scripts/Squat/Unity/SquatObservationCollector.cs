@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using PowerliftingSimulator.Athlete;
 using PowerliftingSimulator.Equipment;
 using PowerliftingSimulator.Foundation;
@@ -75,6 +76,24 @@ namespace PowerliftingSimulator.Squat.Unity
             _hasLastSnapshot = false;
         }
 
+        public void BeginRecording(IReadOnlyList<SquatObservationSnapshot> initialSnapshots)
+        {
+            if (initialSnapshots == null)
+                throw new ArgumentNullException(nameof(initialSnapshots));
+            if (initialSnapshots.Count == 0)
+                throw new ArgumentException("An initial squat recording window is required.", nameof(initialSnapshots));
+
+            _trace.BeginRecording();
+            _attemptStartTick = initialSnapshots[0].SimulationTick;
+            _hasAttemptStart = true;
+            for (int index = 0; index < initialSnapshots.Count; index++)
+            {
+                _trace.Append(initialSnapshots[index]);
+                _lastSnapshot = initialSnapshots[index];
+            }
+            _hasLastSnapshot = true;
+        }
+
         public void EndRecording() => _trace.EndRecording();
 
         public void Clear()
@@ -94,6 +113,7 @@ namespace PowerliftingSimulator.Squat.Unity
             _rig.PoweredController.CapturePostPhysicsDiagnostics();
             _leftFoot?.CompletePhysicsStep();
             _rightFoot?.CompletePhysicsStep();
+            _adapter.Saddle?.CompleteContactStep();
             float stepSeconds = (float)time.FixedDeltaTimeSeconds;
             _leftFoot?.PhysicsTickUpdate(stepSeconds);
             _rightFoot?.PhysicsTickUpdate(stepSeconds);
@@ -250,19 +270,14 @@ namespace PowerliftingSimulator.Squat.Unity
 
         private SquatDepthLandmarks CaptureDepth()
         {
-            if (!_adapter.TryGetRawDepthLandmarks(
-                out SquatPoint3 leftHip,
-                out SquatPoint3 rightHip,
-                out SquatPoint3 leftKnee,
-                out SquatPoint3 rightKnee))
+            if (!_adapter.TryGetSurfaceRuleLandmarks(out SquatRuleLandmarkSet landmarks))
                 return SquatDepthLandmarks.Unavailable();
 
             return new SquatDepthLandmarks(
-                leftHip.Y,
-                rightHip.Y,
-                leftKnee.Y,
-                rightKnee.Y,
-                SquatDepthGeometry.DefaultDepthMarginM);
+                landmarks.LeftHipCreaseWorld.y,
+                landmarks.RightHipCreaseWorld.y,
+                landmarks.LeftKneeTopWorld.y,
+                landmarks.RightKneeTopWorld.y);
         }
 
         private SquatSupportObservation CaptureSupport()

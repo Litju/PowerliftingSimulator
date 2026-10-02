@@ -59,6 +59,51 @@ namespace PowerliftingSimulator.Tests
         }
 
         [Test]
+        public void STREAMING_BALANCE_EVENT_REQUIRES_GAM12_PERSISTENCE_AND_PRESERVES_ONSET_CONTEXT()
+        {
+            SquatFailureCalibration calibration = SquatFailureCalibration.Default;
+            Assert.That(calibration.BalanceSupportMarginFailureM, Is.EqualTo(-0.01f));
+            Assert.That(calibration.BalanceOutwardComVelocityMps, Is.EqualTo(0.03f));
+            Assert.That(calibration.BalancePersistenceTicks, Is.EqualTo(12));
+
+            List<SampleSpec> transientSamples = GoodAttemptSamples();
+            transientSamples[6].ComZ = 0.33f;
+            transientSamples[6].ComVelocityZ = calibration.BalanceOutwardComVelocityMps + 0.01f;
+            SquatFailureDetector transientDetector = new SquatFailureDetector();
+            for (int index = 0; index < transientSamples.Count; index++)
+            {
+                transientDetector.Process(Snapshot(transientSamples[index]));
+                Assert.That(
+                    transientDetector.TryGetLatchedFailureEvent(SquatFailureKind.BALANCE_LOSS, out _),
+                    Is.False,
+                    "A transient support-edge crossing must not terminate mechanics qualification.");
+            }
+
+            SquatTrace persistentTrace = BuildBalanceLoss(forward: true);
+            SquatFailureDetector persistentDetector = new SquatFailureDetector();
+            SquatFailureEvent balanceLoss = null;
+            for (int index = 0; index < persistentTrace.Count; index++)
+            {
+                persistentDetector.Process(persistentTrace[index]);
+                if (persistentDetector.TryGetLatchedFailureEvent(SquatFailureKind.BALANCE_LOSS, out balanceLoss))
+                    break;
+            }
+
+            Assert.That(balanceLoss, Is.Not.Null, "Persistent GAM-12 balance loss must terminate qualification.");
+            Assert.That(balanceLoss.Direction, Is.EqualTo(SquatFailureDirection.FORWARD));
+            Assert.That(balanceLoss.OnsetTick, Is.EqualTo(3ul));
+            Assert.That(balanceLoss.LatchedTick, Is.EqualTo(
+                balanceLoss.OnsetTick + (ulong)calibration.BalancePersistenceTicks - 1ul));
+            Assert.That(balanceLoss.OnsetContext.SimulationTick, Is.EqualTo(balanceLoss.OnsetTick));
+            Assert.That(balanceLoss.LatchedContext.SimulationTick, Is.EqualTo(balanceLoss.LatchedTick));
+
+            SquatFailureResult productionResult = Evaluate(persistentTrace);
+            Assert.That(productionResult.FailureRecord.PrimaryFailureKind, Is.EqualTo(SquatFailureKind.BALANCE_LOSS));
+            Assert.That(productionResult.FailureRecord.OnsetTick, Is.EqualTo(balanceLoss.OnsetTick));
+            Assert.That(productionResult.FailureRecord.LatchedTick, Is.EqualTo(balanceLoss.LatchedTick));
+        }
+
+        [Test]
         public void OUTSIDE_SUPPORT_BUT_RECOVERING_VELOCITY_DOES_NOT_IMMEDIATELY_FAIL()
         {
             List<SampleSpec> samples = GoodAttemptSamples();
@@ -258,6 +303,40 @@ namespace PowerliftingSimulator.Tests
 
             Assert.That(result.FailureRecord.PrimaryFailureKind, Is.EqualTo(SquatFailureKind.POSTURE_OR_BAR_LOSS));
             Assert.That(result.FailureRecord.PrimaryDetail, Is.EqualTo(SquatFailureDetailKind.TRUNK_HARD_LIMIT));
+        }
+
+        [Test]
+        public void WORLD_TRUNK_PITCH_ALONE_DOES_NOT_BLOCK_PHYSICAL_LOCKOUT()
+        {
+            List<SampleSpec> samples = GoodAttemptSamples();
+            for (int index = 9; index < samples.Count; index++)
+                samples[index].TrunkPitchRad = 0.60f;
+
+            SquatFailureDetector detector = new SquatFailureDetector();
+            SquatFailureResult result = detector.Evaluate(Trace(samples));
+
+            Assert.That(detector.PhysicalLockoutSeen, Is.True);
+            Assert.That(result.Outcome, Is.EqualTo(SquatFailureResultKind.NO_PHYSICAL_FAILURE));
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public void LOCAL_ABDOMEN_OR_THORAX_OUTSIDE_TOLERANCE_PREVENTS_PHYSICAL_LOCKOUT(bool abdomenOutside)
+        {
+            List<SampleSpec> samples = SamplesForTopRegionWithoutLockout(30);
+            float outsideTolerance = SquatFailureCalibration.Default.LockoutTrunkToleranceRadians + 0.01f;
+            for (int index = 9; index < samples.Count; index++)
+            {
+                samples[index].AbdomenAngleRad = abdomenOutside ? outsideTolerance : 0f;
+                samples[index].ThoraxAngleRad = abdomenOutside ? 0f : outsideTolerance;
+            }
+
+            SquatTrace trace = Trace(samples);
+            SquatFailureDetector detector = new SquatFailureDetector();
+            SquatFailureResult result = detector.Evaluate(trace, TerminalAtLastSample(trace));
+
+            Assert.That(detector.PhysicalLockoutSeen, Is.False);
+            Assert.That(result.FailureRecord.PrimaryFailureKind, Is.EqualTo(SquatFailureKind.FAILED_LOCKOUT));
         }
 
         [Test]
@@ -1301,8 +1380,7 @@ namespace PowerliftingSimulator.Tests
                     spec.LeftDepthM,
                     spec.RightDepthM,
                     0f,
-                    0f,
-                    SquatDepthGeometry.DefaultDepthMarginM)
+                    0f)
                 : SquatDepthLandmarks.Unavailable();
             SquatSupportObservation support = spec.SupportAvailable
                 ? new SquatSupportObservation(
@@ -1334,8 +1412,32 @@ namespace PowerliftingSimulator.Tests
                     1f,
                     1f)
                 : SquatJointObservation.Unavailable();
+            SquatJointObservation abdomen = spec.JointsAvailable
+                ? SquatJointObservation.Available(
+                    spec.AbdomenAngleRad,
+                    new Vector3Value(0f, 0f, 0f),
+                    0f,
+                    spec.AbdomenAngleRad,
+                    spec.LimitProximity,
+                    spec.ModeledDemand,
+                    100f,
+                    1f,
+                    1f)
+                : SquatJointObservation.Unavailable();
+            SquatJointObservation thorax = spec.JointsAvailable
+                ? SquatJointObservation.Available(
+                    spec.ThoraxAngleRad,
+                    new Vector3Value(0f, 0f, 0f),
+                    0f,
+                    spec.ThoraxAngleRad,
+                    spec.LimitProximity,
+                    spec.ModeledDemand,
+                    100f,
+                    1f,
+                    1f)
+                : SquatJointObservation.Unavailable();
             SquatJointObservationSet joints = new SquatJointObservationSet(
-                joint, joint, joint, joint, joint, joint, joint, joint);
+                joint, joint, joint, joint, joint, joint, abdomen, thorax);
             SquatFootObservation foot = spec.FootAvailable
                 ? SquatFootObservation.Available(spec.FootContact, spec.FootContact ? 1 : 0, 1, 0f, 0f)
                 : SquatFootObservation.Unavailable();
@@ -1382,7 +1484,9 @@ namespace PowerliftingSimulator.Tests
                 spec.PelvisAvailable
                     ? new Vector3Value(0f, spec.PelvisVelocityY, 0f)
                     : SquatTelemetryValue.UnavailableVector3,
-                spec.TrunkAvailable ? QuaternionValue.Identity : SquatTelemetryValue.UnavailableQuaternion,
+                spec.TrunkAvailable
+                    ? QuaternionValue.FromAxisAngleRadians(CoordinateContract.RightAxis, -spec.TrunkPitchRad)
+                    : SquatTelemetryValue.UnavailableQuaternion,
                 spec.TrunkAvailable ? spec.TrunkPitchRad : float.NaN,
                 spec.DriveAvailable
                     ? SquatTelemetryAvailability.AVAILABLE
@@ -1416,6 +1520,8 @@ namespace PowerliftingSimulator.Tests
             public float RightDepthM = -0.02f;
             public float KneeAngleRad;
             public float TrunkPitchRad;
+            public float AbdomenAngleRad;
+            public float ThoraxAngleRad;
             public float LimitProximity;
             public float ModeledDemand;
             public float LoadKg = 25f;

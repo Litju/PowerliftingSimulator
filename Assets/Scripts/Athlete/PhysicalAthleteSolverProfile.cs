@@ -24,14 +24,28 @@ namespace PowerliftingSimulator.Athlete
     /// </summary>
     public static class PhysicalAthleteSolverProfile
     {
-        public const string CalibrationVersion = "GAM11_ATHLETE_SOLVER_PROFILE_V1";
+        public const string CalibrationVersion = "GAM50_ATHLETE_SOLVER_PROFILE_V2";
         public const string SourceClass = "GAME_PHYSICS_CALIBRATION";
 
         /// <summary>
         /// Position iterations. This is what realises drive stiffness; it is
         /// the number the actuator realization contract is measured against.
+        ///
+        /// GAM-50 V2: twenty-eight was qualified on single joints with a
+        /// kinematic parent and does not transfer to the assembled athlete.
+        /// In the grounded, closed-chain athlete Physics Benchmark V1 measured
+        /// the drives delivering a fraction of K e against an independent
+        /// Newton-Euler oracle (ankle 4-5x, abdomen 2.5-4.4x, hips and knees
+        /// 1.2-2x off at 28), the 140 kg standing bar swaying at 0.016 m/s,
+        /// 170 kg never settling and 300 kg collapsing. The oracle deviation
+        /// falls monotonically with iterations (56: 0.6-1.5, 96: 0.2-0.6,
+        /// 128: 0.12-0.29, 192: 0.05-0.07) and reaches 0.00-0.03 at 255, the
+        /// PhysX per-body maximum, with standing settled at every load and
+        /// per-tick cost unchanged within noise (0.3-0.8 ms of a 10 ms tick).
+        /// TGS was measured worse on the same benchmarks
+        /// (Artifacts/Benchmarks/Physics/68d63a7/sweeps).
         /// </summary>
-        public const int PositionIterations = 28;
+        public const int PositionIterations = 255;
 
         /// <summary>
         /// Velocity iterations, left at the project's qualified value. The

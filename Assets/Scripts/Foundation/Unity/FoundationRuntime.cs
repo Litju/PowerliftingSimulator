@@ -177,6 +177,18 @@ namespace PowerliftingSimulator.Foundation.Unity
             _tickDriver.StepOne();
         }
 
+        public void HoldPhysicsUntilInitialStateValidated()
+        {
+            EnsureInitialized();
+            _tickDriver.HoldPhysicsUntilInitialStateValidated();
+        }
+
+        public void MarkInitialPhysicalStateValidated()
+        {
+            EnsureInitialized();
+            _tickDriver.MarkInitialPhysicalStateValidated();
+        }
+
         public int AdvanceRenderFrame(double renderDeltaTimeSeconds)
         {
             EnsureInitialized();

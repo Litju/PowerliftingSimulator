@@ -137,7 +137,6 @@ namespace PowerliftingSimulator.Squat
         public const string DefaultVersion = "GAM12_P3A1_FAILURE_CALIBRATION_PROVISIONAL_V1";
         public const string DefaultPrecedenceVersion = "GAM12_P3_FIRST_IRREVERSIBLE_PRECEDENCE_V1";
 
-        public const float DefaultLegalDepthMarginM = SquatDepthGeometry.DefaultDepthMarginM;
         public const float DefaultBalanceSupportMarginFailureM = -0.01f;
         public const float DefaultBalanceOutwardComVelocityMps = 0.03f;
         public const int DefaultBalancePersistenceTicks = 12;
@@ -185,7 +184,6 @@ namespace PowerliftingSimulator.Squat
 
         public SquatFailureCalibration(
             string version = DefaultVersion,
-            float legalDepthMarginM = DefaultLegalDepthMarginM,
             float balanceSupportMarginFailureM = DefaultBalanceSupportMarginFailureM,
             float balanceOutwardComVelocityMps = DefaultBalanceOutwardComVelocityMps,
             int balancePersistenceTicks = DefaultBalancePersistenceTicks,
@@ -230,7 +228,6 @@ namespace PowerliftingSimulator.Squat
             int preFailureEvidenceCapacity = DefaultPreFailureEvidenceCapacity)
         {
             RequireText(version, nameof(version));
-            RequireNonNegative(legalDepthMarginM, nameof(legalDepthMarginM));
             RequireNegative(balanceSupportMarginFailureM, nameof(balanceSupportMarginFailureM));
             RequirePositive(balanceOutwardComVelocityMps, nameof(balanceOutwardComVelocityMps));
             RequirePositive(balancePersistenceTicks, nameof(balancePersistenceTicks));
@@ -279,7 +276,6 @@ namespace PowerliftingSimulator.Squat
                 throw new ArgumentOutOfRangeException(nameof(stallLowAscentVelocityMps));
 
             Version = version;
-            LegalDepthMarginM = legalDepthMarginM;
             BalanceSupportMarginFailureM = balanceSupportMarginFailureM;
             BalanceOutwardComVelocityMps = balanceOutwardComVelocityMps;
             BalancePersistenceTicks = balancePersistenceTicks;
@@ -332,7 +328,6 @@ namespace PowerliftingSimulator.Squat
         public SquatFailureCalibrationStatus Status => SquatFailureCalibrationStatus.PROVISIONAL_GAME_CALIBRATION;
         public bool RequiresGAM13Calibration => true;
         public string PrecedenceVersion => DefaultPrecedenceVersion;
-        public float LegalDepthMarginM { get; }
         public float BalanceSupportMarginFailureM { get; }
         public float BalanceOutwardComVelocityMps { get; }
         public int BalancePersistenceTicks { get; }
@@ -384,7 +379,7 @@ namespace PowerliftingSimulator.Squat
             const string provisionalStatus = "P3 synthetic/domain fixture only; not heavy-load validated.";
             return new[]
             {
-                Descriptor("legal_depth_margin", "m", LegalDepthMarginM, "REVERSAL", existing, "Reuse the qualified bilateral depth proxy; physical failure still requires motion evidence.", SquatFailureCalibrationStatus.EXISTING_QUALIFIED_BOUND),
+                Descriptor("game_judgment_margin", "m", SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M, "REVERSAL", existing, "The existing 0.005 m game judgment margin; IPF specifies no numeric distance. Legal depth does not gate physical completion.", SquatFailureCalibrationStatus.EXISTING_QUALIFIED_BOUND),
                 Descriptor("balance_support_margin_failure", "m", BalanceSupportMarginFailureM, "BALANCE", provisional, "Ten millimetres beyond the observed support bound is a provisional game failure boundary.", SquatFailureCalibrationStatus.PROVISIONAL_GAME_CALIBRATION),
                 Descriptor("balance_outward_com_velocity", "m/s", BalanceOutwardComVelocityMps, "BALANCE", provisional, "Outward modeled COM velocity distinguishes a persistent dynamic excursion from a static edge sample.", SquatFailureCalibrationStatus.PROVISIONAL_GAME_CALIBRATION),
                 Descriptor("balance_persistence", "ticks", BalancePersistenceTicks, "BALANCE", provisional, "Fixed-step persistence rejects one-sample support excursions.", SquatFailureCalibrationStatus.PROVISIONAL_GAME_CALIBRATION),
@@ -563,6 +558,39 @@ namespace PowerliftingSimulator.Squat
              !double.IsNaN(TerminalTimeSeconds) &&
              !double.IsInfinity(TerminalTimeSeconds) &&
              TerminalTimeSeconds >= 0d);
+    }
+
+    /// <summary>
+    /// Explicit P3 attempt boundary and standing reference. The physical
+    /// detector must not infer either from pre-command settling history.
+    /// </summary>
+    public readonly struct SquatFailureAttemptContext
+    {
+        private SquatFailureAttemptContext(
+            bool isSpecified,
+            ulong attemptStartTick,
+            ulong standingReferenceTick)
+        {
+            IsSpecified = isSpecified;
+            AttemptStartTick = attemptStartTick;
+            StandingReferenceTick = standingReferenceTick;
+        }
+
+        public static SquatFailureAttemptContext Unspecified =>
+            new SquatFailureAttemptContext(false, SquatAttemptEventTicks.NotAvailable, SquatAttemptEventTicks.NotAvailable);
+
+        public static SquatFailureAttemptContext ForAttempt(
+            ulong attemptStartTick,
+            ulong standingReferenceTick) =>
+            new SquatFailureAttemptContext(true, attemptStartTick, standingReferenceTick);
+
+        public bool IsSpecified { get; }
+        public ulong AttemptStartTick { get; }
+        public ulong StandingReferenceTick { get; }
+        public bool IsWellFormed => !IsSpecified ||
+            (AttemptStartTick != SquatAttemptEventTicks.NotAvailable &&
+             StandingReferenceTick != SquatAttemptEventTicks.NotAvailable &&
+             StandingReferenceTick <= AttemptStartTick);
     }
 
     public readonly struct SquatFailureContext
@@ -1169,6 +1197,49 @@ namespace PowerliftingSimulator.Squat
         public bool HasLatchedFailure => _hasPrimary;
         public SquatFailureCandidate PrimaryCandidate => _primaryCandidate;
 
+        /// <summary>
+        /// Reads a physical failure event already latched by this detector.
+        /// This is an observation seam; it does not change candidate ordering,
+        /// classification, or the production failure authority.
+        /// </summary>
+        public bool TryGetLatchedFailureEvent(SquatFailureKind kind, out SquatFailureEvent failureEvent)
+        {
+            if (kind == SquatFailureKind.NONE)
+                throw new ArgumentOutOfRangeException(nameof(kind));
+
+            if (_hasPrimary && _primaryCandidate.Kind == kind)
+            {
+                failureEvent = CreateEvent(_primaryCandidate);
+                return true;
+            }
+
+            for (int index = 0; index < _secondaryEventCount; index++)
+            {
+                SquatFailureEvent candidate = _secondaryEvents[index];
+                if (candidate.Kind != kind)
+                    continue;
+
+                failureEvent = candidate;
+                return true;
+            }
+
+            failureEvent = null;
+            return false;
+        }
+
+        // GAM-47 read-only P3 stage diagnostics. These expose the detector's
+        // existing physical-context state without changing classification.
+        public bool PhysicalDescentSeen => _hasPhysicalDescent;
+        public bool PhysicalBottomSeen => _hasPhysicalBottom;
+        public bool LegalBottomSeen => _hasLegalBottom;
+        public bool AscentEstablished => _hasAscentEstablished;
+        public bool PhysicalLockoutSeen => _physicalLockoutReached;
+        public bool CompletionRegionEntered => _hasCompletionRegionEntry;
+        public int MaximumCompletionRegionDwellTicks => _maximumCompletionRegionDwellTicks;
+        public SquatFailureTerminalContextStatus TerminalContextStatus => _terminalContextStatus;
+        public bool TerminalContextCovered =>
+            _terminalContextStatus == SquatFailureTerminalContextStatus.TRACE_COVERED;
+
         public void Reset()
         {
             _candidateCount = 0;
@@ -1299,13 +1370,41 @@ namespace PowerliftingSimulator.Squat
         /// frozen trace is unchanged; the authoritative terminal context only
         /// permits the FAILED_LOCKOUT terminal postcondition to be decided.
         /// </summary>
-        public SquatFailureResult Evaluate(SquatTrace trace, SquatFailureCompletionContext completion)
+        public SquatFailureResult Evaluate(SquatTrace trace, SquatFailureCompletionContext completion) =>
+            Evaluate(trace, completion, SquatFailureAttemptContext.Unspecified);
+
+        /// <summary>
+        /// Evaluates physical evidence from an explicit attempt boundary. The
+        /// full frozen trace remains available to the caller, but samples before
+        /// <paramref name="attemptContext"/>.AttemptStartTick cannot establish
+        /// P3 descent, bottom, ascent, or lockout.
+        /// </summary>
+        public SquatFailureResult Evaluate(
+            SquatTrace trace,
+            SquatFailureCompletionContext completion,
+            SquatFailureAttemptContext attemptContext)
         {
             Reset();
             if (!IsValidTrace(trace))
                 return InvalidResult(trace);
 
-            for (int index = 0; index < trace.Count; index++)
+            if (!attemptContext.IsWellFormed)
+                return InvalidResult(trace);
+
+            int attemptStartIndex = 0;
+            if (attemptContext.IsSpecified)
+            {
+                attemptStartIndex = FindIndexAtTick(trace, attemptContext.AttemptStartTick);
+                int standingReferenceIndex = FindIndexAtTick(trace, attemptContext.StandingReferenceTick);
+                if (attemptStartIndex < 0 || standingReferenceIndex < 0 || standingReferenceIndex > attemptStartIndex ||
+                    !TryGetPreferredVertical(trace[standingReferenceIndex], out float standingY, out _, out _))
+                    return InvalidResult(trace);
+
+                _hasStandingReference = true;
+                _standingReferenceY = standingY;
+            }
+
+            for (int index = attemptStartIndex; index < trace.Count; index++)
             {
                 if (!TryProcess(trace[index]))
                     return InvalidResult(trace);
@@ -1319,6 +1418,11 @@ namespace PowerliftingSimulator.Squat
                 ApplyTerminalLockoutPostcondition(terminalSample);
             return Complete(trace.Schema);
         }
+
+        public SquatFailureResult Evaluate(
+            SquatTrace trace,
+            SquatFailureAttemptContext attemptContext) =>
+            Evaluate(trace, SquatFailureCompletionContext.NonTerminal, attemptContext);
 
         public SquatFailureResult Detect(SquatTrace trace) => Evaluate(trace);
 
@@ -1491,6 +1595,14 @@ namespace PowerliftingSimulator.Squat
                 prior = current;
             }
             return true;
+        }
+
+        private static int FindIndexAtTick(SquatTrace trace, ulong tick)
+        {
+            for (int index = 0; index < trace.Count; index++)
+                if (trace[index].SimulationTick == tick)
+                    return index;
+            return -1;
         }
 
         private SquatFailureResult InvalidResult(SquatTrace trace) => new SquatFailureResult(
@@ -1904,7 +2016,7 @@ namespace PowerliftingSimulator.Squat
                     snapshot.Depth.WorstSideDepthM,
                     snapshot.SimulationTick - _reversalAttemptTick + 1ul,
                     _calibration.DriveAttemptMinimum01,
-                    -_calibration.LegalDepthMarginM,
+                    -SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M,
                     _calibration.ReversalTimeoutTicks);
             }
         }
@@ -2233,29 +2345,14 @@ namespace PowerliftingSimulator.Squat
 
         private bool IsPhysicalLockout(SquatObservationSnapshot snapshot)
         {
-            if (!snapshot.Bar.IsAvailable ||
-                !_hasStandingReference ||
-                snapshot.Bar.PositionWorldMeters.Y < _standingReferenceY - _calibration.LockoutHeightToleranceM ||
-                snapshot.Bar.LinearVelocityWorldMetersPerSecond.Length > _calibration.LockoutBarStillVelocityMps ||
-                snapshot.Bar.AngularVelocityBarRadiansPerSecond.Length > _calibration.LockoutBarStillAngularVelocityRadS)
-                return false;
-            if (snapshot.Joints.LeftKnee.JointAvailability != SquatTelemetryAvailability.AVAILABLE ||
-                snapshot.Joints.RightKnee.JointAvailability != SquatTelemetryAvailability.AVAILABLE ||
-                snapshot.Joints.LeftHip.JointAvailability != SquatTelemetryAvailability.AVAILABLE ||
-                snapshot.Joints.RightHip.JointAvailability != SquatTelemetryAvailability.AVAILABLE)
-                return false;
-            if (MaxKneeAngle(snapshot) > _calibration.LockoutKneeToleranceRadians ||
-                MaxHipAngle(snapshot) > _calibration.LockoutHipToleranceRadians)
-                return false;
-            return TryGetMaxTrunkAngle(snapshot, out float trunkAngle) &&
-                trunkAngle <= _calibration.LockoutTrunkToleranceRadians;
+            return SquatAttemptPhysicalEvidence.MeasureLockout(
+                snapshot, _hasStandingReference, _standingReferenceY, _calibration).IsLockout;
         }
 
         private bool IsLegalBottom(SquatObservationSnapshot snapshot)
         {
             return snapshot.Depth.Availability == SquatTelemetryAvailability.AVAILABLE &&
-                snapshot.Depth.LeftDepthM <= -_calibration.LegalDepthMarginM &&
-                snapshot.Depth.RightDepthM <= -_calibration.LegalDepthMarginM;
+                snapshot.Depth.BilateralGameJudgmentQualified;
         }
 
         private bool TryGetPreferredVertical(
@@ -2562,7 +2659,7 @@ namespace PowerliftingSimulator.Squat
                     AddMeasurement(measurements, ref measurementCount, "bottom_depth", "m", candidate.MeasuredValueB);
                     AddMeasurement(measurements, ref measurementCount, "no_recovery_window", "ticks", candidate.MeasuredValueC);
                     AddThreshold(thresholds, ref thresholdCount, "drive_attempt_minimum", "1", candidate.ThresholdValueA);
-                    AddThreshold(thresholds, ref thresholdCount, "legal_depth_margin", "m", candidate.ThresholdValueB);
+                    AddThreshold(thresholds, ref thresholdCount, "game_judgment_margin", "m", candidate.ThresholdValueB);
                     AddThreshold(thresholds, ref thresholdCount, "reversal_timeout", "ticks", candidate.ThresholdValueC);
                     break;
                 case SquatFailureKind.MID_ASCENT_STALL:

@@ -137,8 +137,9 @@ namespace PowerliftingSimulator.Tests
             foreach (string footId in new[] { "left_foot", "right_foot" })
             {
                 Rigidbody body = _rig.Segments[footId].Body;
-                Vector3 dimensions = _rig.Segments[footId].DimensionsMeters;
-                Vector3 expectedInertia = PhysicalAthleteDefinition.BoxInertia(body.mass, dimensions);
+                PhysicalAthleteRig.SegmentRuntime segment = _rig.Segments[footId];
+                Vector3 expectedInertia = PhysicalAthleteDefinition.PrimitiveInertiaAboutBodyCenter(
+                    segment.Recipe.Collider, body.mass, segment.DimensionsMeters, ((BoxCollider)segment.Collider).center);
 
                 Assert.That(body.centerOfMass.magnitude, Is.LessThan(1e-4f),
                     $"{footId} centre of mass drifted from the authored body origin.");

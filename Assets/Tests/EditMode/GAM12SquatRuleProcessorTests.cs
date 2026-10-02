@@ -470,7 +470,7 @@ namespace PowerliftingSimulator.Tests
         [Test]
         public void DEPTH_BOUNDARY_USES_EXISTING_NAMED_MARGIN_WITHOUT_AVERAGING_SIDES()
         {
-            float margin = SquatDepthGeometry.DefaultDepthMarginM;
+            float margin = SquatDepthGeometry.GAME_JUDGMENT_MARGIN_M;
             SquatAttemptJudgment exactlyAtMargin = Evaluate(
                 BuildGoodTrace(depthAtBottomM: -margin),
                 CanonicalTimeline());
@@ -825,8 +825,7 @@ namespace PowerliftingSimulator.Tests
                 leftDepthM,
                 rightDepthM,
                 0f,
-                0f,
-                SquatDepthGeometry.DefaultDepthMarginM);
+                0f);
             SquatSupportObservation support = supportAvailable
                 ? new SquatSupportObservation(
                     SquatTelemetryAvailability.AVAILABLE,

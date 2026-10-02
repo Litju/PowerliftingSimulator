@@ -65,8 +65,39 @@ namespace PowerliftingSimulator.Tests
             float ceiling = ankle.BaseCapacityNm * capacityScale;
             float expectedDemand = modelledTorque / ceiling;
 
-            float demand = PoweredJointController.ModelDemandForTest(ankle, new Vector3(errorRad, 0f, 0f), Vector3.zero, ceiling);
-            Assert.That(demand, Is.EqualTo(expectedDemand).Within(1e-4f));
+            PoweredDriveDemand demand = PoweredJointController.ModelDemandForTest(
+                PhysicalJointKind.Hinge, ankle, new Vector3(errorRad, 0f, 0f), Vector3.zero, ceiling);
+            Assert.That(demand.TwistNm, Is.EqualTo(modelledTorque).Within(1e-4f));
+            Assert.That(demand.TwistFraction, Is.EqualTo(expectedDemand).Within(1e-4f));
+            Assert.That(demand.SwingNm, Is.NaN);
+            Assert.That(demand.SwingFraction, Is.NaN);
+            Assert.That(demand.MaximumChannelFraction, Is.EqualTo(expectedDemand).Within(1e-4f));
+        }
+
+        [Test]
+        public void BALL_DRIVE_PRESSURE_MAXES_TWIST_AND_YZ_CHANNELS_SEPARATELY()
+        {
+            JointFamilyProfile trunk = RequireFamily("trunk");
+            const float maximumForce = 100f;
+            Vector3 error = new Vector3(0.1f, 0.1f, 0.1f);
+
+            PoweredDriveDemand hingeDemand = PoweredJointController.ModelDemandForTest(
+                PhysicalJointKind.Hinge, trunk, error, Vector3.zero, maximumForce);
+            PoweredDriveDemand ballDemand = PoweredJointController.ModelDemandForTest(
+                PhysicalJointKind.Ball, trunk, error, Vector3.zero, maximumForce);
+
+            float expectedTwistNm = trunk.Spring * 0.1f;
+            // PhysX clamps each swing axis separately (GAM-50 B06), so the
+            // binding swing channel is the larger axis, not the YZ magnitude.
+            float expectedSwingNm = expectedTwistNm;
+            Assert.That(hingeDemand.MaximumChannelFraction, Is.EqualTo(expectedTwistNm / maximumForce).Within(1e-4f));
+            Assert.That(ballDemand.TwistNm, Is.EqualTo(expectedTwistNm).Within(1e-4f));
+            Assert.That(ballDemand.SwingNm, Is.EqualTo(expectedSwingNm).Within(1e-4f));
+            Assert.That(ballDemand.TwistFraction, Is.EqualTo(expectedTwistNm / maximumForce).Within(1e-4f));
+            Assert.That(ballDemand.SwingFraction, Is.EqualTo(expectedSwingNm / maximumForce).Within(1e-4f));
+            Assert.That(ballDemand.MaximumChannelFraction, Is.EqualTo(expectedSwingNm / maximumForce).Within(1e-4f));
+            Assert.That(ballDemand.MaximumChannelFraction, Is.LessThan(new Vector3(
+                expectedTwistNm, expectedTwistNm, expectedTwistNm).magnitude / maximumForce));
         }
 
         private static JointFamilyProfile RequireFamily(string familyId)

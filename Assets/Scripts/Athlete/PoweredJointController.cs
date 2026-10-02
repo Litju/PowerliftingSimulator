@@ -37,31 +37,33 @@ namespace PowerliftingSimulator.Athlete
         public JointCommand(
             Quaternion targetRelativeRotation,
             Vector3 targetRelativeAngularVelocityRadS,
-            float activation,
-            float capacityScale)
+            float effort,
+            float athleteStrengthScale)
         {
             if (!PoweredJointController.IsFinite(targetRelativeRotation))
                 throw new ArgumentOutOfRangeException(nameof(targetRelativeRotation));
             if (!PoweredJointController.IsFinite(targetRelativeAngularVelocityRadS))
                 throw new ArgumentOutOfRangeException(nameof(targetRelativeAngularVelocityRadS));
-            if (!float.IsFinite(activation))
-                throw new ArgumentOutOfRangeException(nameof(activation));
-            if (!float.IsFinite(capacityScale) || capacityScale < 0f)
-                throw new ArgumentOutOfRangeException(nameof(capacityScale));
+            if (!float.IsFinite(effort))
+                throw new ArgumentOutOfRangeException(nameof(effort));
+            if (!float.IsFinite(athleteStrengthScale) || athleteStrengthScale < 0f)
+                throw new ArgumentOutOfRangeException(nameof(athleteStrengthScale));
 
             TargetRelativeRotation = PoweredJointController.NormalizeCanonical(targetRelativeRotation);
             TargetRelativeAngularVelocityRadS = targetRelativeAngularVelocityRadS;
-            Activation = Mathf.Clamp01(activation);
-            CapacityScale = capacityScale;
+            Effort = Mathf.Clamp01(effort);
+            AthleteStrengthScale = athleteStrengthScale;
         }
 
         public Quaternion TargetRelativeRotation { get; }
         public Vector3 TargetRelativeAngularVelocityRadS { get; }
-        public float Activation { get; }
-        public float CapacityScale { get; }
+        public float Effort { get; }
+        public float AthleteStrengthScale { get; }
+        public float Activation => Effort;
+        public float CapacityScale => AthleteStrengthScale;
 
-        public static JointCommand Neutral(float activation, float capacityScale = 1f) =>
-            new JointCommand(Quaternion.identity, Vector3.zero, activation, capacityScale);
+        public static JointCommand Neutral(float effort, float athleteStrengthScale = 1f) =>
+            new JointCommand(Quaternion.identity, Vector3.zero, effort, athleteStrengthScale);
     }
 
     public readonly struct PoweredJointDiagnostic
@@ -76,6 +78,10 @@ namespace PowerliftingSimulator.Athlete
             float maximumForceNm,
             float activation,
             float capacityScale,
+            float twistDriveDemandNm,
+            float swingDriveDemandNm,
+            float twistDriveDemandFraction,
+            float swingDriveDemandFraction,
             float modeledDemand,
             float limitProximity,
             Vector3 solverTorqueJointSpaceNm)
@@ -89,6 +95,10 @@ namespace PowerliftingSimulator.Athlete
             MaximumForceNm = maximumForceNm;
             Activation = activation;
             CapacityScale = capacityScale;
+            TwistDriveDemandNm = twistDriveDemandNm;
+            SwingDriveDemandNm = swingDriveDemandNm;
+            TwistDriveDemandFraction = twistDriveDemandFraction;
+            SwingDriveDemandFraction = swingDriveDemandFraction;
             ModeledDemand = modeledDemand;
             LimitProximity = limitProximity;
             SolverTorqueJointSpaceNm = solverTorqueJointSpaceNm;
@@ -103,6 +113,10 @@ namespace PowerliftingSimulator.Athlete
         public float MaximumForceNm { get; }
         public float Activation { get; }
         public float CapacityScale { get; }
+        public float TwistDriveDemandNm { get; }
+        public float SwingDriveDemandNm { get; }
+        public float TwistDriveDemandFraction { get; }
+        public float SwingDriveDemandFraction { get; }
         public float ModeledDemand { get; }
         public float LimitProximity { get; }
 
@@ -123,7 +137,30 @@ namespace PowerliftingSimulator.Athlete
         public float SolverFlexionTorqueNm => SolverTorqueJointSpaceNm.x;
     }
 
-    public sealed class PoweredJointController
+    public readonly struct PoweredDriveDemand
+    {
+        internal PoweredDriveDemand(
+            float twistNm,
+            float swingNm,
+            float twistFraction,
+            float swingFraction,
+            float maximumChannelFraction)
+        {
+            TwistNm = twistNm;
+            SwingNm = swingNm;
+            TwistFraction = twistFraction;
+            SwingFraction = swingFraction;
+            MaximumChannelFraction = maximumChannelFraction;
+        }
+
+        public float TwistNm { get; }
+        public float SwingNm { get; }
+        public float TwistFraction { get; }
+        public float SwingFraction { get; }
+        public float MaximumChannelFraction { get; }
+    }
+
+    public sealed class PoweredJointController : IPhysicalAthleteJointCommandSink
     {
         public const string WriterId = "PoweredJointController";
         public const string CalibrationVersion = "GAM7_CONFIGURABLE_JOINT_LOCAL_V1";
@@ -131,12 +168,14 @@ namespace PowerliftingSimulator.Athlete
         public const float PulseRadians = 20f * Mathf.Deg2Rad;
         public const float ModeledDemandSaturationThreshold = 0.95f;
 
+        // GAM-13 V2-3M final calibration: ankle drive compliance remained the downstream limiter.
+        // K=2300 targets <=0.10 rad error at the measured 225-230 N*m drive; D preserves damping ratio.
         private static readonly JointFamilyProfile[] Profiles =
         {
-            new JointFamilyProfile("ankle", 650f, 70f, 180f, 2.0f),
-            new JointFamilyProfile("knee", 800f, 80f, 300f, 2.5f),
-            new JointFamilyProfile("hip", 900f, 90f, 360f, 2.2f),
-            new JointFamilyProfile("trunk", 800f, 85f, 260f, 1.8f),
+            new JointFamilyProfile("ankle", 2300f, 132f, 450f, 2.0f),
+            new JointFamilyProfile("knee", 2900f, 152f, 540f, 2.5f),
+            new JointFamilyProfile("hip", 3150f, 168f, 540f, 2.2f),
+            new JointFamilyProfile("trunk", 7850f, 266f, 390f, 1.8f),
             new JointFamilyProfile("shoulder", 500f, 55f, 130f, 2.5f),
             new JointFamilyProfile("elbow", 450f, 45f, 100f, 3.0f),
             new JointFamilyProfile("wrist", 250f, 30f, 45f, 2.5f),
@@ -212,7 +251,7 @@ namespace PowerliftingSimulator.Athlete
                     command.TargetRelativeRotation,
                     command.TargetRelativeAngularVelocityRadS,
                     GlobalActivation,
-                    command.CapacityScale);
+                    command.AthleteStrengthScale);
             }
         }
 
@@ -306,14 +345,56 @@ namespace PowerliftingSimulator.Athlete
                 Vector3 targetVelocity = Vector3.ClampMagnitude(
                     command.TargetRelativeAngularVelocityRadS,
                     profile.MaxTargetRateRadS);
-                float activation = Mode == PoweredAthleteMode.Passive ? 0f : command.Activation;
-                float maximumForce = profile.BaseCapacityNm * command.CapacityScale * activation;
+                float activation = CapacityActivation(command);
+                float maximumForce = profile.BaseCapacityNm * command.AthleteStrengthScale * activation;
                 if (!float.IsFinite(maximumForce))
                     throw new InvalidOperationException($"Joint '{joint.Id}' produced non-finite authority.");
 
                 WritePoweredJoint(joint, targetVelocity, maximumForce);
                 joint.Diagnostic = BuildCurrentDiagnostic(joint);
             }
+        }
+
+        public void ValidateAppliedDrives()
+        {
+            foreach (PoweredJointRuntime joint in _joints)
+            {
+                if (!joint.Profile.HasValue)
+                    continue;
+
+                ConfigurableJoint configurable = joint.Joint;
+                JointFamilyProfile profile = joint.Profile.Value;
+                JointCommand command = joint.RequestedCommand;
+                float maximumForce = profile.BaseCapacityNm * command.AthleteStrengthScale * CapacityActivation(command);
+                Vector3 targetVelocity = Vector3.ClampMagnitude(
+                    command.TargetRelativeAngularVelocityRadS, profile.MaxTargetRateRadS);
+                if (configurable.configuredInWorldSpace ||
+                    configurable.rotationDriveMode != RotationDriveMode.XYAndZ ||
+                    Quaternion.Angle(configurable.targetRotation, ToUnityTargetRotation(joint.AppliedTarget)) > 0.001f ||
+                    Vector3.Distance(configurable.targetAngularVelocity, ToUnityTargetAngularVelocity(targetVelocity)) > 0.00001f ||
+                    targetVelocity.magnitude > profile.MaxTargetRateRadS + 0.00001f ||
+                    !DriveMatches(configurable.angularXDrive, profile, maximumForce) ||
+                    !DriveMatches(configurable.angularYZDrive, profile, maximumForce,
+                        joint.Recipe.Kind == PhysicalJointKind.Ball) ||
+                    !DriveMatches(configurable.slerpDrive, default, 0f, false))
+                    throw new InvalidOperationException($"Joint '{joint.Id}' does not match its active PhysX drive contract.");
+            }
+        }
+
+        private static bool DriveMatches(
+            JointDrive actual,
+            JointFamilyProfile expected,
+            float maximumForce,
+            bool active = true)
+        {
+            float spring = active ? expected.Spring : 0f;
+            float damper = active ? expected.Damper : 0f;
+            float force = active ? maximumForce : 0f;
+            return IsValidPoweredDrive(actual) &&
+                float.IsFinite(actual.positionSpring) && float.IsFinite(actual.positionDamper) &&
+                Mathf.Abs(actual.positionSpring - spring) <= 0.001f &&
+                Mathf.Abs(actual.positionDamper - damper) <= 0.001f &&
+                Mathf.Abs(actual.maximumForce - force) <= 0.001f;
         }
 
         /// <summary>
@@ -340,6 +421,36 @@ namespace PowerliftingSimulator.Athlete
 
         public static Quaternion ToUnityTargetRotation(Quaternion targetRelativeInJointFrame) =>
             NormalizeCanonical(Quaternion.Inverse(NormalizeCanonical(targetRelativeInJointFrame)));
+
+        /// <summary>
+        /// Logical joint-space target angular velocity to the value written to
+        /// ConfigurableJoint.targetAngularVelocity. Unlike targetRotation, Unity
+        /// applies the velocity target with its own sign: Physics Benchmark V1
+        /// B07 measures a raw +w realised as +w about every axis of a rotated
+        /// ball-joint frame. GAM-7 negated it by analogy with targetRotation,
+        /// which pointed the drive damper at -w and made it resist commanded
+        /// motion with 2 D w.
+        /// </summary>
+        public static Vector3 ToUnityTargetAngularVelocity(Vector3 targetRelativeAngularVelocityRadS) =>
+            targetRelativeAngularVelocityRadS;
+
+        public static Quaternion ToLogicalTargetRotation(
+            Quaternion neutralParentToChild,
+            Quaternion jointSpace,
+            Quaternion desiredParentToChild)
+        {
+            Quaternion neutralDelta = Quaternion.Inverse(neutralParentToChild) * desiredParentToChild;
+            return Quaternion.Inverse(jointSpace) * neutralDelta * jointSpace;
+        }
+
+        public static Quaternion ToParentChildRelativeRotation(
+            Quaternion neutralParentToChild,
+            Quaternion jointSpace,
+            Quaternion logicalTarget)
+        {
+            Quaternion jointSpaceDelta = jointSpace * logicalTarget * Quaternion.Inverse(jointSpace);
+            return neutralParentToChild * jointSpaceDelta;
+        }
 
         public static Quaternion RateLimitShortestArc(Quaternion previous, Quaternion requested, float maxDeltaRadians)
         {
@@ -423,7 +534,7 @@ namespace PowerliftingSimulator.Athlete
             JointFamilyProfile profile = joint.Profile.Value;
             configurable.configuredInWorldSpace = false;
             configurable.targetRotation = ToUnityTargetRotation(joint.AppliedTarget);
-            configurable.targetAngularVelocity = -targetVelocity;
+            configurable.targetAngularVelocity = ToUnityTargetAngularVelocity(targetVelocity);
 
             // Every powered joint drives through the per-axis drives. Slerp
             // realises only a quarter of the authored positionSpring: once the
@@ -474,14 +585,14 @@ namespace PowerliftingSimulator.Athlete
         public static JointDrive BuildDriveForTest(JointFamilyProfile profile, float maximumForce) =>
             Drive(profile, maximumForce);
 
-        public static float ModelDemandForTest(
+        public static PoweredDriveDemand ModelDemandForTest(
+            PhysicalJointKind kind,
             JointFamilyProfile profile,
             Vector3 errorRad,
             Vector3 velocityErrorRadS,
             float maximumForce)
         {
-            Vector3 conceptualTorque = profile.Spring * errorRad + profile.Damper * velocityErrorRadS;
-            return conceptualTorque.magnitude / Mathf.Max(maximumForce, 0.001f);
+            return ModelDriveDemand(kind, profile, errorRad, velocityErrorRadS, maximumForce);
         }
 
         private static JointFamilyProfile? ResolveProfile(string family)
@@ -514,8 +625,12 @@ namespace PowerliftingSimulator.Athlete
             JointFamilyProfile profile = joint.Profile.Value;
             // Demand models the gains actually written to the drive, against
             // the finite maximumForce ceiling that capacity scales.
-            Vector3 conceptualTorque = profile.Spring * errorRad + profile.Damper * (targetVelocity - actualVelocity);
-            float demand = conceptualTorque.magnitude / Mathf.Max(maximumForce, 0.001f);
+            PoweredDriveDemand demand = ModelDriveDemand(
+                joint.Recipe.Kind,
+                profile,
+                errorRad,
+                targetVelocity - actualVelocity,
+                maximumForce);
             float xDegrees = SignedTwistDegrees(actual, Vector3.right);
             float limit = xDegrees >= 0f ? Mathf.Max(0.001f, joint.Recipe.HighDegrees) : Mathf.Max(0.001f, -joint.Recipe.LowDegrees);
             float proximity = Mathf.Clamp01(Mathf.Abs(xDegrees) / limit);
@@ -533,17 +648,46 @@ namespace PowerliftingSimulator.Athlete
                 maximumForce,
                 activation,
                 capacityScale,
-                demand,
+                demand.TwistNm,
+                demand.SwingNm,
+                demand.TwistFraction,
+                demand.SwingFraction,
+                demand.MaximumChannelFraction,
                 proximity,
                 solverTorque);
+        }
+
+        private static PoweredDriveDemand ModelDriveDemand(
+            PhysicalJointKind kind,
+            JointFamilyProfile profile,
+            Vector3 errorRad,
+            Vector3 velocityErrorRadS,
+            float maximumForce)
+        {
+            Vector3 torqueByAxis = profile.Spring * errorRad + profile.Damper * velocityErrorRadS;
+            float denominator = Mathf.Max(maximumForce, 0.001f);
+            float twistNm = Mathf.Abs(torqueByAxis.x);
+            float twistFraction = twistNm / denominator;
+            if (kind == PhysicalJointKind.Hinge)
+                return new PoweredDriveDemand(twistNm, float.NaN, twistFraction, float.NaN, twistFraction);
+
+            // PhysX clamps each swing axis of angularYZDrive to maximumForce
+            // independently (Physics Benchmark V1 B06: a 45 deg swing load
+            // holds up to sqrt(2) F and saturates exactly as the per-axis
+            // prediction says). The binding swing channel is the larger axis,
+            // not the vector magnitude.
+            float swingNm = Mathf.Max(Mathf.Abs(torqueByAxis.y), Mathf.Abs(torqueByAxis.z));
+            float swingFraction = swingNm / denominator;
+            return new PoweredDriveDemand(
+                twistNm, swingNm, twistFraction, swingFraction, Mathf.Max(twistFraction, swingFraction));
         }
 
         private PoweredJointDiagnostic BuildCurrentDiagnostic(PoweredJointRuntime joint)
         {
             JointCommand command = joint.RequestedCommand;
             JointFamilyProfile profile = joint.Profile.Value;
-            float activation = Mode == PoweredAthleteMode.Passive ? 0f : command.Activation;
-            float maximumForce = profile.BaseCapacityNm * command.CapacityScale * activation;
+            float activation = CapacityActivation(command);
+            float maximumForce = profile.BaseCapacityNm * command.AthleteStrengthScale * activation;
             if (!float.IsFinite(maximumForce))
                 throw new InvalidOperationException($"Joint '{joint.Id}' produced non-finite authority.");
 
@@ -555,7 +699,14 @@ namespace PowerliftingSimulator.Athlete
                 targetVelocity,
                 maximumForce,
                 activation,
-                command.CapacityScale);
+                command.AthleteStrengthScale);
+        }
+
+        private float CapacityActivation(JointCommand command)
+        {
+            if (Mode == PoweredAthleteMode.Passive)
+                return 0f;
+            return Mode == PoweredAthleteMode.Controlled ? 1f : command.Effort;
         }
 
         private static Vector3 QuaternionLog(Quaternion quaternion)

@@ -1,0 +1,13 @@
+{
+  "suite": "full EditMode final",
+  "git_sha": "776feac0d13dec34c43e02ba88abd576713cf93d",
+  "unity_version": "6000.3.22f1",
+  "exit": 0,
+  "result": "Passed",
+  "total": 251,
+  "passed": 251,
+  "failed": 0,
+  "skipped": 0,
+  "xml": "E:\\Data\\Projects\\PowerliftingSimulator\\Artifacts\\Benchmarks\\Physics\\776feac\\final-verification\\20261002-015135\\editmode-final\\test-results.xml",
+  "log": "E:\\Data\\Projects\\PowerliftingSimulator\\Artifacts\\Benchmarks\\Physics\\776feac\\final-verification\\20261002-015135\\editmode-final\\unity.log"
+}

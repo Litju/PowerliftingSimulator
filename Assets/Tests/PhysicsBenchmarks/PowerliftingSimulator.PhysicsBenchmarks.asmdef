@@ -1,0 +1,17 @@
+{
+    "name": "PowerliftingSimulator.PhysicsBenchmarks",
+    "rootNamespace": "PowerliftingSimulator.PhysicsBenchmarks",
+    "references": [
+        "PowerliftingSimulator.Foundation",
+        "PowerliftingSimulator.Foundation.Unity",
+        "PowerliftingSimulator.Athlete",
+        "PowerliftingSimulator.Equipment",
+        "PowerliftingSimulator.Squat",
+        "PowerliftingSimulator.Squat.Unity",
+        "PowerliftingSimulator.Foundation.Tests.PlayMode"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": []
+}

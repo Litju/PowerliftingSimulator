@@ -74,7 +74,8 @@ namespace PowerliftingSimulator.Tests
 
             PhysicalSegmentRecipe segment = FindSegment(NeckChildId);
             float mass = segment.MassFraction * 100f;
-            float inertia = PhysicalAthleteDefinition.BoxInertia(mass, segment.DimensionsMeters).x;
+            float inertia = PhysicalAthleteDefinition.PrimitiveInertiaAboutBodyCenter(
+                segment.Collider, mass, segment.DimensionsMeters, Vector3.zero).x;
             float lever = 0.5f * Mathf.Max(segment.DimensionsMeters.x,
                 Mathf.Max(segment.DimensionsMeters.y, segment.DimensionsMeters.z));
 

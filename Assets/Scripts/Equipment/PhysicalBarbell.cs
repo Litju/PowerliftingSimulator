@@ -144,6 +144,8 @@ namespace PowerliftingSimulator.Equipment
             _barRoot.transform.SetPositionAndRotation(spawnPosition, Quaternion.identity);
 
             _barBody = _barRoot.AddComponent<Rigidbody>();
+            _barBody.automaticCenterOfMass = false;
+            _barBody.automaticInertiaTensor = false;
             _barBody.useGravity = true;
             _barBody.isKinematic = false;
             _barBody.interpolation = RigidbodyInterpolation.None;
@@ -165,6 +167,16 @@ namespace PowerliftingSimulator.Equipment
 
             foundation.Runtime.RegisterBody(_barBody, BarbellPrototypeConfiguration.BodyId);
             _status = "105 kg loaded: one dynamic Rigidbody, gravity on";
+        }
+
+        public void SetInitialSpawnPosition(Vector3 positionWorldMeters)
+        {
+            if (IsBuilt)
+                throw new InvalidOperationException("The barbell spawn position is immutable after its Rigidbody is built.");
+            if (!float.IsFinite(positionWorldMeters.x) || !float.IsFinite(positionWorldMeters.y) || !float.IsFinite(positionWorldMeters.z))
+                throw new ArgumentOutOfRangeException(nameof(positionWorldMeters));
+
+            spawnPosition = positionWorldMeters;
         }
 
         private void Update()
@@ -471,17 +483,28 @@ namespace PowerliftingSimulator.Equipment
             _loadPlan = plan;
             _inertiaModel = BarbellPrototypeConfiguration.ComputeInertia(plan);
             _barBody.mass = plan.TotalMassKg;
-            _barBody.centerOfMass = _inertiaModel.CenterOfMassBarMeters;
-            _barBody.inertiaTensor = _inertiaModel.InertiaTensorKgM2;
-            _barBody.inertiaTensorRotation = Quaternion.identity;
             ApplyPlateVisuals(plan.Layout.Left, _leftPlateVisuals, "left");
             ApplyPlateVisuals(plan.Layout.Right, _rightPlateVisuals, "right");
             ApplyPlateCollider(_leftPlateCollider, plan.Layout.Left);
             ApplyPlateCollider(_rightPlateCollider, plan.Layout.Right);
             ApplyCollarPlacement(_leftCollarVisual, _leftCollarCollider, plan.Layout.Left);
             ApplyCollarPlacement(_rightCollarVisual, _rightCollarCollider, plan.Layout.Right);
+            _barBody.centerOfMass = _inertiaModel.CenterOfMassBarMeters;
+            _barBody.inertiaTensor = _inertiaModel.InertiaTensorKgM2;
+            _barBody.inertiaTensorRotation = Quaternion.identity;
             UpdateDebugOverlay();
+
+            if (!float.IsFinite(_barBody.mass) || _barBody.mass <= 0f ||
+                !Finite(_barBody.centerOfMass) || !Finite(_barBody.inertiaTensor) ||
+                _barBody.inertiaTensor.x <= 0f || _barBody.inertiaTensor.y <= 0f || _barBody.inertiaTensor.z <= 0f ||
+                Vector3.Distance(_barBody.centerOfMass, _inertiaModel.CenterOfMassBarMeters) > 0.0001f ||
+                Vector3.Distance(_barBody.inertiaTensor, _inertiaModel.InertiaTensorKgM2) > 0.0001f ||
+                Vector3.Distance(_barBody.centerOfMass, _inertiaModel.CenterOfMassBarMeters) > 0.0001f)
+                throw new InvalidOperationException("The active barbell Rigidbody rejected its explicit compound mass properties.");
         }
+
+        private static bool Finite(Vector3 value) =>
+            float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
 
         private void CreateMaterials()
         {

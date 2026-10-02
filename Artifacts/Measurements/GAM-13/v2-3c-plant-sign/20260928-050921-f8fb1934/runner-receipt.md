@@ -1,0 +1,13 @@
+# GAM-13 V2-3C plant-sign fixture receipt
+
+UNITY_VERSION=6000.3.22f1
+UNITY_PID=19572
+FRESH_PROCESS=true
+TEST_FILTER=GAM13V23CPlantSignTests
+TEST_RESULT=Passed
+TESTS=1
+PASSED=1
+FAILED=0
+PROCESS_EXIT=0
+FIXTURE=PASS
+OUTPUT=E:\Data\Projects\PowerliftingSimulator\Artifacts\Measurements\GAM-13\v2-3c-plant-sign\20260928-050921-f8fb1934

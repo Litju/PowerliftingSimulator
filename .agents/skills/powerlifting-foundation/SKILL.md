@@ -60,6 +60,13 @@ Unity's ordinary 0.02 s global fixed timestep. The foundation does not depend
 on that global value because its authoritative local scene always steps at
 0.01 s.
 
+The readiness gate defaults open for existing foundation-only scenes. A
+physical builder may hold it at tick 0 with
+`HoldPhysicsUntilInitialStateValidated`; `StepOne` then fails before clock
+advance or simulation until the builder validates the authored state and calls
+`MarkInitialPhysicalStateValidated` at tick 0. Reset preserves the gate state,
+so a builder that reauthors a load must hold, validate, then release again.
+
 # Physics Scene Ownership
 
 `AuthoritativePhysicsScene` creates a `LocalPhysicsMode.Physics3D` scene without
@@ -218,3 +225,7 @@ mutation gates, a 100-cycle bounded soak, and a Windows x64 standalone smoke
 PASS. These same-machine results are not a cross-platform PhysX determinism
 claim; editor controller timing p95 was 0.1287 ms while the release player p95
 was 0.0663 ms.
+
+2026-09-27 under GAM-13 V2-3B, `PhysicsFoundationPlayModeTests` passed 14/14
+after adding the opt-in tick-0 readiness gate; the production `Simulate` call
+remains uniquely inside `PhysicsTickDriver.StepOne`.

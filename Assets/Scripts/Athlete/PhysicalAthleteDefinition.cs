@@ -145,14 +145,14 @@ namespace PowerliftingSimulator.Athlete
             new PhysicalJointRecipe("abdomen", HumanBodyBones.Spine, PhysicalJointKind.Ball, Vector3.right, -35f, 45f, 25f, "lumbar"),
             new PhysicalJointRecipe("thorax", HumanBodyBones.Chest, PhysicalJointKind.Ball, Vector3.right, -35f, 50f, 30f, "trunk"),
             new PhysicalJointRecipe("head_neck", HumanBodyBones.Neck, PhysicalJointKind.Ball, Vector3.right, -45f, 55f, 45f, "neck"),
-            new PhysicalJointRecipe("left_upper_arm", HumanBodyBones.LeftUpperArm, PhysicalJointKind.Ball, Vector3.forward, -100f, 100f, 105f, "shoulder"),
-            new PhysicalJointRecipe("right_upper_arm", HumanBodyBones.RightUpperArm, PhysicalJointKind.Ball, Vector3.forward, -100f, 100f, 105f, "shoulder"),
+            new PhysicalJointRecipe("left_upper_arm", HumanBodyBones.LeftUpperArm, PhysicalJointKind.Ball, Vector3.forward, -105f, 105f, 165f, "shoulder"),
+            new PhysicalJointRecipe("right_upper_arm", HumanBodyBones.RightUpperArm, PhysicalJointKind.Ball, Vector3.forward, -105f, 105f, 165f, "shoulder"),
             new PhysicalJointRecipe("left_forearm", HumanBodyBones.LeftLowerArm, PhysicalJointKind.Hinge, Vector3.forward, -5f, 145f, 0f, "elbow", PhysicalJointAxisSource.BindFlexionTransverse),
             new PhysicalJointRecipe("right_forearm", HumanBodyBones.RightLowerArm, PhysicalJointKind.Hinge, Vector3.forward, -5f, 145f, 0f, "elbow", PhysicalJointAxisSource.BindFlexionTransverse),
-            new PhysicalJointRecipe("left_hand", HumanBodyBones.LeftHand, PhysicalJointKind.Ball, Vector3.forward, -70f, 70f, 30f, "wrist"),
-            new PhysicalJointRecipe("right_hand", HumanBodyBones.RightHand, PhysicalJointKind.Ball, Vector3.forward, -70f, 70f, 30f, "wrist"),
-            new PhysicalJointRecipe("left_thigh", HumanBodyBones.LeftUpperLeg, PhysicalJointKind.Ball, Vector3.right, -120f, 45f, 50f, "hip"),
-            new PhysicalJointRecipe("right_thigh", HumanBodyBones.RightUpperLeg, PhysicalJointKind.Ball, Vector3.right, -120f, 45f, 50f, "hip"),
+            new PhysicalJointRecipe("left_hand", HumanBodyBones.LeftHand, PhysicalJointKind.Ball, Vector3.forward, -70f, 70f, 36f, "wrist"),
+            new PhysicalJointRecipe("right_hand", HumanBodyBones.RightHand, PhysicalJointKind.Ball, Vector3.forward, -70f, 70f, 36f, "wrist"),
+            new PhysicalJointRecipe("left_thigh", HumanBodyBones.LeftUpperLeg, PhysicalJointKind.Ball, Vector3.right, -132f, 45f, 50f, "hip"),
+            new PhysicalJointRecipe("right_thigh", HumanBodyBones.RightUpperLeg, PhysicalJointKind.Ball, Vector3.right, -132f, 45f, 50f, "hip"),
             new PhysicalJointRecipe("left_shank", HumanBodyBones.LeftLowerLeg, PhysicalJointKind.Hinge, Vector3.right, -5f, 145f, 0f, "knee"),
             new PhysicalJointRecipe("right_shank", HumanBodyBones.RightLowerLeg, PhysicalJointKind.Hinge, Vector3.right, -5f, 145f, 0f, "knee"),
             new PhysicalJointRecipe("left_foot", HumanBodyBones.LeftFoot, PhysicalJointKind.Hinge, Vector3.right, -45f, 55f, 0f, "ankle"),
@@ -166,6 +166,70 @@ namespace PowerliftingSimulator.Athlete
                 massKg * (sizeMeters.x * sizeMeters.x + sizeMeters.z * sizeMeters.z) / 12f,
                 massKg * (sizeMeters.x * sizeMeters.x + sizeMeters.y * sizeMeters.y) / 12f);
         }
+
+        public static Vector3 PrimitiveInertiaAboutBodyCenter(
+            PhysicalColliderKind kind,
+            float massKg,
+            Vector3 dimensionsMeters,
+            Vector3 colliderCenterMeters)
+        {
+            if (!float.IsFinite(massKg) || massKg <= 0f ||
+                !Finite(dimensionsMeters) || !Finite(colliderCenterMeters))
+                throw new ArgumentOutOfRangeException(nameof(massKg), "Primitive inertia inputs must be finite and positive.");
+
+            Vector3 inertia;
+            switch (kind)
+            {
+                case PhysicalColliderKind.Box:
+                    if (dimensionsMeters.x <= 0f || dimensionsMeters.y <= 0f || dimensionsMeters.z <= 0f)
+                        throw new ArgumentOutOfRangeException(nameof(dimensionsMeters));
+                    inertia = BoxInertia(massKg, dimensionsMeters);
+                    break;
+
+                case PhysicalColliderKind.Capsule:
+                    float radius = dimensionsMeters.x * 0.5f;
+                    float height = dimensionsMeters.y;
+                    if (radius <= 0f || dimensionsMeters.z <= 0f ||
+                        Mathf.Abs(dimensionsMeters.z - dimensionsMeters.x) > 0.000001f ||
+                        height < 2f * radius)
+                        throw new ArgumentOutOfRangeException(nameof(dimensionsMeters),
+                            "A Unity Y-axis capsule requires equal diameters and a height at least its diameter.");
+
+                    float cylinderLength = height - 2f * radius;
+                    float cylinderVolume = Mathf.PI * radius * radius * cylinderLength;
+                    float capVolume = (4f / 3f) * Mathf.PI * radius * radius * radius;
+                    float totalVolume = cylinderVolume + capVolume;
+                    float cylinderMass = massKg * cylinderVolume / totalVolume;
+                    float capMass = massKg - cylinderMass;
+                    float axial = 0.5f * cylinderMass * radius * radius + 0.4f * capMass * radius * radius;
+                    float transverse = cylinderMass * (3f * radius * radius + cylinderLength * cylinderLength) / 12f +
+                        capMass * (0.4f * radius * radius + cylinderLength * cylinderLength * 0.25f +
+                            3f * cylinderLength * radius / 8f);
+                    inertia = new Vector3(transverse, axial, transverse);
+                    break;
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(kind));
+            }
+
+            // Current recipes offset only the foot box along local Y. This keeps
+            // the authored body origin at its intentional COM and preserves a
+            // diagonal principal tensor in the body's collider-aligned frame.
+            int offsetAxes = (Mathf.Abs(colliderCenterMeters.x) > 0.000001f ? 1 : 0) +
+                (Mathf.Abs(colliderCenterMeters.y) > 0.000001f ? 1 : 0) +
+                (Mathf.Abs(colliderCenterMeters.z) > 0.000001f ? 1 : 0);
+            if (offsetAxes > 1)
+                throw new ArgumentOutOfRangeException(nameof(colliderCenterMeters),
+                    "Collider offsets must preserve the authored principal axes.");
+
+            inertia.x += massKg * (colliderCenterMeters.y * colliderCenterMeters.y + colliderCenterMeters.z * colliderCenterMeters.z);
+            inertia.y += massKg * (colliderCenterMeters.x * colliderCenterMeters.x + colliderCenterMeters.z * colliderCenterMeters.z);
+            inertia.z += massKg * (colliderCenterMeters.x * colliderCenterMeters.x + colliderCenterMeters.y * colliderCenterMeters.y);
+            return inertia;
+        }
+
+        private static bool Finite(Vector3 value) =>
+            float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
 
         public static void ValidateDefinition()
         {

@@ -60,6 +60,12 @@ namespace PowerliftingSimulator.Squat.Unity
         public float SupportApLength => SupportApMax - SupportApMin;
         public float SupportMlWidth => SupportMlMax - SupportMlMin;
 
+        public Vector3 MeasureCurrentSystemCom(SquatBarSaddle saddle)
+        {
+            ObserveMassModel(PhysicalObservation.Empty(new SimulationTime(0ul, 0d)), saddle);
+            return SystemCom;
+        }
+
         // Engine contact-impulse centre of pressure.
         public bool HasCopEstimate { get; private set; }
         public Vector3 CopEstimate { get; private set; }
@@ -72,6 +78,13 @@ namespace PowerliftingSimulator.Squat.Unity
         public float CaptureMl { get; private set; }
         public float CaptureMarginFront => SupportApMax - CaptureAp;
         public float CaptureMarginRear => CaptureAp - SupportApMin;
+        public float CaptureMargin2D => !HasSupport
+            ? float.NaN
+            : Mathf.Min(
+                CaptureMarginFront,
+                CaptureMarginRear,
+                SupportMlMax - CaptureMl,
+                CaptureMl - SupportMlMin);
         public float ComApMarginFront => SupportApMax - SystemCom.z;
         public float ComApMarginRear => SystemCom.z - SupportApMin;
 
@@ -242,11 +255,19 @@ namespace PowerliftingSimulator.Squat.Unity
             if (detector == null)
                 return;
 
-            int contacts = detector.CompletedContactCount;
+            int completedContacts = detector.CompletedContactCount;
+            bool useCompletedManifold = completedContacts > 0;
+            int contacts = useCompletedManifold
+                ? completedContacts
+                : detector.IsInContact ? detector.PersistentContactPointCount : 0;
             for (int index = 0; index < contacts; index++)
             {
-                Vector3 point = detector.CompletedContactPoint(index);
-                float normalImpulse = detector.CompletedNormalImpulse(index);
+                Vector3 point = useCompletedManifold
+                    ? detector.CompletedContactPoint(index)
+                    : detector.PersistentContactPoint(index);
+                float normalImpulse = useCompletedManifold
+                    ? detector.CompletedNormalImpulse(index)
+                    : 0f;
                 apMin = Mathf.Min(apMin, point.z);
                 apMax = Mathf.Max(apMax, point.z);
                 mlMin = Mathf.Min(mlMin, point.x);

@@ -1,0 +1,167 @@
+{
+  "model_version": "GAM13_DYNAMIC_PLANT_MODEL_V1",
+  "claim_class": "GAME_ENGINE_CONTROL_PLANT_IDENTIFICATION",
+  "plant_version": "GAM13_PRODUCTION_PLANT_V1",
+  "state": [
+    "com_ap_m",
+    "com_velocity_ap_mps",
+    "cop_ap_m",
+    "capture_ap_m",
+    "trunk_pitch_rad"
+  ],
+  "inputs": [
+    "applied_ankle_delta_rad",
+    "applied_hip_delta_rad",
+    "applied_trunk_delta_rad"
+  ],
+  "models": [
+    {
+      "load_kg": 25.0,
+      "model_version": "GAM13_DYNAMIC_PLANT_MODEL_V1",
+      "valid_identification_rows": 1600,
+      "valid_validation_rows": 1600,
+      "validity": "LOCAL_EQUILIBRIUM",
+      "model_status": "FIT_LOCAL_ARX",
+      "one_step_rmse": 0.00031484581254313056,
+      "multi_step_rmse_50_ticks": 5.538790656905204e+41,
+      "controllability_rank": 5,
+      "state_dimension": 5,
+      "observability_rank": 5,
+      "spectral_radius_bound": 11.916808884434921,
+      "stabilizability": "LOCAL_ONLY_NOT_ROBUST",
+      "pairs": 1598,
+      "intercept": [
+        -0.00012636903466517813,
+        -0.016512211371569024,
+        0.2589122808210893,
+        -0.0056987029515278885,
+        -0.006801296463320615
+      ],
+      "A": [
+        [
+          0.5260918272620749,
+          -0.15037629072793823,
+          -0.004175993108327149,
+          0.47539922457783135,
+          0.0001828547547518605
+        ],
+        [
+          -0.0974725926598694,
+          0.9125571601734919,
+          -0.5305846178233233,
+          0.2867856366592605,
+          0.026057675257746955
+        ],
+        [
+          -0.9634594153831131,
+          0.3826520456459548,
+          8.574972638624928,
+          -1.4948737363592954,
+          -0.5008510484216302
+        ],
+        [
+          0.49251432533412753,
+          0.15741585587124973,
+          -0.18325152786814103,
+          0.5728936440391408,
+          0.008980411794323996
+        ],
+        [
+          0.033138472339487635,
+          -0.04525107723020483,
+          -0.35549785619315805,
+          0.09346430156256247,
+          0.9854776040427035
+        ]
+      ],
+      "B": [
+        [
+          0.0012377830740064031,
+          0.00031179152879964747,
+          -0.0002147714614185508
+        ],
+        [
+          0.16618179367808808,
+          0.04073230828601288,
+          -0.028057522207925678
+        ],
+        [
+          -2.7626771411850446,
+          -0.6516239616516968,
+          0.40227768915565415
+        ],
+        [
+          0.057325605214314894,
+          0.014059643567354584,
+          -0.009693541104273857
+        ],
+        [
+          0.10207010426038382,
+          0.09441052053983205,
+          -0.1464135670545229
+        ]
+      ]
+    },
+    {
+      "load_kg": 60.0,
+      "model_version": "GAM13_DYNAMIC_PLANT_MODEL_V1",
+      "valid_identification_rows": 0,
+      "valid_validation_rows": 0,
+      "validity": "TRANSIENT_LOCAL_RESPONSE",
+      "model_status": "INSUFFICIENT_VALID_LOCAL_WINDOW",
+      "one_step_rmse": null,
+      "multi_step_rmse_50_ticks": null,
+      "controllability_rank": null,
+      "state_dimension": 5,
+      "observability_rank": null,
+      "spectral_radius_bound": null,
+      "stabilizability": "NOT_ESTABLISHED"
+    },
+    {
+      "load_kg": 140.0,
+      "model_version": "GAM13_DYNAMIC_PLANT_MODEL_V1",
+      "valid_identification_rows": 0,
+      "valid_validation_rows": 0,
+      "validity": "TRANSIENT_LOCAL_RESPONSE",
+      "model_status": "INSUFFICIENT_VALID_LOCAL_WINDOW",
+      "one_step_rmse": null,
+      "multi_step_rmse_50_ticks": null,
+      "controllability_rank": null,
+      "state_dimension": 5,
+      "observability_rank": null,
+      "spectral_radius_bound": null,
+      "stabilizability": "NOT_ESTABLISHED"
+    },
+    {
+      "load_kg": 170.0,
+      "model_version": "GAM13_DYNAMIC_PLANT_MODEL_V1",
+      "valid_identification_rows": 0,
+      "valid_validation_rows": 0,
+      "validity": "TRANSIENT_LOCAL_RESPONSE",
+      "model_status": "INSUFFICIENT_VALID_LOCAL_WINDOW",
+      "one_step_rmse": null,
+      "multi_step_rmse_50_ticks": null,
+      "controllability_rank": null,
+      "state_dimension": 5,
+      "observability_rank": null,
+      "spectral_radius_bound": null,
+      "stabilizability": "NOT_ESTABLISHED"
+    },
+    {
+      "load_kg": 300.0,
+      "model_version": "GAM13_DYNAMIC_PLANT_MODEL_V1",
+      "valid_identification_rows": 0,
+      "valid_validation_rows": 0,
+      "validity": "TRANSIENT_LOCAL_RESPONSE",
+      "model_status": "INSUFFICIENT_VALID_LOCAL_WINDOW",
+      "one_step_rmse": null,
+      "multi_step_rmse_50_ticks": null,
+      "controllability_rank": null,
+      "state_dimension": 5,
+      "observability_rank": null,
+      "spectral_radius_bound": null,
+      "stabilizability": "NOT_ESTABLISHED"
+    }
+  ],
+  "claim_ceiling": "No cross-load controllability, stabilizability, or robust stability claim is made without a valid local model."
+}
