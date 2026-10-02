@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Text;
 using NUnit.Framework;
+using PowerliftingSimulator.Squat.Unity;
 
 namespace PowerliftingSimulator.PhysicsBenchmarks
 {
@@ -85,7 +85,7 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
     /// </summary>
     public sealed class PhysicsBenchmarkRecorder
     {
-        public const string RawDirectoryVariable = "PHYSICS_BENCHMARK_RAW_DIR";
+        public const string RawDirectoryVariable = PhysicsBenchmarkEvidence.RawDirectoryVariable;
         public const string SchemaVersion = "PHYSICS_BENCHMARK_V1";
 
         private readonly string _caseId;
@@ -148,11 +148,7 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
 
         public static string RawDirectory()
         {
-            string configured = Environment.GetEnvironmentVariable(RawDirectoryVariable);
-            if (string.IsNullOrWhiteSpace(configured))
-                configured = Path.Combine(Directory.GetCurrentDirectory(), "Artifacts", "Benchmarks", "Physics", "_local", "raw");
-            Directory.CreateDirectory(configured);
-            return configured;
+            return PhysicsBenchmarkEvidence.RawDirectory();
         }
 
         /// <summary>
@@ -162,13 +158,11 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
         /// </summary>
         public void WriteAndAssert()
         {
-            string directory = RawDirectory();
-            string path = Path.Combine(directory, _caseId + ".json");
-            File.WriteAllText(path, ToJson(), new UTF8Encoding(false));
+            string path = PhysicsBenchmarkEvidence.RawPath(_caseId + ".json");
+            PhysicsBenchmarkEvidence.WriteText(path, ToJson());
             foreach (KeyValuePair<string, StringBuilder> series in _series)
             {
-                File.WriteAllText(Path.Combine(directory, _caseId + "." + series.Key + ".csv"),
-                    series.Value.ToString(), new UTF8Encoding(false));
+                PhysicsBenchmarkEvidence.WriteRawText(_caseId + "." + series.Key + ".csv", series.Value.ToString());
             }
 
             var failures = new StringBuilder();

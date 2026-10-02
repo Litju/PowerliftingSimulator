@@ -125,10 +125,7 @@ namespace PowerliftingSimulator.Tests
             string fullPath = Path.GetFullPath(path);
             if (File.Exists(fullPath))
                 throw new InvalidOperationException($"Refusing to overwrite existing evidence '{fullPath}'.");
-            string directory = Path.GetDirectoryName(fullPath);
-            if (!string.IsNullOrEmpty(directory))
-                Directory.CreateDirectory(directory);
-            File.WriteAllText(fullPath, JsonUtility.ToJson(receipt, true), new System.Text.UTF8Encoding(false));
+            PhysicsBenchmarkEvidence.WriteText(fullPath, JsonUtility.ToJson(receipt, true));
             Debug.Log($"GAM13_V23B_TICK0_RECEIPT load={loadKg:F1}kg path={fullPath}");
         }
 
