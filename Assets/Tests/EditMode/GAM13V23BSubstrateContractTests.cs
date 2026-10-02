@@ -116,14 +116,8 @@ namespace PowerliftingSimulator.Tests
         }
 
         [Test]
-        public void GAM13_V23I_KNEE_IMPEDANCE_IS_DERIVED_FROM_MEASURED_LOCKOUT_ERROR()
+        public void GAM13_V23M_FINAL_KNEE_IMPEDANCE_MATCHES_ACCEPTED_CALIBRATION()
         {
-            const float measuredSpringTorqueNm = 97.98962f;
-            const float acceptableKneeErrorRad = 0.08726646f;
-            const float oldSpring = 800f;
-            const float oldDamper = 80f;
-            float derivedSpring = measuredSpringTorqueNm / acceptableKneeErrorRad;
-            float derivedDamper = oldDamper * Mathf.Sqrt(derivedSpring / oldSpring);
             JointFamilyProfile knee = default;
             int kneeProfiles = 0;
 
@@ -136,8 +130,9 @@ namespace PowerliftingSimulator.Tests
             }
 
             Assert.That(kneeProfiles, Is.EqualTo(1));
-            Assert.That(knee.Spring, Is.EqualTo(derivedSpring).Within(0.5f));
-            Assert.That(knee.Damper, Is.EqualTo(derivedDamper).Within(0.1f));
+            // GAM-13 V2-3M final calibration superseded the earlier V2-3I derivation.
+            Assert.That(knee.Spring, Is.EqualTo(2900f));
+            Assert.That(knee.Damper, Is.EqualTo(152f));
             Assert.That(knee.BaseCapacityNm, Is.EqualTo(540f), "This is a stiffness change, not strength calibration.");
         }
 
