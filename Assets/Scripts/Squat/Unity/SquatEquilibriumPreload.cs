@@ -427,5 +427,5 @@ namespace PowerliftingSimulator.Squat.Unity
             return preload;
         }
     }
-}
 #endif
+}
