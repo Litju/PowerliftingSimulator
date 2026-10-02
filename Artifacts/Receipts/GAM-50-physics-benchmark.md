@@ -5,18 +5,26 @@ BRANCH=work/gam-13-squat-load-calibration
 FROZEN_START=3cb11848f8260cf40d8f576ecf182478e0fc63f0
 BASELINE_SHA=332fc9e554790007252866bfe7e54b929cd62d94 (benchmark baseline; production physics identical to frozen start)
 PHYSICS_MEASUREMENT_SHA=68d30852f02f4005a9e915a2dbb18c4c27abb941
-FINAL_SHA=776feac0d13dec34c43e02ba88abd576713cf93d (final validated candidate; production physics inputs unchanged from measurement SHA)
-EXIT_STATE=PHYSICS_BENCHMARK_QUALIFIED
+VALIDATED_CODE_CANDIDATE_SHA=776feac0d13dec34c43e02ba88abd576713cf93d
+POST_CANDIDATE_EVIDENCE_COMMIT_SHA=1a596f7be7e88d3cc7411a40864b057e00a4a0df
+TERMINAL_VERIFICATION_TESTED_SHA=776feac0d13dec34c43e02ba88abd576713cf93d
+EXIT_STATE=FINAL_VERIFICATION_REGRESSION
+GAM50_LINEAR_STATUS=In Progress
+PHYSICS_SUBSTRATE=FROZEN_PENDING_FINAL_PROCEDURAL_SEAL
 
 ## Verdict
 
-**PHYSICS_BENCHMARK_QUALIFIED.** B01-B16 analytical, drive, contact,
-constraint, shared-athlete, squat, and repeatability evidence is green on the
-final physics implementation. The 776feac final candidate contains test-only
-verification corrections after the 68d3085 physics measurement run; production
-physics source/config hashes match. Final required suites were rerun on
-776feac. Windows standalone parity is separately blocked by missing Unity
-Windows Build Support (IL2CPP).
+The historical 68d3085 measurement and 776feac code-candidate evidence remain
+unchanged. The terminal exact-candidate rerun at 776feac returned
+`Failed(Child)`, 19/26 Physics Benchmark tests passed and 7 failed while writing
+raw result files. All 7 report `DirectoryNotFoundException`; the independent
+oracle exported 24 cases with 648 metrics and all 50/50 gated metrics passing.
+The 60 kg B14 run passed. The chain stopped there, so repeatability, 170/300 kg,
+full EditMode, GAM-12, and GAM-49 were not run in this terminal chain.
+
+Disposition: `FINAL_VERIFICATION_REGRESSION`. The failure is in benchmark
+evidence output, not a failed physics tolerance. GAM-50 remains In Progress;
+the substrate stays frozen and no physics/controller repair was made.
 
 ## What was built
 
@@ -24,7 +32,7 @@ Permanent Physics Benchmark V1 (`docs/PHYSICS_BENCHMARK_V1.md`):
 
 - `Assets/Tests/PhysicsBenchmarks/` — B01-B11 isolated engine cases, B16 substrate A/B, B12/B13 shared-athlete standing and static canonical pose matrix with oracle export, B17 Editor/standalone parity harness.
 - `Tools/Benchmarks/` — `Run-PhysicsBenchmark.ps1` (tiers, sweeps, DynamicsManager experiment overrides), `Run-PhysicsBenchmarkBaseline.ps1`, `Compare-PhysicsBenchmark.py` (manifest, results, failure matrix with evidence-carrying localization, before/after), `PhysicsOracle.py` (independent quasi-static Newton-Euler), `SquatBenchmark.py` (B14 mechanics + lockout extension, B15 determinism), `Compare-Parity.py`.
-- `Artifacts/Benchmarks/Physics/<sha>/` — `manifest.json`, `results.json`, `failure-matrix.json`, `summary.md`, `runs/*/raw/`; `localization.json` and `repairs.json` at the root.
+- `Artifacts/Benchmarks/Physics/<sha>/` — compact `manifest.json`, aggregate results, failure matrix, and summary. Generated run/raw/sweep files stay local or external; their source tree and inventory digests are in `Artifacts/Receipts/GAM-50-evidence-compaction.json`.
 
 ## Baseline (332fc9e) — earliest causal layers
 
@@ -138,7 +146,7 @@ Physical terminal, COM/support, and active-squat drive metrics are recorded in
 detector parameters and noise threshold are in
 `Artifacts/Benchmarks/Physics/776feac/raw/B14-170-sticking-detector.json`.
 
-## Final suites
+## Previous suite closure (historical evidence before the terminal rerun)
 
 | Final suite on candidate 776feac | Total | Passed | Failed | Skipped |
 |---|---:|---:|---:|---:|
@@ -148,13 +156,39 @@ detector parameters and noise threshold are in
 | GAM-49 depth-provider PlayMode | 2 | 2 | 0 | 0 |
 | PoweredJointActuatorContractTests (included in full EditMode) | 4 | 4 | 0 | 0 |
 
-Physics V1 comprises 32 cases and 7,023 metric rows, with 863/863 gated
-metrics passing and an empty failure matrix. Suite XML and logs for the final
-candidate are retained under
-`Artifacts/Benchmarks/Physics/776feac/final-verification/`; Physics V1 run
-records and raw output are under `runs/` and `raw/`. The subset count is
-reported separately and is included in—not added again to—the full EditMode
-total.
+The previous Physics V1 record comprises 32 cases and 7,023 metric rows, with
+863/863 gated metrics passing and an empty failure matrix. Historical suite XML,
+logs, and raw traces remain local or retrievable from the pre-cleanup source
+tree; they are not kept in the final Git tree. The compact receipt and evidence
+manifest preserve the run provenance and digests. The subset count above is
+included in—not added again to—the historical full EditMode total.
+
+## Terminal exact-candidate verification — 2026-10-02
+
+| Gate | Result | Detail |
+|---|---|---|
+| Physics Benchmark V1 `All` tier | `Failed(Child)`, 19/26 passed | 7 failed with `DirectoryNotFoundException` while writing raw output: B05 step-response trace and B13 no-balance-feedback exports at 0/25/60/140/170/300 kg. No recorded physics tolerance failed. |
+| Independent dynamics oracle | 648 metrics; 50/50 gated pass | 24 cases exported; raw oracle SHA-256 `e260f801f09bca9152a95f6866333ea3f9ddbc62aba3385ded35059638033e15`. |
+| B14 squat, 60 kg | Passed, 1/1 | Other B14 loads were stopped after the Physics tier failed. |
+| B15 repeatability | Not run | Stopped after the Physics tier failed. |
+| Full EditMode | Not run | Stopped after the Physics tier failed. |
+| GAM-12 PlayMode | Not run | Stopped after the Physics tier failed. |
+| GAM-49 PlayMode | Not run | Stopped after the Physics tier failed. |
+
+Tested candidate SHA: `776feac0d13dec34c43e02ba88abd576713cf93d`.
+The later evidence-only commit is `1a596f7be7e88d3cc7411a40864b057e00a4a0df`.
+The 86-file local run bundle is at
+`Artifacts/Benchmarks/Physics/776feac/final-verification/terminal-776feac-20261002/physics-core/runs/20261002-053422-gam50-final/`
+(5,801,847 bytes; inventory SHA-256
+`f18dfa91006d1e163b307cf8e26a1c55e367260c642a855dbf00c9014bdb19cf`).
+`test-results.xml` SHA-256:
+`e6428e29bd039771ad2fe18198df78b59decf14963ff932ebe38fd540a1b06d7`.
+The compact machine receipt is
+`Artifacts/Receipts/GAM-50-terminal-verification.json` (SHA-256
+`911cc26d36416d7dd71031391102dee7a52ca01bc83c0d1ecfae00fad75985db`); the
+generated-evidence compaction manifest is
+`Artifacts/Receipts/GAM-50-evidence-compaction.json` (SHA-256
+`a406eadd016b624abcef5d32d3260fe26cd844f13e3ee2de344415625df5eac6`).
 
 ## Not done / limits
 
@@ -192,12 +226,31 @@ total.
 - **300 kg:** the athlete loses physical support during loaded setup at tick
   500; the evidence does not show a mid-ascent sticking event.
 
+## Repository evidence compaction
+
+The pre-cleanup audit compared `1a596f7be7e88d3cc7411a40864b057e00a4a0df`
+with `origin/main` at `4cf5fc5fe9bd7e668e363da35cf4656202da233f`. It found
+3,150 changed paths, 2,028,932 added lines, and 674 deleted lines. The generated
+evidence category accounted for 2,754 files, 1,863,189 added lines, and
+317,850,507 bytes. The complete category totals and top-25 path lists are in
+`Artifacts/Receipts/GAM-50-repository-footprint-audit.json` (SHA-256
+`f1f54d8fb55b0e7f460bed9bdc87e09af15549dc3ff9af58312b48066d11ca90`).
+
+The cleanup removes 3,339 generated files from the Git index: 329,317,338 bytes
+and 1,932,725 text lines in the source tree, including 585 inherited files.
+The staged Git deletion diff records 1,935,064 removed lines.
+Existing workspace files are preserved locally and ignored by the repository
+policy. `Artifacts/Receipts/GAM-50-evidence-compaction.json` records source-tree
+identity, per-directory SHA-256 inventory roots, and the baseline comparison.
+`Tools/Spec/Verify-MasterSpec.ps1` now runs the tracked-artifact hygiene guard.
+
 ## Claim ceiling
 
-This qualification covers the Physics Benchmark V1 cases, calibrated shared
-athlete and squat scenarios, and same-platform repeatability on Windows Editor
-with Unity 6000.3.22f1, using the recorded production configuration. It does
-not qualify Windows standalone parity, visible recoverable sticking at
-170 kg, a completed 300 kg squat, or remaining GAM-13 product/controller
-acceptance. The shared physics substrate is frozen; do not retune solver,
-joint K/D, contact, or saddle parameters without a benchmark regression.
+Historical qualification evidence covers the Physics Benchmark V1 cases,
+calibrated shared athlete and squat scenarios, and same-platform repeatability
+on Windows Editor with Unity 6000.3.22f1. This terminal closeout remains in
+`FINAL_VERIFICATION_REGRESSION` because the exact-candidate output-writing gates
+failed; GAM-50 is not Done. The physical substrate remains frozen. Windows
+standalone parity is blocked by the missing IL2CPP module, 170 kg has no
+detector-resolvable sticking region, and 300 kg collapses during setup. Do not
+retune physics in GAM-13.
