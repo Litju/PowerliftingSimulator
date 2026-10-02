@@ -123,13 +123,15 @@ Editor/standalone parity: build with `-executeMethod GAM50ParityBuild.BuildWindo
 run the player with `-gam50Parity -gam50ParityLoad 140 -gam50ParityOutput <csv>`, run
 `-testCategory PhysicsBenchmarkParity` in the Editor, then `Compare-Parity.py`.
 
-Outputs, per measured candidate: `Artifacts/Benchmarks/Physics/<sha>/` with
-`manifest.json`, `results.json`, `failure-matrix.json`, `summary.md`,
-`raw/B*.json` and `runs/<run>/raw/`. Final GAM-50 closeout may also retain
-`repeatability-summary.json`, `convergence-summary.json`, `raw/canonical-mechanics.json`,
-and qualification-suite evidence under `final-verification/`; its manifest names
-the measurement source SHA when final test-only verification commits leave all
-physics inputs unchanged. These records do not relabel the original run SHA.
+Generated raw cases, traces, run folders, solver sweeps, NUnit XML, logs, and
+screenshots stay local or in external evidence storage. Git retains only small
+manifests, aggregate results, failure matrices, and human-authored receipts.
+`Tools/Spec/Verify-TrackedArtifactHygiene.ps1` enforces this policy through
+`Verify-MasterSpec.ps1`; tracked artifacts must stay at or below 128 KiB and may
+not use raw/run/sweep paths or generated trace/log/image extensions. Receipts
+identify the exact measured candidate and record SHA-256 digests for retained
+or locally preserved raw evidence. A later evidence-only commit does not relabel
+the original measurement SHA.
 `Compare-PhysicsBenchmark.py compare --before A --after B` produces before/after tables.
 Repairs are recorded in `Artifacts/Benchmarks/Physics/repairs.json` and flow into the
 failure matrix.
