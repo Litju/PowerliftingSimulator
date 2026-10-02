@@ -88,9 +88,10 @@ namespace PowerliftingSimulator.Squat.Unity
         private float _phaseVelocity;
 #if UNITY_EDITOR
         private bool _autoCycle;
-        private float _bottomHoldTimer;
         private const float BottomHoldDuration = 0.20f;
 #endif
+        // The manual (shipping) phase path resets this on reaching BOTTOM too.
+        private float _bottomHoldTimer;
         private const float ReversalHoldDuration = 0.10f;
         private float _reversalHoldTimer;
         private SquatBarSaddle _saddle;
