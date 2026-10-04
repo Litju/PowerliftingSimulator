@@ -36,7 +36,7 @@ $sha = (git -C $projectRoot rev-parse --short=7 HEAD).Trim()
 # (scripting defines), which must not mislabel a clean commit as dirty.
 $dirty = [bool](git -C $projectRoot status --porcelain -- Assets Packages ProjectSettings/DynamicsManager.asset ProjectSettings/TimeManager.asset ProjectSettings/ProjectVersion.txt)
 $shaDir = if ($dirty) { "$sha-dirty" } else { $sha }
-$runId = (Get-Date -Format 'yyyyMMdd-HHmmss')
+$runId = (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [guid]::NewGuid().ToString('N')
 if ($Label) { $runId = "$runId-$Label" }
 $benchRoot = Join-Path $projectRoot "Artifacts/Benchmarks/Physics/$shaDir"
 if ($Scope) { $benchRoot = Join-Path $benchRoot $Scope }
