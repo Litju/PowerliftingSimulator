@@ -417,6 +417,9 @@ namespace PowerliftingSimulator.Squat.Unity
                 return;
             }
 
+            float configuredLinearLimitM = SquatBarSaddle.ExperimentalOverride?.LinearLimitM ??
+                SquatBarSaddle.DefaultLinearLimitM;
+
             if (_saddle == null || !_saddle.IsAttached || _saddle.IsBroken || _saddle.Joint == null ||
                 !athleteRig.Segments.TryGetValue("thorax", out PhysicalAthleteRig.SegmentRuntime thorax) ||
                 _saddle.Joint.connectedBody != thorax.Body ||
@@ -428,7 +431,9 @@ namespace PowerliftingSimulator.Squat.Unity
                 _saddle.Joint.zMotion != ConfigurableJointMotion.Limited ||
                 !float.IsFinite(_saddle.Joint.breakForce) || _saddle.Joint.breakForce <= 0f ||
                 !float.IsFinite(_saddle.Joint.breakTorque) || _saddle.Joint.breakTorque <= 0f ||
-                Mathf.Abs(_saddle.Joint.linearLimit.limit - SquatBarSaddle.DefaultLinearLimitM) > 0.000001f ||
+                !float.IsFinite(configuredLinearLimitM) || configuredLinearLimitM <= 0f ||
+                !float.IsFinite(_saddle.Joint.linearLimit.limit) ||
+                Mathf.Abs(_saddle.Joint.linearLimit.limit - configuredLinearLimitM) > 0.000001f ||
                 _saddle.InitialAnchorErrorMeters > SquatBarSaddle.InitialAnchorToleranceM ||
                 _saddle.SaddleSeparationMeters > SquatBarSaddle.InitialAnchorToleranceM ||
                 _saddle.CurrentLinearLimitOccupancy > 0.01f ||
