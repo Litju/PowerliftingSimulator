@@ -6,6 +6,11 @@ Base: `ef567cc1611a417c1c70bff6f74b06ce74ffe88f`
 
 Sealed pass: `2aff0202d7574a17414bd4524b8e2ff8f3359884`
 
+## INTERMEDIATE_VERIFICATION_AT_15a1769
+
+The classification, measurements, and verification below record the historical
+intermediate state at commit `15a1769`.
+
 ## Classification
 
 `STALE_GAM49_INITIAL_ALIGNMENT_CONTRACT`
@@ -81,3 +86,10 @@ Key result hashes:
 - Gate 4 C0 / HOLD / canonical XMLs: `c1fcbd1eacc9ddd50082a6ba9520a681f697ec5e3e6743960e74e2905d09f001` / `3caec0495f722180f2af4e99d26347d3724f4f94710dcb316ee1434ad49c1942` / `b1739d880b050ea38cedfd05d84c31f2b7dae9b93c84e25f3f38b363a6d3a117`.
 - Physics Benchmark V1 run receipt: `3f9a424cdc7c61b142d12319b525505ee66d6a7902cdf11448e49ef097ea2995`.
 - GAM-12 EditMode / PlayMode XMLs: `36562292e850c4d2df4870b15a8fdcfd7252056dc1f9f99110f0f6d18831967d` / `204e81eca83496a94367ba44df0445fd4224e127eef4ca02cfd21ff12d4d5e22`.
+
+## Final resolution
+
+- The depth fixture was subsequently repaired in `e6f9092`.
+- Full GAM-49 Gate 4 now `PASS`.
+- See `GAM-49-depth-authority-divergence-resolution.md` for the final current-candidate result.
+- PR #14 is the final combined qualification PR for the saddle-contract and depth-fixture repairs.

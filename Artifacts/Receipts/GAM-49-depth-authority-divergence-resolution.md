@@ -4,7 +4,7 @@ Date: 2026-10-05
 
 ## Classification
 
-`D — GAM49_GATE4_RECOMPUTATION_REGRESSION`
+`D — GAM49_GATE4_RECOMPUTATION/FIXTURE_REGRESSION`
 
 The sealed 2aff020 Gate 4 chain reproduces: C0, HOLD 1.00, and canonical 25 kg
 each pass in a fresh Unity process. Its canonical worst-side depth is
@@ -25,9 +25,18 @@ that trace. The qualification fixture now sends the normal inputs, releases
 the depth comparison. No production physics, threshold, or rule semantics
 changed.
 
-No commit between 2aff0202 and ef567cc changes the GAM-49/GAM-47 calculation
-or runner files; those sources are identical across the range. Thus there is
-no first divergent commit in the implicated calculation layer.
+The GAM-49/GAM-47 fixture-calculation and runner sources remained unchanged.
+The first causal contract divergence is:
+
+FIRST_CAUSAL_CONTRACT_DIVERGENCE=592b9bc38a7f988bc45cbe0bd3763c2a1a030e7e
+
+This production lifecycle commit changes the squat start path from
+`StartSquat()` to `BeginIntentDrivenSquat()` and establishes the V2 intent-driven
+squat lifecycle. The sealed GAM-49 fixture remained unchanged while production
+transitioned from the old automatic squat command authority to the intent-driven
+V2 lifecycle. The fixture therefore became stale because it no longer supplied
+`Yield`/`Drive` inputs required by the production contract. This is a fixture
+regression; production behavior is not defective.
 
 ## Verification
 
