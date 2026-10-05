@@ -127,6 +127,7 @@ namespace PowerliftingSimulator.Tests
                 _controller.BeginAttempt();
 
                 ulong driveTick = SquatAttemptEventTicks.NotAvailable;
+                bool yieldIssued = false;
                 int ticks = 0;
                 while (_controller.AttemptRecord == null && ticks < MaximumAttemptTicks)
                 {
@@ -138,8 +139,25 @@ namespace PowerliftingSimulator.Tests
                     jointCentersByTick[snapshot.SimulationTick] = landmarks.JointCenterDepthDiagnostic;
                     ticks++;
 
-                    if (driveTick == SquatAttemptEventTicks.NotAvailable && IsAscentReferenceState(_controller.Adapter.State))
+                    if (!yieldIssued && _controller.Adapter.State == SquatState.SQUAT_COMMAND)
                     {
+                        _bootstrap.Runtime.InputBuffer.SetContinuous(
+                            IntentAction.Yield,
+                            1f,
+                            _bootstrap.Runtime.CurrentTime.SimulationTimeSeconds +
+                            0.25d * SimulationConstants.FixedDeltaTimeSeconds);
+                        yieldIssued = true;
+                    }
+
+                    if (driveTick == SquatAttemptEventTicks.NotAvailable &&
+                        (_controller.Adapter.State == SquatState.BOTTOM || IsAscentReferenceState(_controller.Adapter.State)))
+                    {
+                        if (_controller.Adapter.State == SquatState.BOTTOM)
+                            _bootstrap.Runtime.InputBuffer.SetContinuous(
+                                IntentAction.Yield,
+                                0f,
+                                _bootstrap.Runtime.CurrentTime.SimulationTimeSeconds +
+                                0.25d * SimulationConstants.FixedDeltaTimeSeconds);
                         _bootstrap.Runtime.InputBuffer.SetContinuous(
                             IntentAction.Drive,
                             1f,
@@ -156,6 +174,8 @@ namespace PowerliftingSimulator.Tests
                 Assert.That(record, Is.Not.Null,
                     $"GAM-49 canonical lifecycle did not finalize within {MaximumAttemptTicks} ticks " +
                     $"(lifecycle={_controller.AttemptLifecycle.State}, adapter={_controller.Adapter.State}, sq={_controller.Adapter.Sq:F3}).");
+                Assert.That(record.Judgment.EvidenceStatus, Is.EqualTo(SquatJudgmentEvidenceStatus.EVALUABLE),
+                    "GAM-49 depth comparison requires an evaluated P2 attempt, not an incomplete trace.");
 
                 DeepestDepth deepest = FindDeepest(record.Trace, record.EventTicks.SquatCommandTick);
                 Assert.That(jointCentersByTick.TryGetValue(deepest.Tick, out SquatJointCenterDepthDiagnostic centerAtDeepest), Is.True,
