@@ -6,6 +6,8 @@ using NUnit.Framework;
 
 namespace PowerliftingSimulator.Tests
 {
+    [Category("HistoricalEvidence")]
+    [Explicit("Historical GAM-44 evidence verification requires local non-versioned measurement artifacts.")]
     public sealed class GAM44InteractionContractTests
     {
         [Test]
