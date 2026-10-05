@@ -29,6 +29,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
+Import-Module (Join-Path $PSScriptRoot 'PhysicsBenchmarkPaths.psm1') -Force
 if (!(Test-Path -LiteralPath $UnityExecutable)) { throw "Unity executable not found: $UnityExecutable" }
 
 $sha = (git -C $projectRoot rev-parse --short=7 HEAD).Trim()
@@ -36,12 +37,17 @@ $sha = (git -C $projectRoot rev-parse --short=7 HEAD).Trim()
 # (scripting defines), which must not mislabel a clean commit as dirty.
 $dirty = [bool](git -C $projectRoot status --porcelain -- Assets Packages ProjectSettings/DynamicsManager.asset ProjectSettings/TimeManager.asset ProjectSettings/ProjectVersion.txt)
 $shaDir = if ($dirty) { "$sha-dirty" } else { $sha }
-$runId = (Get-Date -Format 'yyyyMMdd-HHmmss') + '-' + [guid]::NewGuid().ToString('N')
+$timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+$runGuid = [guid]::NewGuid().ToString('N')
+$runId = "$timestamp-$runGuid"
 if ($Label) { $runId = "$runId-$Label" }
+$runToken = "$timestamp-$($runGuid.Substring(0, 12))"
+$runPathComponent = Get-PhysicsBenchmarkRunPathComponent -RunToken $runToken -Label $Label
 $benchRoot = Join-Path $projectRoot "Artifacts/Benchmarks/Physics/$shaDir"
 if ($Scope) { $benchRoot = Join-Path $benchRoot $Scope }
-$runRoot = Join-Path $benchRoot "runs/$runId"
+$runRoot = Join-Path (Join-Path $benchRoot 'runs') $runPathComponent
 $rawDir = Join-Path $runRoot 'raw'
+$longestEvidencePath = Assert-PhysicsBenchmarkPathBudget -RawDirectory $rawDir
 New-Item -ItemType Directory -Force -Path $rawDir | Out-Null
 
 function Invoke-UnityTests {
@@ -97,7 +103,10 @@ if ($DynamicsOverrides.Count -gt 0) {
 $started = Get-Date
 try {
 $summary = [ordered]@{
-    run_id = $runId; tier = $Tier; git_sha = $sha; working_tree_dirty = $dirty
+    run_id = $runId; label = $Label; run_path_component = $runPathComponent
+    longest_evidence_path_chars = $longestEvidencePath.Length
+    safe_windows_path_budget_chars = (Get-PhysicsBenchmarkPathContract).SafeWindowsPathLength
+    tier = $Tier; git_sha = $sha; working_tree_dirty = $dirty
     started_utc = $started.ToUniversalTime().ToString('o'); environment = $Environment; invocations = @()
 }
 
@@ -151,9 +160,7 @@ $summary | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $runRoo
 $receipt = Get-ChildItem -LiteralPath $rawDir -Filter 'runtime-receipt-140kg.json' -ErrorAction SilentlyContinue | Select-Object -First 1
 $manifestArgs = @('manifest', '--bench-root', $benchRoot)
 if ($receipt) { $manifestArgs += @('--receipt', $receipt.FullName) }
-if ($receipt -or !(Test-Path -LiteralPath (Join-Path $benchRoot 'manifest.json'))) {
-    python (Join-Path $PSScriptRoot 'Compare-PhysicsBenchmark.py') @manifestArgs
-}
+python (Join-Path $PSScriptRoot 'Compare-PhysicsBenchmark.py') @manifestArgs
 
 if (!$NoCompare) {
     python (Join-Path $PSScriptRoot 'Compare-PhysicsBenchmark.py') aggregate --bench-root $benchRoot
