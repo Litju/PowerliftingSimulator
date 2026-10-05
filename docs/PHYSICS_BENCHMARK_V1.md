@@ -112,6 +112,14 @@ Tools/Benchmarks/Run-PhysicsBenchmark.ps1 -Tier Athlete
 Tools/Benchmarks/Run-PhysicsBenchmark.ps1 -Tier Squat -LoadsKg 25,60,140 -Repeats 10
 ```
 
+### Output paths and labels
+
+The runner preflights the longest nested raw/oracle path and keeps every generated
+absolute path at or below 240 UTF-16 code units, 20 characters below classic
+Windows `MAX_PATH`. The `runs/<component>` name uses a timestamp, a 48-bit run
+token, an eight-character sanitized label prefix, and a 12-hex SHA-256 suffix.
+The original label remains in `run.json`, `manifest.json`, and `results.json`.
+
 Sweeps use `-Scope sweeps/<name>` so they never replace baseline rows, with
 `-Environment @{ PHYSICS_BENCHMARK_POS_ITERS = '56' }` (athlete solver override,
 pre-simulation only), `GAM50_FIXED_DT_OVERRIDE` (editor-only timestep sweep),

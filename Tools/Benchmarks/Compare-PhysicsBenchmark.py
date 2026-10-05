@@ -137,6 +137,32 @@ def scrape_constants():
     }
 
 
+def read_run_metadata(run_dir):
+    metadata_path = os.path.join(run_dir, "run.json")
+    if not os.path.exists(metadata_path):
+        return {}
+    with open(metadata_path, encoding="utf-8-sig") as handle:
+        return json.load(handle)
+
+
+def run_metadata_rows(bench_root):
+    rows = []
+    for run_dir in sorted(glob.glob(os.path.join(bench_root, "runs", "*"))):
+        if not os.path.isdir(run_dir):
+            continue
+        metadata = read_run_metadata(run_dir)
+        if not metadata:
+            continue
+        component = os.path.basename(run_dir)
+        rows.append({
+            "run_id": metadata.get("run_id", component),
+            "label": metadata.get("label", ""),
+            "path_component": component,
+            "run_path": os.path.relpath(run_dir, ROOT).replace("\\", "/"),
+        })
+    return rows
+
+
 def cmd_manifest(args):
     dynamics = read(os.path.join(ROOT, "ProjectSettings/DynamicsManager.asset"))
     time_manager = read(os.path.join(ROOT, "ProjectSettings/TimeManager.asset"))
@@ -168,6 +194,7 @@ def cmd_manifest(args):
         },
         "production_constants": scrape_constants(),
         "source_hashes": {p: sha256(os.path.join(ROOT, p)) for p in HASHED_SOURCES if os.path.exists(os.path.join(ROOT, p))},
+        "runs": run_metadata_rows(args.bench_root),
     }
     if args.receipt and os.path.exists(args.receipt):
         with open(args.receipt, encoding="utf-8-sig") as handle:
@@ -183,16 +210,20 @@ def cmd_manifest(args):
 def load_raw(bench_root):
     cases = {}
     for path in sorted(glob.glob(os.path.join(bench_root, "runs", "*", "raw", "*.json"))):
-        run_id = os.path.basename(os.path.dirname(os.path.dirname(path)))
+        run_dir = os.path.dirname(os.path.dirname(path))
+        run_path_component = os.path.basename(run_dir)
+        run_metadata = read_run_metadata(run_dir)
         with open(path, encoding="utf-8") as handle:
             data = json.load(handle)
         # raw/ also holds runtime receipts and oracle exports; only benchmark cases aggregate.
         if data.get("schema") != "PHYSICS_BENCHMARK_V1" or "metrics" not in data:
             continue
         key = data["case"]
-        # Runs are named by timestamp, so lexical order is chronological.
-        if key not in cases or cases[key]["run_id"] <= run_id:
-            data["run_id"] = run_id
+        # The path component starts with the run timestamp, so it remains a compact sort key.
+        if key not in cases or cases[key]["run_path_component"] <= run_path_component:
+            data["run_id"] = run_metadata.get("run_id", run_path_component)
+            data["run_path_component"] = run_path_component
+            data["label"] = run_metadata.get("label", "")
             data["raw_path"] = os.path.relpath(path, ROOT).replace("\\", "/")
             cases[key] = data
     return cases
@@ -253,6 +284,8 @@ def cmd_aggregate(args):
                     metric["localization_evidence"] = rule["evidence"]
                     break
             metric["run_id"] = data["run_id"]
+            metric["run_path_component"] = data["run_path_component"]
+            metric["label"] = data.get("label", "")
             metric["raw_path"] = data["raw_path"]
             results.append(metric)
             if metric["gated"] and not metric["pass"]:
@@ -297,7 +330,7 @@ def cmd_aggregate(args):
     for key in sorted(cases):
         gated = [m for m in cases[key]["metrics"] if m["gated"]]
         passed = sum(1 for m in gated if m["pass"])
-        lines.append("| %s | %s | %d | %d | %d |" % (key, cases[key]["run_id"], len(gated), passed, len(gated) - passed))
+        lines.append("| %s | %s | %d | %d | %d |" % (key, cases[key]["run_path_component"], len(gated), passed, len(gated) - passed))
     lines.append("")
     if earliest is None:
         lines.append("**All gated metrics pass.**")
