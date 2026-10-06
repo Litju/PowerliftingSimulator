@@ -65,6 +65,10 @@ namespace PowerliftingSimulator.Tests
                 summary.CopDifferenceM,
                 MeasurementWindowEndTick,
                 outputDirectory));
+            Assert.That(
+                summary.Classification,
+                Is.EqualTo("POSITIVE_ANKLE_TARGET_MOVES_COP_FORWARD"),
+                "The paired physical probe must retain a clear positive local AP target-to-COP response.");
         }
 
         private static IEnumerator RunArm(float sign, string outputDirectory, Action<ProbeRun> completed)
@@ -103,16 +107,48 @@ namespace PowerliftingSimulator.Tests
             Assert.That(controller.TickZeroValidationTick, Is.EqualTo(0ul));
             Assert.That(runtime.CurrentTime.Tick, Is.EqualTo(0ul), "Each arm must start from a fresh tick-0 reset.");
 
+            float productionApCorrectionRad = adapter.BalanceCorrectionRad;
+            float productionMlCorrectionRad = adapter.MlBalanceCorrectionRad;
+            float productionLeftAnkleApRad = BalanceOffsetApRadians(adapter, "left_foot");
+            float productionRightAnkleApRad = BalanceOffsetApRadians(adapter, "right_foot");
+            bool apFeedbackEnabledBeforeProbe = adapter.ApFeedbackContributionEnabled;
+            Assert.That(apFeedbackEnabledBeforeProbe, Is.True,
+                "Capture the production AP-enabled target before disabling AP feedback for the probe.");
+            Quaternion baselineLeftTarget = rig.PoweredController.GetJoint("left_foot").RequestedCommand.TargetRelativeRotation;
+            Quaternion baselineRightTarget = rig.PoweredController.GetJoint("right_foot").RequestedCommand.TargetRelativeRotation;
             Dictionary<string, JointBaseline> baseline = CaptureJointBaseline(rig.PoweredController);
             adapter.ApFeedbackContributionEnabled = false;
             adapter.AnkleSagittalOffsetAdditiveRad = residualRad;
             rig.PrimeCommandSource();
-            AssertOnlyAnkleResidualChanged(rig.PoweredController, baseline, residualRad);
+            Assert.That(adapter.ApFeedbackContributionEnabled, Is.False);
+            Assert.That(adapter.MlBalanceCorrectionRad, Is.EqualTo(productionMlCorrectionRad).Within(0.000001f));
+            AssertOnlyAnkleResidualChanged(adapter, rig.PoweredController, baseline, residualRad);
+
+            Quaternion postProbeLeftTarget = rig.PoweredController.GetJoint("left_foot").RequestedCommand.TargetRelativeRotation;
+            Quaternion postProbeRightTarget = rig.PoweredController.GetJoint("right_foot").RequestedCommand.TargetRelativeRotation;
+            Debug.Log(string.Format(
+                Invariant,
+                "GAM13_V23C_TICK_0 arm={0} production_ap_correction_rad={1:R} production_ml_correction_rad={2:R} " +
+                "baseline_left_ankle_balance_ap_rad={3:R} baseline_right_ankle_balance_ap_rad={4:R} " +
+                "ap_feedback_enabled_before={5} requested_residual_rad={6:R} " +
+                "baseline_left_target_xyzw={7} baseline_right_target_xyzw={8} " +
+                "post_probe_left_target_xyzw={9} post_probe_right_target_xyzw={10}",
+                arm,
+                productionApCorrectionRad,
+                productionMlCorrectionRad,
+                productionLeftAnkleApRad,
+                productionRightAnkleApRad,
+                apFeedbackEnabledBeforeProbe,
+                residualRad,
+                QuaternionText(baselineLeftTarget),
+                QuaternionText(baselineRightTarget),
+                QuaternionText(postProbeLeftTarget),
+                QuaternionText(postProbeRightTarget)));
 
             var run = new ProbeRun(arm, residualRad, outputDirectory);
             float initialComAp = adapter.Balance.MeasureCurrentSystemCom(controller.Saddle).z;
             float initialComVelocityAp = adapter.Balance.SystemComVelocity.z;
-            ProbeSample initial = CaptureTickZero(controller, baseline, residualRad, initialComAp, initialComVelocityAp);
+            ProbeSample initial = CaptureTickZero(controller, residualRad, initialComAp, initialComVelocityAp);
             run.Samples.Add(initial);
 
             for (int tick = 1; tick <= MeasurementWindowEndTick; tick++)
@@ -124,7 +160,7 @@ namespace PowerliftingSimulator.Tests
                 SquatObservationSnapshot snapshot = controller.ObservationCollector.LastSnapshot;
                 Assert.That(snapshot.SimulationTick, Is.EqualTo((ulong)tick));
 
-                ProbeSample sample = CapturePostPhysics(controller, snapshot, baseline, residualRad);
+                ProbeSample sample = CapturePostPhysics(controller, snapshot, residualRad);
                 ProbeSample previous = run.Samples[run.Samples.Count - 1];
                 sample.ComAccelerationApMps2 = (sample.ComVelocityApMps - previous.ComVelocityApMps) /
                     (float)SimulationConstants.FixedDeltaTimeSeconds;
@@ -144,7 +180,6 @@ namespace PowerliftingSimulator.Tests
             foreach (PoweredJointController.PoweredJointRuntime joint in powered.Joints)
             {
                 result.Add(joint.Id, new JointBaseline(
-                    joint.RequestedCommand.TargetRelativeRotation,
                     joint.RequestedCommand.TargetRelativeAngularVelocityRadS,
                     joint.RequestedCommand.Effort,
                     joint.RequestedCommand.AthleteStrengthScale,
@@ -156,6 +191,7 @@ namespace PowerliftingSimulator.Tests
         }
 
         private static void AssertOnlyAnkleResidualChanged(
+            SquatPhysicalAdapter adapter,
             PoweredJointController powered,
             Dictionary<string, JointBaseline> baseline,
             float residualRad)
@@ -164,21 +200,15 @@ namespace PowerliftingSimulator.Tests
             {
                 JointBaseline before = baseline[joint.Id];
                 bool ankle = joint.Id == "left_foot" || joint.Id == "right_foot";
-                if (ankle)
+                bool hip = joint.Id == "left_thigh" || joint.Id == "right_thigh";
+                bool trunk = joint.Id == "abdomen" || joint.Id == "thorax";
+                if (ankle || hip || trunk)
                 {
-                    Quaternion delta = PoweredJointController.NormalizeCanonical(
-                        Quaternion.Inverse(before.Target) * joint.RequestedCommand.TargetRelativeRotation);
-                    float appliedResidualRad = PoweredJointController.SignedTwistRadians(delta, Vector3.right);
-                    Assert.That(appliedResidualRad, Is.EqualTo(residualRad).Within(0.0001f), joint.Id);
-                    Quaternion twist = Quaternion.AngleAxis(appliedResidualRad * Mathf.Rad2Deg, Vector3.right);
-                    Assert.That(Quaternion.Angle(twist, delta), Is.LessThanOrEqualTo(0.001f), joint.Id);
-                }
-                else
-                {
+                    float expectedAp = ankle ? residualRad : 0f;
                     Assert.That(
-                        Quaternion.Angle(before.Target, joint.RequestedCommand.TargetRelativeRotation),
-                        Is.LessThanOrEqualTo(0.001f),
-                        $"Unexpected target change on {joint.Id}.");
+                        BalanceOffsetApRadians(adapter, joint.Id),
+                        Is.EqualTo(expectedAp).Within(0.0001f),
+                        $"Unexpected AP balance offset on {joint.Id}.");
                 }
 
                 Assert.That(
@@ -205,7 +235,6 @@ namespace PowerliftingSimulator.Tests
 
         private static ProbeSample CaptureTickZero(
             SquatPhysicalPrototypeController controller,
-            Dictionary<string, JointBaseline> baseline,
             float residualRad,
             float comAp,
             float comVelocityAp)
@@ -219,8 +248,9 @@ namespace PowerliftingSimulator.Tests
                 Tick = 0,
                 SampleKind = "TICK_0_PRE_PHYSICS_COMMAND",
                 RequestedResidualRad = residualRad,
-                LeftTargetResidualRad = AppliedTargetResidual(left.Diagnostic, baseline["left_foot"]),
-                RightTargetResidualRad = AppliedTargetResidual(right.Diagnostic, baseline["right_foot"]),
+                ApFeedbackContributionEnabled = controller.Adapter.ApFeedbackContributionEnabled,
+                LeftBalanceOffsetApRad = BalanceOffsetApRadians(controller.Adapter, "left_foot"),
+                RightBalanceOffsetApRad = BalanceOffsetApRadians(controller.Adapter, "right_foot"),
                 LeftActualTwistRad = PoweredJointController.SignedTwistRadians(left.Diagnostic.ActualRelative, Vector3.right),
                 RightActualTwistRad = PoweredJointController.SignedTwistRadians(right.Diagnostic.ActualRelative, Vector3.right),
                 CopApM = float.NaN,
@@ -251,7 +281,6 @@ namespace PowerliftingSimulator.Tests
         private static ProbeSample CapturePostPhysics(
             SquatPhysicalPrototypeController controller,
             SquatObservationSnapshot snapshot,
-            Dictionary<string, JointBaseline> baseline,
             float residualRad)
         {
             PoweredJointController powered = controller.AthleteRig.PoweredController;
@@ -268,8 +297,9 @@ namespace PowerliftingSimulator.Tests
                 Tick = (int)snapshot.SimulationTick,
                 SampleKind = "POST_PHYSICS",
                 RequestedResidualRad = residualRad,
-                LeftTargetResidualRad = AppliedTargetResidual(leftDiagnostic, baseline["left_foot"]),
-                RightTargetResidualRad = AppliedTargetResidual(rightDiagnostic, baseline["right_foot"]),
+                ApFeedbackContributionEnabled = controller.Adapter.ApFeedbackContributionEnabled,
+                LeftBalanceOffsetApRad = BalanceOffsetApRadians(controller.Adapter, "left_foot"),
+                RightBalanceOffsetApRad = BalanceOffsetApRadians(controller.Adapter, "right_foot"),
                 LeftActualTwistRad = PoweredJointController.SignedTwistRadians(leftDiagnostic.ActualRelative, Vector3.right),
                 RightActualTwistRad = PoweredJointController.SignedTwistRadians(rightDiagnostic.ActualRelative, Vector3.right),
                 CopApM = hasCop ? support.EngineContactPointWorldMeters.Z : float.NaN,
@@ -302,14 +332,16 @@ namespace PowerliftingSimulator.Tests
             };
         }
 
-        private static float AppliedTargetResidual(
-            PoweredJointDiagnostic diagnostic,
-            JointBaseline baseline)
+        private static float BalanceOffsetApRadians(SquatPhysicalAdapter adapter, string jointId)
         {
-            Quaternion delta = PoweredJointController.NormalizeCanonical(
-                Quaternion.Inverse(baseline.Target) * diagnostic.AppliedTarget);
-            return PoweredJointController.SignedTwistRadians(delta, Vector3.right);
+            Assert.That(adapter.TryGetTargetComposition(jointId, out SquatPhysicalAdapter.JointTargetComposition composition),
+                Is.True,
+                "Missing target composition for " + jointId + ".");
+            return PoweredJointController.SignedTwistRadians(composition.BalanceOffset, Vector3.right);
         }
+
+        private static string QuaternionText(Quaternion value) =>
+            string.Format(Invariant, "({0:R},{1:R},{2:R},{3:R})", value.x, value.y, value.z, value.w);
 
         private static bool GeometricFootContact(PhysicalAthleteRig rig, string footId)
         {
@@ -521,9 +553,9 @@ namespace PowerliftingSimulator.Tests
             for (int index = 1; index < run.Samples.Count; index++)
             {
                 ProbeSample sample = run.Samples[index];
-                if (!float.IsFinite(sample.LeftTargetResidualRad) || !float.IsFinite(sample.RightTargetResidualRad) ||
-                    Mathf.Abs(sample.LeftTargetResidualRad - run.RequestedResidualRad) > toleranceRad ||
-                    Mathf.Abs(sample.RightTargetResidualRad - run.RequestedResidualRad) > toleranceRad)
+                if (!float.IsFinite(sample.LeftBalanceOffsetApRad) || !float.IsFinite(sample.RightBalanceOffsetApRad) ||
+                    Mathf.Abs(sample.LeftBalanceOffsetApRad - run.RequestedResidualRad) > toleranceRad ||
+                    Mathf.Abs(sample.RightBalanceOffsetApRad - run.RequestedResidualRad) > toleranceRad)
                     return false;
             }
             return true;
@@ -534,7 +566,7 @@ namespace PowerliftingSimulator.Tests
             var csv = new StringBuilder(4096);
             csv.AppendLine(
                 "arm,requested_ankle_ap_target_residual_rad,tick,sample_kind,ap_feedback_contribution_enabled," +
-                "left_logical_ankle_target_delta_rad,right_logical_ankle_target_delta_rad," +
+                "left_ankle_balance_offset_ap_rad,right_ankle_balance_offset_ap_rad," +
                 "left_actual_ankle_twist_rad,right_actual_ankle_twist_rad,cop_ap_m,support_center_ap_m," +
                 "com_ap_m,com_velocity_ap_mps,early_com_acceleration_ap_mps2,contact_sample_available," +
                 "left_foot_contact,right_foot_contact,left_geometric_contact,right_geometric_contact," +
@@ -554,9 +586,9 @@ namespace PowerliftingSimulator.Tests
                 Field(row, run.RequestedResidualRad);
                 Field(row, sample.Tick.ToString(Invariant));
                 Field(row, sample.SampleKind);
-                Field(row, "false");
-                Field(row, sample.LeftTargetResidualRad);
-                Field(row, sample.RightTargetResidualRad);
+                Field(row, Bool(sample.ApFeedbackContributionEnabled));
+                Field(row, sample.LeftBalanceOffsetApRad);
+                Field(row, sample.RightBalanceOffsetApRad);
                 Field(row, sample.LeftActualTwistRad);
                 Field(row, sample.RightActualTwistRad);
                 Field(row, sample.CopApM);
@@ -649,7 +681,7 @@ namespace PowerliftingSimulator.Tests
             text.AppendLine();
             text.AppendLine("- Unity: `6000.3.22f1`");
             text.AppendLine("- Substrate: cleaned unloaded `SquatPhysicalPrototype`; each arm loaded a fresh scene, reset to tick 0, and recaptured the canonical standing COM reference.");
-            text.AppendLine("- Probe: AP feedback contribution disabled at ankle, hip, and trunk target allocations; ML feedback remained enabled; both ankle logical AP targets received only the listed ±1° residual.");
+            text.AppendLine("- Probe: AP feedback contribution disabled at ankle, hip, and trunk target allocations; ML feedback remained enabled; both ankle `BalanceOffset` AP components received only the listed ±1° residual.");
             text.AppendLine("- Measurement window: post-physics ticks 1–5 at 100 Hz (0.05 s), declared before the run.");
             text.AppendLine("- COP source: Unity contact-impulse estimate. Tick 0 has no simulated contact impulse and is recorded as unavailable; geometric plantar registration is recorded separately.");
             text.AppendLine("- Demand source: command-side modeled drive-channel pressure; it is not measured drive torque. Solver torque is labeled separately as an engine solver diagnostic.");
@@ -666,7 +698,7 @@ namespace PowerliftingSimulator.Tests
             text.AppendLine($"- First post-physics COM_AP acceleration: +1° `{N(summary.PlusEarlyComAccelerationMps2)}` m/s² ({Direction(summary.PlusEarlyComAccelerationMps2)}); −1° `{N(summary.MinusEarlyComAccelerationMps2)}` m/s² ({Direction(summary.MinusEarlyComAccelerationMps2)}).");
             text.AppendLine($"- Maximum COM_AP displacement in window = `{N(summary.MaximumWindowComDriftM)}` m.");
             text.AppendLine($"- Bilateral foot contact persisted for every post-physics sample: `{summary.BilateralContactEverySample}`.");
-            text.AppendLine($"- Target realization within 0.1°: `{summary.TargetRealizationMatches}`.");
+            text.AppendLine($"- `BalanceOffset` AP realization within 0.1°: `{summary.TargetRealizationMatches}`.");
             text.AppendLine($"- Clear magnitude (≥2 mm pair separation and ≥3× paired standard error): `{summary.ClearSignal}`.");
             text.AppendLine($"- Opposite-signed paired-midpoint responses: `{summary.OppositeCenteredResponses}`.");
             text.AppendLine();
@@ -755,7 +787,6 @@ namespace PowerliftingSimulator.Tests
         private sealed class JointBaseline
         {
             public JointBaseline(
-                Quaternion target,
                 Vector3 targetVelocity,
                 float effort,
                 float strengthScale,
@@ -763,7 +794,6 @@ namespace PowerliftingSimulator.Tests
                 JointDrive swingDrive,
                 float maximumForceNm)
             {
-                Target = target;
                 TargetVelocity = targetVelocity;
                 Effort = effort;
                 StrengthScale = strengthScale;
@@ -772,7 +802,6 @@ namespace PowerliftingSimulator.Tests
                 MaximumForceNm = maximumForceNm;
             }
 
-            public Quaternion Target { get; }
             public Vector3 TargetVelocity { get; }
             public float Effort { get; }
             public float StrengthScale { get; }
@@ -786,8 +815,9 @@ namespace PowerliftingSimulator.Tests
             public int Tick;
             public string SampleKind;
             public float RequestedResidualRad;
-            public float LeftTargetResidualRad;
-            public float RightTargetResidualRad;
+            public bool ApFeedbackContributionEnabled;
+            public float LeftBalanceOffsetApRad;
+            public float RightBalanceOffsetApRad;
             public float LeftActualTwistRad;
             public float RightActualTwistRad;
             public float CopApM;
