@@ -113,16 +113,5 @@ InitTestScene*.unity*
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
 
-# Generated qualification output stays local; compact receipts remain trackable.
-/Artifacts/**/runs/
-/Artifacts/**/raw/
-/Artifacts/**/sweeps/
-/Artifacts/**/run-*/
-/Artifacts/**/*.csv
-/Artifacts/**/*.xml
-/Artifacts/**/*.png
-/Artifacts/**/*.gz
-/Artifacts/**/*.bin
-/Artifacts/**/*.dump
-/Artifacts/**/*.trace
-/Artifacts/Benchmarks/Physics/*/results.json
+# Generated measurements, research evidence, and receipts stay local.
+/Artifacts/

@@ -33,7 +33,7 @@ namespace PowerliftingSimulator.PhysicsBenchmarks
         private const float MaximumDemandFraction = 0.95f;
         // GAM-12 sealed lockout bar stillness.
         private const float BarStillnessMps = 0.020f;
-        // Explicit engineering / product tolerances (Docs/PHYSICS_BENCHMARK_V1.md).
+        // Explicit engineering / product tolerances (docs/ARCHITECTURE.md).
         private const float MaximumNominalTrackingErrorRad = 0.10f;
         private const float MaximumAnchorSeparationM = 0.01f;
         private const float MaximumPelvisDropM = 0.05f;

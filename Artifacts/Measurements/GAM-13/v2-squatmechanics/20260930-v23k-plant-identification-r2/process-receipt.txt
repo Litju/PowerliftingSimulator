@@ -1,8 +1,0 @@
-FRESH_PROCESS=true
-UNITY_PID=20072
-TEST_RESULT=Passed
-TESTS=1
-PASSED=1
-FAILED=0
-EXIT=0
-OUTPUT=E:\Data\Projects\PowerliftingSimulator\Artifacts\Measurements\GAM-13\v2-squatmechanics\20260930-v23k-plant-identification-r2

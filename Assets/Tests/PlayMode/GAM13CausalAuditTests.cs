@@ -25,7 +25,7 @@ namespace PowerliftingSimulator.Tests
     /// and at most one environment-selected single-property intervention.
     ///
     /// Onset predicates are frozen in GAM13_CAUSAL_ONSET_PREDICATES_V1
-    /// (Artifacts/Research/GAM-13-causal-onset-predicates.md) and were
+    /// (https://github.com/Litju/PowerliftingSimulator/blob/404c3e1ecd8cf5c4733dcb8328cb29e738ed3705/Artifacts/Research/GAM-13-causal-onset-predicates.md) and were
     /// committed before any trace from this fixture was interpreted.
     /// </summary>
     public sealed class GAM13CausalAuditTests

@@ -256,7 +256,7 @@ def severity(metric):
 
 def cmd_aggregate(args):
     cases = load_raw(args.bench_root)
-    repairs_path = os.path.join(ROOT, "Artifacts", "Benchmarks", "Physics", "repairs.json")
+    repairs_path = os.path.join(os.path.dirname(__file__), "repairs.json")
     repairs = {}
     if os.path.exists(repairs_path):
         with open(repairs_path, encoding="utf-8") as handle:
@@ -266,7 +266,7 @@ def cmd_aggregate(args):
     # its symptom shows; when a discriminating experiment proves an earlier or
     # different root-cause layer, the reassignment and its evidence are
     # recorded here, never by editing the metric.
-    localization_path = os.path.join(ROOT, "Artifacts", "Benchmarks", "Physics", "localization.json")
+    localization_path = os.path.join(os.path.dirname(__file__), "localization.json")
     localization = []
     if os.path.exists(localization_path):
         with open(localization_path, encoding="utf-8") as handle:

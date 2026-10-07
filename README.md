@@ -1,38 +1,25 @@
 # Powerlifting Simulator
 
-Physics-driven powerlifting game built in Unity.
+A Unity physics-driven powerlifting prototype with an articulated athlete,
+physical barbell, and squat simulation. This repository does not contain a
+complete three-lift game.
 
-## Status
+After cloning, run `git lfs pull` to materialize the model and textures.
+Open the project in Unity **6000.3.22f1** (URP). The squat prototype scene is
+`Assets/Scenes/Prototype/SquatPhysicalPrototype.unity`; the build scene list is
+in `ProjectSettings/EditorBuildSettings.asset`.
 
-Ground-zero implementation.
+[Architecture](docs/ARCHITECTURE.md) describes the ownership boundaries.
+Run EditMode and PlayMode suites through Unity's Test Runner. Batch runs use
+`-batchmode -nographics -projectPath <repo> -runTests -testPlatform editmode`
+(or `playmode`) with `-testResults <output.xml> -logFile <output.log>`; omit
+`-quit` for test runs. Physics benchmarks use
+`Tools/Benchmarks/Run-PhysicsBenchmark.ps1` with `-Tier Isolated`, `Athlete`,
+or `Squat` and an optional `-UnityExecutable <path>`.
 
-## Core product
+Project history and decisions live in Linear; implementation provenance lives
+in Git and pull requests. Generated evidence under `Artifacts/` stays local.
 
-- Real visible powerlifter
-- Physical squat, bench press, and deadlift
-- Finite powered-joint physics
-- Competition rules and meet gameplay
-- Replay and performance analysis
-- Career and progression
-
-## Architecture
-
-The frozen design authority is the [master specification](docs/master-spec/POWERLIFTING_SIMULATOR_MASTER_SPEC_V1/00_READ_ME_FIRST.md). Repository rules live in the [repository constitution](docs/REPOSITORY_CONSTITUTION.md).
-
-## Engine
-
-- Unity 6000.3.22f1 LTS
-- Universal Render Pipeline (URP)
-
-## Development model
-
-Frozen specification → bounded implementation waves → tests/evidence → review.
-
-## Repository
-
-Canonical source repository: <https://github.com/Litju/PowerliftingSimulator>
-
-## License
-
-License pending repository licensing milestone.
-All rights reserved unless otherwise stated.
+All rights reserved unless otherwise stated. The imported athlete's terms and
+source record are in [License_Standard.txt](Assets/Characters/Athlete/Source/License_Standard.txt)
+and [PROVENANCE.md](Assets/Characters/Athlete/Source/PROVENANCE.md).

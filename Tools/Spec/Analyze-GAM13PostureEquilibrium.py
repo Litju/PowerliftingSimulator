@@ -22,8 +22,8 @@ bodies-*) and derives:
                           analytically from the 1x margin (no sweep).
   equilibrium-audit.csv   runtime standing bias against the V2 trim
 
-Rules are the frozen ones in
-Artifacts/Research/GAM-13-posture-equilibrium-isolation.md.
+Rules are the ones recorded in Git history:
+https://github.com/Litju/PowerliftingSimulator/blob/404c3e1ecd8cf5c4733dcb8328cb29e738ed3705/Artifacts/Research/GAM-13-posture-equilibrium-isolation.md.
 """
 
 import argparse
