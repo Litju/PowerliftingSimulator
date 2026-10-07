@@ -4,7 +4,8 @@
 Stdlib only. Reads the per-run files written by GAM13CausalAuditTests
 (trace-, bodies-, bodymeta-, contacts-, causal-summary-*.csv) and writes
 derived evidence tables. Nothing here changes a predicate: every rule it
-applies is the frozen one in Artifacts/Research/GAM-13-causal-onset-predicates.md;
+applies is the one recorded in Git history:
+https://github.com/Litju/PowerliftingSimulator/blob/404c3e1ecd8cf5c4733dcb8328cb29e738ed3705/Artifacts/Research/GAM-13-causal-onset-predicates.md;
 derived views that go beyond V1 are labelled as such in their column names.
 """
 
