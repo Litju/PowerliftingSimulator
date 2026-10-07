@@ -402,7 +402,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ebe30cd1e9a3e85469efc9c150829381, type: 3}
   m_Name:
   m_EditorClassIdentifier: PowerliftingSimulator.Foundation.Unity::PowerliftingSimulator.Foundation.Unity.FoundationBootstrap
-  inputActions: {fileID: 0, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  inputActions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   authoritativePhysicsSceneName: PowerliftingSimulator.AuthoritativePhysics
 --- !u!114 &1900000003
 MonoBehaviour:

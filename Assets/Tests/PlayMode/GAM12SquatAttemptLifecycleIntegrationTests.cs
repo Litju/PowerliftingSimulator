@@ -191,10 +191,10 @@ namespace PowerliftingSimulator.Tests
             SetupKeyboardInput();
             yield return LoadQualificationScene();
 
-            _inputTestFixture.Press(_testKeyboard.sKey);
+            PressKeyboardButton(_testKeyboard.sKey);
             for (int frame = 0; frame < 12; frame++)
                 yield return null;
-            _inputTestFixture.Release(_testKeyboard.sKey);
+            ReleaseKeyboardButton(_testKeyboard.sKey);
             yield return null;
 
             Assert.That(_controller.AttemptOrchestrator.HasStarted, Is.False);
@@ -216,6 +216,55 @@ namespace PowerliftingSimulator.Tests
 
             Assert.That(_controller.AttemptOrchestrator, Is.SameAs(orchestrator));
             Assert.That(orchestrator.HasStarted, Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator PLAYER_F_YIELD_AND_DRIVE_KEYS_ADVANCE_SQUAT_PHASES()
+        {
+            SetupKeyboardInput();
+            yield return LoadQualificationScene();
+            System.Reflection.FieldInfo inputActionsField = typeof(FoundationBootstrap).GetField(
+                "inputActions",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            InputActionAsset actions = inputActionsField?.GetValue(_bootstrap) as InputActionAsset;
+            Assert.That(actions, Is.Not.Null, "The gameplay InputActionAsset is not wired in the scene.");
+            InputAction yieldAction = actions.FindActionMap("Gameplay", true).FindAction("Yield", true);
+            InputAction driveAction = actions.FindActionMap("Gameplay", true).FindAction("Drive", true);
+            Assert.That(yieldAction.controls.Count, Is.GreaterThan(0), "Yield has no resolved controls.");
+            Assert.That(driveAction.controls.Count, Is.GreaterThan(0), "Drive has no resolved controls.");
+
+            yield return TapKeyboardControl(_testKeyboard.digit2Key);
+            Assert.That(_controller.CurrentLoadKg, Is.EqualTo(25f));
+            yield return TapKeyboardControl(_testKeyboard.fKey);
+            Assert.That(_controller.AttemptOrchestrator.HasStarted, Is.True);
+            PressKeyboardButton(_testKeyboard.sKey);
+            Assert.That(yieldAction.enabled, Is.True);
+            for (int frame = 0; frame < MaximumQualificationTicks &&
+                !_controller.AttemptOrchestrator.HasSquatCommand; frame++)
+                yield return new WaitForSecondsRealtime(0.01f);
+            Assert.That(
+                _controller.AttemptOrchestrator.HasSquatCommand,
+                Is.True,
+                "The F key did not progress through the start window; lifecycle=" +
+                _controller.AttemptLifecycle.State + ", tick=" + _bootstrap.Runtime.CurrentTime.Tick);
+
+            for (int frame = 0; frame < 600 && _controller.Adapter.State != SquatState.BOTTOM; frame++)
+                yield return new WaitForSecondsRealtime(0.01f);
+            Assert.That(_controller.Adapter.State, Is.EqualTo(SquatState.BOTTOM));
+            Assert.That(_controller.Adapter.Sq, Is.EqualTo(1f));
+
+            ReleaseKeyboardButton(_testKeyboard.sKey);
+            yield return new WaitForSecondsRealtime(0.02f);
+            PressKeyboardButton(_testKeyboard.wKey);
+            yield return null;
+            Assert.That(driveAction.enabled, Is.True);
+            Assert.That(driveAction.ReadValue<float>(), Is.GreaterThan(0.5f), "W must bind to Drive.");
+            for (int frame = 0; frame < 200 &&
+                (_controller.Adapter.State != SquatState.ASCENT || _controller.Adapter.Sq >= 1f); frame++)
+                yield return new WaitForSecondsRealtime(0.01f);
+
+            Assert.That(_controller.Adapter.State, Is.EqualTo(SquatState.ASCENT));
+            Assert.That(_controller.Adapter.Sq, Is.LessThan(1f));
         }
 
         [UnityTest]
@@ -284,10 +333,22 @@ namespace PowerliftingSimulator.Tests
 
         private IEnumerator TapKeyboardControl(ButtonControl control)
         {
+            PressKeyboardButton(control);
+            yield return null;
+            ReleaseKeyboardButton(control);
+            yield return null;
+        }
+
+        private void PressKeyboardButton(ButtonControl control)
+        {
+            _inputTestFixture.currentTime = Time.realtimeSinceStartupAsDouble;
             _inputTestFixture.Press(control);
-            yield return null;
+        }
+
+        private void ReleaseKeyboardButton(ButtonControl control)
+        {
+            _inputTestFixture.currentTime = Time.realtimeSinceStartupAsDouble;
             _inputTestFixture.Release(control);
-            yield return null;
         }
 
         private void SetupKeyboardInput()
