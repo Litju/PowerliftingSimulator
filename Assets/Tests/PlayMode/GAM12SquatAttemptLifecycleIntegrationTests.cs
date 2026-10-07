@@ -186,11 +186,59 @@ namespace PowerliftingSimulator.Tests
         }
 
         [UnityTest]
+        public IEnumerator YIELD_BEFORE_F_DOES_NOT_BEGIN_PLAYER_SQUAT_MOTION()
+        {
+            SetupKeyboardInput();
+            yield return LoadQualificationScene();
+
+            _inputTestFixture.Press(_testKeyboard.sKey);
+            for (int frame = 0; frame < 12; frame++)
+                yield return null;
+            _inputTestFixture.Release(_testKeyboard.sKey);
+            yield return null;
+
+            Assert.That(_controller.AttemptOrchestrator.HasStarted, Is.False);
+            Assert.That(_controller.AttemptOrchestrator.HasSquatCommand, Is.False);
+            Assert.That(_controller.Adapter.State, Is.EqualTo(SquatState.SETUP));
+            Assert.That(_controller.Adapter.Sq, Is.EqualTo(0f));
+        }
+
+        [UnityTest]
+        public IEnumerator F_KEY_TWICE_IS_IDEMPOTENT_AT_PLAYER_INPUT_LAYER()
+        {
+            SetupKeyboardInput();
+            yield return LoadQualificationScene();
+
+            yield return TapKeyboardControl(_testKeyboard.fKey);
+            SquatAttemptOrchestrator orchestrator = _controller.AttemptOrchestrator;
+            Assert.That(orchestrator.HasStarted, Is.True);
+            yield return TapKeyboardControl(_testKeyboard.fKey);
+
+            Assert.That(_controller.AttemptOrchestrator, Is.SameAs(orchestrator));
+            Assert.That(orchestrator.HasStarted, Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator LOAD_KEYS_AFTER_F_ARE_IGNORED()
+        {
+            SetupKeyboardInput();
+            yield return LoadQualificationScene();
+            float loadKg = _controller.CurrentLoadKg;
+
+            yield return TapKeyboardControl(_testKeyboard.fKey);
+            Assert.That(_controller.AttemptOrchestrator.HasStarted, Is.True);
+            yield return TapKeyboardControl(_testKeyboard.digit1Key);
+            yield return TapKeyboardControl(_testKeyboard.digit2Key);
+            yield return TapKeyboardControl(_testKeyboard.digit3Key);
+
+            Assert.That(_controller.CurrentLoadKg, Is.EqualTo(loadKg));
+            Assert.That(_controller.AttemptOrchestrator.HasStarted, Is.True);
+        }
+
+        [UnityTest]
         public IEnumerator SCENE_RELOAD_RETRY_STARTS_A_FRESH_ATTEMPT_EPOCH()
         {
-            _inputTestFixture = new InputTestFixture();
-            _inputTestFixture.Setup();
-            _testKeyboard = InputSystem.AddDevice<Keyboard>();
+            SetupKeyboardInput();
             yield return LoadQualificationScene();
             yield return TapKeyboardControl(_testKeyboard.digit2Key);
             Assert.That(_controller.CurrentLoadKg, Is.EqualTo(25f));
@@ -240,6 +288,13 @@ namespace PowerliftingSimulator.Tests
             yield return null;
             _inputTestFixture.Release(control);
             yield return null;
+        }
+
+        private void SetupKeyboardInput()
+        {
+            _inputTestFixture = new InputTestFixture();
+            _inputTestFixture.Setup();
+            _testKeyboard = InputSystem.AddDevice<Keyboard>();
         }
 
         private IEnumerator CompleteAttempt(FoundationRuntime runtime)
@@ -318,7 +373,9 @@ namespace PowerliftingSimulator.Tests
 
         private void CaptureUnexpectedError(string condition, string stackTrace, LogType type)
         {
-            if (type != LogType.Error || condition.StartsWith("connection.state_change", System.StringComparison.Ordinal))
+            if (type != LogType.Error && type != LogType.Exception)
+                return;
+            if (type == LogType.Error && condition.StartsWith("connection.state_change", System.StringComparison.Ordinal))
                 return;
 
             _unexpectedErrors.Add(condition);

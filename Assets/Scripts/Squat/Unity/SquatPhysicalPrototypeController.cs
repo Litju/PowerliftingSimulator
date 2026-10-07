@@ -218,11 +218,11 @@ namespace PowerliftingSimulator.Squat.Unity
             if (keyboard == null)
                 return;
 
-            if (keyboard.digit1Key.wasPressedThisFrame)
+            if (!_attemptOrchestrator.HasStarted && keyboard.digit1Key.wasPressedThisFrame)
                 SetLoad(0f);
-            else if (keyboard.digit2Key.wasPressedThisFrame)
+            else if (!_attemptOrchestrator.HasStarted && keyboard.digit2Key.wasPressedThisFrame)
                 SetLoad(25f);
-            else if (keyboard.digit3Key.wasPressedThisFrame)
+            else if (!_attemptOrchestrator.HasStarted && keyboard.digit3Key.wasPressedThisFrame)
                 SetLoad(105f);
             else if (keyboard.fKey.wasPressedThisFrame && !_attemptOrchestrator.HasStarted)
                 BeginAttempt();
