@@ -265,6 +265,36 @@ namespace PowerliftingSimulator.Tests
 
             Assert.That(_controller.Adapter.State, Is.EqualTo(SquatState.ASCENT));
             Assert.That(_controller.Adapter.Sq, Is.LessThan(1f));
+
+            for (int frame = 0; frame < MaximumQualificationTicks && _controller.AttemptRecord == null; frame++)
+                yield return new WaitForSecondsRealtime(0.01f);
+
+            SquatAttemptRecord record = _controller.AttemptRecord;
+            Assert.That(
+                record,
+                Is.Not.Null,
+                "The real Input System attempt did not finalize within the bounded tick budget. lifecycle=" +
+                _controller.AttemptLifecycle.State + ", adapterState=" + _controller.Adapter.State +
+                ", traceCount=" + _controller.ObservationTrace.Count);
+            Assert.That(record.Trace.IsFrozen, Is.True);
+            Assert.That(record.Trace.IsTruthSealed, Is.True);
+            Assert.That(record.Judgment.EvidenceStatus, Is.EqualTo(SquatJudgmentEvidenceStatus.EVALUABLE));
+            Assert.That(record.FailureResult.EvidenceStatus, Is.EqualTo(SquatFailureEvidenceStatus.EVALUABLE));
+            Assert.That(record.TerminalReason, Is.EqualTo(SquatAttemptTerminalReason.PHYSICAL_LOCKOUT));
+            Assert.That(record.EventTicks.LockoutTick, Is.Not.EqualTo(SquatAttemptEventTicks.NotAvailable));
+            Assert.That(record.CommandTimeline.Count, Is.EqualTo(3));
+            Assert.That(record.CommandTimelineCovered, Is.True);
+
+            // This physical-input fixture may produce either evaluable rule
+            // verdict; NO_LIFT is accepted only when it carries a real violation.
+            Assert.That(
+                record.RuleOutcome == SquatJudgmentOutcome.GOOD_LIFT ||
+                record.RuleOutcome == SquatJudgmentOutcome.NO_LIFT,
+                Is.True);
+            if (record.RuleOutcome == SquatJudgmentOutcome.NO_LIFT)
+                Assert.That(record.Judgment.PrimaryViolationKind, Is.Not.EqualTo(SquatRuleViolationKind.NONE));
+            Assert.That(record.PhysicalFailureOutcome, Is.EqualTo(SquatFailureResultKind.NO_PHYSICAL_FAILURE));
+            Assert.That(record.FailureResult.HasFailure, Is.False);
         }
 
         [UnityTest]
