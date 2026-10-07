@@ -67,34 +67,7 @@ namespace PowerliftingSimulator.Tests
                 Assert.That(_controller.AttemptLifecycle.State, Is.EqualTo(SquatAttemptLifecycleState.START_WINDOW));
 
                 FoundationRuntime runtime = _bootstrap.Runtime;
-                float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
-                bool driveRequested = false;
-                int ticks = 0;
-                while (_controller.AttemptRecord == null && ticks < MaximumQualificationTicks)
-                {
-                    // This test owns stepping while the production Update methods are disabled.
-                    if (_controller.AttemptOrchestrator.HasSquatCommand)
-                    {
-                        SquatState state = _controller.Adapter.State;
-                        if (state == SquatState.BOTTOM || state == SquatState.REVERSAL ||
-                            state == SquatState.ASCENT || state == SquatState.STICKING)
-                            driveRequested = true;
-
-                        double inputTime = runtime.CurrentTime.SimulationTimeSeconds +
-                            0.25d * SimulationConstants.FixedDeltaTimeSeconds;
-                        runtime.InputBuffer.SetContinuous(IntentAction.Yield, driveRequested ? 0f : 1f, inputTime);
-                        runtime.InputBuffer.SetContinuous(IntentAction.Drive, driveRequested ? 1f : 0f, inputTime);
-                    }
-
-                    Assert.That(
-                        runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds),
-                        Is.EqualTo(1));
-                    _controller.LeftFootContact?.PhysicsTickUpdate(dt);
-                    _controller.RightFootContact?.PhysicsTickUpdate(dt);
-                    ticks++;
-                    if (ticks % 40 == 0)
-                        yield return null;
-                }
+                yield return CompleteAttempt(runtime);
 
                 SquatAttemptRecord record = _controller.AttemptRecord;
                 Assert.That(
@@ -197,6 +170,83 @@ namespace PowerliftingSimulator.Tests
             }
         }
 
+        [UnityTest]
+        public IEnumerator SCENE_RELOAD_RETRY_STARTS_A_FRESH_ATTEMPT_EPOCH()
+        {
+            yield return LoadQualificationScene();
+            _controller.enabled = false;
+            _bootstrap.enabled = false;
+            _controller.SetLoad(25f);
+
+            FoundationRuntime firstRuntime = _bootstrap.Runtime;
+            IntentBuffer firstInputBuffer = firstRuntime.InputBuffer;
+            InputTimeDomain firstInputTimeDomain = firstRuntime.InputTimeDomain;
+            SquatTrace firstTrace = _controller.ObservationTrace;
+            _controller.BeginAttempt();
+            Assert.That(_controller.AttemptLifecycle.State, Is.EqualTo(SquatAttemptLifecycleState.START_WINDOW));
+            Assert.That(_controller.AttemptOrchestrator.HasSquatCommand, Is.False);
+            yield return CompleteAttempt(firstRuntime);
+
+            SquatAttemptRecord firstRecord = _controller.AttemptRecord;
+            Assert.That(firstRecord, Is.Not.Null);
+            Assert.That(_controller.AttemptLifecycle.Record, Is.SameAs(firstRecord));
+            Assert.That(firstRecord.Trace, Is.SameAs(firstTrace));
+            Assert.That(firstRecord.Trace.IsTruthSealed, Is.True);
+
+            _controller.ResetPrototype();
+            yield return WaitForLoadedQualificationScene();
+            _controller.enabled = false;
+            _bootstrap.enabled = false;
+            _controller.SetLoad(25f);
+
+            FoundationRuntime retryRuntime = _bootstrap.Runtime;
+            Assert.That(retryRuntime, Is.Not.SameAs(firstRuntime));
+            Assert.That(retryRuntime.InputBuffer, Is.Not.SameAs(firstInputBuffer));
+            Assert.That(retryRuntime.InputTimeDomain, Is.Not.SameAs(firstInputTimeDomain));
+            Assert.That(retryRuntime.CurrentTime.Tick, Is.EqualTo(0ul));
+            Assert.That(_controller.ObservationTrace, Is.Not.SameAs(firstTrace));
+            Assert.That(_controller.ObservationTrace.Count, Is.EqualTo(0));
+            Assert.That(_controller.AttemptRecord, Is.Null);
+            Assert.That(_controller.AttemptLifecycle.State, Is.EqualTo(SquatAttemptLifecycleState.IDLE));
+
+            _controller.BeginAttempt();
+            Assert.That(_controller.AttemptLifecycle.State, Is.EqualTo(SquatAttemptLifecycleState.START_WINDOW));
+            Assert.That(_controller.AttemptOrchestrator.HasSquatCommand, Is.False);
+            Assert.That(_controller.AttemptRecord, Is.Null);
+        }
+
+        private IEnumerator CompleteAttempt(FoundationRuntime runtime)
+        {
+            bool driveRequested = false;
+            int ticks = 0;
+            float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
+            while (_controller.AttemptRecord == null && ticks < MaximumQualificationTicks)
+            {
+                // This test owns stepping while the production Update methods are disabled.
+                if (_controller.AttemptOrchestrator.HasSquatCommand)
+                {
+                    SquatState state = _controller.Adapter.State;
+                    if (state == SquatState.BOTTOM || state == SquatState.REVERSAL ||
+                        state == SquatState.ASCENT || state == SquatState.STICKING)
+                        driveRequested = true;
+
+                    double inputTime = runtime.CurrentTime.SimulationTimeSeconds +
+                        0.25d * SimulationConstants.FixedDeltaTimeSeconds;
+                    runtime.InputBuffer.SetContinuous(IntentAction.Yield, driveRequested ? 0f : 1f, inputTime);
+                    runtime.InputBuffer.SetContinuous(IntentAction.Drive, driveRequested ? 1f : 0f, inputTime);
+                }
+
+                Assert.That(runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds), Is.EqualTo(1));
+                _controller.LeftFootContact?.PhysicsTickUpdate((float)SimulationConstants.FixedDeltaTimeSeconds);
+                _controller.RightFootContact?.PhysicsTickUpdate((float)SimulationConstants.FixedDeltaTimeSeconds);
+                ticks++;
+                if (ticks % 40 == 0)
+                    yield return null;
+            }
+
+            Assert.That(_controller.AttemptRecord, Is.Not.Null, "The attempt did not finalize within its tick budget.");
+        }
+
         private static string FormatViolations(SquatAttemptJudgment judgment)
         {
             if (judgment.Violations.Count == 0)
@@ -214,14 +264,20 @@ namespace PowerliftingSimulator.Tests
 
         private IEnumerator LoadQualificationScene()
         {
-            AsyncOperation load = SceneManager.LoadSceneAsync(QualificationScene, LoadSceneMode.Single);
-            Assert.That(load, Is.Not.Null, "The qualification scene is missing from the project.");
+            AsyncOperation load = SceneManager.LoadSceneAsync(0, LoadSceneMode.Single);
+            Assert.That(load, Is.Not.Null, "The first build scene must be the squat gameplay entry point.");
             while (!load.isDone)
                 yield return null;
+            yield return WaitForLoadedQualificationScene();
+        }
+
+        private IEnumerator WaitForLoadedQualificationScene()
+        {
             yield return null;
 
             _bootstrap = Object.FindFirstObjectByType<FoundationBootstrap>();
             _controller = Object.FindFirstObjectByType<SquatPhysicalPrototypeController>();
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo(QualificationScene));
             Assert.That(_bootstrap, Is.Not.Null);
             Assert.That(_bootstrap.Runtime, Is.Not.Null);
             Assert.That(_bootstrap.Runtime.IsInitialized, Is.True);
