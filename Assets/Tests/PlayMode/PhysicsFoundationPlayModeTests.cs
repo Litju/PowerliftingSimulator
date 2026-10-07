@@ -123,7 +123,11 @@ namespace PowerliftingSimulator.Tests
 
                 Assert.That(_runtime.CurrentTime.SimulationTimeSeconds, Is.EqualTo(0.01d));
                 Assert.That(body.linearVelocity.y, Is.EqualTo(-9.81f * 0.01f).Within(0.002f));
-                Assert.That(body.position.y, Is.EqualTo(positionBeforeStep.y - 9.81f * 0.01f * 0.01f).Within(0.0002f));
+                float substepSeconds = (float)SimulationConstants.PhysicsSubstepSeconds;
+                float expectedPositionY = positionBeforeStep.y
+                    - 9.81f * substepSeconds * substepSeconds
+                    - 9.81f * (2f * substepSeconds) * substepSeconds;
+                Assert.That(body.position.y, Is.EqualTo(expectedPositionY).Within(0.0002f));
             }
             finally
             {
