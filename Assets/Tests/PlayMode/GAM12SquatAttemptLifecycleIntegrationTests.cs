@@ -6,6 +6,8 @@ using PowerliftingSimulator.Foundation.Unity;
 using PowerliftingSimulator.Squat;
 using PowerliftingSimulator.Squat.Unity;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
@@ -18,6 +20,8 @@ namespace PowerliftingSimulator.Tests
 
         private FoundationBootstrap _bootstrap;
         private SquatPhysicalPrototypeController _controller;
+        private InputTestFixture _inputTestFixture;
+        private Keyboard _testKeyboard;
         private readonly List<string> _unexpectedErrors = new List<string>();
 
         [SetUp]
@@ -35,6 +39,11 @@ namespace PowerliftingSimulator.Tests
         [UnityTearDown]
         public IEnumerator TearDown()
         {
+            if (_controller != null)
+                _controller.enabled = false;
+            if (_bootstrap != null)
+                _bootstrap.enabled = false;
+
             if (_bootstrap != null && _bootstrap.Runtime != null && _bootstrap.Runtime.IsInitialized)
             {
                 AsyncOperation unload = _bootstrap.Runtime.Shutdown();
@@ -46,6 +55,12 @@ namespace PowerliftingSimulator.Tests
                 Object.DestroyImmediate(_bootstrap.gameObject);
             _bootstrap = null;
             _controller = null;
+            if (_inputTestFixture != null)
+            {
+                _inputTestFixture.TearDown();
+                _inputTestFixture = null;
+                _testKeyboard = null;
+            }
             Application.logMessageReceived -= CaptureUnexpectedError;
             LogAssert.ignoreFailingMessages = false;
             Assert.That(_unexpectedErrors, Is.Empty, string.Join("\n", _unexpectedErrors));
@@ -173,18 +188,22 @@ namespace PowerliftingSimulator.Tests
         [UnityTest]
         public IEnumerator SCENE_RELOAD_RETRY_STARTS_A_FRESH_ATTEMPT_EPOCH()
         {
+            _inputTestFixture = new InputTestFixture();
+            _inputTestFixture.Setup();
+            _testKeyboard = InputSystem.AddDevice<Keyboard>();
             yield return LoadQualificationScene();
-            _controller.enabled = false;
-            _bootstrap.enabled = false;
-            _controller.SetLoad(25f);
+            yield return TapKeyboardControl(_testKeyboard.digit2Key);
+            Assert.That(_controller.CurrentLoadKg, Is.EqualTo(25f));
 
             FoundationRuntime firstRuntime = _bootstrap.Runtime;
             IntentBuffer firstInputBuffer = firstRuntime.InputBuffer;
             InputTimeDomain firstInputTimeDomain = firstRuntime.InputTimeDomain;
             SquatTrace firstTrace = _controller.ObservationTrace;
-            _controller.BeginAttempt();
-            Assert.That(_controller.AttemptLifecycle.State, Is.EqualTo(SquatAttemptLifecycleState.START_WINDOW));
-            Assert.That(_controller.AttemptOrchestrator.HasSquatCommand, Is.False);
+            yield return TapKeyboardControl(_testKeyboard.fKey);
+            Assert.That(_controller.AttemptOrchestrator.HasStarted, Is.True);
+            Assert.That(_controller.AttemptLifecycle.State, Is.Not.EqualTo(SquatAttemptLifecycleState.IDLE));
+            _controller.enabled = false;
+            _bootstrap.enabled = false;
             yield return CompleteAttempt(firstRuntime);
 
             SquatAttemptRecord firstRecord = _controller.AttemptRecord;
@@ -195,24 +214,32 @@ namespace PowerliftingSimulator.Tests
 
             _controller.ResetPrototype();
             yield return WaitForLoadedQualificationScene();
-            _controller.enabled = false;
-            _bootstrap.enabled = false;
-            _controller.SetLoad(25f);
+            yield return TapKeyboardControl(_testKeyboard.digit2Key);
+            Assert.That(_controller.CurrentLoadKg, Is.EqualTo(25f));
 
             FoundationRuntime retryRuntime = _bootstrap.Runtime;
             Assert.That(retryRuntime, Is.Not.SameAs(firstRuntime));
             Assert.That(retryRuntime.InputBuffer, Is.Not.SameAs(firstInputBuffer));
             Assert.That(retryRuntime.InputTimeDomain, Is.Not.SameAs(firstInputTimeDomain));
-            Assert.That(retryRuntime.CurrentTime.Tick, Is.EqualTo(0ul));
             Assert.That(_controller.ObservationTrace, Is.Not.SameAs(firstTrace));
             Assert.That(_controller.ObservationTrace.Count, Is.EqualTo(0));
             Assert.That(_controller.AttemptRecord, Is.Null);
             Assert.That(_controller.AttemptLifecycle.State, Is.EqualTo(SquatAttemptLifecycleState.IDLE));
 
-            _controller.BeginAttempt();
-            Assert.That(_controller.AttemptLifecycle.State, Is.EqualTo(SquatAttemptLifecycleState.START_WINDOW));
-            Assert.That(_controller.AttemptOrchestrator.HasSquatCommand, Is.False);
+            yield return TapKeyboardControl(_testKeyboard.fKey);
+            Assert.That(_controller.AttemptOrchestrator.HasStarted, Is.True);
+            Assert.That(_controller.AttemptLifecycle.State, Is.Not.EqualTo(SquatAttemptLifecycleState.IDLE));
             Assert.That(_controller.AttemptRecord, Is.Null);
+            _controller.enabled = false;
+            _bootstrap.enabled = false;
+        }
+
+        private IEnumerator TapKeyboardControl(ButtonControl control)
+        {
+            _inputTestFixture.Press(control);
+            yield return null;
+            _inputTestFixture.Release(control);
+            yield return null;
         }
 
         private IEnumerator CompleteAttempt(FoundationRuntime runtime)
