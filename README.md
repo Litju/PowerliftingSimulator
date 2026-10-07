@@ -10,10 +10,12 @@ Open the project in Unity **6000.3.22f1** (URP). The squat prototype scene is
 in `ProjectSettings/EditorBuildSettings.asset`.
 
 [Architecture](docs/ARCHITECTURE.md) describes the ownership boundaries.
-Run EditMode and PlayMode suites through Unity's Test Runner. Batch runs use
-`-batchmode -nographics -projectPath <repo> -runTests -testPlatform editmode`
-(or `playmode`) with `-testResults <output.xml> -logFile <output.log>`; omit
-`-quit` for test runs. Physics benchmarks use
+Run EditMode and PlayMode suites through Unity's Test Runner. Batch EditMode
+and non-graphics PlayMode subsets may use
+`-batchmode -nographics -projectPath <repo> -runTests` with
+`-testPlatform editmode` (or `playmode`), `-testResults <output.xml>`,
+and `-logFile <output.log>`; omit `-quit` for test runs. Graphics-dependent
+PlayMode tests must run with a graphics device. Physics benchmarks use
 `Tools/Benchmarks/Run-PhysicsBenchmark.ps1` with `-Tier Isolated`, `Athlete`,
 or `Squat` and an optional `-UnityExecutable <path>`.
 
