@@ -422,7 +422,7 @@ MonoBehaviour:
   barLoadKg: 0
   autoSquatOnStart: 0
   attachBarSaddle: 1
-  showDebugGui: 1
+  showDebugGui: 0
 --- !u!4 &850789821
 Transform:
   m_ObjectHideFlags: 0
