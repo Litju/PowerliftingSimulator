@@ -655,7 +655,11 @@ namespace PowerliftingSimulator.Squat.Unity
                 GUILayout.Label("ATTEMPT COMPLETE", _playerBodyStyle, GUILayout.Height(26f));
                 GUILayout.Label(FormatPlayerResult(record), _playerResultStyle, GUILayout.MinHeight(58f));
                 if (GUILayout.Button("RETRY", _playerButtonStyle, GUILayout.Height(40f)))
+                {
                     RetryFromPlayerUi();
+                    GUILayout.EndArea();
+                    return;
+                }
             }
             else if (lifecycleState == SquatAttemptLifecycleState.IDLE)
             {
