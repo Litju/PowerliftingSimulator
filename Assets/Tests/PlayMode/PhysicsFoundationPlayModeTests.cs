@@ -109,16 +109,26 @@ namespace PowerliftingSimulator.Tests
         [UnityTest]
         public IEnumerator FULL_CATCH_UP_INPUT_HORIZON_ACCEPTS_ABSOLUTE_TIME_ROUNDING()
         {
-            double simulationStartSeconds = 0.1d;
-            double simulationEndSeconds = simulationStartSeconds + SimulationConstants.MaxAccumulatedTimeSeconds;
+            _runtime = CreateRuntime();
+            for (int tick = 0; tick < 10; tick++)
+                Assert.That(_runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds), Is.EqualTo(1));
+
+            double simulationStartSeconds = _runtime.CurrentTime.SimulationTimeSeconds;
+            _runtime.PrepareRenderFrame(1d);
+            double simulationEndSeconds = _runtime.InputRenderIntervalEndSeconds;
             Assert.That(
                 simulationEndSeconds - simulationStartSeconds,
                 Is.GreaterThan(SimulationConstants.MaxAccumulatedTimeSeconds));
 
-            InputTimeDomain inputTimeDomain = new InputTimeDomain();
+            InputTimeDomain inputTimeDomain = _runtime.InputTimeDomain;
+            inputTimeDomain.Reset(simulationStartSeconds);
+            inputTimeDomain.AdvanceRenderInterval(1d, simulationStartSeconds, simulationStartSeconds);
             Assert.That(
-                inputTimeDomain.AdvanceRenderInterval(1d, simulationStartSeconds, simulationEndSeconds),
+                inputTimeDomain.AdvanceRenderInterval(2d, simulationStartSeconds, simulationEndSeconds),
                 Is.EqualTo(simulationEndSeconds));
+            Assert.That(inputTimeDomain.Map(2d), Is.EqualTo(simulationEndSeconds));
+            Assert.That(_runtime.CompleteRenderFrame(), Is.EqualTo(SimulationConstants.MaxCatchUpTicksPerRenderFrame));
+            Assert.That(_runtime.CurrentTime.SimulationTimeSeconds, Is.EqualTo(simulationEndSeconds));
 
             InputTimeDomain overBoundInputTimeDomain = new InputTimeDomain();
             Assert.Throws<ArgumentOutOfRangeException>(() => overBoundInputTimeDomain.AdvanceRenderInterval(
