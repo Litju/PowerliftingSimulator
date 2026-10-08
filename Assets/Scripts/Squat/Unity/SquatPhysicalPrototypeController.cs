@@ -723,27 +723,118 @@ namespace PowerliftingSimulator.Squat.Unity
             if (record == null)
                 return string.Empty;
 
-            SquatAttemptJudgment judgment = record.Judgment;
-            string result;
-            if (judgment.EvidenceStatus != SquatJudgmentEvidenceStatus.EVALUABLE)
-                result = "UNJUDGED\nRules: " + Humanize(judgment.EvidenceStatus.ToString());
-            else if (record.RuleOutcome == SquatJudgmentOutcome.GOOD_LIFT)
-                result = "GOOD LIFT";
-            else if (record.RuleOutcome == SquatJudgmentOutcome.NO_LIFT)
-                result = "NO LIFT" + (judgment.PrimaryViolationKind == SquatRuleViolationKind.NONE
-                    ? string.Empty
-                    : "\nReason: " + Humanize(judgment.PrimaryViolationKind.ToString()));
-            else
-                result = "UNDECIDED\nRules: " + Humanize(record.RuleOutcome.ToString());
+            return FormatPlayerResult(
+                record.TerminalReason,
+                record.Judgment.EvidenceStatus,
+                record.RuleOutcome,
+                record.Judgment.PrimaryViolationKind,
+                record.FailureResult.EvidenceStatus,
+                record.PhysicalFailureOutcome,
+                record.FailureResult.PrimaryFailureKind);
+        }
 
-            SquatFailureResult failure = record.FailureResult;
-            if (failure.EvidenceStatus != SquatFailureEvidenceStatus.EVALUABLE)
-                result += "\nPhysical result unavailable: " + Humanize(failure.EvidenceStatus.ToString());
-            else if (failure.Outcome == SquatFailureResultKind.PHYSICAL_FAILURE)
-                result += "\nPhysical failure: " + Humanize(failure.PrimaryFailureKind.ToString());
-            else if (failure.Outcome == SquatFailureResultKind.UNDETERMINED)
-                result += "\nPhysical result undetermined";
+        public static string FormatPlayerResult(
+            SquatAttemptTerminalReason terminalReason,
+            SquatJudgmentEvidenceStatus ruleEvidenceStatus,
+            SquatJudgmentOutcome ruleOutcome,
+            SquatRuleViolationKind primaryViolationKind,
+            SquatFailureEvidenceStatus failureEvidenceStatus,
+            SquatFailureResultKind failureOutcome,
+            SquatFailureKind primaryFailureKind)
+        {
+            bool terminalOverride =
+                terminalReason == SquatAttemptTerminalReason.ABORTED ||
+                terminalReason == SquatAttemptTerminalReason.TIMEOUT ||
+                terminalReason == SquatAttemptTerminalReason.LIFECYCLE_FAULT;
+            bool terminalPhysicalFailure = terminalReason == SquatAttemptTerminalReason.PHYSICAL_FAILURE;
+            bool physicalFailure =
+                failureEvidenceStatus == SquatFailureEvidenceStatus.EVALUABLE &&
+                failureOutcome == SquatFailureResultKind.PHYSICAL_FAILURE;
+            bool physicalUnavailable =
+                failureEvidenceStatus != SquatFailureEvidenceStatus.EVALUABLE ||
+                failureOutcome == SquatFailureResultKind.UNDETERMINED;
+
+            string result;
+            if (terminalReason == SquatAttemptTerminalReason.ABORTED)
+                result = "ATTEMPT ABORTED";
+            else if (terminalReason == SquatAttemptTerminalReason.TIMEOUT)
+                result = "ATTEMPT TIMEOUT";
+            else if (terminalReason == SquatAttemptTerminalReason.LIFECYCLE_FAULT)
+                result = "LIFECYCLE FAULT";
+            else if (terminalPhysicalFailure || physicalFailure)
+            {
+                result = "PHYSICAL FAILURE";
+                if (failureEvidenceStatus == SquatFailureEvidenceStatus.EVALUABLE &&
+                    primaryFailureKind != SquatFailureKind.NONE)
+                    result += "\nReason: " + Humanize(primaryFailureKind.ToString());
+                else if (failureEvidenceStatus != SquatFailureEvidenceStatus.EVALUABLE)
+                    result += "\nPhysical evidence: " + Humanize(failureEvidenceStatus.ToString());
+            }
+            else if (physicalUnavailable)
+            {
+                result = "RESULT UNAVAILABLE";
+                result += "\nPhysical: " + (failureEvidenceStatus != SquatFailureEvidenceStatus.EVALUABLE
+                    ? Humanize(failureEvidenceStatus.ToString())
+                    : Humanize(failureOutcome.ToString()));
+            }
+            else
+            {
+                result = FormatRuleVerdict(ruleEvidenceStatus, ruleOutcome, primaryViolationKind);
+            }
+
+            bool headlineIsRuleVerdict =
+                !terminalOverride &&
+                !terminalPhysicalFailure &&
+                !physicalFailure &&
+                !physicalUnavailable;
+            if (!headlineIsRuleVerdict)
+                result += "\n" + FormatRuleLine(ruleEvidenceStatus, ruleOutcome, primaryViolationKind);
+
+            if (terminalOverride)
+            {
+                if (failureEvidenceStatus != SquatFailureEvidenceStatus.EVALUABLE)
+                    result += "\nPhysical: " + Humanize(failureEvidenceStatus.ToString());
+                else if (physicalFailure)
+                    result += "\nPhysical: " + (primaryFailureKind == SquatFailureKind.NONE
+                        ? "failure"
+                        : Humanize(primaryFailureKind.ToString()));
+                else if (failureOutcome == SquatFailureResultKind.UNDETERMINED)
+                    result += "\nPhysical: undetermined";
+            }
+
             return result;
+        }
+
+        private static string FormatRuleVerdict(
+            SquatJudgmentEvidenceStatus evidenceStatus,
+            SquatJudgmentOutcome outcome,
+            SquatRuleViolationKind primaryViolationKind)
+        {
+            if (evidenceStatus != SquatJudgmentEvidenceStatus.EVALUABLE)
+                return "UNJUDGED\nRules: " + Humanize(evidenceStatus.ToString());
+            if (outcome == SquatJudgmentOutcome.GOOD_LIFT)
+                return "GOOD LIFT";
+            if (outcome == SquatJudgmentOutcome.NO_LIFT)
+                return "NO LIFT" + (primaryViolationKind == SquatRuleViolationKind.NONE
+                    ? string.Empty
+                    : "\nReason: " + Humanize(primaryViolationKind.ToString()));
+            return "UNDECIDED\nRules: " + Humanize(outcome.ToString());
+        }
+
+        private static string FormatRuleLine(
+            SquatJudgmentEvidenceStatus evidenceStatus,
+            SquatJudgmentOutcome outcome,
+            SquatRuleViolationKind primaryViolationKind)
+        {
+            if (evidenceStatus != SquatJudgmentEvidenceStatus.EVALUABLE)
+                return "Rules: " + Humanize(evidenceStatus.ToString());
+            if (outcome == SquatJudgmentOutcome.GOOD_LIFT)
+                return "Rules: GOOD LIFT";
+            if (outcome == SquatJudgmentOutcome.NO_LIFT)
+                return "Rules: NO LIFT" + (primaryViolationKind == SquatRuleViolationKind.NONE
+                    ? string.Empty
+                    : " (" + Humanize(primaryViolationKind.ToString()) + ")");
+            return "Rules: " + Humanize(outcome.ToString());
         }
 
         private static string Humanize(string value) => value.Replace('_', ' ').ToLowerInvariant();

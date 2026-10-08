@@ -209,6 +209,72 @@ namespace PowerliftingSimulator.Tests
             Assert.That((bool)debugField.GetValue(_controller), Is.False);
         }
 
+        [Test]
+        public void PLAYER_RESULT_PRIORITIZES_PHYSICAL_FAILURE_OVER_GOOD_LIFT()
+        {
+            string result = SquatPhysicalPrototypeController.FormatPlayerResult(
+                SquatAttemptTerminalReason.PHYSICAL_LOCKOUT,
+                SquatJudgmentEvidenceStatus.EVALUABLE,
+                SquatJudgmentOutcome.GOOD_LIFT,
+                SquatRuleViolationKind.NONE,
+                SquatFailureEvidenceStatus.EVALUABLE,
+                SquatFailureResultKind.PHYSICAL_FAILURE,
+                SquatFailureKind.POSTURE_OR_BAR_LOSS).ToUpperInvariant();
+
+            Assert.That(result.StartsWith("PHYSICAL FAILURE", System.StringComparison.Ordinal), Is.True);
+            StringAssert.Contains("POSTURE OR BAR LOSS", result);
+            StringAssert.Contains("RULES: GOOD LIFT", result);
+        }
+
+        [Test]
+        public void PLAYER_RESULT_PRIORITIZES_ABORTED_TERMINAL_CONTEXT()
+        {
+            string result = SquatPhysicalPrototypeController.FormatPlayerResult(
+                SquatAttemptTerminalReason.ABORTED,
+                SquatJudgmentEvidenceStatus.EVALUABLE,
+                SquatJudgmentOutcome.NO_LIFT,
+                SquatRuleViolationKind.EARLY_RACK,
+                SquatFailureEvidenceStatus.EVALUABLE,
+                SquatFailureResultKind.NO_PHYSICAL_FAILURE,
+                SquatFailureKind.NONE).ToUpperInvariant();
+
+            Assert.That(result.StartsWith("ATTEMPT ABORTED", System.StringComparison.Ordinal), Is.True);
+            StringAssert.Contains("RULES: NO LIFT", result);
+            StringAssert.Contains("EARLY RACK", result);
+        }
+
+        [Test]
+        public void PLAYER_RESULT_PRIORITIZES_UNAVAILABLE_EVIDENCE()
+        {
+            string result = SquatPhysicalPrototypeController.FormatPlayerResult(
+                SquatAttemptTerminalReason.PHYSICAL_LOCKOUT,
+                SquatJudgmentEvidenceStatus.INSUFFICIENT_EVIDENCE,
+                SquatJudgmentOutcome.UNDETERMINED,
+                SquatRuleViolationKind.NONE,
+                SquatFailureEvidenceStatus.INSUFFICIENT_EVIDENCE,
+                SquatFailureResultKind.UNDETERMINED,
+                SquatFailureKind.NONE).ToUpperInvariant();
+
+            Assert.That(result.StartsWith("RESULT UNAVAILABLE", System.StringComparison.Ordinal), Is.True);
+            StringAssert.Contains("PHYSICAL: INSUFFICIENT EVIDENCE", result);
+            StringAssert.Contains("RULES: INSUFFICIENT EVIDENCE", result);
+        }
+
+        [Test]
+        public void PLAYER_RESULT_NOMINAL_GOOD_LIFT_REMAINS_SIMPLE()
+        {
+            string result = SquatPhysicalPrototypeController.FormatPlayerResult(
+                SquatAttemptTerminalReason.PHYSICAL_LOCKOUT,
+                SquatJudgmentEvidenceStatus.EVALUABLE,
+                SquatJudgmentOutcome.GOOD_LIFT,
+                SquatRuleViolationKind.NONE,
+                SquatFailureEvidenceStatus.EVALUABLE,
+                SquatFailureResultKind.NO_PHYSICAL_FAILURE,
+                SquatFailureKind.NONE);
+
+            Assert.That(result, Is.EqualTo("GOOD LIFT"));
+        }
+
         [UnityTest]
         public IEnumerator YIELD_BEFORE_F_DOES_NOT_BEGIN_PLAYER_SQUAT_MOTION()
         {
