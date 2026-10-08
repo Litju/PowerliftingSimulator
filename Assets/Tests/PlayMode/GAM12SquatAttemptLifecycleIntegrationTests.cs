@@ -6,6 +6,8 @@ using PowerliftingSimulator.Foundation.Unity;
 using PowerliftingSimulator.Squat;
 using PowerliftingSimulator.Squat.Unity;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
@@ -18,6 +20,8 @@ namespace PowerliftingSimulator.Tests
 
         private FoundationBootstrap _bootstrap;
         private SquatPhysicalPrototypeController _controller;
+        private InputTestFixture _inputTestFixture;
+        private Keyboard _testKeyboard;
         private readonly List<string> _unexpectedErrors = new List<string>();
 
         [SetUp]
@@ -35,6 +39,11 @@ namespace PowerliftingSimulator.Tests
         [UnityTearDown]
         public IEnumerator TearDown()
         {
+            if (_controller != null)
+                _controller.enabled = false;
+            if (_bootstrap != null)
+                _bootstrap.enabled = false;
+
             if (_bootstrap != null && _bootstrap.Runtime != null && _bootstrap.Runtime.IsInitialized)
             {
                 AsyncOperation unload = _bootstrap.Runtime.Shutdown();
@@ -46,6 +55,12 @@ namespace PowerliftingSimulator.Tests
                 Object.DestroyImmediate(_bootstrap.gameObject);
             _bootstrap = null;
             _controller = null;
+            if (_inputTestFixture != null)
+            {
+                _inputTestFixture.TearDown();
+                _inputTestFixture = null;
+                _testKeyboard = null;
+            }
             Application.logMessageReceived -= CaptureUnexpectedError;
             LogAssert.ignoreFailingMessages = false;
             Assert.That(_unexpectedErrors, Is.Empty, string.Join("\n", _unexpectedErrors));
@@ -67,34 +82,7 @@ namespace PowerliftingSimulator.Tests
                 Assert.That(_controller.AttemptLifecycle.State, Is.EqualTo(SquatAttemptLifecycleState.START_WINDOW));
 
                 FoundationRuntime runtime = _bootstrap.Runtime;
-                float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
-                bool driveRequested = false;
-                int ticks = 0;
-                while (_controller.AttemptRecord == null && ticks < MaximumQualificationTicks)
-                {
-                    // This test owns stepping while the production Update methods are disabled.
-                    if (_controller.AttemptOrchestrator.HasSquatCommand)
-                    {
-                        SquatState state = _controller.Adapter.State;
-                        if (state == SquatState.BOTTOM || state == SquatState.REVERSAL ||
-                            state == SquatState.ASCENT || state == SquatState.STICKING)
-                            driveRequested = true;
-
-                        double inputTime = runtime.CurrentTime.SimulationTimeSeconds +
-                            0.25d * SimulationConstants.FixedDeltaTimeSeconds;
-                        runtime.InputBuffer.SetContinuous(IntentAction.Yield, driveRequested ? 0f : 1f, inputTime);
-                        runtime.InputBuffer.SetContinuous(IntentAction.Drive, driveRequested ? 1f : 0f, inputTime);
-                    }
-
-                    Assert.That(
-                        runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds),
-                        Is.EqualTo(1));
-                    _controller.LeftFootContact?.PhysicsTickUpdate(dt);
-                    _controller.RightFootContact?.PhysicsTickUpdate(dt);
-                    ticks++;
-                    if (ticks % 40 == 0)
-                        yield return null;
-                }
+                yield return CompleteAttempt(runtime);
 
                 SquatAttemptRecord record = _controller.AttemptRecord;
                 Assert.That(
@@ -197,6 +185,241 @@ namespace PowerliftingSimulator.Tests
             }
         }
 
+        [UnityTest]
+        public IEnumerator YIELD_BEFORE_F_DOES_NOT_BEGIN_PLAYER_SQUAT_MOTION()
+        {
+            SetupKeyboardInput();
+            yield return LoadQualificationScene();
+
+            PressKeyboardButton(_testKeyboard.sKey);
+            for (int frame = 0; frame < 12; frame++)
+                yield return null;
+            ReleaseKeyboardButton(_testKeyboard.sKey);
+            yield return null;
+
+            Assert.That(_controller.AttemptOrchestrator.HasStarted, Is.False);
+            Assert.That(_controller.AttemptOrchestrator.HasSquatCommand, Is.False);
+            Assert.That(_controller.Adapter.State, Is.EqualTo(SquatState.SETUP));
+            Assert.That(_controller.Adapter.Sq, Is.EqualTo(0f));
+        }
+
+        [UnityTest]
+        public IEnumerator F_KEY_TWICE_IS_IDEMPOTENT_AT_PLAYER_INPUT_LAYER()
+        {
+            SetupKeyboardInput();
+            yield return LoadQualificationScene();
+
+            yield return TapKeyboardControl(_testKeyboard.fKey);
+            SquatAttemptOrchestrator orchestrator = _controller.AttemptOrchestrator;
+            Assert.That(orchestrator.HasStarted, Is.True);
+            yield return TapKeyboardControl(_testKeyboard.fKey);
+
+            Assert.That(_controller.AttemptOrchestrator, Is.SameAs(orchestrator));
+            Assert.That(orchestrator.HasStarted, Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator PLAYER_F_YIELD_AND_DRIVE_KEYS_ADVANCE_SQUAT_PHASES()
+        {
+            SetupKeyboardInput();
+            yield return LoadQualificationScene();
+            System.Reflection.FieldInfo inputActionsField = typeof(FoundationBootstrap).GetField(
+                "inputActions",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            InputActionAsset actions = inputActionsField?.GetValue(_bootstrap) as InputActionAsset;
+            Assert.That(actions, Is.Not.Null, "The gameplay InputActionAsset is not wired in the scene.");
+            InputAction yieldAction = actions.FindActionMap("Gameplay", true).FindAction("Yield", true);
+            InputAction driveAction = actions.FindActionMap("Gameplay", true).FindAction("Drive", true);
+            Assert.That(yieldAction.controls.Count, Is.GreaterThan(0), "Yield has no resolved controls.");
+            Assert.That(driveAction.controls.Count, Is.GreaterThan(0), "Drive has no resolved controls.");
+
+            yield return TapKeyboardControl(_testKeyboard.digit2Key);
+            Assert.That(_controller.CurrentLoadKg, Is.EqualTo(25f));
+            yield return TapKeyboardControl(_testKeyboard.fKey);
+            Assert.That(_controller.AttemptOrchestrator.HasStarted, Is.True);
+            PressKeyboardButton(_testKeyboard.sKey);
+            Assert.That(yieldAction.enabled, Is.True);
+            for (int frame = 0; frame < MaximumQualificationTicks &&
+                !_controller.AttemptOrchestrator.HasSquatCommand; frame++)
+                yield return new WaitForSecondsRealtime(0.01f);
+            Assert.That(
+                _controller.AttemptOrchestrator.HasSquatCommand,
+                Is.True,
+                "The F key did not progress through the start window; lifecycle=" +
+                _controller.AttemptLifecycle.State + ", tick=" + _bootstrap.Runtime.CurrentTime.Tick);
+
+            for (int frame = 0; frame < 600 && _controller.Adapter.State != SquatState.BOTTOM; frame++)
+                yield return new WaitForSecondsRealtime(0.01f);
+            Assert.That(_controller.Adapter.State, Is.EqualTo(SquatState.BOTTOM));
+            Assert.That(_controller.Adapter.Sq, Is.EqualTo(1f));
+
+            ReleaseKeyboardButton(_testKeyboard.sKey);
+            yield return new WaitForSecondsRealtime(0.02f);
+            PressKeyboardButton(_testKeyboard.wKey);
+            yield return null;
+            Assert.That(driveAction.enabled, Is.True);
+            Assert.That(driveAction.ReadValue<float>(), Is.GreaterThan(0.5f), "W must bind to Drive.");
+            for (int frame = 0; frame < 200 &&
+                (_controller.Adapter.State != SquatState.ASCENT || _controller.Adapter.Sq >= 1f); frame++)
+                yield return new WaitForSecondsRealtime(0.01f);
+
+            Assert.That(_controller.Adapter.State, Is.EqualTo(SquatState.ASCENT));
+            Assert.That(_controller.Adapter.Sq, Is.LessThan(1f));
+
+            for (int frame = 0; frame < MaximumQualificationTicks && _controller.AttemptRecord == null; frame++)
+                yield return new WaitForSecondsRealtime(0.01f);
+
+            SquatAttemptRecord record = _controller.AttemptRecord;
+            Assert.That(
+                record,
+                Is.Not.Null,
+                "The real Input System attempt did not finalize within the bounded tick budget. lifecycle=" +
+                _controller.AttemptLifecycle.State + ", adapterState=" + _controller.Adapter.State +
+                ", traceCount=" + _controller.ObservationTrace.Count);
+            Assert.That(record.Trace.IsFrozen, Is.True);
+            Assert.That(record.Trace.IsTruthSealed, Is.True);
+            Assert.That(record.Judgment.EvidenceStatus, Is.EqualTo(SquatJudgmentEvidenceStatus.EVALUABLE));
+            Assert.That(record.FailureResult.EvidenceStatus, Is.EqualTo(SquatFailureEvidenceStatus.EVALUABLE));
+            Assert.That(record.TerminalReason, Is.EqualTo(SquatAttemptTerminalReason.PHYSICAL_LOCKOUT));
+            Assert.That(record.EventTicks.LockoutTick, Is.Not.EqualTo(SquatAttemptEventTicks.NotAvailable));
+            Assert.That(record.CommandTimeline.Count, Is.EqualTo(3));
+            Assert.That(record.CommandTimelineCovered, Is.True);
+
+            // This physical-input fixture may produce either evaluable rule
+            // verdict; NO_LIFT is accepted only when it carries a real violation.
+            Assert.That(
+                record.RuleOutcome == SquatJudgmentOutcome.GOOD_LIFT ||
+                record.RuleOutcome == SquatJudgmentOutcome.NO_LIFT,
+                Is.True);
+            if (record.RuleOutcome == SquatJudgmentOutcome.NO_LIFT)
+                Assert.That(record.Judgment.PrimaryViolationKind, Is.Not.EqualTo(SquatRuleViolationKind.NONE));
+            Assert.That(record.PhysicalFailureOutcome, Is.EqualTo(SquatFailureResultKind.NO_PHYSICAL_FAILURE));
+            Assert.That(record.FailureResult.HasFailure, Is.False);
+        }
+
+        [UnityTest]
+        public IEnumerator LOAD_KEYS_AFTER_F_ARE_IGNORED()
+        {
+            SetupKeyboardInput();
+            yield return LoadQualificationScene();
+            float loadKg = _controller.CurrentLoadKg;
+
+            yield return TapKeyboardControl(_testKeyboard.fKey);
+            Assert.That(_controller.AttemptOrchestrator.HasStarted, Is.True);
+            yield return TapKeyboardControl(_testKeyboard.digit1Key);
+            yield return TapKeyboardControl(_testKeyboard.digit2Key);
+            yield return TapKeyboardControl(_testKeyboard.digit3Key);
+
+            Assert.That(_controller.CurrentLoadKg, Is.EqualTo(loadKg));
+            Assert.That(_controller.AttemptOrchestrator.HasStarted, Is.True);
+        }
+
+        [UnityTest]
+        public IEnumerator SCENE_RELOAD_RETRY_STARTS_A_FRESH_ATTEMPT_EPOCH()
+        {
+            SetupKeyboardInput();
+            yield return LoadQualificationScene();
+            yield return TapKeyboardControl(_testKeyboard.digit2Key);
+            Assert.That(_controller.CurrentLoadKg, Is.EqualTo(25f));
+
+            FoundationRuntime firstRuntime = _bootstrap.Runtime;
+            IntentBuffer firstInputBuffer = firstRuntime.InputBuffer;
+            InputTimeDomain firstInputTimeDomain = firstRuntime.InputTimeDomain;
+            SquatTrace firstTrace = _controller.ObservationTrace;
+            yield return TapKeyboardControl(_testKeyboard.fKey);
+            Assert.That(_controller.AttemptOrchestrator.HasStarted, Is.True);
+            Assert.That(_controller.AttemptLifecycle.State, Is.Not.EqualTo(SquatAttemptLifecycleState.IDLE));
+            _controller.enabled = false;
+            _bootstrap.enabled = false;
+            yield return CompleteAttempt(firstRuntime);
+
+            SquatAttemptRecord firstRecord = _controller.AttemptRecord;
+            Assert.That(firstRecord, Is.Not.Null);
+            Assert.That(_controller.AttemptLifecycle.Record, Is.SameAs(firstRecord));
+            Assert.That(firstRecord.Trace, Is.SameAs(firstTrace));
+            Assert.That(firstRecord.Trace.IsTruthSealed, Is.True);
+
+            _controller.ResetPrototype();
+            yield return WaitForLoadedQualificationScene();
+            yield return TapKeyboardControl(_testKeyboard.digit2Key);
+            Assert.That(_controller.CurrentLoadKg, Is.EqualTo(25f));
+
+            FoundationRuntime retryRuntime = _bootstrap.Runtime;
+            Assert.That(retryRuntime, Is.Not.SameAs(firstRuntime));
+            Assert.That(retryRuntime.InputBuffer, Is.Not.SameAs(firstInputBuffer));
+            Assert.That(retryRuntime.InputTimeDomain, Is.Not.SameAs(firstInputTimeDomain));
+            Assert.That(_controller.ObservationTrace, Is.Not.SameAs(firstTrace));
+            Assert.That(_controller.ObservationTrace.Count, Is.EqualTo(0));
+            Assert.That(_controller.AttemptRecord, Is.Null);
+            Assert.That(_controller.AttemptLifecycle.State, Is.EqualTo(SquatAttemptLifecycleState.IDLE));
+
+            yield return TapKeyboardControl(_testKeyboard.fKey);
+            Assert.That(_controller.AttemptOrchestrator.HasStarted, Is.True);
+            Assert.That(_controller.AttemptLifecycle.State, Is.Not.EqualTo(SquatAttemptLifecycleState.IDLE));
+            Assert.That(_controller.AttemptRecord, Is.Null);
+            _controller.enabled = false;
+            _bootstrap.enabled = false;
+        }
+
+        private IEnumerator TapKeyboardControl(ButtonControl control)
+        {
+            PressKeyboardButton(control);
+            yield return null;
+            ReleaseKeyboardButton(control);
+            yield return null;
+        }
+
+        private void PressKeyboardButton(ButtonControl control)
+        {
+            _inputTestFixture.currentTime = Time.realtimeSinceStartupAsDouble;
+            _inputTestFixture.Press(control);
+        }
+
+        private void ReleaseKeyboardButton(ButtonControl control)
+        {
+            _inputTestFixture.currentTime = Time.realtimeSinceStartupAsDouble;
+            _inputTestFixture.Release(control);
+        }
+
+        private void SetupKeyboardInput()
+        {
+            _inputTestFixture = new InputTestFixture();
+            _inputTestFixture.Setup();
+            _testKeyboard = InputSystem.AddDevice<Keyboard>();
+        }
+
+        private IEnumerator CompleteAttempt(FoundationRuntime runtime)
+        {
+            bool driveRequested = false;
+            int ticks = 0;
+            float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
+            while (_controller.AttemptRecord == null && ticks < MaximumQualificationTicks)
+            {
+                // This test owns stepping while the production Update methods are disabled.
+                if (_controller.AttemptOrchestrator.HasSquatCommand)
+                {
+                    SquatState state = _controller.Adapter.State;
+                    if (state == SquatState.BOTTOM || state == SquatState.REVERSAL ||
+                        state == SquatState.ASCENT || state == SquatState.STICKING)
+                        driveRequested = true;
+
+                    double inputTime = runtime.CurrentTime.SimulationTimeSeconds +
+                        0.25d * SimulationConstants.FixedDeltaTimeSeconds;
+                    runtime.InputBuffer.SetContinuous(IntentAction.Yield, driveRequested ? 0f : 1f, inputTime);
+                    runtime.InputBuffer.SetContinuous(IntentAction.Drive, driveRequested ? 1f : 0f, inputTime);
+                }
+
+                Assert.That(runtime.AdvanceRenderFrame(SimulationConstants.FixedDeltaTimeSeconds), Is.EqualTo(1));
+                _controller.LeftFootContact?.PhysicsTickUpdate((float)SimulationConstants.FixedDeltaTimeSeconds);
+                _controller.RightFootContact?.PhysicsTickUpdate((float)SimulationConstants.FixedDeltaTimeSeconds);
+                ticks++;
+                if (ticks % 40 == 0)
+                    yield return null;
+            }
+
+            Assert.That(_controller.AttemptRecord, Is.Not.Null, "The attempt did not finalize within its tick budget.");
+        }
+
         private static string FormatViolations(SquatAttemptJudgment judgment)
         {
             if (judgment.Violations.Count == 0)
@@ -214,14 +437,20 @@ namespace PowerliftingSimulator.Tests
 
         private IEnumerator LoadQualificationScene()
         {
-            AsyncOperation load = SceneManager.LoadSceneAsync(QualificationScene, LoadSceneMode.Single);
-            Assert.That(load, Is.Not.Null, "The qualification scene is missing from the project.");
+            AsyncOperation load = SceneManager.LoadSceneAsync(0, LoadSceneMode.Single);
+            Assert.That(load, Is.Not.Null, "The first build scene must be the squat gameplay entry point.");
             while (!load.isDone)
                 yield return null;
+            yield return WaitForLoadedQualificationScene();
+        }
+
+        private IEnumerator WaitForLoadedQualificationScene()
+        {
             yield return null;
 
             _bootstrap = Object.FindFirstObjectByType<FoundationBootstrap>();
             _controller = Object.FindFirstObjectByType<SquatPhysicalPrototypeController>();
+            Assert.That(SceneManager.GetActiveScene().name, Is.EqualTo(QualificationScene));
             Assert.That(_bootstrap, Is.Not.Null);
             Assert.That(_bootstrap.Runtime, Is.Not.Null);
             Assert.That(_bootstrap.Runtime.IsInitialized, Is.True);
@@ -235,7 +464,9 @@ namespace PowerliftingSimulator.Tests
 
         private void CaptureUnexpectedError(string condition, string stackTrace, LogType type)
         {
-            if (type != LogType.Error || condition.StartsWith("connection.state_change", System.StringComparison.Ordinal))
+            if (type != LogType.Error && type != LogType.Exception)
+                return;
+            if (type == LogType.Error && condition.StartsWith("connection.state_change", System.StringComparison.Ordinal))
                 return;
 
             _unexpectedErrors.Add(condition);

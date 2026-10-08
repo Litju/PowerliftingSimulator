@@ -155,8 +155,9 @@ namespace PowerliftingSimulator.Foundation
             ValidateTimestamp(authoritativeSimulationEndSeconds);
             if (authoritativeSimulationEndSeconds < authoritativeSimulationStartSeconds)
                 throw new ArgumentOutOfRangeException(nameof(authoritativeSimulationEndSeconds));
-            if (authoritativeSimulationEndSeconds - authoritativeSimulationStartSeconds >
-                SimulationConstants.MaxAccumulatedTimeSeconds)
+            // Compare absolute endpoints: subtracting a legal full window can round above the cap.
+            if (authoritativeSimulationEndSeconds >
+                authoritativeSimulationStartSeconds + SimulationConstants.MaxAccumulatedTimeSeconds)
                 throw new ArgumentOutOfRangeException(nameof(authoritativeSimulationEndSeconds),
                     "The accepted input horizon cannot exceed the four-tick catch-up bound.");
             if (_hasOpenRenderInterval &&

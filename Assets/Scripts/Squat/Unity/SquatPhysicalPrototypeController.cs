@@ -218,12 +218,17 @@ namespace PowerliftingSimulator.Squat.Unity
             if (keyboard == null)
                 return;
 
-            if (keyboard.digit1Key.wasPressedThisFrame)
+            if (!_attemptOrchestrator.HasStarted && keyboard.digit1Key.wasPressedThisFrame)
                 SetLoad(0f);
-            else if (keyboard.digit2Key.wasPressedThisFrame)
+            else if (!_attemptOrchestrator.HasStarted && keyboard.digit2Key.wasPressedThisFrame)
                 SetLoad(25f);
-            else if (keyboard.digit3Key.wasPressedThisFrame)
+            else if (!_attemptOrchestrator.HasStarted && keyboard.digit3Key.wasPressedThisFrame)
                 SetLoad(105f);
+            else if (keyboard.fKey.wasPressedThisFrame && !_attemptOrchestrator.HasStarted)
+                BeginAttempt();
+            else if (keyboard.escapeKey.wasPressedThisFrame &&
+                _attemptOrchestrator.HasSquatCommand && !_attemptOrchestrator.IsTruthFrozen)
+                AbortAttempt();
             else if (keyboard.bKey.wasPressedThisFrame)
                 ReleaseSaddleForFailureInspection();
             else if (keyboard.rKey.wasPressedThisFrame)
@@ -607,8 +612,8 @@ namespace PowerliftingSimulator.Squat.Unity
                 return;
 
             EnsureHudStyles();
-            GUILayout.BeginArea(new Rect(12f, 12f, 630f, 292f), GUI.skin.box);
-            GUILayout.Label("GAM-11 PHYSICAL SQUAT", _hudTitleStyle, GUILayout.Height(16f));
+            GUILayout.BeginArea(new Rect(12f, 12f, 630f, 344f), GUI.skin.box);
+            GUILayout.Label("PHYSICAL SQUAT", _hudTitleStyle, GUILayout.Height(16f));
             if (!_isInitialized)
             {
                 GUILayout.Label("STARTUP: " + (_startupFailure.Length == 0 ? "waiting" : _startupFailure), _hudLabelStyle, GUILayout.Height(13f));
@@ -627,6 +632,31 @@ namespace PowerliftingSimulator.Squat.Unity
             string failure = _adapter.FailureReason;
             if (_saddle != null && !_saddle.SpawnAlignmentWithinTolerance && failure == "NONE")
                 failure = "SPAWN_ALIGNMENT";
+
+            SquatAttemptRecord record = _attemptOrchestrator.Record;
+            HudLabel(record == null
+                ? _attemptOrchestrator.HasStarted
+                    ? "ATTEMPT: ACTIVE — " + _attemptOrchestrator.Lifecycle.State
+                    : "ATTEMPT: READY — select a load, then press F"
+                : "ATTEMPT: FINALIZED");
+            if (record != null)
+            {
+                string ruleResult = record.Judgment.EvidenceStatus != SquatJudgmentEvidenceStatus.EVALUABLE
+                    ? "UNEVALUABLE (" + record.Judgment.EvidenceStatus + ")"
+                    : record.RuleOutcome == SquatJudgmentOutcome.GOOD_LIFT
+                        ? "LEGAL GOOD_LIFT"
+                        : record.RuleOutcome == SquatJudgmentOutcome.NO_LIFT
+                            ? "NO_LIFT (" + record.Judgment.PrimaryViolationKind + ")"
+                            : "UNDETERMINED (" + record.RuleOutcome + ")";
+                string physicalResult = record.FailureResult.EvidenceStatus != SquatFailureEvidenceStatus.EVALUABLE
+                    ? "UNEVALUABLE (" + record.FailureResult.EvidenceStatus + ")"
+                    : record.PhysicalFailureOutcome == SquatFailureResultKind.PHYSICAL_FAILURE
+                        ? "PHYSICAL_FAILURE (" + record.FailureResult.PrimaryFailureKind + ")"
+                        : record.PhysicalFailureOutcome.ToString();
+                HudLabel("RULES: " + ruleResult);
+                HudLabel("PHYSICAL: " + physicalResult);
+                HudLabel("TERMINAL: " + record.TerminalReason);
+            }
 
             GUILayout.BeginHorizontal();
             GUILayout.BeginVertical(GUILayout.Width(315f));
@@ -678,7 +708,7 @@ namespace PowerliftingSimulator.Squat.Unity
             GUILayout.EndVertical();
             GUILayout.EndHorizontal();
 
-            HudLabel("CONTROLS: SPACE Brace/Confirm | S Yield/descend | W Drive/ascend | A/D Balance | R Reset | B Release saddle");
+            HudLabel("CONTROLS: F Start attempt | SPACE Brace/Confirm | S Descend | W Ascend | ESC Abort active attempt | R Reset");
             HudLabel("LOAD_CONTROLS: 1 Unloaded | 2 25 kg | 3 105 kg");
             GUILayout.EndArea();
         }

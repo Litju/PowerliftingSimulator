@@ -79,6 +79,7 @@ namespace PowerliftingSimulator.Squat.Unity
         private const float MinimumTrunkParticipationRad = 0.0017f; // 0.1 deg
         private const float MaxTrunkNormalizationScale = 4f;
         private SquatState _state = SquatState.SETUP;
+        private bool _squatCommandIssued;
         private SquatPhaseDirection _direction = SquatPhaseDirection.None;
         private float _sq;
         // Slow enough for the finite drives and contact solver to settle at
@@ -428,6 +429,7 @@ namespace PowerliftingSimulator.Squat.Unity
         public void Reset()
         {
             _state = SquatState.SETUP;
+            _squatCommandIssued = false;
             _direction = SquatPhaseDirection.None;
             _sq = 0f;
 #if UNITY_EDITOR
@@ -490,6 +492,7 @@ namespace PowerliftingSimulator.Squat.Unity
         public void BeginIntentDrivenSquat()
         {
             _state = SquatState.SQUAT_COMMAND;
+            _squatCommandIssued = true;
             _direction = SquatPhaseDirection.None;
             _lockoutReached = false;
             _failureReason = "NONE";
@@ -716,8 +719,10 @@ namespace PowerliftingSimulator.Squat.Unity
             }
 #endif
 
-            // Manual mode is intent-driven. Brace/Confirm arms the squat;
-            // Yield and Drive only alter the reference phase.
+            if (!_squatCommandIssued)
+                return;
+
+            // The issued squat command opens player-driven reference motion.
             if ((_state == SquatState.SETUP || _state == SquatState.LOCKOUT) && braceInput)
             {
                 _state = SquatState.SQUAT_COMMAND;
