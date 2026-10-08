@@ -23,7 +23,7 @@ namespace PowerliftingSimulator.Squat.Unity
         [SerializeField] private float barLoadKg = 25f;
         [SerializeField] private bool autoSquatOnStart = false;
         [SerializeField] private bool attachBarSaddle = true;
-        [SerializeField] private bool showDebugGui = true;
+        [SerializeField] private bool showDebugGui;
 
         private const float PlantarSymmetryToleranceM = 0.001f;
 
@@ -43,6 +43,11 @@ namespace PowerliftingSimulator.Squat.Unity
         private string _startupFailure = string.Empty;
         private GUIStyle _hudLabelStyle;
         private GUIStyle _hudTitleStyle;
+        private GUIStyle _playerTitleStyle;
+        private GUIStyle _playerBodyStyle;
+        private GUIStyle _playerResultStyle;
+        private GUIStyle _playerButtonStyle;
+        private GUIStyle _playerControlsStyle;
 
         public SquatPhysicalAdapter Adapter => _adapter;
         public SquatBarSaddle Saddle => _saddle;
@@ -546,6 +551,12 @@ namespace PowerliftingSimulator.Squat.Unity
             SceneManager.LoadScene(SceneManager.GetActiveScene().path, LoadSceneMode.Single);
         }
 
+        public void SelectLoadFromPlayerUi(float loadKg) => SetLoad(loadKg);
+
+        public void StartAttemptFromPlayerUi() => BeginAttempt();
+
+        public void RetryFromPlayerUi() => ResetPrototype();
+
         private void ApplySelectedLoadWithoutSaddle()
         {
             if (barbell == null || barbell.Body == null)
@@ -608,11 +619,140 @@ namespace PowerliftingSimulator.Squat.Unity
 
         private void OnGUI()
         {
-            if (!showDebugGui)
-                return;
-
             EnsureHudStyles();
-            GUILayout.BeginArea(new Rect(12f, 12f, 630f, 344f), GUI.skin.box);
+            DrawPlayerHud();
+            if (showDebugGui)
+                DrawDebugHud();
+        }
+
+        private void DrawPlayerHud()
+        {
+            GUILayout.BeginArea(new Rect(18f, 18f, 390f, 382f), GUI.skin.box);
+            GUILayout.Space(4f);
+            GUILayout.Label("SQUAT", _playerTitleStyle, GUILayout.Height(30f));
+            GUILayout.Label(string.Format(CultureInfo.InvariantCulture, "BAR LOAD  {0:0} kg", _selectedLoadKg),
+                _playerBodyStyle, GUILayout.Height(24f));
+
+            SquatAttemptLifecycleState lifecycleState = _attemptOrchestrator == null
+                ? SquatAttemptLifecycleState.IDLE
+                : _attemptOrchestrator.Lifecycle.State;
+            SquatAttemptRecord record = AttemptRecord;
+            if (_isInitialized && lifecycleState == SquatAttemptLifecycleState.IDLE && record == null)
+            {
+                GUILayout.BeginHorizontal();
+                DrawLoadButton(0f);
+                DrawLoadButton(25f);
+                DrawLoadButton(105f);
+                GUILayout.EndHorizontal();
+            }
+
+            if (!_isInitialized)
+            {
+                GUILayout.Label("Preparing the squat…", _playerBodyStyle, GUILayout.Height(30f));
+            }
+            else if (record != null)
+            {
+                GUILayout.Label("ATTEMPT COMPLETE", _playerBodyStyle, GUILayout.Height(26f));
+                GUILayout.Label(FormatPlayerResult(record), _playerResultStyle, GUILayout.MinHeight(58f));
+                if (GUILayout.Button("RETRY", _playerButtonStyle, GUILayout.Height(40f)))
+                    RetryFromPlayerUi();
+            }
+            else if (lifecycleState == SquatAttemptLifecycleState.IDLE)
+            {
+                GUILayout.Label("READY", _playerResultStyle, GUILayout.Height(28f));
+                if (GUILayout.Button("START ATTEMPT", _playerButtonStyle, GUILayout.Height(42f)))
+                    StartAttemptFromPlayerUi();
+            }
+            else
+            {
+                GUILayout.Label("ATTEMPT ACTIVE", _playerResultStyle, GUILayout.Height(28f));
+                GUILayout.Label(PlayerInstruction(lifecycleState), _playerBodyStyle, GUILayout.MinHeight(44f));
+            }
+
+            GUILayout.Space(4f);
+            GUILayout.Label("1 / 2 / 3 load  ·  F start  ·  Space brace / confirm", _playerControlsStyle, GUILayout.Height(20f));
+            GUILayout.Label("S / ↓ descend  ·  W / ↑ drive up  ·  Esc abort  ·  R reset", _playerControlsStyle, GUILayout.Height(20f));
+            if (GUILayout.Button(showDebugGui ? "HIDE DEVELOPER TELEMETRY" : "DEVELOPER TELEMETRY", GUILayout.Height(28f)))
+                showDebugGui = !showDebugGui;
+            GUILayout.EndArea();
+        }
+
+        private void DrawLoadButton(float loadKg)
+        {
+            Color previous = GUI.backgroundColor;
+            if (Mathf.Approximately(_selectedLoadKg, loadKg))
+                GUI.backgroundColor = new Color(0.42f, 0.82f, 0.68f);
+            if (GUILayout.Button(loadKg.ToString("0", CultureInfo.InvariantCulture) + " kg",
+                _playerButtonStyle, GUILayout.Height(38f)))
+                SelectLoadFromPlayerUi(loadKg);
+            GUI.backgroundColor = previous;
+        }
+
+        private string PlayerInstruction(SquatAttemptLifecycleState lifecycleState)
+        {
+            if (lifecycleState == SquatAttemptLifecycleState.START_WINDOW)
+                return "Hold steady while your start position is checked.";
+            if (lifecycleState == SquatAttemptLifecycleState.PHYSICAL_TERMINAL_CONDITION)
+                return "Stand tall and hold steady while the result is finalized.";
+
+            switch (_adapter.State)
+            {
+                case SquatState.SQUAT_COMMAND:
+                    return "Press and hold S or ↓ to begin the descent.";
+                case SquatState.DESCENT:
+                    return "Continue the descent with S or ↓.";
+                case SquatState.BOTTOM:
+                case SquatState.REVERSAL:
+                    return "Drive up with W or ↑.";
+                case SquatState.ASCENT:
+                case SquatState.STICKING:
+                    return "Keep driving up with W or ↑.";
+                case SquatState.LOCKOUT:
+                case SquatState.RACK_COMMAND:
+                case SquatState.RERACK:
+                    return "Stand tall and hold steady while the attempt finishes.";
+                case SquatState.FAILURE:
+                    return "Attempt ended. Review the result.";
+                default:
+                    return "Get set. Follow the cue to descend, then drive up.";
+            }
+        }
+
+        public static string FormatPlayerResult(SquatAttemptRecord record)
+        {
+            if (record == null)
+                return string.Empty;
+
+            SquatAttemptJudgment judgment = record.Judgment;
+            string result;
+            if (judgment.EvidenceStatus != SquatJudgmentEvidenceStatus.EVALUABLE)
+                result = "UNJUDGED\nRules: " + Humanize(judgment.EvidenceStatus.ToString());
+            else if (record.RuleOutcome == SquatJudgmentOutcome.GOOD_LIFT)
+                result = "GOOD LIFT";
+            else if (record.RuleOutcome == SquatJudgmentOutcome.NO_LIFT)
+                result = "NO LIFT" + (judgment.PrimaryViolationKind == SquatRuleViolationKind.NONE
+                    ? string.Empty
+                    : "\nReason: " + Humanize(judgment.PrimaryViolationKind.ToString()));
+            else
+                result = "UNDECIDED\nRules: " + Humanize(record.RuleOutcome.ToString());
+
+            SquatFailureResult failure = record.FailureResult;
+            if (failure.EvidenceStatus != SquatFailureEvidenceStatus.EVALUABLE)
+                result += "\nPhysical result unavailable: " + Humanize(failure.EvidenceStatus.ToString());
+            else if (failure.Outcome == SquatFailureResultKind.PHYSICAL_FAILURE)
+                result += "\nPhysical failure: " + Humanize(failure.PrimaryFailureKind.ToString());
+            else if (failure.Outcome == SquatFailureResultKind.UNDETERMINED)
+                result += "\nPhysical result undetermined";
+            return result;
+        }
+
+        private static string Humanize(string value) => value.Replace('_', ' ').ToLowerInvariant();
+
+        private void DrawDebugHud()
+        {
+            float top = 418f;
+            GUILayout.BeginArea(new Rect(18f, top, Screen.width - 36f,
+                Mathf.Max(200f, Screen.height - top - 18f)), GUI.skin.box);
             GUILayout.Label("PHYSICAL SQUAT", _hudTitleStyle, GUILayout.Height(16f));
             if (!_isInitialized)
             {
@@ -757,6 +897,32 @@ namespace PowerliftingSimulator.Squat.Unity
                 fontSize = 13,
                 fixedHeight = 16f,
                 fontStyle = FontStyle.Bold
+            };
+            _playerTitleStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 22,
+                fixedHeight = 30f,
+                fontStyle = FontStyle.Bold
+            };
+            _playerBodyStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 15,
+                wordWrap = true
+            };
+            _playerResultStyle = new GUIStyle(_playerBodyStyle)
+            {
+                fontSize = 18,
+                fontStyle = FontStyle.Bold
+            };
+            _playerButtonStyle = new GUIStyle(GUI.skin.button)
+            {
+                fontSize = 15,
+                fontStyle = FontStyle.Bold
+            };
+            _playerControlsStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 11,
+                wordWrap = true
             };
         }
     }
