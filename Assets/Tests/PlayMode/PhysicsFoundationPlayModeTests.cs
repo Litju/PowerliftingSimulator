@@ -107,6 +107,28 @@ namespace PowerliftingSimulator.Tests
         }
 
         [UnityTest]
+        public IEnumerator FULL_CATCH_UP_INPUT_HORIZON_ACCEPTS_ABSOLUTE_TIME_ROUNDING()
+        {
+            double simulationStartSeconds = 0.1d;
+            double simulationEndSeconds = simulationStartSeconds + SimulationConstants.MaxAccumulatedTimeSeconds;
+            Assert.That(
+                simulationEndSeconds - simulationStartSeconds,
+                Is.GreaterThan(SimulationConstants.MaxAccumulatedTimeSeconds));
+
+            InputTimeDomain inputTimeDomain = new InputTimeDomain();
+            Assert.That(
+                inputTimeDomain.AdvanceRenderInterval(1d, simulationStartSeconds, simulationEndSeconds),
+                Is.EqualTo(simulationEndSeconds));
+
+            InputTimeDomain overBoundInputTimeDomain = new InputTimeDomain();
+            Assert.Throws<ArgumentOutOfRangeException>(() => overBoundInputTimeDomain.AdvanceRenderInterval(
+                1d,
+                simulationStartSeconds,
+                simulationEndSeconds + 1e-9d));
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator GLOBAL_FIXED_TIMESTEP_AUTHORITY()
         {
             _runtime = CreateRuntime();
