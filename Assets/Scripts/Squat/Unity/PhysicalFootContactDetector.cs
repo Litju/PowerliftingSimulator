@@ -46,6 +46,17 @@ namespace PowerliftingSimulator.Squat.Unity
         /// <summary>Plantar contact points recorded during the previous simulated step.</summary>
         public int CompletedContactCount => _completedCount;
 
+        public float CompletedNormalImpulseTotal
+        {
+            get
+            {
+                float total = 0f;
+                for (int index = 0; index < _completedCount; index++)
+                    total += _completedNormalImpulses[index];
+                return total;
+            }
+        }
+
         public Vector3 CompletedContactPoint(int index) => _completedPoints[index];
 
         /// <summary>

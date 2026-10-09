@@ -68,6 +68,9 @@ namespace PowerliftingSimulator.Squat.Unity
         public IReadOnlyList<string> SuppressedInitialPenetrationPairs => _suppressedInitialPenetrationPairs;
         public bool RuntimeWired => _isInitialized && foundation != null && athleteRig != null &&
             barbell != null && _adapter != null && (_selectedLoadKg <= 0f || _saddle != null);
+        public bool CanRequestOneStepWalkoutIntent => _isInitialized && _selectedLoadKg == 25f &&
+            _attemptOrchestrator != null && !_attemptOrchestrator.HasStarted &&
+            _adapter != null && _adapter.CanBeginOneStepWalkout;
         public string StartupFailure => _startupFailure;
 
         private void Awake()
@@ -229,7 +232,8 @@ namespace PowerliftingSimulator.Squat.Unity
                 SetLoad(25f);
             else if (!_attemptOrchestrator.HasStarted && keyboard.digit3Key.wasPressedThisFrame)
                 SetLoad(105f);
-            else if (keyboard.fKey.wasPressedThisFrame && !_attemptOrchestrator.HasStarted)
+            else if (keyboard.fKey.wasPressedThisFrame && !_attemptOrchestrator.HasStarted &&
+                _adapter.OneStepWalkoutState == SquatOneStepWalkoutState.BILATERAL_STANDING)
                 BeginAttempt();
             else if (keyboard.escapeKey.wasPressedThisFrame &&
                 _attemptOrchestrator.HasSquatCommand && !_attemptOrchestrator.IsTruthFrozen)
@@ -528,8 +532,18 @@ namespace PowerliftingSimulator.Squat.Unity
         {
             if (!_isInitialized || _attemptOrchestrator == null)
                 throw new InvalidOperationException("The squat attempt lifecycle is not initialized.");
+            if (_adapter.OneStepWalkoutState != SquatOneStepWalkoutState.BILATERAL_STANDING)
+                throw new InvalidOperationException("The judged squat remains unavailable after this one-step walkout gate.");
 
             _attemptOrchestrator.BeginAttempt();
+        }
+
+        public void RequestOneStepWalkoutIntent()
+        {
+            if (!CanRequestOneStepWalkoutIntent)
+                throw new InvalidOperationException("The 25 kg one-step Walkout intent requires loaded bilateral standing before an attempt starts.");
+
+            _adapter.BeginOneStepWalkout(foundation.Runtime.CurrentTime.Tick);
         }
 
         public SquatAttemptRecord AbortAttempt()
@@ -664,7 +678,21 @@ namespace PowerliftingSimulator.Squat.Unity
             else if (lifecycleState == SquatAttemptLifecycleState.IDLE)
             {
                 GUILayout.Label("READY", _playerResultStyle, GUILayout.Height(28f));
-                if (GUILayout.Button("START ATTEMPT", _playerButtonStyle, GUILayout.Height(42f)))
+                SquatOneStepWalkoutState walkoutState = _adapter.OneStepWalkoutState;
+                bool walkoutInProgress = walkoutState != SquatOneStepWalkoutState.BILATERAL_STANDING &&
+                    walkoutState != SquatOneStepWalkoutState.ONE_STEP_READY &&
+                    walkoutState != SquatOneStepWalkoutState.ABORTED;
+                if (CanRequestOneStepWalkoutIntent &&
+                    GUILayout.Button("WALKOUT STEP", _playerButtonStyle, GUILayout.Height(38f)))
+                    RequestOneStepWalkoutIntent();
+                if (walkoutInProgress)
+                    GUILayout.Label("WALKOUT IN PROGRESS", _playerBodyStyle, GUILayout.Height(24f));
+                else if (walkoutState == SquatOneStepWalkoutState.ABORTED)
+                    GUILayout.Label("WALKOUT ABORTED · RESET TO RETRY", _playerBodyStyle, GUILayout.Height(24f));
+                else if (walkoutState == SquatOneStepWalkoutState.ONE_STEP_READY)
+                    GUILayout.Label("ONE-STEP WALKOUT READY", _playerBodyStyle, GUILayout.Height(24f));
+                else if (walkoutState == SquatOneStepWalkoutState.BILATERAL_STANDING &&
+                    GUILayout.Button("START ATTEMPT", _playerButtonStyle, GUILayout.Height(42f)))
                     StartAttemptFromPlayerUi();
             }
             else
