@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Failed(Child)" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-09 02:16:59Z" end-time="2026-10-09 02:17:05Z" duration="5.1341747">
+  <test-suite type="TestSuite" id="1390" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="290" result="Failed" site="Child" start-time="2026-10-09 02:16:59Z" end-time="2026-10-09 02:17:05Z" duration="5.134175" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1343" name="PowerliftingSimulator.Foundation.Tests.PlayMode.dll" fullname="C:/Users/Usuario/.codex/worktrees/gam60-first-step/PowerliftingSimulator/Library/ScriptAssemblies/PowerliftingSimulator.Foundation.Tests.PlayMode.dll" runstate="Runnable" testcasecount="263" result="Failed" site="Child" start-time="2026-10-09 02:16:59Z" end-time="2026-10-09 02:17:05Z" duration="5.118699" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="19428" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1344" name="PowerliftingSimulator" fullname="PowerliftingSimulator" runstate="Runnable" testcasecount="263" result="Failed" site="Child" start-time="2026-10-09 02:16:59Z" end-time="2026-10-09 02:17:05Z" duration="5.115240" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1345" name="Tests" fullname="PowerliftingSimulator.Tests" runstate="Runnable" testcasecount="263" result="Failed" site="Child" start-time="2026-10-09 02:16:59Z" end-time="2026-10-09 02:17:05Z" duration="5.111640" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestFixture" id="1166" name="GAM60OneStepWalkoutQualificationTests" fullname="PowerliftingSimulator.Tests.GAM60OneStepWalkoutQualificationTests" classname="PowerliftingSimulator.Tests.GAM60OneStepWalkoutQualificationTests" runstate="Runnable" testcasecount="1" result="Failed" site="Child" start-time="2026-10-09 02:16:59Z" end-time="2026-10-09 02:17:05Z" duration="5.092495" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1167" name="GAM60_25KG_ONE_BACKWARD_STEP_QUALIFIES_THREE_FRESH_SCENES" fullname="PowerliftingSimulator.Tests.GAM60OneStepWalkoutQualificationTests.GAM60_25KG_ONE_BACKWARD_STEP_QUALIFIES_THREE_FRESH_SCENES" methodname="GAM60_25KG_ONE_BACKWARD_STEP_QUALIFIES_THREE_FRESH_SCENES" classname="PowerliftingSimulator.Tests.GAM60OneStepWalkoutQualificationTests" runstate="Runnable" seed="1903150753" result="Failed" start-time="2026-10-09 02:17:00Z" end-time="2026-10-09 02:17:05Z" duration="5.034865" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  run 1: FAIL; walkout entered ABORT_RECOVERY: STATE_TIMEOUT_SHIFT_TO_LEFT_STANCE; bounded ABORT_RECOVERY reached ABORTED safely
+run 2: FAIL; walkout entered ABORT_RECOVERY: STATE_TIMEOUT_SHIFT_TO_LEFT_STANCE; bounded ABORT_RECOVERY reached ABORTED safely
+run 3: FAIL; walkout entered ABORT_RECOVERY: STATE_TIMEOUT_SHIFT_TO_LEFT_STANCE; bounded ABORT_RECOVERY reached ABORTED safely
+Evidence: C:\Users\Usuario\.codex\worktrees\gam60-first-step\PowerliftingSimulator\Artifacts\Measurements\GAM-60\one-step-25kg.csv
+Joint baseline: C:\Users\Usuario\.codex\worktrees\gam60-first-step\PowerliftingSimulator\Artifacts\Measurements\GAM-60\one-step-25kg-joint-baseline.csv
+  Expected: <empty>
+  But was:  < "run 1: FAIL; walkout entered ABORT_RECOVERY: STATE_TIMEOUT_SHIFT_TO_LEFT_STANCE; bounded ABORT_RECOVERY reached ABORTED safely", "run 2: FAIL; walkout entered ABORT_RECOVERY: STATE_TIMEOUT_SHIFT_TO_LEFT_STANCE; bounded ABORT_RECOVERY reached ABORTED safely", "run 3: FAIL; walkout entered ABORT_RECOVERY: STATE_TIMEOUT_SHIFT_TO_LEFT_STANCE; bounded ABORT_RECOVERY reached ABORTED safely" >
+]]></message>
+                <stack-trace><![CDATA[at PowerliftingSimulator.Tests.GAM60OneStepWalkoutQualificationTests+<GAM60_25KG_ONE_BACKWARD_STEP_QUALIFIES_THREE_FRESH_SCENES>d__6.MoveNext () [0x014e8] in C:\Users\Usuario\.codex\worktrees\gam60-first-step\PowerliftingSimulator\Assets\Tests\PlayMode\GAM60OneStepWalkoutQualificationTests.cs:348
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0003a] in .\Library\PackageCache\com.unity.test-framework@bd7f943e9647\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[GAM60_RUN=1 JOINT=left_foot MAX_DELTA_FROM_A_REQUEST_DEG=2.865 MAX_DELTA_FROM_B_APPLIED_DEG=2.865
+GAM60_RUN=1 JOINT=right_foot MAX_DELTA_FROM_A_REQUEST_DEG=2.865 MAX_DELTA_FROM_B_APPLIED_DEG=2.865
+GAM60_RUN=1 JOINT=left_shank MAX_DELTA_FROM_A_REQUEST_DEG=0.000 MAX_DELTA_FROM_B_APPLIED_DEG=0.000
+GAM60_RUN=1 JOINT=right_shank MAX_DELTA_FROM_A_REQUEST_DEG=0.000 MAX_DELTA_FROM_B_APPLIED_DEG=0.000
+GAM60_RUN=1 JOINT=left_thigh MAX_DELTA_FROM_A_REQUEST_DEG=0.428 MAX_DELTA_FROM_B_APPLIED_DEG=0.428
+GAM60_RUN=1 JOINT=right_thigh MAX_DELTA_FROM_A_REQUEST_DEG=0.428 MAX_DELTA_FROM_B_APPLIED_DEG=0.428
+GAM60_RUN=1 JOINT=abdomen MAX_DELTA_FROM_A_REQUEST_DEG=0.000 MAX_DELTA_FROM_B_APPLIED_DEG=0.000
+GAM60_RUN=1 JOINT=thorax MAX_DELTA_FROM_A_REQUEST_DEG=0.000 MAX_DELTA_FROM_B_APPLIED_DEG=0.000
+GAM60_RUN=1 STATE=ABORTED TICKS=421 POSTERIOR_M=0.0000 CLEARANCE_M=0.0000 OFFGROUND_BEFORE_TRANSLATION=False NEAR_ZERO_TOUCH=False FAILURE=walkout entered ABORT_RECOVERY: STATE_TIMEOUT_SHIFT_TO_LEFT_STANCE; bounded ABORT_RECOVERY reached ABORTED safely
+GAM60_RUN=2 JOINT=left_foot MAX_DELTA_FROM_A_REQUEST_DEG=2.865 MAX_DELTA_FROM_B_APPLIED_DEG=2.865
+GAM60_RUN=2 JOINT=right_foot MAX_DELTA_FROM_A_REQUEST_DEG=2.865 MAX_DELTA_FROM_B_APPLIED_DEG=2.865
+GAM60_RUN=2 JOINT=left_shank MAX_DELTA_FROM_A_REQUEST_DEG=0.000 MAX_DELTA_FROM_B_APPLIED_DEG=0.000
+GAM60_RUN=2 JOINT=right_shank MAX_DELTA_FROM_A_REQUEST_DEG=0.000 MAX_DELTA_FROM_B_APPLIED_DEG=0.000
+GAM60_RUN=2 JOINT=left_thigh MAX_DELTA_FROM_A_REQUEST_DEG=0.428 MAX_DELTA_FROM_B_APPLIED_DEG=0.428
+GAM60_RUN=2 JOINT=right_thigh MAX_DELTA_FROM_A_REQUEST_DEG=0.428 MAX_DELTA_FROM_B_APPLIED_DEG=0.428
+GAM60_RUN=2 JOINT=abdomen MAX_DELTA_FROM_A_REQUEST_DEG=0.000 MAX_DELTA_FROM_B_APPLIED_DEG=0.000
+GAM60_RUN=2 JOINT=thorax MAX_DELTA_FROM_A_REQUEST_DEG=0.000 MAX_DELTA_FROM_B_APPLIED_DEG=0.000
+GAM60_RUN=2 STATE=ABORTED TICKS=421 POSTERIOR_M=0.0000 CLEARANCE_M=0.0000 OFFGROUND_BEFORE_TRANSLATION=False NEAR_ZERO_TOUCH=False FAILURE=walkout entered ABORT_RECOVERY: STATE_TIMEOUT_SHIFT_TO_LEFT_STANCE; bounded ABORT_RECOVERY reached ABORTED safely
+GAM60_RUN=3 JOINT=left_foot MAX_DELTA_FROM_A_REQUEST_DEG=2.865 MAX_DELTA_FROM_B_APPLIED_DEG=2.865
+GAM60_RUN=3 JOINT=right_foot MAX_DELTA_FROM_A_REQUEST_DEG=2.865 MAX_DELTA_FROM_B_APPLIED_DEG=2.865
+GAM60_RUN=3 JOINT=left_shank MAX_DELTA_FROM_A_REQUEST_DEG=0.000 MAX_DELTA_FROM_B_APPLIED_DEG=0.000
+GAM60_RUN=3 JOINT=right_shank MAX_DELTA_FROM_A_REQUEST_DEG=0.000 MAX_DELTA_FROM_B_APPLIED_DEG=0.000
+GAM60_RUN=3 JOINT=left_thigh MAX_DELTA_FROM_A_REQUEST_DEG=0.428 MAX_DELTA_FROM_B_APPLIED_DEG=0.428
+GAM60_RUN=3 JOINT=right_thigh MAX_DELTA_FROM_A_REQUEST_DEG=0.428 MAX_DELTA_FROM_B_APPLIED_DEG=0.428
+GAM60_RUN=3 JOINT=abdomen MAX_DELTA_FROM_A_REQUEST_DEG=0.000 MAX_DELTA_FROM_B_APPLIED_DEG=0.000
+GAM60_RUN=3 JOINT=thorax MAX_DELTA_FROM_A_REQUEST_DEG=0.000 MAX_DELTA_FROM_B_APPLIED_DEG=0.000
+GAM60_RUN=3 STATE=ABORTED TICKS=421 POSTERIOR_M=0.0000 CLEARANCE_M=0.0000 OFFGROUND_BEFORE_TRANSLATION=False NEAR_ZERO_TOUCH=False FAILURE=walkout entered ABORT_RECOVERY: STATE_TIMEOUT_SHIFT_TO_LEFT_STANCE; bounded ABORT_RECOVERY reached ABORTED safely
+Saving results to: C:/Users/Usuario/AppData/LocalLow/DefaultCompany/PowerliftingSimulator\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

@@ -7,6 +7,21 @@ using UnityEngine;
 
 namespace PowerliftingSimulator.Squat.Unity
 {
+    public enum SquatOneStepWalkoutState
+    {
+        BILATERAL_STANDING,
+        SHIFT_TO_LEFT_STANCE,
+        VERIFY_RIGHT_UNLOAD,
+        RIGHT_SWING_CLEAR,
+        RIGHT_SWING_BACK,
+        RIGHT_TOUCHDOWN,
+        RIGHT_LOAD_ACCEPT,
+        BILATERAL_RECOVERY,
+        ONE_STEP_READY,
+        ABORT_RECOVERY,
+        ABORTED
+    }
+
     /// <summary>
     /// Converts squat intent and the previous post-physics observation into
     /// finite joint targets. It never writes a Rigidbody force, torque,
@@ -78,6 +93,16 @@ namespace PowerliftingSimulator.Squat.Unity
         private const float LockoutTransitionSq = 0.001f;
         private const float MinimumTrunkParticipationRad = 0.0017f; // 0.1 deg
         private const float MaxTrunkNormalizationScale = 4f;
+        public const float OneStepPosteriorDistanceM = 0.18f;
+        public const float OneStepSwingClearanceM = 0.07f;
+        public const string OneStepTargetFrame = "W";
+        private const float OneStepLandingToleranceM = 0.03f;
+        private const float OneStepLoadedImpulseFraction = 0.05f;
+        private const float OneStepUnloadImpulseFraction = 0.01f;
+        private const int OneStepUnloadPersistenceTicks = 10;
+        private const int OneStepOffGroundPersistenceTicks = 2;
+        private const int OneStepLoadAcceptanceTicks = 10;
+        private const int OneStepRecoveryPersistenceTicks = 20;
         private SquatState _state = SquatState.SETUP;
         private bool _squatCommandIssued;
         private SquatPhaseDirection _direction = SquatPhaseDirection.None;
@@ -103,6 +128,25 @@ namespace PowerliftingSimulator.Squat.Unity
         private float _referenceComOffsetMl;
         private Vector3 _referenceSupportCenter;
         private bool _hasStandingComReference;
+        private PhysicalFootContactDetector _leftFoot;
+        private PhysicalFootContactDetector _rightFoot;
+        private SquatOneStepWalkoutState _oneStepWalkoutState = SquatOneStepWalkoutState.BILATERAL_STANDING;
+        private ulong _oneStepStateEnteredTick;
+        private Vector3 _oneStepRightStartBodyWorld;
+        private Vector3 _oneStepRightLandingBodyWorld;
+        private Vector3 _oneStepRightTargetBodyWorld;
+        private Quaternion _oneStepRightFootBodyRotation;
+        private float _oneStepInitialComWorldX;
+        private float _oneStepLeftComTargetWorldX;
+        private float _oneStepSupportPlaneY;
+        private int _oneStepUnloadTicks;
+        private int _oneStepOffGroundTicks;
+        private int _oneStepLoadTicks;
+        private int _oneStepRecoveryTicks;
+        private bool _oneStepRightIkActive;
+        private bool _oneStepAbortTouchdownObserved;
+        private bool _oneStepSawNearZeroTouch;
+        private string _oneStepFailure = string.Empty;
 #if UNITY_EDITOR
         private readonly SquatPredictiveBalanceController _balanceController = new SquatPredictiveBalanceController();
 #endif
@@ -288,6 +332,8 @@ namespace PowerliftingSimulator.Squat.Unity
             PhysicalFootContactDetector leftFoot,
             PhysicalFootContactDetector rightFoot)
         {
+            _leftFoot = leftFoot;
+            _rightFoot = rightFoot;
             _observer.SetFootContactDetectors(leftFoot, rightFoot);
         }
 
@@ -306,6 +352,22 @@ namespace PowerliftingSimulator.Squat.Unity
         public float MaxDriveSaturation => _maxDriveSaturation;
         public float MinPelvisHeightM => _minPelvisHeightM;
         public bool LockoutReached => _lockoutReached;
+        public SquatOneStepWalkoutState OneStepWalkoutState => _oneStepWalkoutState;
+        public string OneStepWalkoutFailure => _oneStepFailure;
+        public bool OneStepSawNearZeroTouch => _oneStepSawNearZeroTouch;
+        public bool CanBeginOneStepWalkout
+        {
+            get
+            {
+                float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
+                float loadedImpulse = OneStepImpulseThreshold(OneStepLoadedImpulseFraction, dt);
+                return _oneStepWalkoutState == SquatOneStepWalkoutState.BILATERAL_STANDING &&
+                    HasFiniteComSupport() && IsFootLoaded(_leftFoot, loadedImpulse) &&
+                    IsFootLoaded(_rightFoot, loadedImpulse) && IsComControlledByBothFeet(0.15f);
+            }
+        }
+        public float OneStepPosteriorDisplacementM =>
+            _oneStepRightStartBodyWorld.z - _rig.Segments["right_foot"].Body.position.z;
 
         // IPF-derived depth proxy measured on the physical bodies. Pelvis
         // drop is kept separately as a regression metric; it is not legality.
@@ -325,6 +387,39 @@ namespace PowerliftingSimulator.Squat.Unity
             _saddle = saddle;
             if (saddle != null)
                 _failureReason = "NONE";
+        }
+
+        public void BeginOneStepWalkout(ulong currentTick)
+        {
+            if (!_hasStandingComReference || _state != SquatState.SETUP || _squatCommandIssued ||
+                _oneStepWalkoutState != SquatOneStepWalkoutState.BILATERAL_STANDING)
+                throw new InvalidOperationException("The one-step walkout requires an untouched validated standing setup.");
+            if (!CanBeginOneStepWalkout)
+                throw new InvalidOperationException("Bilateral loaded support and finite controlled COM are required before walkout.");
+            if (_saddle == null || !_saddle.IsAttached || _saddle.Barbell == null ||
+                Mathf.Abs(_saddle.Barbell.LoadedMassKg - 25f) > 0.001f)
+                throw new InvalidOperationException("The GAM-60 one-step walkout is qualified only with an attached 25 kg bar.");
+            if (_leftFoot == null || _rightFoot == null ||
+                _rig.Segments["left_foot"].Body == null || _rig.Segments["right_foot"].Body == null)
+                throw new InvalidOperationException("Both physical foot contact detectors are required.");
+
+            _oneStepRightStartBodyWorld = _rig.Segments["right_foot"].Body.position;
+            _oneStepRightLandingBodyWorld = _oneStepRightStartBodyWorld + Vector3.back * OneStepPosteriorDistanceM;
+            _oneStepRightTargetBodyWorld = _oneStepRightStartBodyWorld;
+            _oneStepRightFootBodyRotation = _rig.Segments["right_foot"].Body.rotation;
+            _oneStepInitialComWorldX = _observer.SystemCom.x;
+            _oneStepLeftComTargetWorldX = _rig.Segments["left_foot"].Body.position.x;
+            _oneStepSupportPlaneY = _observer.SupportPlaneY;
+            _oneStepStateEnteredTick = currentTick;
+            _oneStepUnloadTicks = 0;
+            _oneStepOffGroundTicks = 0;
+            _oneStepLoadTicks = 0;
+            _oneStepRecoveryTicks = 0;
+            _oneStepRightIkActive = false;
+            _oneStepAbortTouchdownObserved = false;
+            _oneStepSawNearZeroTouch = false;
+            _oneStepFailure = string.Empty;
+            SetOneStepWalkoutState(SquatOneStepWalkoutState.SHIFT_TO_LEFT_STANCE, currentTick);
         }
 
         public void CaptureStandingComReference()
@@ -442,6 +537,23 @@ namespace PowerliftingSimulator.Squat.Unity
             _minPelvisHeightM = float.PositiveInfinity;
             _systemCom = Vector3.zero;
             _supportCenter = Vector3.zero;
+            _oneStepWalkoutState = SquatOneStepWalkoutState.BILATERAL_STANDING;
+            _oneStepStateEnteredTick = 0ul;
+            _oneStepRightStartBodyWorld = Vector3.zero;
+            _oneStepRightLandingBodyWorld = Vector3.zero;
+            _oneStepRightTargetBodyWorld = Vector3.zero;
+            _oneStepRightFootBodyRotation = Quaternion.identity;
+            _oneStepInitialComWorldX = 0f;
+            _oneStepLeftComTargetWorldX = 0f;
+            _oneStepSupportPlaneY = 0f;
+            _oneStepUnloadTicks = 0;
+            _oneStepOffGroundTicks = 0;
+            _oneStepLoadTicks = 0;
+            _oneStepRecoveryTicks = 0;
+            _oneStepRightIkActive = false;
+            _oneStepAbortTouchdownObserved = false;
+            _oneStepSawNearZeroTouch = false;
+            _oneStepFailure = string.Empty;
             _apComError = 0f;
             _mlComError = 0f;
             _balanceCorrectionRad = 0f;
@@ -556,12 +668,15 @@ namespace PowerliftingSimulator.Squat.Unity
             _referenceComOffsetAp = _referenceComOffsetApSamples[0];
 #endif
             ComputeComAndSupport(previousObservation);
+            AdvanceOneStepWalkout(time);
+            float activeComOffsetMl = OneStepComOffsetMl();
+            _mlComError = (_systemCom.x - _supportCenter.x) - activeComOffsetMl;
             _lastBalanceCorrection = _balanceV2.Solve(
                 _systemCom,
                 _observer.SystemComVelocity,
                 _supportCenter,
                 _referenceComOffsetAp,
-                _referenceComOffsetMl,
+                activeComOffsetMl,
                 intent.BalanceX,
                 dt);
 
@@ -634,6 +749,20 @@ namespace PowerliftingSimulator.Squat.Unity
             Quaternion abdomenTarget = Compose("abdomen", reference.Abdomen, abdomenTrim, abdomenBalance);
             Quaternion thoraxTarget = Compose("thorax", reference.Thorax, thoraxTrim, thoraxBalance);
 
+            if (_oneStepRightIkActive)
+            {
+                if (TrySolveOneStepRightLeg(out Quaternion ikHip, out Quaternion ikKnee, out Quaternion ikFoot))
+                {
+                    rightHipTarget = Compose("right_thigh", ikHip, Quaternion.identity, Quaternion.identity);
+                    rightKneeTarget = Compose("right_shank", ikKnee, Quaternion.identity, Quaternion.identity);
+                    rightAnkleTarget = Compose("right_foot", ikFoot, Quaternion.identity, Quaternion.identity);
+                }
+                else
+                {
+                    AbortOneStepWalkout("RIGHT_FOOT_TARGET_UNREACHABLE", time.Tick);
+                }
+            }
+
             ReferenceRateFrame rate = Mathf.Abs(_phaseVelocity) > 1e-5f
                 ? EvaluateReferenceRatePerPhase(_sq, _direction)
                 : ReferenceRateFrame.Zero;
@@ -656,6 +785,352 @@ namespace PowerliftingSimulator.Squat.Unity
             ApplyUpperLimbReference(jointCommandSink, reference, rate, phaseVelocity, effort, tick);
             CheckDriveSaturation(_rig.PoweredController);
         }
+        private float OneStepComOffsetMl()
+        {
+            if (_oneStepWalkoutState == SquatOneStepWalkoutState.SHIFT_TO_LEFT_STANCE ||
+                _oneStepWalkoutState == SquatOneStepWalkoutState.VERIFY_RIGHT_UNLOAD ||
+                _oneStepWalkoutState == SquatOneStepWalkoutState.RIGHT_SWING_CLEAR ||
+                _oneStepWalkoutState == SquatOneStepWalkoutState.RIGHT_SWING_BACK ||
+                _oneStepWalkoutState == SquatOneStepWalkoutState.RIGHT_TOUCHDOWN ||
+                (_oneStepWalkoutState == SquatOneStepWalkoutState.ABORT_RECOVERY && !_oneStepAbortTouchdownObserved) ||
+                (_oneStepWalkoutState == SquatOneStepWalkoutState.ABORTED && !_oneStepAbortTouchdownObserved))
+                return _oneStepLeftComTargetWorldX - _supportCenter.x;
+            return _referenceComOffsetMl;
+        }
+
+        private void AdvanceOneStepWalkout(SimulationTime time)
+        {
+            if (_oneStepWalkoutState == SquatOneStepWalkoutState.BILATERAL_STANDING ||
+                _oneStepWalkoutState == SquatOneStepWalkoutState.ONE_STEP_READY ||
+                _oneStepWalkoutState == SquatOneStepWalkoutState.ABORTED)
+                return;
+
+            if (time.Tick - _oneStepStateEnteredTick > (ulong)OneStepStateTimeoutTicks(_oneStepWalkoutState))
+            {
+                if (_oneStepWalkoutState == SquatOneStepWalkoutState.ABORT_RECOVERY)
+                    SetOneStepWalkoutState(SquatOneStepWalkoutState.ABORTED, time.Tick);
+                else
+                    AbortOneStepWalkout("STATE_TIMEOUT_" + _oneStepWalkoutState, time.Tick);
+                return;
+            }
+
+            float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
+            float loadedImpulse = OneStepImpulseThreshold(OneStepLoadedImpulseFraction, dt);
+            float unloadImpulse = OneStepImpulseThreshold(OneStepUnloadImpulseFraction, dt);
+            bool leftLoaded = IsFootLoaded(_leftFoot, loadedImpulse);
+            bool rightLoaded = IsFootLoaded(_rightFoot, loadedImpulse);
+            float comSpeed = _observer.SystemComVelocity.magnitude;
+
+            if (_oneStepWalkoutState == SquatOneStepWalkoutState.ABORT_RECOVERY)
+            {
+                if (!_oneStepAbortTouchdownObserved && _rightFoot.CompletedContactCount > 0 &&
+                    IsRightFootInLandingRegion(_oneStepRightTargetBodyWorld))
+                    _oneStepAbortTouchdownObserved = true;
+                if (leftLoaded && rightLoaded && IsComControlledByBothFeet(0.20f))
+                    _oneStepRecoveryTicks++;
+                else
+                    _oneStepRecoveryTicks = 0;
+                if (_oneStepRecoveryTicks >= OneStepRecoveryPersistenceTicks)
+                    SetOneStepWalkoutState(SquatOneStepWalkoutState.ABORTED, time.Tick);
+                return;
+            }
+
+            if (!HasFiniteComSupport() || !leftLoaded || !float.IsFinite(comSpeed) || comSpeed > 0.75f)
+            {
+                AbortOneStepWalkout("LEFT_SUPPORT_OR_COM_INVALID", time.Tick);
+                return;
+            }
+
+            switch (_oneStepWalkoutState)
+            {
+                case SquatOneStepWalkoutState.SHIFT_TO_LEFT_STANCE:
+                    if (!IsComControlledByBothFeet(0.75f))
+                    {
+                        AbortOneStepWalkout("BILATERAL_COM_UNCONTROLLED", time.Tick);
+                        return;
+                    }
+                    if (_leftFoot.CompletedNormalImpulseTotal > _rightFoot.CompletedNormalImpulseTotal * 1.15f &&
+                        _oneStepInitialComWorldX - _observer.SystemCom.x >= 0.025f &&
+                        IsComControlledByFoot(_leftFoot, 0.55f))
+                        SetOneStepWalkoutState(SquatOneStepWalkoutState.VERIFY_RIGHT_UNLOAD, time.Tick);
+                    break;
+
+                case SquatOneStepWalkoutState.VERIFY_RIGHT_UNLOAD:
+                    if (!IsComControlledByFoot(_leftFoot, 0.55f))
+                    {
+                        AbortOneStepWalkout("LEFT_STANCE_COM_UNCONTROLLED", time.Tick);
+                        return;
+                    }
+                    if (_rightFoot.CompletedNormalImpulseTotal < unloadImpulse)
+                    {
+                        _oneStepUnloadTicks++;
+                        if (_rightFoot.CompletedContactCount > 0)
+                            _oneStepSawNearZeroTouch = true;
+                    }
+                    else
+                    {
+                        _oneStepUnloadTicks = 0;
+                        _oneStepOffGroundTicks = 0;
+                    }
+                    if (_oneStepUnloadTicks >= OneStepUnloadPersistenceTicks)
+                    {
+                        if (_rightFoot.CompletedContactCount == 0 &&
+                            _rightFoot.CompletedNormalImpulseTotal < unloadImpulse)
+                        {
+                            _oneStepOffGroundTicks++;
+                            if (_oneStepOffGroundTicks >= OneStepOffGroundPersistenceTicks)
+                            {
+                                _oneStepRightTargetBodyWorld = _oneStepRightStartBodyWorld +
+                                    Vector3.up * OneStepSwingClearanceM;
+                                _oneStepRightIkActive = true;
+                                SetOneStepWalkoutState(SquatOneStepWalkoutState.RIGHT_SWING_CLEAR, time.Tick);
+                            }
+                        }
+                        else
+                        {
+                            _oneStepRightTargetBodyWorld = _oneStepRightStartBodyWorld + Vector3.up * 0.015f;
+                            _oneStepRightIkActive = true;
+                            _oneStepOffGroundTicks = 0;
+                        }
+                    }
+                    break;
+
+                case SquatOneStepWalkoutState.RIGHT_SWING_CLEAR:
+                    _oneStepRightTargetBodyWorld = _oneStepRightStartBodyWorld +
+                        Vector3.up * OneStepSwingClearanceM;
+                    if (_rightFoot.CompletedContactCount == 0 && IsRightFootClearOfPlatform(0.04f) &&
+                        IsComControlledByFoot(_leftFoot, 0.55f))
+                    {
+                        _oneStepRightTargetBodyWorld = _oneStepRightLandingBodyWorld +
+                            Vector3.up * OneStepSwingClearanceM;
+                        SetOneStepWalkoutState(SquatOneStepWalkoutState.RIGHT_SWING_BACK, time.Tick);
+                    }
+                    break;
+
+                case SquatOneStepWalkoutState.RIGHT_SWING_BACK:
+                    _oneStepRightTargetBodyWorld = _oneStepRightLandingBodyWorld +
+                        Vector3.up * OneStepSwingClearanceM;
+                    if (_oneStepRightStartBodyWorld.z - _rig.Segments["right_foot"].Body.position.z >=
+                            OneStepPosteriorDistanceM - OneStepLandingToleranceM &&
+                        IsRightFootClearOfPlatform(0.04f) && _rightFoot.CompletedContactCount == 0 &&
+                        IsComControlledByFoot(_leftFoot, 0.55f))
+                    {
+                        _oneStepRightTargetBodyWorld = _oneStepRightLandingBodyWorld;
+                        SetOneStepWalkoutState(SquatOneStepWalkoutState.RIGHT_TOUCHDOWN, time.Tick);
+                    }
+                    break;
+
+                case SquatOneStepWalkoutState.RIGHT_TOUCHDOWN:
+                    _oneStepRightTargetBodyWorld = _oneStepRightLandingBodyWorld;
+                    if (_rightFoot.CompletedContactCount > 0 &&
+                        IsRightFootInLandingRegion(_oneStepRightLandingBodyWorld))
+                    {
+                        _oneStepLoadTicks = 0;
+                        SetOneStepWalkoutState(SquatOneStepWalkoutState.RIGHT_LOAD_ACCEPT, time.Tick);
+                    }
+                    break;
+
+                case SquatOneStepWalkoutState.RIGHT_LOAD_ACCEPT:
+                    _oneStepRightTargetBodyWorld = _oneStepRightLandingBodyWorld;
+                    if (leftLoaded && rightLoaded)
+                        _oneStepLoadTicks++;
+                    else
+                        _oneStepLoadTicks = 0;
+                    if (_oneStepLoadTicks >= OneStepLoadAcceptanceTicks)
+                        SetOneStepWalkoutState(SquatOneStepWalkoutState.BILATERAL_RECOVERY, time.Tick);
+                    break;
+
+                case SquatOneStepWalkoutState.BILATERAL_RECOVERY:
+                    _oneStepRightTargetBodyWorld = _oneStepRightLandingBodyWorld;
+                    if (leftLoaded && rightLoaded && IsComControlledByBothFeet(0.20f))
+                        _oneStepRecoveryTicks++;
+                    else
+                        _oneStepRecoveryTicks = 0;
+                    if (_oneStepRecoveryTicks >= OneStepRecoveryPersistenceTicks)
+                        SetOneStepWalkoutState(SquatOneStepWalkoutState.ONE_STEP_READY, time.Tick);
+                    break;
+            }
+        }
+
+        private void AbortOneStepWalkout(string reason, ulong tick)
+        {
+            if (_oneStepWalkoutState == SquatOneStepWalkoutState.ABORT_RECOVERY ||
+                _oneStepWalkoutState == SquatOneStepWalkoutState.ABORTED ||
+                _oneStepWalkoutState == SquatOneStepWalkoutState.ONE_STEP_READY)
+                return;
+
+            _oneStepFailure = reason;
+            if (_oneStepRightIkActive)
+            {
+                Vector3 foot = _rig.Segments["right_foot"].Body.position;
+                _oneStepRightTargetBodyWorld = new Vector3(
+                    Mathf.Clamp(foot.x, _oneStepRightStartBodyWorld.x - OneStepLandingToleranceM,
+                        _oneStepRightStartBodyWorld.x + OneStepLandingToleranceM),
+                    _oneStepRightStartBodyWorld.y,
+                    Mathf.Clamp(foot.z, _oneStepRightLandingBodyWorld.z - OneStepLandingToleranceM,
+                        _oneStepRightStartBodyWorld.z + OneStepLandingToleranceM));
+            }
+            else
+            {
+                _oneStepAbortTouchdownObserved = true;
+            }
+            _oneStepRecoveryTicks = 0;
+            SetOneStepWalkoutState(SquatOneStepWalkoutState.ABORT_RECOVERY, tick);
+        }
+
+        private void SetOneStepWalkoutState(SquatOneStepWalkoutState state, ulong tick)
+        {
+            _oneStepWalkoutState = state;
+            _oneStepStateEnteredTick = tick;
+        }
+
+        private static int OneStepStateTimeoutTicks(SquatOneStepWalkoutState state)
+        {
+            switch (state)
+            {
+                case SquatOneStepWalkoutState.SHIFT_TO_LEFT_STANCE:
+                case SquatOneStepWalkoutState.VERIFY_RIGHT_UNLOAD:
+                case SquatOneStepWalkoutState.RIGHT_LOAD_ACCEPT:
+                    return 400;
+                case SquatOneStepWalkoutState.RIGHT_SWING_CLEAR:
+                case SquatOneStepWalkoutState.RIGHT_TOUCHDOWN:
+                case SquatOneStepWalkoutState.ABORT_RECOVERY:
+                    return 300;
+                case SquatOneStepWalkoutState.RIGHT_SWING_BACK:
+                case SquatOneStepWalkoutState.BILATERAL_RECOVERY:
+                    return 500;
+                default:
+                    return 0;
+            }
+        }
+
+        private float OneStepImpulseThreshold(float fraction, float dt) =>
+            Mathf.Max(0.02f, _observer.SystemMassKg * SquatBalanceObserver.GravityMagnitudeMps2 * dt * fraction);
+
+        private bool IsFootLoaded(PhysicalFootContactDetector foot, float loadedImpulse) =>
+            foot != null && foot.CompletedContactCount > 0 &&
+            float.IsFinite(foot.CompletedNormalImpulseTotal) &&
+            foot.CompletedNormalImpulseTotal >= loadedImpulse;
+
+        private bool HasFiniteComSupport() =>
+            _observer.HasSupport && _observer.SystemMassKg > 0f && float.IsFinite(_observer.SystemMassKg) &&
+            PoweredJointController.IsFinite(_observer.SystemCom) &&
+            PoweredJointController.IsFinite(_observer.SystemComVelocity) &&
+            float.IsFinite(_observer.CaptureAp) && float.IsFinite(_observer.CaptureMl) &&
+            float.IsFinite(_observer.SupportApMin) && float.IsFinite(_observer.SupportApMax) &&
+            float.IsFinite(_observer.SupportMlMin) && float.IsFinite(_observer.SupportMlMax) &&
+            float.IsFinite(_observer.SupportPlaneY);
+
+        private bool IsComControlledByFoot(PhysicalFootContactDetector foot, float maximumSpeedMps)
+        {
+            if (!HasFiniteComSupport() || !float.IsFinite(maximumSpeedMps) ||
+                _observer.SystemComVelocity.magnitude > maximumSpeedMps ||
+                foot == null || foot.CompletedContactCount == 0)
+                return false;
+
+            float minX = float.PositiveInfinity;
+            float maxX = float.NegativeInfinity;
+            float minZ = float.PositiveInfinity;
+            float maxZ = float.NegativeInfinity;
+            for (int index = 0; index < foot.CompletedContactCount; index++)
+            {
+                Vector3 point = foot.CompletedContactPoint(index);
+                minX = Mathf.Min(minX, point.x);
+                maxX = Mathf.Max(maxX, point.x);
+                minZ = Mathf.Min(minZ, point.z);
+                maxZ = Mathf.Max(maxZ, point.z);
+            }
+            return _observer.CaptureMl >= minX - 0.04f && _observer.CaptureMl <= maxX + 0.04f &&
+                _observer.CaptureAp >= minZ - 0.04f && _observer.CaptureAp <= maxZ + 0.04f;
+        }
+
+        private bool IsComControlledByBothFeet(float maximumSpeedMps) =>
+            HasFiniteComSupport() && float.IsFinite(maximumSpeedMps) &&
+            _observer.SystemComVelocity.magnitude <= maximumSpeedMps &&
+            _observer.CaptureMargin2D >= -0.025f;
+
+        private bool IsRightFootClearOfPlatform(float clearanceM)
+        {
+            Collider collider = _rig.Segments["right_foot"].Collider;
+            return collider != null && float.IsFinite(_oneStepSupportPlaneY) &&
+                collider.bounds.min.y >= _oneStepSupportPlaneY + clearanceM;
+        }
+
+        private bool IsRightFootInLandingRegion(Vector3 target)
+        {
+            Vector3 position = _rig.Segments["right_foot"].Body.position;
+            return Mathf.Abs(position.x - target.x) <= OneStepLandingToleranceM &&
+                Mathf.Abs(position.z - target.z) <= OneStepLandingToleranceM &&
+                Mathf.Abs(position.y - target.y) <= OneStepLandingToleranceM;
+        }
+
+        private bool TrySolveOneStepRightLeg(
+            out Quaternion hipTarget,
+            out Quaternion kneeTarget,
+            out Quaternion ankleTarget)
+        {
+            hipTarget = kneeTarget = ankleTarget = Quaternion.identity;
+            PhysicalAthleteRig.SegmentRuntime pelvis = _rig.Segments["pelvis"];
+            PoweredJointController.PoweredJointRuntime hipJoint = _rig.PoweredController.GetJoint("right_thigh");
+            PoweredJointController.PoweredJointRuntime kneeJoint = _rig.PoweredController.GetJoint("right_shank");
+            PoweredJointController.PoweredJointRuntime footJoint = _rig.PoweredController.GetJoint("right_foot");
+
+            Vector3 hip = hipJoint.Joint.connectedBody.transform.TransformPoint(hipJoint.Joint.connectedAnchor);
+            Vector3 ankle = _oneStepRightTargetBodyWorld + _oneStepRightFootBodyRotation * footJoint.Joint.anchor;
+            Vector3 legVector = Vector3.ProjectOnPlane(ankle - hip, Vector3.right);
+            float distance = legVector.magnitude;
+            float thighLength = _referenceCalibration.RightThighLengthM;
+            float shankLength = _referenceCalibration.RightShankLengthM;
+            float minimumReach = Mathf.Abs(thighLength - shankLength) + 0.01f;
+            float maximumReach = thighLength + shankLength - 0.01f;
+            if (!PoweredJointController.IsFinite(hip) || !PoweredJointController.IsFinite(ankle) ||
+                !float.IsFinite(distance) || distance < minimumReach || distance > maximumReach ||
+                Mathf.Abs(ankle.x - hip.x) > 0.04f)
+                return false;
+
+            Vector3 direction = legVector / distance;
+            Vector3 forwardSide = Vector3.ProjectOnPlane(Vector3.forward, direction);
+            if (forwardSide.sqrMagnitude < 1e-6f)
+                return false;
+            forwardSide.Normalize();
+            if (Vector3.Dot(forwardSide, Vector3.forward) < 0f)
+                forwardSide = -forwardSide;
+
+            float along = (thighLength * thighLength - shankLength * shankLength + distance * distance) /
+                (2f * distance);
+            float bend = Mathf.Sqrt(Mathf.Max(0f, thighLength * thighLength - along * along));
+            Vector3 knee = hip + direction * along + forwardSide * bend;
+            Vector3 shankUp = (knee - ankle).normalized;
+            Vector3 thighUp = (hip - knee).normalized;
+            Quaternion shankFrame = Quaternion.FromToRotation(
+                _referenceCalibration.RightShank.AnatomicalFrameBind.Up,
+                shankUp) * _referenceCalibration.RightShank.AnatomicalFrameBind.Rotation;
+            Quaternion thighFrame = Quaternion.FromToRotation(
+                _referenceCalibration.RightThigh.AnatomicalFrameBind.Up,
+                thighUp) * _referenceCalibration.RightThigh.AnatomicalFrameBind.Rotation;
+            Quaternion thighBodyRotation = ToPhysicalBodyRotation(
+                "right_thigh", thighFrame * _referenceCalibration.RightThigh.BoneFromAnatomicalFrame);
+            Quaternion shankBodyRotation = ToPhysicalBodyRotation(
+                "right_shank", shankFrame * _referenceCalibration.RightShank.BoneFromAnatomicalFrame);
+
+            hipTarget = ToLogicalJointTarget("right_thigh", pelvis.Body.rotation, thighBodyRotation);
+            kneeTarget = ToLogicalJointTarget("right_shank", thighBodyRotation, shankBodyRotation);
+            ankleTarget = ToLogicalJointTarget("right_foot", shankBodyRotation, _oneStepRightFootBodyRotation);
+            return IsWithinJointFlexionBound("right_thigh", hipTarget) &&
+                IsWithinJointFlexionBound("right_shank", kneeTarget) &&
+                IsWithinJointFlexionBound("right_foot", ankleTarget);
+        }
+
+        private bool IsWithinJointFlexionBound(string jointId, Quaternion target)
+        {
+            if (!PoweredJointController.IsFinite(target))
+                return false;
+            PhysicalJointRecipe recipe = _rig.PoweredController.GetJoint(jointId).Recipe;
+            float degrees = PoweredJointController.SignedTwistRadians(target, Vector3.right) * Mathf.Rad2Deg;
+            return float.IsFinite(degrees) && degrees >= recipe.LowDegrees - 0.5f &&
+                degrees <= recipe.HighDegrees + 0.5f;
+        }
+
         private void AdvanceStateAndPhase(float dt, PlayerIntentFrame intent)
         {
             float yieldInput = Mathf.Max(intent.Yield01, intent.YieldHeld ? 1f : 0f);
