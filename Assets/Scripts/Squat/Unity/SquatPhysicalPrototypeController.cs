@@ -21,6 +21,7 @@ namespace PowerliftingSimulator.Squat.Unity
         [SerializeField] private PhysicalAthleteRig athleteRig;
         [SerializeField] private PhysicalBarbell barbell;
         [SerializeField] private float barLoadKg = 25f;
+        [SerializeField] private RuntimeAnimatorController locomotionAnimatorController;
         [SerializeField] private bool autoSquatOnStart = false;
         [SerializeField] private bool attachBarSaddle = true;
         [SerializeField] private bool showDebugGui;
@@ -33,6 +34,9 @@ namespace PowerliftingSimulator.Squat.Unity
         private PhysicalFootContactDetector _rightFootContact;
         private SquatObservationCollector _observationCollector;
         private SquatAttemptOrchestrator _attemptOrchestrator;
+        private SquatHybridGameFlow _gameFlow;
+        private GameObject _presentationRack;
+        private Material _rackMaterial;
         private bool _isInitialized;
         private bool _tickZeroSubstrateValidated;
         private ulong _tickZeroValidationTick = ulong.MaxValue;
@@ -48,6 +52,7 @@ namespace PowerliftingSimulator.Squat.Unity
         private GUIStyle _playerResultStyle;
         private GUIStyle _playerButtonStyle;
         private GUIStyle _playerControlsStyle;
+        private static float _pendingRetryLoadKg = float.NaN;
 
         public SquatPhysicalAdapter Adapter => _adapter;
         public SquatBarSaddle Saddle => _saddle;
@@ -60,6 +65,11 @@ namespace PowerliftingSimulator.Squat.Unity
         public SquatAttemptLifecycle AttemptLifecycle => _attemptOrchestrator == null ? null : _attemptOrchestrator.Lifecycle;
         public SquatAttemptRecord AttemptRecord => _attemptOrchestrator == null ? null : _attemptOrchestrator.Record;
         public float CurrentLoadKg => _selectedLoadKg;
+        public SquatPlayerGamePhase PlayerGamePhase => _gameFlow == null ? SquatPlayerGamePhase.LOAD : _gameFlow.Phase;
+        public bool CanBeginPlayerSetup => _gameFlow != null && _gameFlow.CanBeginSetup && _selectedLoadKg >= 25f;
+        public float HybridWalkoutDistanceMeters => _gameFlow == null ? 0f : _gameFlow.WalkoutDistanceMeters;
+        public float HybridHandoffPoseErrorMeters => _gameFlow == null ? float.PositiveInfinity : _gameFlow.MaximumHandoffPoseErrorMeters;
+        public float HybridHandoffBarAngularErrorDegrees => _gameFlow == null ? float.PositiveInfinity : _gameFlow.MaximumHandoffBarAngularErrorDegrees;
         public bool IsInitialized => _isInitialized;
         public bool TickZeroSubstrateValidated => _tickZeroSubstrateValidated;
         public ulong TickZeroValidationTick => _tickZeroValidationTick;
@@ -72,7 +82,8 @@ namespace PowerliftingSimulator.Squat.Unity
 
         private void Awake()
         {
-            _selectedLoadKg = Mathf.Max(0f, barLoadKg);
+            _selectedLoadKg = Mathf.Max(0f, float.IsNaN(_pendingRetryLoadKg) ? barLoadKg : _pendingRetryLoadKg);
+            _pendingRetryLoadKg = float.NaN;
             if (foundation == null)
                 foundation = FindFirstObjectByType<FoundationBootstrap>();
             if (foundation != null && foundation.Runtime != null && foundation.Runtime.IsInitialized)
@@ -147,6 +158,15 @@ namespace PowerliftingSimulator.Squat.Unity
             _attemptOrchestrator = new SquatAttemptOrchestrator(
                 _observationCollector,
                 _adapter);
+            _gameFlow = new SquatHybridGameFlow(
+                transform,
+                athleteRig,
+                barbell,
+                _adapter,
+                _observationCollector,
+                _attemptOrchestrator,
+                locomotionAnimatorController);
+            BuildPlayerRackPresentation();
 
             if (autoSquatOnStart)
                 _attemptOrchestrator.BeginAttempt();
@@ -219,18 +239,32 @@ namespace PowerliftingSimulator.Squat.Unity
                     _rightFootContact.PhysicsTickUpdate(dt);
             }
 
+            _gameFlow?.Update(Time.deltaTime);
+
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null)
                 return;
 
-            if (!_attemptOrchestrator.HasStarted && keyboard.digit1Key.wasPressedThisFrame)
+            if (_gameFlow != null && _gameFlow.Phase == SquatPlayerGamePhase.LOAD &&
+                !_attemptOrchestrator.HasStarted && keyboard.digit1Key.wasPressedThisFrame)
                 SetLoad(0f);
-            else if (!_attemptOrchestrator.HasStarted && keyboard.digit2Key.wasPressedThisFrame)
+            else if (_gameFlow != null && _gameFlow.Phase == SquatPlayerGamePhase.LOAD &&
+                !_attemptOrchestrator.HasStarted && keyboard.digit2Key.wasPressedThisFrame)
                 SetLoad(25f);
-            else if (!_attemptOrchestrator.HasStarted && keyboard.digit3Key.wasPressedThisFrame)
+            else if (_gameFlow != null && _gameFlow.Phase == SquatPlayerGamePhase.LOAD &&
+                !_attemptOrchestrator.HasStarted && keyboard.digit3Key.wasPressedThisFrame)
                 SetLoad(105f);
+            else if (_gameFlow != null && _gameFlow.Phase == SquatPlayerGamePhase.SETUP &&
+                keyboard.enterKey.wasPressedThisFrame)
+                UnrackFromPlayerUi();
+#if UNITY_EDITOR
             else if (keyboard.fKey.wasPressedThisFrame && !_attemptOrchestrator.HasStarted)
                 BeginAttempt();
+#else
+            else if (keyboard.fKey.wasPressedThisFrame && _gameFlow != null &&
+                _gameFlow.Phase == SquatPlayerGamePhase.LOAD)
+                StartGameFromPlayerUi();
+#endif
             else if (keyboard.escapeKey.wasPressedThisFrame &&
                 _attemptOrchestrator.HasSquatCommand && !_attemptOrchestrator.IsTruthFrozen)
                 AbortAttempt();
@@ -244,6 +278,8 @@ namespace PowerliftingSimulator.Squat.Unity
         {
             if (!_isInitialized || barbell == null)
                 return;
+            if (_gameFlow != null && _gameFlow.Phase != SquatPlayerGamePhase.LOAD)
+                throw new InvalidOperationException("The squat load can only change before player setup begins.");
             if (_observationCollector != null && _observationCollector.IsRecording)
                 throw new InvalidOperationException("The squat load cannot change while an observation trace is recording.");
             if (_attemptOrchestrator != null && _attemptOrchestrator.HasStarted)
@@ -282,6 +318,7 @@ namespace PowerliftingSimulator.Squat.Unity
             athleteRig.PrimeCommandSource();
             ValidateInitialSubstrate();
             foundation.Runtime.MarkInitialPhysicalStateValidated();
+            _gameFlow?.ResetReadiness();
         }
 
 #if UNITY_EDITOR
@@ -548,11 +585,22 @@ namespace PowerliftingSimulator.Squat.Unity
             // A gameplay reset rebuilds the production scene so every dynamic
             // body returns to its authored spawn pose without writing a
             // physical transform or velocity from the control path.
+            _gameFlow?.MarkRetry();
+            _pendingRetryLoadKg = _selectedLoadKg;
             SceneManager.LoadScene(SceneManager.GetActiveScene().path, LoadSceneMode.Single);
         }
 
         public void SelectLoadFromPlayerUi(float loadKg) => SetLoad(loadKg);
 
+        public void StartGameFromPlayerUi()
+        {
+            if (_selectedLoadKg >= 25f)
+                _gameFlow?.BeginSetup();
+        }
+
+        public void UnrackFromPlayerUi() => _gameFlow?.BeginWalkout();
+
+        // Kept as a direct physical-attempt entry point for existing qualification fixtures.
         public void StartAttemptFromPlayerUi() => BeginAttempt();
 
         public void RetryFromPlayerUi() => ResetPrototype();
@@ -625,35 +673,132 @@ namespace PowerliftingSimulator.Squat.Unity
                 DrawDebugHud();
         }
 
+        private void LateUpdate()
+        {
+            _gameFlow?.LateUpdate();
+        }
+
+        private void OnDestroy()
+        {
+            if (_presentationRack != null)
+                Destroy(_presentationRack);
+            if (_rackMaterial != null)
+            {
+                if (Application.isPlaying)
+                    Destroy(_rackMaterial);
+                else
+                    DestroyImmediate(_rackMaterial);
+            }
+        }
+
+        private void BuildPlayerRackPresentation()
+        {
+            if (_presentationRack != null)
+                return;
+
+            Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+            if (shader == null)
+                return;
+
+            _rackMaterial = new Material(shader) { color = new Color(0.10f, 0.14f, 0.18f) };
+            _presentationRack = new GameObject("GAM63 Squat Rack Presentation");
+            _presentationRack.transform.SetParent(transform, false);
+
+            Vector3 barPosition = barbell != null && barbell.Body != null
+                ? barbell.Body.position
+                : new Vector3(0f, 1.48f, -0.115f);
+            float postHeight = Mathf.Max(1.75f, barPosition.y + 0.24f);
+            float postZ = barPosition.z - 0.10f;
+            const float halfWidth = 0.78f;
+            AddRackBlock("Left Upright", new Vector3(-halfWidth, postHeight * 0.5f, postZ), new Vector3(0.08f, postHeight, 0.10f));
+            AddRackBlock("Right Upright", new Vector3(halfWidth, postHeight * 0.5f, postZ), new Vector3(0.08f, postHeight, 0.10f));
+            AddRackBlock("Top Crossbar", new Vector3(0f, postHeight - 0.03f, postZ), new Vector3(1.64f, 0.08f, 0.12f));
+            AddRackBlock("Left Hook", new Vector3(-0.62f, barPosition.y - 0.02f, barPosition.z + 0.07f), new Vector3(0.16f, 0.05f, 0.24f));
+            AddRackBlock("Right Hook", new Vector3(0.62f, barPosition.y - 0.02f, barPosition.z + 0.07f), new Vector3(0.16f, 0.05f, 0.24f));
+        }
+
+        private void AddRackBlock(string label, Vector3 position, Vector3 size)
+        {
+            GameObject block = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            block.name = label;
+            block.transform.SetParent(_presentationRack.transform, false);
+            block.transform.localPosition = position;
+            block.transform.localScale = size;
+            Collider collider = block.GetComponent<Collider>();
+            if (collider != null)
+                collider.enabled = false;
+            Renderer renderer = block.GetComponent<Renderer>();
+            if (renderer != null)
+                renderer.sharedMaterial = _rackMaterial;
+        }
+
         private void DrawPlayerHud()
         {
-            GUILayout.BeginArea(new Rect(18f, 18f, 390f, 382f), GUI.skin.box);
+            GUILayout.BeginArea(new Rect(18f, 18f, 390f, 416f), GUI.skin.box);
             GUILayout.Space(4f);
             GUILayout.Label("SQUAT", _playerTitleStyle, GUILayout.Height(30f));
             GUILayout.Label(string.Format(CultureInfo.InvariantCulture, "BAR LOAD  {0:0} kg", _selectedLoadKg),
                 _playerBodyStyle, GUILayout.Height(24f));
 
+            SquatPlayerGamePhase gamePhase = _gameFlow == null ? SquatPlayerGamePhase.LOAD : _gameFlow.Phase;
             SquatAttemptLifecycleState lifecycleState = _attemptOrchestrator == null
                 ? SquatAttemptLifecycleState.IDLE
                 : _attemptOrchestrator.Lifecycle.State;
             SquatAttemptRecord record = AttemptRecord;
-            if (_isInitialized && lifecycleState == SquatAttemptLifecycleState.IDLE && record == null)
+
+            if (!_isInitialized)
+            {
+                GUILayout.Label("Preparing the squat…", _playerBodyStyle, GUILayout.Height(30f));
+            }
+            else if (gamePhase == SquatPlayerGamePhase.LOAD && !_attemptOrchestrator.HasStarted && record == null)
             {
                 GUILayout.BeginHorizontal();
                 DrawLoadButton(0f);
                 DrawLoadButton(25f);
                 DrawLoadButton(105f);
                 GUILayout.EndHorizontal();
+                GUILayout.Label(_selectedLoadKg < 25f ? "LOAD A BAR" :
+                    CanBeginPlayerSetup ? "READY" : "FINDING A STABLE START POSITION",
+                    _playerResultStyle, GUILayout.Height(28f));
+                if (_selectedLoadKg < 25f)
+                    GUILayout.Label("Choose at least the 25 kg competition bar to begin.", _playerBodyStyle, GUILayout.MinHeight(36f));
+                else
+                {
+                    bool previousEnabled = GUI.enabled;
+                    GUI.enabled = CanBeginPlayerSetup;
+                    if (GUILayout.Button("SET UP", _playerButtonStyle, GUILayout.Height(42f)))
+                        StartGameFromPlayerUi();
+                    GUI.enabled = previousEnabled;
+                }
             }
-
-            if (!_isInitialized)
+            else if (gamePhase == SquatPlayerGamePhase.SETUP)
             {
-                GUILayout.Label("Preparing the squat…", _playerBodyStyle, GUILayout.Height(30f));
+                GUILayout.Label("SETUP", _playerResultStyle, GUILayout.Height(28f));
+                GUILayout.Label("Brace under the bar, then start the walkout.", _playerBodyStyle, GUILayout.MinHeight(36f));
+                if (GUILayout.Button("UNRACK & WALK OUT", _playerButtonStyle, GUILayout.Height(42f)))
+                    UnrackFromPlayerUi();
             }
-            else if (record != null)
+            else if (gamePhase == SquatPlayerGamePhase.PHYSICS_HANDOFF)
+            {
+                GUILayout.Label("PHYSICS HANDOFF", _playerResultStyle, GUILayout.Height(28f));
+                GUILayout.Label("Settled pose matched. Physical squat control is taking over.", _playerBodyStyle, GUILayout.MinHeight(44f));
+            }
+            else if (gamePhase == SquatPlayerGamePhase.RERACK)
+            {
+                GUILayout.Label("RERACK", _playerResultStyle, GUILayout.Height(28f));
+                GUILayout.Label(GamePhaseInstruction(gamePhase), _playerBodyStyle, GUILayout.MinHeight(44f));
+            }
+            else if (gamePhase == SquatPlayerGamePhase.LOAD && _attemptOrchestrator.HasStarted && record == null)
+            {
+                GUILayout.Label("PHYSICAL SQUAT", _playerResultStyle, GUILayout.Height(28f));
+                GUILayout.Label(PlayerInstruction(lifecycleState), _playerBodyStyle, GUILayout.MinHeight(44f));
+            }
+            else if (gamePhase == SquatPlayerGamePhase.RESULT ||
+                record != null && gamePhase == SquatPlayerGamePhase.LOAD)
             {
                 GUILayout.Label("ATTEMPT COMPLETE", _playerBodyStyle, GUILayout.Height(26f));
-                GUILayout.Label(FormatPlayerResult(record), _playerResultStyle, GUILayout.MinHeight(58f));
+                GUILayout.Label(record == null ? "The physical start position was not reached." : FormatPlayerResult(record),
+                    _playerResultStyle, GUILayout.MinHeight(58f));
                 if (GUILayout.Button("RETRY", _playerButtonStyle, GUILayout.Height(40f)))
                 {
                     RetryFromPlayerUi();
@@ -661,24 +806,39 @@ namespace PowerliftingSimulator.Squat.Unity
                     return;
                 }
             }
-            else if (lifecycleState == SquatAttemptLifecycleState.IDLE)
-            {
-                GUILayout.Label("READY", _playerResultStyle, GUILayout.Height(28f));
-                if (GUILayout.Button("START ATTEMPT", _playerButtonStyle, GUILayout.Height(42f)))
-                    StartAttemptFromPlayerUi();
-            }
             else
             {
-                GUILayout.Label("ATTEMPT ACTIVE", _playerResultStyle, GUILayout.Height(28f));
-                GUILayout.Label(PlayerInstruction(lifecycleState), _playerBodyStyle, GUILayout.MinHeight(44f));
+                GUILayout.Label(GamePhaseHeading(gamePhase), _playerResultStyle, GUILayout.Height(28f));
+                GUILayout.Label(gamePhase == SquatPlayerGamePhase.JUDGED_SQUAT || gamePhase == SquatPlayerGamePhase.LOCKOUT
+                    ? PlayerInstruction(lifecycleState)
+                    : GamePhaseInstruction(gamePhase), _playerBodyStyle, GUILayout.MinHeight(44f));
             }
 
             GUILayout.Space(4f);
-            GUILayout.Label("1 / 2 / 3 load  ·  F start  ·  Space brace / confirm", _playerControlsStyle, GUILayout.Height(20f));
-            GUILayout.Label("S / ↓ descend  ·  W / ↑ drive up  ·  Esc abort  ·  R reset", _playerControlsStyle, GUILayout.Height(20f));
+            GUILayout.Label("Choose a load, set up, then press UNRACK.", _playerControlsStyle, GUILayout.Height(18f));
+            GUILayout.Label("Space brace  ·  S / ↓ yield  ·  W / ↑ drive  ·  A / D balance", _playerControlsStyle, GUILayout.Height(18f));
+            GUILayout.Label("Esc abort  ·  R retry", _playerControlsStyle, GUILayout.Height(18f));
             if (GUILayout.Button(showDebugGui ? "HIDE DEVELOPER TELEMETRY" : "DEVELOPER TELEMETRY", GUILayout.Height(28f)))
                 showDebugGui = !showDebugGui;
             GUILayout.EndArea();
+        }
+
+        private static string GamePhaseHeading(SquatPlayerGamePhase phase) => phase.ToString().Replace('_', ' ');
+
+        private static string GamePhaseInstruction(SquatPlayerGamePhase phase)
+        {
+            switch (phase)
+            {
+                case SquatPlayerGamePhase.UNRACK: return "Lift the bar clear and prepare to step back.";
+                case SquatPlayerGamePhase.WALKOUT_STEP_1: return "Walkout step 1 of 2.";
+                case SquatPlayerGamePhase.WALKOUT_STEP_2: return "Walkout step 2 of 2.";
+                case SquatPlayerGamePhase.SETTLE: return "Settle into your starting stance.";
+                case SquatPlayerGamePhase.JUDGED_SQUAT: return "Hold still for the physical start check.";
+                case SquatPlayerGamePhase.LOCKOUT: return "Stand tall and hold steady.";
+                case SquatPlayerGamePhase.RERACK: return "Walking the physical bar back to the rack.";
+                case SquatPlayerGamePhase.RETRY: return "Resetting the attempt.";
+                default: return "Follow the on-screen cue.";
+            }
         }
 
         private void DrawLoadButton(float loadKg)
