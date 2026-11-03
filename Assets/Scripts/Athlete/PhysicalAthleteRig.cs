@@ -873,7 +873,7 @@ namespace PowerliftingSimulator.Athlete
             GUILayout.BeginArea(new Rect(18f, 18f, 520f, 430f), GUI.skin.box);
             GUILayout.Label("GAM-7 Finite Powered Athlete");
             GUILayout.Label(_status);
-            GUILayout.Label($"Bodies: {_segments.Count}/16   Powered: {_poweredController?.PoweredJointCount ?? 0}/14   Mass: {TotalMassKg:F4} kg");
+            GUILayout.Label($"Bodies: {_segments.Count}/16   Powered: {_poweredController?.PoweredJointCount ?? 0}/15   Mass: {TotalMassKg:F4} kg");
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Passive")) ResetPassive();
             if (GUILayout.Button("Powered Neutral")) StartPoweredNeutral();
@@ -950,6 +950,7 @@ namespace PowerliftingSimulator.Athlete
                 physicsStep_s = SimulationConstants.FixedDeltaTimeSeconds,
                 driveWriter = PoweredJointController.WriterId,
                 driveWriterCount = 1,
+                controlMode = _poweredController.Mode.ToString(),
                 sourceClass = PoweredJointController.SourceClass,
                 targetRotationConversion = PoweredJointController.CalibrationVersion + ": logical q_target_J -> inverse(q_target_J); neutral identity; local joint targets",
                 targetAngularVelocityConversion = "logical omega_target_J rad/s -> +omega_target_J (Unity applies targetAngularVelocity with its own sign; GAM-50 B07)",
@@ -983,9 +984,10 @@ namespace PowerliftingSimulator.Athlete
         }
 
         private static bool HasPoweredDrive(ConfigurableJoint joint) =>
-            joint.angularXDrive.positionSpring != 0f || joint.angularXDrive.positionDamper != 0f || joint.angularXDrive.maximumForce != 0f ||
-            joint.angularYZDrive.positionSpring != 0f || joint.angularYZDrive.positionDamper != 0f || joint.angularYZDrive.maximumForce != 0f ||
-            joint.slerpDrive.positionSpring != 0f || joint.slerpDrive.positionDamper != 0f || joint.slerpDrive.maximumForce != 0f;
+            HasDrive(joint.angularXDrive) || HasDrive(joint.angularYZDrive) || HasDrive(joint.slerpDrive);
+
+        private static bool HasDrive(JointDrive drive) =>
+            drive.positionSpring != 0f || drive.positionDamper != 0f || drive.maximumForce != 0f;
 
         private static SoftJointLimit Limit(float degrees) => new SoftJointLimit { limit = degrees, bounciness = 0f, contactDistance = 2f };
         private static bool Finite(Vector3 value) => float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
@@ -1013,6 +1015,7 @@ namespace PowerliftingSimulator.Athlete
             public double physicsStep_s;
             public string driveWriter;
             public int driveWriterCount;
+            public string controlMode;
             public string sourceClass;
             public string targetRotationConversion;
             public string targetAngularVelocityConversion;
@@ -1084,6 +1087,9 @@ namespace PowerliftingSimulator.Athlete
             public QuaternionRecord neutralParentToChild;
             public QuaternionRecord jointSpaceBasis;
             public string driveMode;
+            public bool angularXDriveConfigured;
+            public bool angularYZDriveConfigured;
+            public bool slerpDriveConfigured;
             public float activation;
             public float capacityScale;
             public float configuredMaximumForceAtFullActivation_Nm;
@@ -1107,9 +1113,10 @@ namespace PowerliftingSimulator.Athlete
                     secondaryAxis_B_child = VectorRecord.From(runtime.Joint.secondaryAxis),
                     neutralParentToChild = QuaternionRecord.From(runtime.NeutralParentToChild),
                     jointSpaceBasis = QuaternionRecord.From(runtime.JointSpace),
-                    driveMode = profile.HasValue
-                        ? (runtime.Recipe.Kind == PhysicalJointKind.Hinge ? "XAndYZ" : "Slerp")
-                        : "Passive",
+                    driveMode = profile.HasValue ? runtime.Joint.rotationDriveMode.ToString() : "Passive",
+                    angularXDriveConfigured = HasDrive(runtime.Joint.angularXDrive),
+                    angularYZDriveConfigured = HasDrive(runtime.Joint.angularYZDrive),
+                    slerpDriveConfigured = HasDrive(runtime.Joint.slerpDrive),
                     activation = runtime.Diagnostic.Activation,
                     capacityScale = runtime.Diagnostic.CapacityScale,
                     configuredMaximumForceAtFullActivation_Nm = profile.HasValue ? profile.Value.BaseCapacityNm : 0f,

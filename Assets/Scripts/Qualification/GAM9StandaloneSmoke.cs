@@ -111,8 +111,8 @@ namespace PowerliftingSimulator.Qualification
                     throw new InvalidOperationException("The qualification scene did not initialize its foundation, athlete, and barbell.");
                 if (rig.Segments.Count != 16 || rig.Joints.Count != 15)
                     throw new InvalidOperationException($"Unexpected athlete topology {rig.Segments.Count}/{rig.Joints.Count}; expected 16/15.");
-                if (rig.PoweredController.PoweredJointCount != 14 || rig.PoweredController.PassiveJointCount != 1)
-                    throw new InvalidOperationException("The powered-joint split is not 14 powered and 1 passive.");
+                if (rig.PoweredController.PoweredJointCount != 15 || rig.PoweredController.PassiveJointCount != 0)
+                    throw new InvalidOperationException("The powered-joint inventory is not 15 powered and 0 passive.");
                 if (!bar.IsBuilt || bar.Body == null || bar.Body.GetComponentsInChildren<Rigidbody>(true).Length != 1)
                     throw new InvalidOperationException("The standalone barbell is not one dynamic Rigidbody.");
                 if (performanceRelease)

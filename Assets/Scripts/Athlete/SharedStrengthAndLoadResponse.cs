@@ -59,7 +59,7 @@ namespace PowerliftingSimulator.Athlete
         public LoadResponseSample(
             LiftKind lift,
             float loadKilograms,
-            ulong simulationTick,
+            ulong completedObservationTick,
             float barVerticalVelocityWorldMetersPerSecond)
         {
             if (lift != LiftKind.Squat && lift != LiftKind.Bench && lift != LiftKind.Deadlift)
@@ -71,13 +71,13 @@ namespace PowerliftingSimulator.Athlete
 
             Lift = lift;
             LoadKilograms = loadKilograms;
-            SimulationTick = simulationTick;
+            CompletedObservationTick = completedObservationTick;
             BarVerticalVelocityWorldMetersPerSecond = barVerticalVelocityWorldMetersPerSecond;
         }
 
         public LiftKind Lift { get; }
         public float LoadKilograms { get; }
-        public ulong SimulationTick { get; }
+        public ulong CompletedObservationTick { get; }
         public float BarVerticalVelocityWorldMetersPerSecond { get; }
     }
 }
