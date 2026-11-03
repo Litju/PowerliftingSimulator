@@ -124,7 +124,7 @@ namespace PowerliftingSimulator.Tests
                 else
                 {
                     Assert.That(joint.Id, Is.EqualTo("head_neck"),
-                        "Only the passive head/neck joint may omit a squat target composition.");
+                        "Only the head/neck joint may omit a squat-specific target composition; its powered target remains neutral.");
                     composition = new SquatPhysicalAdapter.JointTargetComposition(
                         Quaternion.identity,
                         Quaternion.identity,

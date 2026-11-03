@@ -71,6 +71,8 @@ namespace PowerliftingSimulator.Tests
         public IEnumerator TEN_FRESH_25KG_ATTEMPTS_COMPLETE_HYBRID_WALKOUT_PHYSICS_RERACK_AND_RETRY()
         {
             yield return LoadFreshGame();
+            TestContext.WriteLine(
+                "M4S_SHADOW_SCOPE: measured 25 kg bar velocity and modeled demand are shadow diagnostics, not actual motor torque or a calibrated load-velocity curve.");
 
             for (int attempt = 0; attempt < FreshAttemptCount; attempt++)
             {
@@ -122,6 +124,43 @@ namespace PowerliftingSimulator.Tests
                 Assert.That(record, Is.Not.Null, $"attempt {attempt + 1} did not produce a truthful result");
                 Assert.That(record.TerminalReason, Is.EqualTo(SquatAttemptTerminalReason.PHYSICAL_LOCKOUT));
                 Assert.That(record.PhysicalFailureOutcome, Is.EqualTo(SquatFailureResultKind.NO_PHYSICAL_FAILURE));
+
+                PoweredJointController controller = _controller.AthleteRig.PoweredController;
+                Assert.That(controller.PoweredJointCount, Is.EqualTo(15));
+                Assert.That(controller.PassiveJointCount, Is.Zero);
+                Assert.That(controller.Mode, Is.EqualTo(PoweredAthleteMode.Controlled));
+                PoweredJointController.PoweredJointRuntime headNeck = controller.GetJoint("head_neck");
+                Assert.That(headNeck.Profile.HasValue, Is.True);
+                Assert.That(headNeck.Profile.Value.Id, Is.EqualTo("neck"));
+                Assert.That(headNeck.RequestedCommand.TargetRelativeRotation, Is.EqualTo(Quaternion.identity));
+                Assert.That(headNeck.RequestedCommand.TargetRelativeAngularVelocityRadS, Is.EqualTo(Vector3.zero));
+                Assert.That(headNeck.Joint.rotationDriveMode, Is.EqualTo(RotationDriveMode.XYAndZ));
+                Assert.That(headNeck.Joint.angularXDrive.positionSpring, Is.EqualTo(headNeck.Profile.Value.Spring).Within(0.001f));
+                Assert.That(headNeck.Joint.angularYZDrive.positionSpring, Is.EqualTo(headNeck.Profile.Value.Spring).Within(0.001f));
+                Assert.That(headNeck.Joint.slerpDrive.positionSpring, Is.Zero);
+
+                SquatLoadResponseMetrics response = SquatLoadResponseAnalyzer.Analyze(
+                    record.Trace,
+                    record.EventTicks.LockoutTick);
+                Assert.That(response.MeanConcentricVelocityMps, Is.GreaterThan(0f));
+                Assert.That(response.PeakConcentricVelocityMps, Is.GreaterThan(0f));
+                SquatObservationSnapshot lastSample = record.Trace[record.Trace.Count - 1];
+                var shadowSample = new LoadResponseSample(
+                    LiftKind.Squat,
+                    lastSample.Bar.LoadKilograms,
+                    completedObservationTick: lastSample.SimulationTick,
+                    barVerticalVelocityWorldMetersPerSecond: lastSample.Bar.LinearVelocityWorldMetersPerSecond.Y);
+                Assert.That(shadowSample.Lift, Is.EqualTo(LiftKind.Squat));
+                Assert.That(shadowSample.LoadKilograms, Is.EqualTo(_controller.CurrentLoadKg));
+                Assert.That(shadowSample.CompletedObservationTick, Is.EqualTo(lastSample.SimulationTick));
+                TestContext.WriteLine(
+                    $"M4S_SHADOW lift=Squat load={shadowSample.LoadKilograms:F1}kg completedObservationTick={shadowSample.CompletedObservationTick} " +
+                    $"barVyWorldY={shadowSample.BarVerticalVelocityWorldMetersPerSecond:F4}m/s " +
+                    $"meanConcentric={response.MeanConcentricVelocityMps:F4}m/s " +
+                    $"peakConcentric={response.PeakConcentricVelocityMps:F4}m/s " +
+                    $"maxModeledDemand={response.MaximumModeledDemand:F4} " +
+                    $"nearSaturation={response.AscentNearSaturationFraction:F4} " +
+                    $"saturation={response.AscentSaturationFraction:F4}");
 
                 for (int frame = 0; frame < 300 && _controller.PlayerGamePhase != SquatPlayerGamePhase.RERACK; frame++)
                     yield return new WaitForSecondsRealtime(0.01f);
