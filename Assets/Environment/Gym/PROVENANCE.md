@@ -6,11 +6,11 @@ This document records the asset provenance, licensing status, and authorship bou
 
 | Asset Path | Description | Provenance & License Authority |
 |---|---|---|
-| `Assets/Characters/Athlete/Source/Superhero_Male_FullBody.fbx` | Canonical 1.80 m humanoid athlete mesh and skeleton (`VisibleRig_GAM6`, `ReferenceRig_GAM6`) | Existing repository-qualified asset (`GAM-6` / `.agents/skills/powerlifting-physical-athlete/SKILL.md`), tracked via Git LFS. |
+| `Assets/Characters/Athlete/Source/Superhero_Male_FullBody.fbx` | Canonical 1.80 m humanoid athlete mesh and skeleton (`VisibleRig_GAM6`, `ReferenceRig_GAM6`) | Quaternius "Universal Base Characters [Standard]", CC0 1.0 Universal. Evidence: `Assets/Characters/Athlete/Source/PROVENANCE.md` and `License_Standard.txt`. Tracked via Git LFS. |
 | `Assets/Characters/Athlete/Textures/T_Superhero_Male_Ligh.png` | Albedo/base color texture for canonical athlete | Existing repository-qualified texture asset, tracked via Git LFS. |
 | `Assets/Characters/Athlete/Textures/T_Superhero_Male_Normal.png` | Normal map texture for canonical athlete | Existing repository-qualified texture asset, tracked via Git LFS. |
 | `Assets/Characters/Athlete/Materials/CanonicalAthlete.mat` | URP Lit material bound to `VisibleRig_GAM6` | First-party repository material asset (`GAM-6`). |
-| `Assets/Characters/Athlete/Locomotion/GAM63SquatLocomotion.controller` (`SetupIdle.anim`, `WalkoutSequence.anim`, `RerackSequence.anim`) | Root-motion walkout and rerack animation clips | First-party repository animation assets (`GAM-63`). |
+| `Assets/Characters/Athlete/Animations/GAM63/SquatLocomotion.controller` (`SetupIdle.anim`, `WalkoutSequence.anim`, `RerackSequence.anim`) | Root-motion walkout and rerack animation clips | First-party repository animation assets (`GAM-63`). |
 
 ## 2. Competition Barbell & Calibrated Plates (Authoritative Physics)
 
