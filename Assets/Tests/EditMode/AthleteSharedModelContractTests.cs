@@ -45,11 +45,13 @@ namespace PowerliftingSimulator.Tests
         public void LOAD_RESPONSE_SAMPLE_PRESERVES_SIGNED_MEASURED_WORLD_Y_VELOCITY()
         {
             var sample = new LoadResponseSample(LiftKind.Squat, 25f, 42ul, -0.125f);
+            var stalledSample = new LoadResponseSample(LiftKind.Bench, 25f, 43ul, 0f);
 
             Assert.That(sample.Lift, Is.EqualTo(LiftKind.Squat));
             Assert.That(sample.LoadKilograms, Is.EqualTo(25f));
             Assert.That(sample.SimulationTick, Is.EqualTo(42ul));
             Assert.That(sample.BarVerticalVelocityWorldMetersPerSecond, Is.EqualTo(-0.125f));
+            Assert.That(stalledSample.BarVerticalVelocityWorldMetersPerSecond, Is.Zero);
         }
 
         [Test]
