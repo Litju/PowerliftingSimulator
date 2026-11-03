@@ -123,6 +123,27 @@ namespace PowerliftingSimulator.Tests
                 Assert.That(record.TerminalReason, Is.EqualTo(SquatAttemptTerminalReason.PHYSICAL_LOCKOUT));
                 Assert.That(record.PhysicalFailureOutcome, Is.EqualTo(SquatFailureResultKind.NO_PHYSICAL_FAILURE));
 
+                SquatLoadResponseMetrics response = SquatLoadResponseAnalyzer.Analyze(
+                    record.Trace,
+                    record.EventTicks.LockoutTick);
+                Assert.That(response.MeanConcentricVelocityMps, Is.GreaterThan(0f));
+                Assert.That(response.PeakConcentricVelocityMps, Is.GreaterThan(0f));
+                SquatObservationSnapshot lastSample = record.Trace[record.Trace.Count - 1];
+                var shadowSample = new LoadResponseSample(
+                    LiftKind.Squat,
+                    lastSample.Bar.LoadKilograms,
+                    lastSample.SimulationTick,
+                    lastSample.Bar.LinearVelocityWorldMetersPerSecond.Y);
+                Assert.That(shadowSample.LoadKilograms, Is.EqualTo(_controller.CurrentLoadKg));
+                TestContext.WriteLine(
+                    $"M4S_SHADOW lift=Squat load={shadowSample.LoadKilograms:F1}kg tick={shadowSample.SimulationTick} " +
+                    $"barVyWorldY={shadowSample.BarVerticalVelocityWorldMetersPerSecond:F4}m/s " +
+                    $"meanConcentric={response.MeanConcentricVelocityMps:F4}m/s " +
+                    $"peakConcentric={response.PeakConcentricVelocityMps:F4}m/s " +
+                    $"maxModeledDemand={response.MaximumModeledDemand:F4} " +
+                    $"nearSaturation={response.AscentNearSaturationFraction:F4} " +
+                    $"saturation={response.AscentSaturationFraction:F4}");
+
                 for (int frame = 0; frame < 300 && _controller.PlayerGamePhase != SquatPlayerGamePhase.RERACK; frame++)
                     yield return new WaitForSecondsRealtime(0.01f);
                 Assert.That(_controller.PlayerGamePhase, Is.EqualTo(SquatPlayerGamePhase.RERACK),
