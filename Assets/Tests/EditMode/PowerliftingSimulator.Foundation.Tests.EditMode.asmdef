@@ -7,7 +7,8 @@
         "PowerliftingSimulator.Athlete",
         "PowerliftingSimulator.Equipment",
         "PowerliftingSimulator.Squat",
-        "PowerliftingSimulator.Squat.Unity"
+        "PowerliftingSimulator.Squat.Unity",
+        "UnityEngine.UI"
     ],
     "optionalUnityReferences": [
         "TestAssemblies"

@@ -35,6 +35,7 @@ namespace PowerliftingSimulator.Squat.Unity
         private SquatObservationCollector _observationCollector;
         private SquatAttemptOrchestrator _attemptOrchestrator;
         private SquatHybridGameFlow _gameFlow;
+        private PowerliftingGameUiController _gameUiController;
         private GameObject _presentationRack;
         private Material _rackMaterial;
         private bool _isInitialized;
@@ -79,6 +80,11 @@ namespace PowerliftingSimulator.Squat.Unity
         public bool RuntimeWired => _isInitialized && foundation != null && athleteRig != null &&
             barbell != null && _adapter != null && (_selectedLoadKg <= 0f || _saddle != null);
         public string StartupFailure => _startupFailure;
+        public bool ShowDebugGui
+        {
+            get => showDebugGui;
+            set => showDebugGui = value;
+        }
 
         private void Awake()
         {
@@ -254,6 +260,9 @@ namespace PowerliftingSimulator.Squat.Unity
             else if (_gameFlow != null && _gameFlow.Phase == SquatPlayerGamePhase.LOAD &&
                 !_attemptOrchestrator.HasStarted && keyboard.digit3Key.wasPressedThisFrame)
                 SetLoad(105f);
+            else if (_gameFlow != null && _gameFlow.Phase == SquatPlayerGamePhase.LOAD &&
+                !_attemptOrchestrator.HasStarted && keyboard.digit4Key.wasPressedThisFrame)
+                SetLoad(60f);
             else if (_gameFlow != null && _gameFlow.Phase == SquatPlayerGamePhase.SETUP &&
                 keyboard.enterKey.wasPressedThisFrame)
                 UnrackFromPlayerUi();
@@ -590,7 +599,19 @@ namespace PowerliftingSimulator.Squat.Unity
             SceneManager.LoadScene(SceneManager.GetActiveScene().path, LoadSceneMode.Single);
         }
 
-        public void SelectLoadFromPlayerUi(float loadKg) => SetLoad(loadKg);
+        public void SelectLoadFromPlayerUi(float loadKg)
+        {
+            if (foundation != null && foundation.Runtime != null && foundation.Runtime.IsInitialized &&
+                foundation.Runtime.CurrentTime.Tick > 0ul)
+            {
+                _selectedLoadKg = Mathf.Max(0f, loadKg);
+                _pendingRetryLoadKg = _selectedLoadKg;
+                SceneManager.LoadScene(SceneManager.GetActiveScene().path, LoadSceneMode.Single);
+                return;
+            }
+
+            SetLoad(loadKg);
+        }
 
         public void StartGameFromPlayerUi()
         {
@@ -667,8 +688,17 @@ namespace PowerliftingSimulator.Squat.Unity
 
         private void OnGUI()
         {
+            if (Application.isBatchMode)
+                return;
+            if (_gameUiController == null)
+                _gameUiController = FindFirstObjectByType<PowerliftingGameUiController>();
+            bool drawPlayer = _gameUiController == null || !_gameUiController.isActiveAndEnabled;
+            if (!drawPlayer && !showDebugGui)
+                return;
+
             EnsureHudStyles();
-            DrawPlayerHud();
+            if (drawPlayer)
+                DrawPlayerHud();
             if (showDebugGui)
                 DrawDebugHud();
         }
@@ -693,6 +723,10 @@ namespace PowerliftingSimulator.Squat.Unity
 
         private void BuildPlayerRackPresentation()
         {
+            PowerliftingGymEnvironment gym = PowerliftingGymEnvironment.EnsureInScene(this, barbell);
+            if (gym != null && gym.IsBuilt)
+                return;
+
             if (_presentationRack != null)
                 return;
 

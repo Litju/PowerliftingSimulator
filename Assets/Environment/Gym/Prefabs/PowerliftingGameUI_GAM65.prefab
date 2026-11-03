@@ -1,0 +1,89 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &44640009328394155
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1775053166408781422}
+  - component: {fileID: 3850051927476778101}
+  - component: {fileID: 7686739524008194779}
+  - component: {fileID: 4418678437181647715}
+  m_Layer: 0
+  m_Name: PowerliftingGameUI_GAM65
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1775053166408781422
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 44640009328394155}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3850051927476778101
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 44640009328394155}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cbe938e82a11c454d886eb8cf23035c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: PowerliftingSimulator.Squat.Unity::PowerliftingSimulator.Squat.Unity.PowerliftingSettingsManager
+  isFullscreen: 0
+  resolutionIndex: 0
+  vSyncEnabled: 1
+  targetFrameRate: 120
+  antiAliasingSamples: 4
+  softShadowsEnabled: 1
+  masterVolume: 0.8
+  audioMuted: 0
+  preferredCameraAngle: 0
+  developerTelemetryEnabled: 0
+--- !u!114 &7686739524008194779
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 44640009328394155}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80106cfa7c344c241985fe7d871ec341, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: PowerliftingSimulator.Squat.Unity::PowerliftingSimulator.Squat.Unity.PowerliftingAudioDirector
+  squatController: {fileID: 0}
+  settingsManager: {fileID: 0}
+--- !u!114 &4418678437181647715
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 44640009328394155}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64b7f45d85ad9b443b74666103102320, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: PowerliftingSimulator.Squat.Unity::PowerliftingSimulator.Squat.Unity.PowerliftingGameUiController
+  squatController: {fileID: 0}
+  cameraDirector: {fileID: 0}
+  audioDirector: {fileID: 0}
+  settingsManager: {fileID: 0}
+  gymEnvironment: {fileID: 0}

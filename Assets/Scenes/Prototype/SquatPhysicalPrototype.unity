@@ -129,6 +129,8 @@ GameObject:
   m_Component:
   - component: {fileID: 283690815}
   - component: {fileID: 283690814}
+  - component: {fileID: 283690817}
+  - component: {fileID: 283690816}
   m_Layer: 0
   m_Name: Physical Athlete Review Camera
   m_TagString: MainCamera
@@ -202,6 +204,31 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &283690816
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 283690813}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f5c3446e8be9f0e48a2df535fb5f843a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: PowerliftingSimulator.Squat.Unity::PowerliftingSimulator.Squat.Unity.PowerliftingCameraDirector
+  targetCamera: {fileID: 0}
+  squatController: {fileID: 0}
+  settingsManager: {fileID: 0}
+  positionSmoothTime: 0.28
+  rotationLerpSpeed: 9
+--- !u!81 &283690817
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 283690813}
+  m_Enabled: 1
 --- !u!1 &495771390
 GameObject:
   m_ObjectHideFlags: 0
@@ -361,7 +388,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7417cf719a054d74f99e87326f09b82d, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: PowerliftingSimulator.Athlete::PowerliftingSimulator.Athlete.PhysicalAthleteRig
   foundation: {fileID: 850789820}
   ownership: {fileID: 850789819}
@@ -374,7 +401,6 @@ MonoBehaviour:
   showWholeBodyCom: 1
   showJointAnchors: 1
   showJointAxes: 1
-  showSegmentLabels: 1
 --- !u!114 &850789819
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -385,7 +411,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cf0837a4406b7854c8bf25e455f5f147, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: PowerliftingSimulator.Athlete::PowerliftingSimulator.Athlete.AthleteRigOwnership
   referenceRigAnimator: {fileID: 1563725341}
   visibleRigRoot: {fileID: 1492397056}
@@ -400,30 +426,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ebe30cd1e9a3e85469efc9c150829381, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: PowerliftingSimulator.Foundation.Unity::PowerliftingSimulator.Foundation.Unity.FoundationBootstrap
   inputActions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   authoritativePhysicsSceneName: PowerliftingSimulator.AuthoritativePhysics
---- !u!114 &1900000003
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 850789817}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: da0b4a547900f404b8990435cd1b255c, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: PowerliftingSimulator.Squat.Unity::PowerliftingSimulator.Squat.Unity.SquatPhysicalPrototypeController
-  foundation: {fileID: 850789820}
-  athleteRig: {fileID: 850789818}
-  barbell: {fileID: 1900000001}
-  barLoadKg: 25
-  locomotionAnimatorController: {fileID: 9100000, guid: 6f7923c2254424745aea661d5944c8e8, type: 2}
-  autoSquatOnStart: 0
-  attachBarSaddle: 1
-  showDebugGui: 0
 --- !u!4 &850789821
 Transform:
   m_ObjectHideFlags: 0
@@ -523,7 +529,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8531248215242998404, guid: ae429cac7206b4742b938a52a7fbbaa2, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 2100000, guid: f69b505f6fd5f1a488983e48d2bf3b90, type: 2}
     - target: {fileID: 919132149155446097, guid: ae429cac7206b4742b938a52a7fbbaa2, type: 3}
       propertyPath: m_Name
@@ -531,11 +537,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2321523695958950486, guid: ae429cac7206b4742b938a52a7fbbaa2, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 2100000, guid: f69b505f6fd5f1a488983e48d2bf3b90, type: 2}
     - target: {fileID: 5849235069368944319, guid: ae429cac7206b4742b938a52a7fbbaa2, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 2100000, guid: f69b505f6fd5f1a488983e48d2bf3b90, type: 2}
     - target: {fileID: 5866666021909216657, guid: ae429cac7206b4742b938a52a7fbbaa2, type: 3}
       propertyPath: m_Enabled
@@ -614,7 +620,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8531248215242998404, guid: ae429cac7206b4742b938a52a7fbbaa2, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 2100000, guid: f69b505f6fd5f1a488983e48d2bf3b90, type: 2}
     - target: {fileID: 919132149155446097, guid: ae429cac7206b4742b938a52a7fbbaa2, type: 3}
       propertyPath: m_Name
@@ -626,7 +632,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2321523695958950486, guid: ae429cac7206b4742b938a52a7fbbaa2, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 2100000, guid: f69b505f6fd5f1a488983e48d2bf3b90, type: 2}
     - target: {fileID: 5849235069368944319, guid: ae429cac7206b4742b938a52a7fbbaa2, type: 3}
       propertyPath: m_Enabled
@@ -634,7 +640,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5849235069368944319, guid: ae429cac7206b4742b938a52a7fbbaa2, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 2100000, guid: f69b505f6fd5f1a488983e48d2bf3b90, type: 2}
     - target: {fileID: 5866666021909216657, guid: ae429cac7206b4742b938a52a7fbbaa2, type: 3}
       propertyPath: m_Enabled
@@ -841,21 +847,11 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -0.05, z: 0}
-  m_LocalScale: {x: 3, y: 0.10, z: 3}
+  m_LocalScale: {x: 3, y: 0.1, z: 3}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1660057539 &9223372036854775807
-SceneRoots:
-  m_ObjectHideFlags: 0
-  m_Roots:
-  - {fileID: 850789821}
-  - {fileID: 1689380672}
-  - {fileID: 495771392}
-  - {fileID: 1683927634}
-  - {fileID: 283690815}
-  - {fileID: 1900000002}
 --- !u!1 &1900000000
 GameObject:
   m_ObjectHideFlags: 0
@@ -883,7 +879,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 730485e4e8d6412aa9e2694455325fc9, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: PowerliftingSimulator.Equipment::PowerliftingSimulator.Equipment.PhysicalBarbell
   foundation: {fileID: 850789820}
   initialLoadKg: 25
@@ -905,3 +901,157 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1900000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 850789817}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da0b4a547900f404b8990435cd1b255c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: PowerliftingSimulator.Squat.Unity::PowerliftingSimulator.Squat.Unity.SquatPhysicalPrototypeController
+  foundation: {fileID: 850789820}
+  athleteRig: {fileID: 850789818}
+  barbell: {fileID: 1900000001}
+  barLoadKg: 25
+  locomotionAnimatorController: {fileID: 9100000, guid: 6f7923c2254424745aea661d5944c8e8, type: 2}
+  autoSquatOnStart: 0
+  attachBarSaddle: 1
+  showDebugGui: 0
+--- !u!1001 &6451361419170202548
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 44640009328394155, guid: 682addc6102d96f43ad766b0ca9918b5, type: 3}
+      propertyPath: m_Name
+      value: PowerliftingGameUI_GAM65
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775053166408781422, guid: 682addc6102d96f43ad766b0ca9918b5, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775053166408781422, guid: 682addc6102d96f43ad766b0ca9918b5, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775053166408781422, guid: 682addc6102d96f43ad766b0ca9918b5, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775053166408781422, guid: 682addc6102d96f43ad766b0ca9918b5, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775053166408781422, guid: 682addc6102d96f43ad766b0ca9918b5, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775053166408781422, guid: 682addc6102d96f43ad766b0ca9918b5, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775053166408781422, guid: 682addc6102d96f43ad766b0ca9918b5, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775053166408781422, guid: 682addc6102d96f43ad766b0ca9918b5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775053166408781422, guid: 682addc6102d96f43ad766b0ca9918b5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1775053166408781422, guid: 682addc6102d96f43ad766b0ca9918b5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 682addc6102d96f43ad766b0ca9918b5, type: 3}
+--- !u!1001 &8971379302217091830
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 1504144528921166360, guid: e1c1b3fcd8ac573408db6a91b8ff1df0, type: 3}
+      propertyPath: m_Name
+      value: PowerliftingGymEnvironment_GAM65
+      objectReference: {fileID: 0}
+    - target: {fileID: 6481314116715559101, guid: e1c1b3fcd8ac573408db6a91b8ff1df0, type: 3}
+      propertyPath: squatController
+      value: 
+      objectReference: {fileID: 1900000003}
+    - target: {fileID: 6481314116715559101, guid: e1c1b3fcd8ac573408db6a91b8ff1df0, type: 3}
+      propertyPath: authoritativeBarbell
+      value: 
+      objectReference: {fileID: 1900000001}
+    - target: {fileID: 8878240184624007643, guid: e1c1b3fcd8ac573408db6a91b8ff1df0, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8878240184624007643, guid: e1c1b3fcd8ac573408db6a91b8ff1df0, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8878240184624007643, guid: e1c1b3fcd8ac573408db6a91b8ff1df0, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8878240184624007643, guid: e1c1b3fcd8ac573408db6a91b8ff1df0, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8878240184624007643, guid: e1c1b3fcd8ac573408db6a91b8ff1df0, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8878240184624007643, guid: e1c1b3fcd8ac573408db6a91b8ff1df0, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8878240184624007643, guid: e1c1b3fcd8ac573408db6a91b8ff1df0, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8878240184624007643, guid: e1c1b3fcd8ac573408db6a91b8ff1df0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8878240184624007643, guid: e1c1b3fcd8ac573408db6a91b8ff1df0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8878240184624007643, guid: e1c1b3fcd8ac573408db6a91b8ff1df0, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e1c1b3fcd8ac573408db6a91b8ff1df0, type: 3}
+--- !u!1660057539 &9223372036854775807
+SceneRoots:
+  m_ObjectHideFlags: 0
+  m_Roots:
+  - {fileID: 850789821}
+  - {fileID: 1689380672}
+  - {fileID: 495771392}
+  - {fileID: 1683927634}
+  - {fileID: 283690815}
+  - {fileID: 1900000002}
+  - {fileID: 8971379302217091830}
+  - {fileID: 6451361419170202548}
