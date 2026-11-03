@@ -7,7 +7,8 @@
         "PowerliftingSimulator.Foundation.Unity",
         "PowerliftingSimulator.Athlete",
         "PowerliftingSimulator.Equipment",
-        "Unity.InputSystem"
+        "Unity.InputSystem",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
