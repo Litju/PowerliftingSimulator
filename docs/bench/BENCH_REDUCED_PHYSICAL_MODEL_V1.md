@@ -1,11 +1,13 @@
-# GAM-64 — Bench Reduced Physical Model V1 (BRPM-1)
+# GAM-64 — Bench Reduced Physical Model V1 (BRPM-1): PROVISIONAL
 
 **Architecture decision:** BRPM-1, 2026-11-05.  
-**Status:** DESIGN FROZEN for implementation; NOT physically qualified.  
+**Status:** PROVISIONAL CANDIDATE — NOT APPROVED for implementation; pending complete game-wide architecture and runtime audit.  
 **Repo:** Litju/PowerliftingSimulator; issue GAM-64 (single active work item).  
 **Branch:** codex/gam64-bench-reduced-plant, forked from clean main commit 687112b43afe71fe3e63e9c422708377a7f5bade.  
 **Unity:** 6000.3.22f1.  
 **Product scope:** one complete 25 kg bench press, not an all-lift muscle model.
+
+**ARCHITECTURAL HOLD (2026-11-05):** An independent repository-wide static inspection identified lift-specific UI/game orchestration inside the Squat assembly and a hardcoded 16-body/15-joint athlete builder. The six-body implementation's integration with the game, its physical support/contact coverage, and its source-level qualification have **not** been established. Do not implement or promote this document as an approved specification until the owner has reviewed a game-wide code, runtime, UX and test audit. Existing main and dirty historical bench source are unchanged.
 
 ## 0 — Decision and evidence
 
