@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using PowerliftingSimulator.Equipment;
+using PowerliftingSimulator.Foundation.Unity;
 using PowerliftingSimulator.Squat;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -22,6 +23,8 @@ namespace PowerliftingSimulator.Squat.Unity
         [SerializeField] private PowerliftingSettingsManager settingsManager;
         [SerializeField] private PowerliftingGymEnvironment gymEnvironment;
 
+        private FoundationBootstrap _foundation;
+        private readonly PlayerDepthFeedback _depthFeedback = new PlayerDepthFeedback();
         private Canvas _canvas;
         private Font _uiFont;
         private PowerliftingScreenState _currentScreen = PowerliftingScreenState.MainMenu;
@@ -120,6 +123,8 @@ namespace PowerliftingSimulator.Squat.Unity
         {
             if (squatController == null)
                 squatController = FindFirstObjectByType<SquatPhysicalPrototypeController>();
+            if (_foundation == null)
+                _foundation = FindFirstObjectByType<FoundationBootstrap>();
             if (settingsManager == null)
             {
                 settingsManager = FindFirstObjectByType<PowerliftingSettingsManager>();
@@ -593,11 +598,12 @@ namespace PowerliftingSimulator.Squat.Unity
                 : SquatAttemptLifecycleState.IDLE;
             SquatState adapterState = squatController.Adapter != null ? squatController.Adapter.State : SquatState.SETUP;
             SquatTrace trace = squatController.ObservationTrace;
-            SquatDepthLandmarks depth = trace != null && trace.IsRecording && trace.Count > 0 &&
-                orchestrator != null && orchestrator.HasSquatCommand
-                ? trace[trace.Count - 1].Depth
-                : SquatDepthLandmarks.Unavailable();
-            bool depthReached = depth.Availability == SquatTelemetryAvailability.AVAILABLE && depth.BilateralGameJudgmentQualified;
+            bool clockAvailable = _foundation != null && _foundation.Runtime != null && _foundation.Runtime.IsInitialized;
+            PlayerDepthStatus depthStatus = _depthFeedback.Update(
+                trace, orchestrator != null && orchestrator.HasSquatCommand,
+                orchestrator != null ? orchestrator.SquatCommandTick : 0ul,
+                clockAvailable ? _foundation.Runtime.CurrentTime.Tick : ulong.MaxValue);
+            bool depthReached = depthStatus == PlayerDepthStatus.Reached;
 
             if (_hudLoadBadgeText != null)
                 _hudLoadBadgeText.text = string.Format(CultureInfo.InvariantCulture, "COMPETITION SQUAT  ·  {0:0} KG", loadKg);
@@ -610,7 +616,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 gamePhase,
                 lifecycleState,
                 adapterState,
-                depthReached,
+                depthStatus,
                 out string refereeCallout,
                 out string playerPrompt,
                 out Color bannerColor);
@@ -628,17 +634,17 @@ namespace PowerliftingSimulator.Squat.Unity
                 _hudDepthFillImage.color = new Color(0.18f, 0.78f, 0.44f, 1f);
             }
             if (_hudDepthValueText != null)
-                _hudDepthValueText.text = FormatDepthFeedback(depth);
+                _hudDepthValueText.text = FormatDepthFeedback(depthStatus);
 
             if (_hudCameraAngleButtonText != null && cameraDirector != null)
                 _hudCameraAngleButtonText.text = "CAMERA [C]: " + PowerliftingCameraDirector.GetCameraAngleLabel(cameraDirector.ActiveLiftAngle);
         }
 
-        public static string FormatDepthFeedback(SquatDepthLandmarks depth)
+        public static string FormatDepthFeedback(PlayerDepthStatus status)
         {
-            if (depth.Availability != SquatTelemetryAvailability.AVAILABLE)
+            if (status == PlayerDepthStatus.Waiting)
                 return "DEPTH\nWAITING";
-            return depth.BilateralGameJudgmentQualified ? "DEPTH\nREACHED" : "DEPTH\nNOT YET";
+            return status == PlayerDepthStatus.Reached ? "DEPTH\nREACHED" : "DEPTH\nNOT YET";
         }
 
         private static string FormatActivePhaseBadge(
@@ -669,7 +675,7 @@ namespace PowerliftingSimulator.Squat.Unity
             SquatPlayerGamePhase gamePhase,
             SquatAttemptLifecycleState lifecycleState,
             SquatState adapterState,
-            bool depthReached,
+            PlayerDepthStatus depthStatus,
             out string refereeCallout,
             out string playerPrompt,
             out Color bannerColor)
@@ -720,16 +726,29 @@ namespace PowerliftingSimulator.Squat.Unity
                     return;
                 case SquatState.DESCENT:
                     refereeCallout = "DESCENDING — REACH IPF LEGAL DEPTH";
-                    playerPrompt = depthReached
+                    playerPrompt = depthStatus == PlayerDepthStatus.Reached
                         ? "Depth reached: release [S] and hold [W] or [Up Arrow] to drive up."
-                        : "Hold [S] or [Down Arrow] until the depth indicator says REACHED.";
+                        : depthStatus == PlayerDepthStatus.Waiting
+                            ? "Waiting for depth data. Hold [S] to descend or abort [Esc]."
+                            : "Hold [S] or [Down Arrow] until the depth indicator says REACHED.";
                     bannerColor = new Color(0.55f, 0.38f, 0.10f, 0.96f);
                     return;
                 case SquatState.BOTTOM:
                 case SquatState.REVERSAL:
-                    refereeCallout = depthReached ? "DEPTH REACHED - DRIVE UP!" : "BOTTOM - DRIVE UP!";
-                    playerPrompt = "Release [S] and hold [W] or [Up Arrow] to drive out of the hole!";
-                    bannerColor = new Color(0.12f, 0.56f, 0.34f, 0.96f);
+                    if (depthStatus == PlayerDepthStatus.Reached)
+                    {
+                        refereeCallout = "DEPTH REACHED - DRIVE UP!";
+                        playerPrompt = "Release [S] and hold [W] or [Up Arrow] to drive up.";
+                        bannerColor = new Color(0.12f, 0.56f, 0.34f, 0.96f);
+                    }
+                    else
+                    {
+                        refereeCallout = depthStatus == PlayerDepthStatus.Waiting ? "DEPTH DATA UNAVAILABLE" : "DEPTH NOT YET REACHED";
+                        playerPrompt = adapterState == SquatState.BOTTOM
+                            ? "Lowest programmed position reached. Wait to settle or abort [Esc]; depth is not confirmed."
+                            : "Depth is not confirmed. The referees will decide; abort [Esc] to stop.";
+                        bannerColor = new Color(0.55f, 0.38f, 0.10f, 0.96f);
+                    }
                     return;
                 case SquatState.ASCENT:
                 case SquatState.STICKING:
@@ -1549,7 +1568,7 @@ namespace PowerliftingSimulator.Squat.Unity
             CreateLabel(
                 depthCard,
                 "DepthTag",
-                "LIVE CUE",
+                "THIS LIFT",
                 new Vector2(0f, -192f),
                 new Vector2(114f, 26f),
                 12,
@@ -2186,4 +2205,79 @@ namespace PowerliftingSimulator.Squat.Unity
             return s_solidWhiteSprite;
         }
     }
+    public enum PlayerDepthStatus { Waiting, NotYet, Reached }
+
+    // Read-only presentation state; the referee evaluates its own frozen trace.
+    public sealed class PlayerDepthFeedback
+    {
+        private readonly SquatRuleProcessor _rules = new SquatRuleProcessor();
+        private SquatTrace _trace;
+        private ulong _commandTick;
+        private int _onset = -1;
+        private int _nextDepthIndex;
+        private int _nextEvidenceIndex;
+        private ulong _lastEvidenceTick;
+        private bool _hasEvidenceTick;
+        private bool _missingEvidence;
+        private bool _achieved;
+
+        public PlayerDepthStatus Update(SquatTrace trace, bool hasCommand, ulong commandTick, ulong currentTick)
+        {
+            if (!hasCommand || trace != _trace || commandTick != _commandTick ||
+                (trace != null && (_nextDepthIndex > trace.Count || _nextEvidenceIndex > trace.Count)))
+            {
+                _trace = trace;
+                _commandTick = commandTick;
+                _onset = -1;
+                _nextDepthIndex = 0;
+                _nextEvidenceIndex = 0;
+                _lastEvidenceTick = commandTick;
+                _hasEvidenceTick = false;
+                _missingEvidence = false;
+                _achieved = false;
+            }
+            if (!hasCommand || trace == null || trace.Count == 0)
+                return PlayerDepthStatus.Waiting;
+            if (_achieved)
+                return PlayerDepthStatus.Reached;
+
+            SquatObservationSnapshot latest = trace[trace.Count - 1];
+            if (!trace.IsRecording || latest.SimulationTick != currentTick || latest.SimulationTick < commandTick)
+                return PlayerDepthStatus.Waiting;
+
+            for (; _nextEvidenceIndex < trace.Count; _nextEvidenceIndex++)
+            {
+                SquatObservationSnapshot sample = trace[_nextEvidenceIndex];
+                if (sample.SimulationTick < commandTick)
+                    continue;
+                if ((!_hasEvidenceTick && sample.SimulationTick != commandTick) ||
+                    (_hasEvidenceTick && sample.SimulationTick != _lastEvidenceTick + 1ul) ||
+                    !sample.Bar.IsAvailable || sample.Depth.Availability != SquatTelemetryAvailability.AVAILABLE)
+                    _missingEvidence = true;
+                _lastEvidenceTick = sample.SimulationTick;
+                _hasEvidenceTick = true;
+            }
+            if (_onset < 0)
+            {
+                _onset = _rules.FindFirstPhysicalDescentMotionOnsetAtOrAfter(trace, commandTick, trace.Count - 1);
+                if (_onset >= 0)
+                    _nextDepthIndex = _onset;
+            }
+            if (_onset >= 0)
+            {
+                for (; _nextDepthIndex < trace.Count; _nextDepthIndex++)
+                {
+                    SquatDepthLandmarks depth = trace[_nextDepthIndex].Depth;
+                    if (depth.Availability == SquatTelemetryAvailability.AVAILABLE && depth.BilateralGameJudgmentQualified)
+                        _achieved = true;
+                }
+            }
+            if (_achieved)
+                return PlayerDepthStatus.Reached;
+            if (_missingEvidence || !latest.Bar.IsAvailable || latest.Depth.Availability != SquatTelemetryAvailability.AVAILABLE)
+                return PlayerDepthStatus.Waiting;
+            return PlayerDepthStatus.NotYet;
+        }
+    }
+
 }

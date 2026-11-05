@@ -1501,7 +1501,7 @@ namespace PowerliftingSimulator.Squat
             return -1;
         }
 
-        private int FindFirstPhysicalDescentMotionOnsetAtOrAfter(SquatTrace trace, ulong tick, int end)
+        public int FindFirstPhysicalDescentMotionOnsetAtOrAfter(SquatTrace trace, ulong tick, int end)
         {
             int persistence = _tolerances.DescentOnsetPersistenceTicks;
             for (int index = 0; index + persistence - 1 <= end; index++)

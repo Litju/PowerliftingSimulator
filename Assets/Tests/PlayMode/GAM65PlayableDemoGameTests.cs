@@ -226,11 +226,12 @@ namespace PowerliftingSimulator.Tests
             }
             Assert.That(_controller.Adapter.State, Is.EqualTo(SquatState.BOTTOM));
             _ui.RefreshUiImmediate();
+            Assert.That(_controller.AttemptRecord, Is.Null, "HUD feedback must not finalize or award the attempt.");
             SquatTrace depthTrace = _controller.ObservationTrace;
             Assert.That(depthTrace.Count, Is.GreaterThan(0));
             SquatDepthLandmarks depth = depthTrace[depthTrace.Count - 1].Depth;
             var depthLabel = GameObject.Find("DepthValueLabel").GetComponent<UnityEngine.UI.Text>();
-            Assert.That(depthLabel.text, Is.EqualTo(PowerliftingGameUiController.FormatDepthFeedback(depth)));
+            Assert.That(depthLabel.text, Is.EqualTo("DEPTH\nREACHED"));
             Assert.That(depth.BilateralGameJudgmentQualified, Is.True);
 
             // Capture bottom depth in both 3/4 Competition view and Side Depth Referee view
@@ -249,6 +250,8 @@ namespace PowerliftingSimulator.Tests
             {
                 if (!capturedAscent && _controller.Adapter.State == SquatState.ASCENT && _controller.Adapter.Sq <= 0.55f)
                 {
+                    _ui.RefreshUiImmediate();
+                    Assert.That(depthLabel.text, Is.EqualTo("DEPTH\nREACHED"), "Depth achievement must persist during ascent.");
                     _cameraDirector.SnapToTargetImmediate();
                     CaptureGameFrame(captureDir, "13_active_lift_ascent.png");
                     capturedAscent = true;
@@ -287,6 +290,7 @@ namespace PowerliftingSimulator.Tests
 
             Assert.That(_ui.CurrentScreen, Is.EqualTo(PowerliftingScreenState.SquatPreparation));
             Assert.That(_controller.CurrentLoadKg, Is.EqualTo(25f));
+            Assert.That(_controller.ObservationTrace.Count, Is.EqualTo(0), "Retry must start a fresh observation trace.");
 
             // Start second attempt and abort after SQUAT_COMMAND to verify non-good-lift result presentation
             _ui.BeginUnrackAndWalkoutAction();
