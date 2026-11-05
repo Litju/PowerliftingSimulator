@@ -592,7 +592,12 @@ namespace PowerliftingSimulator.Squat.Unity
                 ? orchestrator.Lifecycle.State
                 : SquatAttemptLifecycleState.IDLE;
             SquatState adapterState = squatController.Adapter != null ? squatController.Adapter.State : SquatState.SETUP;
-            float sq = squatController.Adapter != null ? Mathf.Clamp01(squatController.Adapter.Sq) : 0f;
+            SquatTrace trace = squatController.ObservationTrace;
+            SquatDepthLandmarks depth = trace != null && trace.IsRecording && trace.Count > 0 &&
+                orchestrator != null && orchestrator.HasSquatCommand
+                ? trace[trace.Count - 1].Depth
+                : SquatDepthLandmarks.Unavailable();
+            bool depthReached = depth.Availability == SquatTelemetryAvailability.AVAILABLE && depth.BilateralGameJudgmentQualified;
 
             if (_hudLoadBadgeText != null)
                 _hudLoadBadgeText.text = string.Format(CultureInfo.InvariantCulture, "COMPETITION SQUAT  ·  {0:0} KG", loadKg);
@@ -605,6 +610,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 gamePhase,
                 lifecycleState,
                 adapterState,
+                depthReached,
                 out string refereeCallout,
                 out string playerPrompt,
                 out Color bannerColor);
@@ -618,17 +624,21 @@ namespace PowerliftingSimulator.Squat.Unity
 
             if (_hudDepthFillImage != null)
             {
-                _hudDepthFillImage.fillAmount = sq;
-                bool depthReached = sq >= 0.85f || adapterState == SquatState.BOTTOM || adapterState == SquatState.REVERSAL || adapterState == SquatState.ASCENT || adapterState == SquatState.LOCKOUT;
-                _hudDepthFillImage.color = depthReached
-                    ? new Color(0.18f, 0.78f, 0.44f, 1f)
-                    : new Color(0.92f, 0.62f, 0.14f, 1f);
+                _hudDepthFillImage.fillAmount = depthReached ? 1f : 0f;
+                _hudDepthFillImage.color = new Color(0.18f, 0.78f, 0.44f, 1f);
             }
             if (_hudDepthValueText != null)
-                _hudDepthValueText.text = string.Format(CultureInfo.InvariantCulture, "DEPTH\n{0:0}%", sq * 100f);
+                _hudDepthValueText.text = FormatDepthFeedback(depth);
 
             if (_hudCameraAngleButtonText != null && cameraDirector != null)
                 _hudCameraAngleButtonText.text = "CAMERA [C]: " + PowerliftingCameraDirector.GetCameraAngleLabel(cameraDirector.ActiveLiftAngle);
+        }
+
+        public static string FormatDepthFeedback(SquatDepthLandmarks depth)
+        {
+            if (depth.Availability != SquatTelemetryAvailability.AVAILABLE)
+                return "DEPTH\nWAITING";
+            return depth.BilateralGameJudgmentQualified ? "DEPTH\nREACHED" : "DEPTH\nNOT YET";
         }
 
         private static string FormatActivePhaseBadge(
@@ -659,6 +669,7 @@ namespace PowerliftingSimulator.Squat.Unity
             SquatPlayerGamePhase gamePhase,
             SquatAttemptLifecycleState lifecycleState,
             SquatState adapterState,
+            bool depthReached,
             out string refereeCallout,
             out string playerPrompt,
             out Color bannerColor)
@@ -709,12 +720,14 @@ namespace PowerliftingSimulator.Squat.Unity
                     return;
                 case SquatState.DESCENT:
                     refereeCallout = "DESCENDING — REACH IPF LEGAL DEPTH";
-                    playerPrompt = "Continue holding [S] or [Down Arrow] until the depth meter turns green.";
+                    playerPrompt = depthReached
+                        ? "Depth reached: release [S] and hold [W] or [Up Arrow] to drive up."
+                        : "Hold [S] or [Down Arrow] until the depth indicator says REACHED.";
                     bannerColor = new Color(0.55f, 0.38f, 0.10f, 0.96f);
                     return;
                 case SquatState.BOTTOM:
                 case SquatState.REVERSAL:
-                    refereeCallout = "LEGAL DEPTH REACHED — DRIVE UP!";
+                    refereeCallout = depthReached ? "DEPTH REACHED - DRIVE UP!" : "BOTTOM - DRIVE UP!";
                     playerPrompt = "Release [S] and hold [W] or [Up Arrow] to drive out of the hole!";
                     bannerColor = new Color(0.12f, 0.56f, 0.34f, 0.96f);
                     return;
@@ -1486,7 +1499,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 true);
             _hudCameraAngleButtonText = camBtn.GetComponentInChildren<Text>();
 
-            // Right-side vertical Squat Depth Meter
+            // Live physical depth cue
             RectTransform depthCard = CreatePanel(
                 _activeLiftPanel.transform,
                 "DepthMeterCard",
@@ -1500,7 +1513,7 @@ namespace PowerliftingSimulator.Squat.Unity
             _hudDepthValueText = CreateLabel(
                 depthCard,
                 "DepthValueLabel",
-                "DEPTH\n0%",
+                "DEPTH\nWAITING",
                 new Vector2(0f, 174f),
                 new Vector2(110f, 54f),
                 16,
@@ -1533,26 +1546,15 @@ namespace PowerliftingSimulator.Squat.Unity
             _hudDepthFillImage.fillAmount = 0f;
             _hudDepthFillImage.color = new Color(0.92f, 0.62f, 0.14f, 1f);
 
-            // Legal depth threshold marker line at 85%
-            CreatePanel(
-                meterBg,
-                "LegalDepthMarker",
-                new Vector2(0.5f, 0.85f),
-                new Vector2(0.5f, 0.85f),
-                new Vector2(0.5f, 0.5f),
-                Vector2.zero,
-                new Vector2(64f, 4f),
-                new Color(0.22f, 0.95f, 0.52f, 1f));
-
             CreateLabel(
                 depthCard,
-                "LegalDepthTag",
-                "IPF DEPTH",
+                "DepthTag",
+                "LIVE CUE",
                 new Vector2(0f, -192f),
                 new Vector2(114f, 26f),
                 12,
                 FontStyle.Bold,
-                new Color(0.32f, 0.92f, 0.56f, 1f),
+                Color.white,
                 TextAnchor.MiddleCenter);
 
             // Bottom instruction & action bar

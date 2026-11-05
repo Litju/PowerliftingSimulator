@@ -225,6 +225,13 @@ namespace PowerliftingSimulator.Tests
                 yield return new WaitForSecondsRealtime(0.01f);
             }
             Assert.That(_controller.Adapter.State, Is.EqualTo(SquatState.BOTTOM));
+            _ui.RefreshUiImmediate();
+            SquatTrace depthTrace = _controller.ObservationTrace;
+            Assert.That(depthTrace.Count, Is.GreaterThan(0));
+            SquatDepthLandmarks depth = depthTrace[depthTrace.Count - 1].Depth;
+            var depthLabel = GameObject.Find("DepthValueLabel").GetComponent<UnityEngine.UI.Text>();
+            Assert.That(depthLabel.text, Is.EqualTo(PowerliftingGameUiController.FormatDepthFeedback(depth)));
+            Assert.That(depth.BilateralGameJudgmentQualified, Is.True);
 
             // Capture bottom depth in both 3/4 Competition view and Side Depth Referee view
             _cameraDirector.SetActiveLiftCameraAngle(PowerliftingCameraAngle.ThreeQuarterCompetition, true);
