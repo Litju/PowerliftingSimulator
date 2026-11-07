@@ -76,11 +76,25 @@ Test receipts:
 - GAM-12 PlayMode lifecycle/rules/failure/trace: **17/17**.
 - GAM-63 isolated 25 kg: **1/1**, **10/10 fresh attempts**.
 - GAM-65 playable game flow: **1/1**.
+- GAM-66 shared-athlete contracts: **8/8**.
 - GAM-9: 4/5 pass. The `G1_MUTATION_GATES_REJECT_FORBIDDEN_AUTHORITY` case
   reports a `pelvis isKinematic` fixture state; the identical failure was
   reproduced on untouched baseline `687112b`, so it is not caused by this
   change. The physical substrate, reset repeatability, active/passive,
   powered-neutral and standalone-evidence cases pass.
+
+Receipt files (local, not committed):
+
+- `Artifacts/Logs/gam68-editmode-full2.xml`
+- `Artifacts/Logs/gam68-gam10-gfx.xml`
+- `Artifacts/Logs/gam68-gam12.xml`
+- `Artifacts/Logs/gam68-gam63b.xml`
+- `Artifacts/Logs/gam68-gam65-gfx.xml`
+- `Artifacts/Logs/gam68-gam66b.xml`
+- `Artifacts/Logs/gam68-gam9-gfx.xml`
+- `Artifacts/Logs/gam68-before3.xml` and `gam68-after-final.xml`
+- `Artifacts/Logs/gam68-build3.log`
+- `Artifacts/Evidence/GAM-68/before-after-contact-sheet.png`
 
 ## Windows review build
 
