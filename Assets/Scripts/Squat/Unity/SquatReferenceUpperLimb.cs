@@ -112,14 +112,17 @@ namespace PowerliftingSimulator.Squat.Unity
 
             Vector3 leftGrip = barCenter - thoraxRight * SquatReferenceKinematics.ArmBarHalfWidthM;
             Vector3 rightGrip = barCenter + thoraxRight * SquatReferenceKinematics.ArmBarHalfWidthM;
+            Vector3 referencePalmNormal = (thoraxForward * 0.95f + thoraxUp * 0.25f).normalized;
 
             return new SquatReferenceUpperLimbSolution(
                 SolveSide(
                     calibration.LeftUpperArm, calibration.LeftForearm, calibration.LeftHand,
-                    leftShoulderPosition, leftGrip, thoraxForward, thoraxUp, thoraxRight, isLeft: true),
+                    leftShoulderPosition, leftGrip, thoraxForward, thoraxUp, thoraxRight,
+                    thoraxRight, referencePalmNormal, new Vector3(-0.018f, 0.038f, 0f), isLeft: true),
                 SolveSide(
                     calibration.RightUpperArm, calibration.RightForearm, calibration.RightHand,
-                    rightShoulderPosition, rightGrip, thoraxForward, thoraxUp, thoraxRight, isLeft: false),
+                    rightShoulderPosition, rightGrip, thoraxForward, thoraxUp, thoraxRight,
+                    thoraxRight, referencePalmNormal, new Vector3(0.018f, 0.038f, 0f), isLeft: false),
                 barCenter);
         }
 
@@ -174,6 +177,39 @@ namespace PowerliftingSimulator.Squat.Unity
             return parentPosition + parentRotation * offsetInParentBind;
         }
 
+        /// <summary>
+        /// Solves one arm against the realized physical shoulder and the live
+        /// bar shaft. This is the correction for the walkout: the GAM-10
+        /// reference lives in the calibration scene's world frame, while the
+        /// physical athlete steps back with the bar. The task-space geometry is
+        /// unchanged; only its world anchor and palm-facing direction come from
+        /// the measured live rig.
+        /// </summary>
+        public static SquatReferenceUpperLimbSide SolveSideForLiveBar(
+            SquatReferenceRigCalibration calibration,
+            bool isLeft,
+            Vector3 shoulder,
+            Vector3 barGripCenterline,
+            Vector3 thoraxForward,
+            Vector3 thoraxUp,
+            Vector3 thoraxRight,
+            Vector3 barAxis,
+            float swivelDegrees = 0f,
+            Vector3? measuredPalmCenterLocal = null)
+        {
+            if (calibration == null)
+                throw new ArgumentNullException(nameof(calibration));
+            Vector3 palmNormalTarget = (-thoraxUp * 0.95f + thoraxForward * 0.10f).normalized;
+            Vector3 palmOffset = measuredPalmCenterLocal ??
+                (isLeft ? new Vector3(-0.018f, 0.038f, 0f) : new Vector3(0.018f, 0.038f, 0f));
+            return SolveSide(
+                isLeft ? calibration.LeftUpperArm : calibration.RightUpperArm,
+                isLeft ? calibration.LeftForearm : calibration.RightForearm,
+                isLeft ? calibration.LeftHand : calibration.RightHand,
+                shoulder, barGripCenterline, thoraxForward, thoraxUp, thoraxRight,
+                barAxis, palmNormalTarget, palmOffset, isLeft, swivelDegrees, alignPalmNormalToBar: true);
+        }
+
         private static SquatReferenceUpperLimbSide SolveSide(
             SquatReferenceBoneFrame upperArmFrame,
             SquatReferenceBoneFrame forearmFrame,
@@ -183,7 +219,12 @@ namespace PowerliftingSimulator.Squat.Unity
             Vector3 thoraxForward,
             Vector3 thoraxUp,
             Vector3 thoraxRight,
-            bool isLeft)
+            Vector3 barAxis,
+            Vector3 palmNormalTarget,
+            Vector3 palmOffset,
+            bool isLeft,
+            float swivelDegrees = 0f,
+            bool alignPalmNormalToBar = false)
         {
             float upperLength = Vector3.Distance(forearmFrame.BindPosition, upperArmFrame.BindPosition);
             float forearmLength = Vector3.Distance(handFrame.BindPosition, forearmFrame.BindPosition);
@@ -191,30 +232,60 @@ namespace PowerliftingSimulator.Squat.Unity
             float sideSign = isLeft ? -1f : 1f;
             Vector3 poleHint = -thoraxUp * 0.95f - thoraxForward * 0.04f + thoraxRight * (sideSign * 0.30f);
 
-            // The palm faces the front of the body with a slight upward rest
-            // angle, which is what puts the forearm under the bar.
-            Vector3 palmNormalTarget = (thoraxForward * 0.95f + thoraxUp * 0.25f).normalized;
-
-            SolveTwoBone(
-                shoulder, barGripCenterline, upperLength, forearmLength, poleHint,
-                out Vector3 approxElbow, out Vector3 approxHand);
-            Vector3 forearmApproachDir = (approxHand - approxElbow).normalized;
-
-            Quaternion approxHandRot = HandRotation(forearmApproachDir, palmNormalTarget, isLeft);
-
-            // In FBX local space the hand's longitudinal axis is +Y and the
-            // palm normal is +X on the right hand, -X on the left.
-            Vector3 palmOffset = isLeft ? new Vector3(-0.018f, 0.038f, 0f) : new Vector3(0.018f, 0.038f, 0f);
-            Vector3 palmNormalWorld = approxHandRot * (isLeft ? Vector3.left : Vector3.right);
-            Vector3 palmContactTarget = barGripCenterline - palmNormalWorld * BarRadiusM;
-            Vector3 handBoneTarget = palmContactTarget - approxHandRot * palmOffset;
-
-            SolveTwoBone(
-                shoulder, handBoneTarget, upperLength, forearmLength, poleHint,
-                out Vector3 elbow, out Vector3 solvedHand);
-
-            Vector3 upperDir = (elbow - shoulder).normalized;
+            Vector3 wristTarget = barGripCenterline;
+            Vector3 elbow = shoulder;
+            Vector3 solvedHand = shoulder;
+            Vector3 upperDir = (solvedHand - shoulder).normalized;
             Vector3 forearmFinalDir = (solvedHand - elbow).normalized;
+            Quaternion handRot = Quaternion.identity;
+            Vector3 palmCenterWorld = barGripCenterline;
+
+            void SolveWrist(Vector3 normalTarget)
+            {
+                for (int iteration = 0; iteration < 6; iteration++)
+                {
+                    SolveTwoBone(
+                        shoulder, wristTarget, upperLength, forearmLength, poleHint,
+                        out elbow, out solvedHand);
+                    if (Mathf.Abs(swivelDegrees) > 0.0001f)
+                    {
+                        Vector3 shoulderToHand = (solvedHand - shoulder).normalized;
+                        elbow = shoulder + Quaternion.AngleAxis(swivelDegrees, shoulderToHand) * (elbow - shoulder);
+                    }
+
+                    upperDir = (elbow - shoulder).normalized;
+                    forearmFinalDir = (solvedHand - elbow).normalized;
+                    handRot = HandRotation(forearmFinalDir, normalTarget, isLeft);
+                    Vector3 actualPalmNormal = handRot * (isLeft ? Vector3.left : Vector3.right);
+                    palmCenterWorld = solvedHand + handRot * palmOffset;
+                    Vector3 desiredPalm = barGripCenterline - actualPalmNormal * BarRadiusM;
+                    Vector3 error = desiredPalm - palmCenterWorld;
+                    if (error.sqrMagnitude < 0.00000025f)
+                        break;
+                    wristTarget += error;
+                }
+            }
+
+            // Place the measured palm surface on the shaft and, for the live
+            // solve, turn it to face the actual shaft radial. The swivel
+            // rotates the elbow around the shoulder-to-wrist axis, changing
+            // forearm roll without changing the wrist position; the wrist
+            // target then absorbs the measured palm offset. A few fixed-point
+            // iterations converge because the palm offset is small relative to
+            // the arm length.
+            Vector3 palmNormal = palmNormalTarget;
+            SolveWrist(palmNormal);
+            if (alignPalmNormalToBar)
+            {
+                for (int outer = 0; outer < 3; outer++)
+                {
+                    Vector3 radial = Vector3.ProjectOnPlane(barGripCenterline - palmCenterWorld, barAxis);
+                    if (radial.sqrMagnitude < 1e-8f)
+                        break;
+                    palmNormal = radial.normalized;
+                    SolveWrist(palmNormal);
+                }
+            }
 
             // Upper arm: longitudinal axis (+Y) along the humerus, anterior
             // surface (+Z, biceps) facing forward.
@@ -224,8 +295,6 @@ namespace PowerliftingSimulator.Squat.Unity
             float humerusSignedDeg = isLeft ? -HumerusAxialDeg : HumerusAxialDeg;
             Quaternion upperRot = Quaternion.AngleAxis(humerusSignedDeg, upperDir) * baseUpperRot;
 
-            Quaternion handRot = HandRotation(forearmFinalDir, palmNormalTarget, isLeft);
-
             // The forearm follows the hand through their bind relationship, so
             // the wrist keeps the authored neutral the reference rig carries.
             Quaternion handBindRelativeToForearm =
@@ -233,8 +302,7 @@ namespace PowerliftingSimulator.Squat.Unity
             Quaternion forearmRot = handRot * Quaternion.Inverse(handBindRelativeToForearm);
 
             float forearmHandAngleDeg = Vector3.Angle(forearmFinalDir, handRot * Vector3.up);
-            Vector3 palmCenterWorld = solvedHand + handRot * palmOffset;
-            Vector3 radialOffset = Vector3.ProjectOnPlane(palmCenterWorld - barGripCenterline, thoraxRight);
+            Vector3 radialOffset = Vector3.ProjectOnPlane(palmCenterWorld - barGripCenterline, barAxis);
             float palmBarSurfaceErrorM = Mathf.Abs(radialOffset.magnitude - BarRadiusM);
 
             return new SquatReferenceUpperLimbSide(

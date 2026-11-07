@@ -79,6 +79,26 @@ namespace PowerliftingSimulator.Squat.Unity
         private const float MinimumTrunkParticipationRad = 0.0017f; // 0.1 deg
         private const float MaxTrunkNormalizationScale = 4f;
         private SquatState _state = SquatState.SETUP;
+        private bool _liveUpperLimbActive;
+        private float _liveLeftHandPositionResidualM;
+        private float _liveRightHandPositionResidualM;
+        private float _liveLeftHandOrientationResidualDeg;
+        private float _liveRightHandOrientationResidualDeg;
+        private Vector3 _liveLeftHandTargetWorld;
+        private Vector3 _liveRightHandTargetWorld;
+        private Vector3 _liveLeftElbowTargetWorld;
+        private Vector3 _liveRightElbowTargetWorld;
+
+        public bool LiveUpperLimbActive => _liveUpperLimbActive;
+        public float LiveLeftHandPositionResidualM => _liveLeftHandPositionResidualM;
+        public float LiveRightHandPositionResidualM => _liveRightHandPositionResidualM;
+        public float LiveLeftHandOrientationResidualDeg => _liveLeftHandOrientationResidualDeg;
+        public float LiveRightHandOrientationResidualDeg => _liveRightHandOrientationResidualDeg;
+        public Vector3 LiveLeftHandTargetWorld => _liveLeftHandTargetWorld;
+        public Vector3 LiveRightHandTargetWorld => _liveRightHandTargetWorld;
+        public Vector3 LiveLeftElbowTargetWorld => _liveLeftElbowTargetWorld;
+        public Vector3 LiveRightElbowTargetWorld => _liveRightElbowTargetWorld;
+
         private bool _squatCommandIssued;
         private SquatPhaseDirection _direction = SquatPhaseDirection.None;
         private float _sq;
@@ -1130,12 +1150,131 @@ namespace PowerliftingSimulator.Squat.Unity
             float effort,
             ulong tick)
         {
-            ApplyUpperLimbJoint(jointCommandSink, "left_upper_arm", referenceTarget.LeftUpperArm, rate.LeftUpperArm, phaseVelocity, effort, tick);
-            ApplyUpperLimbJoint(jointCommandSink, "right_upper_arm", referenceTarget.RightUpperArm, rate.RightUpperArm, phaseVelocity, effort, tick);
-            ApplyUpperLimbJoint(jointCommandSink, "left_forearm", referenceTarget.LeftForearm, rate.LeftForearm, phaseVelocity, effort, tick);
-            ApplyUpperLimbJoint(jointCommandSink, "right_forearm", referenceTarget.RightForearm, rate.RightForearm, phaseVelocity, effort, tick);
-            ApplyUpperLimbJoint(jointCommandSink, "left_hand", referenceTarget.LeftHand, rate.LeftHand, phaseVelocity, effort, tick);
-            ApplyUpperLimbJoint(jointCommandSink, "right_hand", referenceTarget.RightHand, rate.RightHand, phaseVelocity, effort, tick);
+            Quaternion leftUpper = referenceTarget.LeftUpperArm;
+            Quaternion rightUpper = referenceTarget.RightUpperArm;
+            Quaternion leftForearm = referenceTarget.LeftForearm;
+            Quaternion rightForearm = referenceTarget.RightForearm;
+            Quaternion leftHand = referenceTarget.LeftHand;
+            Quaternion rightHand = referenceTarget.RightHand;
+
+            if (TrySolveLiveUpperLimb(out PhysicalUpperLimbTargets liveLeft, out PhysicalUpperLimbTargets liveRight))
+            {
+                leftUpper = liveLeft.UpperArm;
+                rightUpper = liveRight.UpperArm;
+                leftForearm = liveLeft.Forearm;
+                rightForearm = liveRight.Forearm;
+                leftHand = liveLeft.Hand;
+                rightHand = liveRight.Hand;
+                _liveUpperLimbActive = true;
+                _liveLeftHandPositionResidualM = liveLeft.HandPositionResidualM;
+                _liveRightHandPositionResidualM = liveRight.HandPositionResidualM;
+                _liveLeftHandOrientationResidualDeg = liveLeft.HandOrientationResidualDeg;
+                _liveRightHandOrientationResidualDeg = liveRight.HandOrientationResidualDeg;
+            }
+            else
+            {
+                _liveUpperLimbActive = false;
+            }
+
+            ApplyUpperLimbJoint(jointCommandSink, "left_upper_arm", leftUpper, rate.LeftUpperArm, phaseVelocity, effort, tick);
+            ApplyUpperLimbJoint(jointCommandSink, "right_upper_arm", rightUpper, rate.RightUpperArm, phaseVelocity, effort, tick);
+            ApplyUpperLimbJoint(jointCommandSink, "left_forearm", leftForearm, rate.LeftForearm, phaseVelocity, effort, tick);
+            ApplyUpperLimbJoint(jointCommandSink, "right_forearm", rightForearm, rate.RightForearm, phaseVelocity, effort, tick);
+            ApplyUpperLimbJoint(jointCommandSink, "left_hand", leftHand, rate.LeftHand, phaseVelocity, effort, tick);
+            ApplyUpperLimbJoint(jointCommandSink, "right_hand", rightHand, rate.RightHand, phaseVelocity, effort, tick);
+        }
+
+        /// <summary>
+        /// Re-anchors the accepted GAM-10 upper-limb task to the realized
+        /// physical shoulders and the live bar shaft. The virtual reference
+        /// lives in the calibration world frame; the physical athlete steps
+        /// back during the walkout, so the un-anchored reference leaves the
+        /// hands reaching for a bar that is not where the athlete is. This
+        /// reads only realized physical body poses and the actual bar, and
+        /// feeds the same one-axis elbow / ball shoulder / ball wrist
+        /// projection. It adds no joint, body, constraint or force.
+        /// </summary>
+        private bool TrySolveLiveUpperLimb(
+            out PhysicalUpperLimbTargets leftArm,
+            out PhysicalUpperLimbTargets rightArm)
+        {
+            leftArm = default;
+            rightArm = default;
+            if (_referenceCalibration == null || _saddle == null || !_saddle.IsAttached ||
+                _saddle.Barbell == null || _saddle.Barbell.Body == null ||
+                !_saddle.Barbell.Body.gameObject.activeInHierarchy)
+                return false;
+            if (!_rig.Segments.TryGetValue("thorax", out PhysicalAthleteRig.SegmentRuntime thorax) ||
+                thorax.Body == null ||
+                !_rig.Segments.TryGetValue("left_upper_arm", out PhysicalAthleteRig.SegmentRuntime leftUpper) ||
+                !_rig.Segments.TryGetValue("right_upper_arm", out PhysicalAthleteRig.SegmentRuntime rightUpper) ||
+                leftUpper.Body == null || rightUpper.Body == null ||
+                !TryJointAnchor("left_upper_arm", out Vector3 leftShoulder) ||
+                !TryJointAnchor("right_upper_arm", out Vector3 rightShoulder))
+                return false;
+
+            Rigidbody bar = _saddle.Barbell.Body;
+            Quaternion thoraxFrame = ReferenceFrameWorldRotation(thorax, _referenceCalibration.Chest);
+            Vector3 forward = thoraxFrame * _referenceCalibration.GameForward;
+            Vector3 up = thoraxFrame * _referenceCalibration.GameUp;
+            Vector3 right = thoraxFrame * _referenceCalibration.GameRight;
+            Vector3 barAxis = (bar.rotation * Vector3.right).normalized;
+            float halfWidth = SquatReferenceKinematics.ArmBarHalfWidthM;
+            Vector3 leftGrip = bar.position - barAxis * halfWidth;
+            Vector3 rightGrip = bar.position + barAxis * halfWidth;
+            Vector3 leftPalmLocal = new Vector3(-0.023394f, 0.066974f, 0.005951f);
+            Vector3 rightPalmLocal = new Vector3(0.023394f, 0.066974f, 0.005951f);
+            if (SquatPalmSurface.TryMeasure(
+                    _rig.VisibleAnimator, true, bar.position, barAxis,
+                    out SquatPalmSurfaceFrame leftFrame, out _))
+                leftPalmLocal = leftFrame.CenterLocal;
+            if (SquatPalmSurface.TryMeasure(
+                    _rig.VisibleAnimator, false, bar.position, barAxis,
+                    out SquatPalmSurfaceFrame rightFrame, out _))
+                rightPalmLocal = rightFrame.CenterLocal;
+            leftArm = BestLiveArm(leftShoulder, leftGrip, forward, up, right, barAxis, thorax.Body.rotation, true,
+                leftPalmLocal, out _liveLeftHandTargetWorld, out _liveLeftElbowTargetWorld);
+            rightArm = BestLiveArm(rightShoulder, rightGrip, forward, up, right, barAxis, thorax.Body.rotation, false,
+                rightPalmLocal, out _liveRightHandTargetWorld, out _liveRightElbowTargetWorld);
+            return true;
+        }
+
+        private PhysicalUpperLimbTargets BestLiveArm(
+            Vector3 shoulder,
+            Vector3 grip,
+            Vector3 forward,
+            Vector3 up,
+            Vector3 right,
+            Vector3 barAxis,
+            Quaternion thoraxBodyRotation,
+            bool isLeft,
+            Vector3 palmCenterLocal,
+            out Vector3 handTarget,
+            out Vector3 elbowTarget)
+        {
+            PhysicalUpperLimbTargets best = default;
+            float bestScore = float.PositiveInfinity;
+            handTarget = Vector3.zero;
+            elbowTarget = Vector3.zero;
+            for (int step = -4; step <= 4; step++)
+            {
+                float swivel = step * 15f;
+                SquatReferenceUpperLimbSide side = SquatReferenceUpperLimb.SolveSideForLiveBar(
+                    _referenceCalibration, isLeft, shoulder, grip, forward, up, right, barAxis, swivel, palmCenterLocal);
+                PhysicalUpperLimbTargets candidate = SquatPhysicalUpperLimbProjection.Project(
+                    _rig, _referenceCalibration, side, thoraxBodyRotation, isLeft);
+                float score = candidate.HandOrientationResidualDeg +
+                    candidate.HandPositionResidualM * 1000f +
+                    Mathf.Abs(swivel) * 0.20f;
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    best = candidate;
+                    handTarget = side.HandCenter;
+                    elbowTarget = side.ElbowCenter;
+                }
+            }
+            return best;
         }
 
         private void ApplyUpperLimbJoint(
