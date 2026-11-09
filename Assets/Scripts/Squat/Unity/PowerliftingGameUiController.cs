@@ -498,7 +498,7 @@ namespace PowerliftingSimulator.Squat.Unity
             bool canSetup = squatController.CanBeginPlayerSetup;
 
             if (_prepSelectedWeightLabel != null)
-                _prepSelectedWeightLabel.text = string.Format(CultureInfo.InvariantCulture, "SELECTED BAR LOAD: {0:0} KG", loadKg);
+                _prepSelectedWeightLabel.text = string.Format(CultureInfo.InvariantCulture, "LOAD: {0:0} KG", loadKg);
 
             if (_prepPlateBreakdownLabel != null)
                 _prepPlateBreakdownLabel.text = DescribePlateBreakdown(loadKg);
@@ -516,52 +516,52 @@ namespace PowerliftingSimulator.Squat.Unity
             if (phase == SquatPlayerGamePhase.SETUP)
             {
                 if (_prepReadinessBadgeLabel != null)
-                    _prepReadinessBadgeLabel.text = "STATUS: BRACED UNDER BAR — READY TO UNRACK";
+                    _prepReadinessBadgeLabel.text = "BRACED — READY TO WALK OUT";
                 if (_prepReadinessBadgeBg != null)
                     _prepReadinessBadgeBg.color = new Color(0.14f, 0.52f, 0.34f, 0.96f);
                 if (_prepSetupButton != null)
                     _prepSetupButton.interactable = false;
                 if (_prepSetupButtonLabel != null)
-                    _prepSetupButtonLabel.text = "1. SET UP COMPLETE";
+                    _prepSetupButtonLabel.text = "1. BRACED";
                 if (_prepUnrackButton != null)
                     _prepUnrackButton.interactable = true;
             }
             else if (loadKg < 25f)
             {
                 if (_prepReadinessBadgeLabel != null)
-                    _prepReadinessBadgeLabel.text = "SELECT AT LEAST 25 KG COMPETITION BAR TO BEGIN";
+                    _prepReadinessBadgeLabel.text = "SELECT 25 KG OR MORE TO LIFT";
                 if (_prepReadinessBadgeBg != null)
                     _prepReadinessBadgeBg.color = new Color(0.58f, 0.34f, 0.10f, 0.96f);
                 if (_prepSetupButton != null)
                     _prepSetupButton.interactable = false;
                 if (_prepSetupButtonLabel != null)
-                    _prepSetupButtonLabel.text = "1. SET UP UNDER BAR";
+                    _prepSetupButtonLabel.text = "1. BRACE & SET GRIP";
                 if (_prepUnrackButton != null)
                     _prepUnrackButton.interactable = false;
             }
             else if (canSetup)
             {
                 if (_prepReadinessBadgeLabel != null)
-                    _prepReadinessBadgeLabel.text = "STATUS: ATHLETE STABLE — READY FOR SETUP & WALKOUT";
+                    _prepReadinessBadgeLabel.text = "BAR ON BACK — READY TO BRACE";
                 if (_prepReadinessBadgeBg != null)
                     _prepReadinessBadgeBg.color = new Color(0.12f, 0.48f, 0.32f, 0.96f);
                 if (_prepSetupButton != null)
                     _prepSetupButton.interactable = true;
                 if (_prepSetupButtonLabel != null)
-                    _prepSetupButtonLabel.text = "1. SET UP UNDER BAR";
+                    _prepSetupButtonLabel.text = "1. BRACE & SET GRIP";
                 if (_prepUnrackButton != null)
                     _prepUnrackButton.interactable = true;
             }
             else
             {
                 if (_prepReadinessBadgeLabel != null)
-                    _prepReadinessBadgeLabel.text = "STATUS: STABILIZING STANDING START POSE...";
+                    _prepReadinessBadgeLabel.text = "BAR ON BACK — SETTLING...";
                 if (_prepReadinessBadgeBg != null)
                     _prepReadinessBadgeBg.color = new Color(0.45f, 0.36f, 0.14f, 0.96f);
                 if (_prepSetupButton != null)
                     _prepSetupButton.interactable = false;
                 if (_prepSetupButtonLabel != null)
-                    _prepSetupButtonLabel.text = "1. SET UP UNDER BAR";
+                    _prepSetupButtonLabel.text = "1. BRACE & SET GRIP";
                 if (_prepUnrackButton != null)
                     _prepUnrackButton.interactable = false;
             }
@@ -1211,7 +1211,7 @@ namespace PowerliftingSimulator.Squat.Unity
             CreateLabel(
                 topBar,
                 "PrepHeaderTitle",
-                "SQUAT PREPARATION  —  CONFIGURE BARBELL & START ATTEMPT",
+                "SQUAT  —  PREPARE YOUR ATTEMPT",
                 new Vector2(-420f, 0f),
                 new Vector2(900f, 50f),
                 24,
@@ -1226,7 +1226,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 new Vector2(330f, 0f),
                 new Vector2(200f, 48f),
                 new Color(0.15f, 0.19f, 0.25f, 1f),
-                15,
+                18,
                 EnterTrainingGym,
                 true);
 
@@ -1237,7 +1237,7 @@ namespace PowerliftingSimulator.Squat.Unity
                 new Vector2(550f, 0f),
                 new Vector2(180f, 48f),
                 new Color(0.15f, 0.19f, 0.25f, 1f),
-                15,
+                18,
                 OpenSettingsModal,
                 true);
 
@@ -1248,30 +1248,31 @@ namespace PowerliftingSimulator.Squat.Unity
                 new Vector2(760f, 0f),
                 new Vector2(190f, 48f),
                 new Color(0.24f, 0.14f, 0.16f, 1f),
-                15,
+                18,
                 ReturnToMainMenu,
                 true);
 
-            // Left Panel: Weight Selection & Plate Breakdown
+            // Left column: load selection and the two attempt steps. Kept to
+            // the left third so the athlete, bar and hands stay unobstructed.
             RectTransform leftPanel = CreatePanel(
                 _squatPrepPanel.transform,
                 "WeightSelectionPanel",
                 new Vector2(0f, 0.5f),
                 new Vector2(0f, 0.5f),
                 new Vector2(0f, 0.5f),
-                new Vector2(48f, -36f),
-                new Vector2(540f, 820f),
-                new Color(0.055f, 0.07f, 0.095f, 0.93f));
+                new Vector2(32f, -40f),
+                new Vector2(470f, 800f),
+                new Color(0.055f, 0.07f, 0.095f, 0.90f));
 
-            CreateAccentBar(leftPanel, new Vector2(0f, 406f), new Vector2(540f, 6f), new Color(0.82f, 0.14f, 0.18f, 1f));
+            CreateAccentBar(leftPanel, new Vector2(0f, 396f), new Vector2(470f, 6f), new Color(0.82f, 0.14f, 0.18f, 1f));
 
             CreateLabel(
                 leftPanel,
                 "WeightSectionHeader",
-                "1. SELECT BARBELL LOAD",
-                new Vector2(32f, 355f),
-                new Vector2(476f, 34f),
-                20,
+                "BARBELL LOAD",
+                new Vector2(28f, 352f),
+                new Vector2(414f, 34f),
+                22,
                 FontStyle.Bold,
                 new Color(0.92f, 0.72f, 0.26f, 1f),
                 TextAnchor.MiddleLeft);
@@ -1279,10 +1280,10 @@ namespace PowerliftingSimulator.Squat.Unity
             _prepSelectedWeightLabel = CreateLabel(
                 leftPanel,
                 "SelectedWeightValue",
-                "SELECTED BAR LOAD: 25 KG",
-                new Vector2(32f, 308f),
-                new Vector2(476f, 40f),
-                26,
+                "LOAD: 25 KG",
+                new Vector2(28f, 308f),
+                new Vector2(414f, 42f),
+                30,
                 FontStyle.Bold,
                 Color.white,
                 TextAnchor.MiddleLeft);
@@ -1291,38 +1292,37 @@ namespace PowerliftingSimulator.Squat.Unity
                 leftPanel,
                 "PlateBreakdownLabel",
                 DescribePlateBreakdown(25f),
-                new Vector2(32f, 238f),
-                new Vector2(476f, 66f),
-                15,
+                new Vector2(28f, 244f),
+                new Vector2(414f, 72f),
+                19,
                 FontStyle.Normal,
-                new Color(0.76f, 0.82f, 0.88f, 1f),
+                new Color(0.80f, 0.85f, 0.91f, 1f),
                 TextAnchor.UpperLeft);
 
             _loadButtonBgs.Clear();
-            CreateWeightOptionButton(leftPanel, 25f, "25 KG  —  COMPETITION BAR + COLLARS (RECOMMENDED)", new Vector2(32f, 152f));
-            CreateWeightOptionButton(leftPanel, 60f, "60 KG  —  WARMUP STACK (15 + 2.5 KG / SIDE)", new Vector2(32f, 78f));
-            CreateWeightOptionButton(leftPanel, 105f, "105 KG  —  HEAVY STACK (25 + 15 KG / SIDE)", new Vector2(32f, 4f));
-            CreateWeightOptionButton(leftPanel, 0f, "0 KG  —  UNLOADED STANDING CALIBRATION", new Vector2(32f, -70f));
+            CreateWeightOptionButton(leftPanel, 25f, "25 KG  ·  EMPTY BAR (RECOMMENDED)", new Vector2(28f, 168f));
+            CreateWeightOptionButton(leftPanel, 60f, "60 KG  ·  WARM-UP", new Vector2(28f, 100f));
+            CreateWeightOptionButton(leftPanel, 105f, "105 KG  ·  HEAVY", new Vector2(28f, 32f));
+            CreateWeightOptionButton(leftPanel, 0f, "0 KG  ·  NO BAR (CALIBRATION)", new Vector2(28f, -36f));
 
-            // Readiness & Launch Controls at bottom of left panel
             RectTransform readinessPill = CreatePanel(
                 leftPanel,
                 "ReadinessPill",
                 new Vector2(0.5f, 0.5f),
                 new Vector2(0.5f, 0.5f),
                 new Vector2(0.5f, 0.5f),
-                new Vector2(0f, -162f),
-                new Vector2(476f, 44f),
+                new Vector2(0f, -124f),
+                new Vector2(414f, 52f),
                 new Color(0.12f, 0.48f, 0.32f, 0.96f));
             _prepReadinessBadgeBg = readinessPill.GetComponent<Image>();
 
             _prepReadinessBadgeLabel = CreateLabel(
                 readinessPill,
                 "ReadinessText",
-                "STATUS: ATHLETE STABLE — READY FOR SETUP",
+                "BAR ON BACK — READY TO BRACE",
                 Vector2.zero,
-                new Vector2(460f, 40f),
-                15,
+                new Vector2(400f, 48f),
+                19,
                 FontStyle.Bold,
                 Color.white,
                 TextAnchor.MiddleCenter);
@@ -1330,68 +1330,73 @@ namespace PowerliftingSimulator.Squat.Unity
             _prepSetupButton = CreateMenuButton(
                 leftPanel,
                 "BeginSetupButton",
-                "1. SET UP UNDER BAR",
-                new Vector2(32f, -242f),
-                new Vector2(476f, 60f),
+                "1. BRACE & SET GRIP",
+                new Vector2(28f, -202f),
+                new Vector2(414f, 64f),
                 new Color(0.18f, 0.36f, 0.58f, 1f),
-                19,
+                22,
                 BeginPlayerSetupAction);
             _prepSetupButtonLabel = _prepSetupButton.GetComponentInChildren<Text>();
 
             _prepUnrackButton = CreateMenuButton(
                 leftPanel,
                 "UnrackAndWalkoutButton",
-                "2. UNRACK & WALK OUT  —  START LIFT [ENTER]",
-                new Vector2(32f, -322f),
-                new Vector2(476f, 68f),
+                "2. WALK OUT & START  [ENTER]",
+                new Vector2(28f, -280f),
+                new Vector2(414f, 72f),
                 new Color(0.80f, 0.14f, 0.18f, 1f),
-                20,
+                22,
                 BeginUnrackAndWalkoutAction);
 
-            // Right Panel: Controls & Competition Rules Guide
+            CreateLabel(
+                leftPanel,
+                "SetupStepsHelp",
+                "Step 1 locks your braced stance and grip.\nStep 2 walks back two steps; then wait for SQUAT.",
+                new Vector2(28f, -362f),
+                new Vector2(414f, 70f),
+                18,
+                FontStyle.Normal,
+                new Color(0.80f, 0.85f, 0.91f, 1f),
+                TextAnchor.UpperLeft);
+
+            // Compact key card, bottom right, clear of the athlete and plates.
             RectTransform rightPanel = CreatePanel(
                 _squatPrepPanel.transform,
                 "ControlsGuidePanel",
-                new Vector2(1f, 0.5f),
-                new Vector2(1f, 0.5f),
-                new Vector2(1f, 0.5f),
-                new Vector2(-48f, -36f),
-                new Vector2(470f, 540f),
-                new Color(0.055f, 0.07f, 0.095f, 0.90f));
+                new Vector2(1f, 0f),
+                new Vector2(1f, 0f),
+                new Vector2(1f, 0f),
+                new Vector2(-32f, 32f),
+                new Vector2(420f, 236f),
+                new Color(0.055f, 0.07f, 0.095f, 0.88f));
 
-            CreateAccentBar(rightPanel, new Vector2(0f, 266f), new Vector2(470f, 6f), new Color(0.88f, 0.66f, 0.22f, 1f));
+            CreateAccentBar(rightPanel, new Vector2(0f, 115f), new Vector2(420f, 6f), new Color(0.88f, 0.66f, 0.22f, 1f));
 
             CreateLabel(
                 rightPanel,
                 "GuideHeader",
-                "ATTEMPT CONTROLS & IPF RULES",
-                new Vector2(28f, 218f),
-                new Vector2(414f, 34f),
-                19,
+                "CONTROLS",
+                new Vector2(0f, 84f),
+                new Vector2(372f, 32f),
+                21,
                 FontStyle.Bold,
                 new Color(0.92f, 0.72f, 0.26f, 1f),
                 TextAnchor.MiddleLeft);
 
             string guideText =
-                "• UNRACK & WALKOUT:\n" +
-                "  Click [UNRACK & WALK OUT] or press [Enter]. The athlete unracks the bar, steps back two steps, and settles.\n\n" +
-                "• DESCENT (S or Down Arrow):\n" +
-                "  After the Head Referee calls \"SQUAT!\", press and hold [S] or [↓] to descend until the hip crease passes below the top of the knees.\n\n" +
-                "• ASCENT & LOCKOUT (W or Up Arrow):\n" +
-                "  At the bottom, release [S] and hold [W] or [↑] to drive back to full standing lockout.\n\n" +
-                "• CAMERA & RESET:\n" +
-                "  [C] Cycle Camera Angle (3/4 · Side Depth · Front)\n" +
-                "  [Esc] Abort Active Lift   ·   [R] Instant Retry";
+                "S / ↓   hold to descend after \"SQUAT\"\n" +
+                "W / ↑   hold to drive up to lockout\n" +
+                "C   camera     Esc   abort     R   retry";
 
             CreateLabel(
                 rightPanel,
                 "GuideBody",
                 guideText,
-                new Vector2(28f, -20f),
-                new Vector2(414f, 380f),
-                15,
+                new Vector2(0f, -22f),
+                new Vector2(372f, 150f),
+                19,
                 FontStyle.Normal,
-                new Color(0.82f, 0.86f, 0.92f, 1f),
+                new Color(0.86f, 0.90f, 0.95f, 1f),
                 TextAnchor.UpperLeft);
         }
 
@@ -1402,9 +1407,9 @@ namespace PowerliftingSimulator.Squat.Unity
                 $"WeightBtn_{loadKg:0}kg",
                 label,
                 anchoredPos,
-                new Vector2(476f, 58f),
+                new Vector2(414f, 56f),
                 new Color(0.15f, 0.18f, 0.23f, 0.95f),
-                16,
+                20,
                 () => SelectBarbellWeight(loadKg));
             _loadButtonBgs[loadKg] = btn.GetComponent<Image>();
         }
