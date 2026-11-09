@@ -74,6 +74,34 @@ namespace PowerliftingSimulator.Squat.Unity
         public static Vector3 RightPalmNormalLocal => Right.NormalLocal;
         public static float PalmSpanMeters => MeasuredPalmSpanMeters;
 
+        /// <summary>
+        /// Angle between the hand's width axis and its metacarpophalangeal
+        /// line (index to little proximal phalanx bases), read from the visible
+        /// rig. A gripped shaft lies along that line, so this is how far the
+        /// hand's long axis leans toward the little-finger side from
+        /// perpendicular to the shaft. Measured on the canonical avatar: 14.1 deg.
+        /// </summary>
+        public static float GripObliquityDegrees(Animator visibleAnimator, bool isLeft)
+        {
+            if (visibleAnimator == null)
+                return MeasuredGripObliquityDegrees;
+            Transform hand = visibleAnimator.GetBoneTransform(isLeft ? HumanBodyBones.LeftHand : HumanBodyBones.RightHand);
+            Transform index = visibleAnimator.GetBoneTransform(
+                isLeft ? HumanBodyBones.LeftIndexProximal : HumanBodyBones.RightIndexProximal);
+            Transform little = visibleAnimator.GetBoneTransform(
+                isLeft ? HumanBodyBones.LeftLittleProximal : HumanBodyBones.RightLittleProximal);
+            if (hand == null || index == null || little == null)
+                return MeasuredGripObliquityDegrees;
+            // Bind-relative: the finger bases are rigid children of the hand.
+            Vector3 line = hand.InverseTransformPoint(index.position) - hand.InverseTransformPoint(little.position);
+            float across = Mathf.Abs(line.z);
+            if (across < 1e-5f)
+                return MeasuredGripObliquityDegrees;
+            return Mathf.Atan2(Mathf.Abs(line.y), across) * Mathf.Rad2Deg;
+        }
+
+        public const float MeasuredGripObliquityDegrees = 14.1f;
+
         public static bool TryMeasure(
             Animator visibleAnimator,
             bool isLeft,

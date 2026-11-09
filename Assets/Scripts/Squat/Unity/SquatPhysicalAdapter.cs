@@ -1222,20 +1222,30 @@ namespace PowerliftingSimulator.Squat.Unity
             float halfWidth = SquatReferenceKinematics.ArmBarHalfWidthM;
             Vector3 leftGrip = bar.position - barAxis * halfWidth;
             Vector3 rightGrip = bar.position + barAxis * halfWidth;
-            Vector3 leftPalmLocal = new Vector3(-0.023394f, 0.066974f, 0.005951f);
-            Vector3 rightPalmLocal = new Vector3(0.023394f, 0.066974f, 0.005951f);
+            Vector3 leftPalmLocal = SquatPalmSurface.LeftPalmCenterLocal;
+            Vector3 rightPalmLocal = SquatPalmSurface.RightPalmCenterLocal;
+            Vector3 leftNormalLocal = SquatPalmSurface.LeftPalmNormalLocal;
+            Vector3 rightNormalLocal = SquatPalmSurface.RightPalmNormalLocal;
             if (SquatPalmSurface.TryMeasure(
                     _rig.VisibleAnimator, true, bar.position, barAxis,
                     out SquatPalmSurfaceFrame leftFrame, out _))
+            {
                 leftPalmLocal = leftFrame.CenterLocal;
+                leftNormalLocal = leftFrame.NormalLocal;
+            }
             if (SquatPalmSurface.TryMeasure(
                     _rig.VisibleAnimator, false, bar.position, barAxis,
                     out SquatPalmSurfaceFrame rightFrame, out _))
+            {
                 rightPalmLocal = rightFrame.CenterLocal;
+                rightNormalLocal = rightFrame.NormalLocal;
+            }
+            float leftObliquity = SquatPalmSurface.GripObliquityDegrees(_rig.VisibleAnimator, true);
+            float rightObliquity = SquatPalmSurface.GripObliquityDegrees(_rig.VisibleAnimator, false);
             leftArm = BestLiveArm(leftShoulder, leftGrip, forward, up, right, barAxis, thorax.Body.rotation, true,
-                leftPalmLocal, out _liveLeftHandTargetWorld, out _liveLeftElbowTargetWorld);
+                leftPalmLocal, leftNormalLocal, leftObliquity, out _liveLeftHandTargetWorld, out _liveLeftElbowTargetWorld);
             rightArm = BestLiveArm(rightShoulder, rightGrip, forward, up, right, barAxis, thorax.Body.rotation, false,
-                rightPalmLocal, out _liveRightHandTargetWorld, out _liveRightElbowTargetWorld);
+                rightPalmLocal, rightNormalLocal, rightObliquity, out _liveRightHandTargetWorld, out _liveRightElbowTargetWorld);
             return true;
         }
 
@@ -1249,32 +1259,100 @@ namespace PowerliftingSimulator.Squat.Unity
             Quaternion thoraxBodyRotation,
             bool isLeft,
             Vector3 palmCenterLocal,
+            Vector3 palmNormalLocal,
+            float gripObliquityDeg,
             out Vector3 handTarget,
             out Vector3 elbowTarget)
         {
+            // The only free variable of the grip is its pitch about the shaft.
+            // Each pitch yields one arm (closed-form wrist, continuous elbow);
+            // the real joint projection decides which arms the shoulder,
+            // one-axis elbow and wrist can actually hold. Among those, the most
+            // posterior elbow wins. A coarse sweep then a local refinement keep
+            // the choice continuous from tick to tick.
+            Vector3 lateral = isLeft ? -right : right;
+            float wristBudget = WristSecondaryLimitDegrees();
             PhysicalUpperLimbTargets best = default;
-            float bestScore = float.PositiveInfinity;
-            handTarget = Vector3.zero;
-            elbowTarget = Vector3.zero;
-            for (int step = -4; step <= 4; step++)
+            Vector3 bestHand = Vector3.zero;
+            Vector3 bestElbow = Vector3.zero;
+            float bestScore = float.NegativeInfinity;
+            float bestPitch = 0f;
+            bool found = false;
+
+            void Evaluate(float pitchDeg)
             {
-                float swivel = step * 15f;
-                SquatReferenceUpperLimbSide side = SquatReferenceUpperLimb.SolveSideForLiveBar(
-                    _referenceCalibration, isLeft, shoulder, grip, forward, up, right, barAxis, swivel, palmCenterLocal);
+                if (!SquatReferenceUpperLimb.TrySolveSideForLiveGrip(
+                        _referenceCalibration, isLeft, shoulder, grip, forward, up, lateral, barAxis,
+                        palmCenterLocal, palmNormalLocal, gripObliquityDeg, pitchDeg * Mathf.Deg2Rad,
+                        wristBudget, out SquatReferenceUpperLimbSide side))
+                    return;
                 PhysicalUpperLimbTargets candidate = SquatPhysicalUpperLimbProjection.Project(
                     _rig, _referenceCalibration, side, thoraxBodyRotation, isLeft);
-                float score = candidate.HandOrientationResidualDeg +
-                    candidate.HandPositionResidualM * 1000f +
-                    Mathf.Abs(swivel) * 0.20f;
-                if (score < bestScore)
+                // Feasible arms are those the physical joints deliver without
+                // clamping the wrist and within the 25 mm hand task tolerance of
+                // the GAM-11 projection; among them the most posterior elbow
+                // wins. If none is feasible, the least infeasible arm is used.
+                bool feasible = candidate.HandOrientationResidualDeg < 0.5f &&
+                    candidate.HandPositionResidualM < SquatPhysicalUpperLimbProjection.HandTaskToleranceM;
+                float posteriorM = Vector3.Dot(side.ElbowCenter - shoulder, -forward);
+                float score = feasible
+                    ? 1000f + posteriorM
+                    : -(candidate.HandOrientationResidualDeg + candidate.HandPositionResidualM * 1000f);
+                if (!found || score > bestScore)
                 {
+                    found = true;
                     bestScore = score;
+                    bestPitch = pitchDeg;
                     best = candidate;
-                    handTarget = side.HandCenter;
-                    elbowTarget = side.ElbowCenter;
+                    bestHand = side.HandCenter;
+                    bestElbow = side.ElbowCenter;
                 }
             }
+
+            for (float pitch = -LiveGripPitchRangeDeg; pitch <= LiveGripPitchRangeDeg; pitch += 6f)
+                Evaluate(pitch);
+            if (found)
+            {
+                float center = bestPitch;
+                for (float pitch = center - 5f; pitch <= center + 5f; pitch += 1f)
+                    Evaluate(pitch);
+
+                // The one-axis elbow cannot reproduce the bind carrying angle,
+                // so the projected hand lands a near-constant ~15 mm from the
+                // requested wrist (GAM-11 contract). Feed that realized error
+                // back into the grip target so the palm, not the request,
+                // ends on the shaft. Same pitch, same DOFs.
+                Vector3 requestedGrip = grip;
+                Vector3 offset = Vector3.zero;
+                for (int correction = 0; correction < 2; correction++)
+                {
+                    Vector3 error = best.HandPositionErrorWorld;
+                    if (error.sqrMagnitude < 1e-8f)
+                        break;
+                    offset = -error;
+                    grip = requestedGrip + offset;
+                    found = false;
+                    Evaluate(bestPitch);
+                }
+            }
+            handTarget = bestHand;
+            elbowTarget = bestElbow;
             return best;
+        }
+
+        /// <summary>
+        /// Pitch of the grip about the shaft, from fingers straight up. The
+        /// bound keeps the fingers on the top half of the shaft: beyond 90 deg
+        /// the hand would be under or in front of the bar.
+        /// </summary>
+        private const float LiveGripPitchRangeDeg = 84f;
+
+        private static float WristSecondaryLimitDegrees()
+        {
+            foreach (PhysicalJointRecipe recipe in PhysicalAthleteDefinition.Joints)
+                if (string.Equals(recipe.ChildId, "left_hand", StringComparison.Ordinal))
+                    return recipe.SecondaryLimitDegrees;
+            throw new InvalidOperationException("The physical wrist recipe is missing.");
         }
 
         private void ApplyUpperLimbJoint(
