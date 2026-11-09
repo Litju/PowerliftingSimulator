@@ -44,6 +44,10 @@ namespace PowerliftingSimulator.Tests
         public void SetUp()
         {
             PowerliftingGameUiController.ClearPendingReloadScreen();
+            _samples.Clear();
+            _capturedPhases.Clear();
+            _leftElbowTargets.Clear();
+            _rightElbowTargets.Clear();
             _input = new InputTestFixture();
             _input.Setup();
             _keyboard = InputSystem.AddDevice<Keyboard>();
@@ -172,6 +176,358 @@ namespace PowerliftingSimulator.Tests
             TestContext.WriteLine($"GAM-68 capture label={label} directory={captureDir} samples={_samples.Count}");
         }
 
+        /// <summary>
+        /// Owner journey: the rejected 105 kg Squat Preparation screen, then the
+        /// qualified 25 kg attempt from preparation, setup, unrack and walkout
+        /// through the judged squat, result and retry. Every phase is rendered
+        /// with the gameplay camera and HUD plus matched rear, side,
+        /// three-quarter and hand close-up views, and sampled for palm, finger
+        /// and joint geometry.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator CAPTURE_PLAYER_JOURNEY_PREPARATION_THROUGH_RETRY()
+        {
+            string label = Environment.GetEnvironmentVariable("GAM68_CAPTURE_LABEL");
+            if (string.IsNullOrWhiteSpace(label))
+                label = "journey-current";
+            string captureDir = Path.Combine(
+                Directory.GetParent(Application.dataPath).FullName,
+                "Artifacts", "Evidence", "GAM-68", label);
+            Directory.CreateDirectory(captureDir);
+
+            yield return LoadFreshSceneZero();
+            _ui.EnterTrainingGym();
+            _ui.SelectSquatStation();
+            yield return null;
+
+            // 1. The reported view: 105 kg selected on Squat Preparation, before setup.
+            SquatPhysicalPrototypeController previous = _controller;
+            _ui.SelectBarbellWeight(105f);
+            yield return WaitForReloadedController(previous);
+            Assert.That(_controller.CurrentLoadKg, Is.EqualTo(105f));
+            yield return WaitRealtime(1.5f);
+            Assert.That(_controller.PlayerGamePhase, Is.EqualTo(SquatPlayerGamePhase.LOAD));
+            yield return CaptureJourneyPhase(captureDir, "00_prep_105kg");
+
+            // 2. Qualified 25 kg journey.
+            previous = _controller;
+            _ui.SelectBarbellWeight(25f);
+            yield return WaitForReloadedController(previous);
+            yield return WaitForPlayerReadiness();
+            yield return CaptureJourneyPhase(captureDir, "01_prep_25kg");
+
+            _ui.BeginPlayerSetupAction();
+            Assert.That(_controller.PlayerGamePhase, Is.EqualTo(SquatPlayerGamePhase.SETUP));
+            yield return WaitRealtime(0.3f);
+            yield return CaptureJourneyPhase(captureDir, "02_setup");
+
+            _ui.BeginUnrackAndWalkoutAction();
+            bool unrack = false, walkout = false, settle = false;
+            for (int frame = 0; frame < MaxWaitFrames && _controller.PlayerGamePhase != SquatPlayerGamePhase.JUDGED_SQUAT; frame++)
+            {
+                SquatPlayerGamePhase phase = _controller.PlayerGamePhase;
+                if (!unrack && phase == SquatPlayerGamePhase.UNRACK)
+                {
+                    unrack = true;
+                    yield return WaitRealtime(0.4f);
+                    yield return CaptureJourneyPhase(captureDir, "03_unrack");
+                }
+                else if (!walkout && phase == SquatPlayerGamePhase.WALKOUT_STEP_2)
+                {
+                    walkout = true;
+                    yield return CaptureJourneyPhase(captureDir, "04_walkout");
+                }
+                else if (!settle && phase == SquatPlayerGamePhase.SETTLE)
+                {
+                    settle = true;
+                    yield return CaptureJourneyPhase(captureDir, "05_settle");
+                }
+                yield return new WaitForSecondsRealtime(0.01f);
+            }
+            Assert.That(_controller.PlayerGamePhase, Is.EqualTo(SquatPlayerGamePhase.JUDGED_SQUAT));
+            for (int frame = 0; frame < MaxWaitFrames && !_controller.AttemptOrchestrator.HasSquatCommand; frame++)
+                yield return new WaitForSecondsRealtime(0.01f);
+            Assert.That(_controller.AttemptOrchestrator.HasSquatCommand, Is.True);
+            yield return CaptureJourneyPhase(captureDir, "06_standing");
+
+            Press(_keyboard.sKey);
+            bool descent = false;
+            for (int frame = 0; frame < MaxWaitFrames && _controller.Adapter.State != SquatState.BOTTOM; frame++)
+            {
+                RecordContinuity();
+                if (!descent && _controller.Adapter.Sq >= 0.5f)
+                {
+                    descent = true;
+                    yield return CaptureJourneyPhase(captureDir, "07_descent");
+                }
+                yield return new WaitForSecondsRealtime(0.01f);
+            }
+            Assert.That(_controller.Adapter.State, Is.EqualTo(SquatState.BOTTOM));
+            yield return CaptureJourneyPhase(captureDir, "08_bottom");
+            Release(_keyboard.sKey);
+            yield return new WaitForSecondsRealtime(0.02f);
+            Press(_keyboard.wKey);
+            bool ascent = false;
+            for (int frame = 0; frame < MaxWaitFrames && _controller.Adapter.State != SquatState.LOCKOUT; frame++)
+            {
+                RecordContinuity();
+                if (!ascent && _controller.Adapter.Sq <= 0.5f && _controller.Adapter.State != SquatState.BOTTOM)
+                {
+                    ascent = true;
+                    yield return CaptureJourneyPhase(captureDir, "09_ascent");
+                }
+                yield return new WaitForSecondsRealtime(0.01f);
+            }
+            Assert.That(_controller.Adapter.State, Is.EqualTo(SquatState.LOCKOUT));
+            yield return CaptureJourneyPhase(captureDir, "10_lockout");
+            Release(_keyboard.wKey);
+
+            for (int frame = 0; frame < MaxWaitFrames && _controller.PlayerGamePhase != SquatPlayerGamePhase.RESULT; frame++)
+                yield return new WaitForSecondsRealtime(0.01f);
+            Assert.That(_controller.PlayerGamePhase, Is.EqualTo(SquatPlayerGamePhase.RESULT));
+            Assert.That(_controller.AttemptRecord, Is.Not.Null);
+            Assert.That(_controller.AttemptRecord.RuleOutcome, Is.EqualTo(SquatJudgmentOutcome.GOOD_LIFT));
+            yield return CaptureJourneyPhase(captureDir, "11_result");
+
+            previous = _controller;
+            _ui.RetryToSquatPreparation();
+            yield return WaitForReloadedController(previous);
+            yield return WaitForPlayerReadiness();
+            Assert.That(_ui.CurrentScreen, Is.EqualTo(PowerliftingScreenState.SquatPreparation));
+            yield return CaptureJourneyPhase(captureDir, "12_retry_prep");
+
+            WriteMeasurements(captureDir);
+            Assert.That(_capturedPhases, Is.EqualTo(new[]
+            {
+                "00_prep_105kg", "01_prep_25kg", "02_setup", "03_unrack", "04_walkout", "05_settle",
+                "06_standing", "07_descent", "08_bottom", "09_ascent", "10_lockout", "11_result", "12_retry_prep"
+            }));
+            Assert.That(_samples[0].gamePhase, Is.EqualTo(nameof(SquatPlayerGamePhase.LOAD)));
+            Assert.That(_samples[2].gamePhase, Is.EqualTo(nameof(SquatPlayerGamePhase.SETUP)));
+
+            // The same harness captures the untouched baseline for comparison;
+            // only the candidate is held to the grip acceptance below.
+            if (string.Equals(Environment.GetEnvironmentVariable("GAM68_JOURNEY_BASELINE"), "1", StringComparison.Ordinal))
+            {
+                TestContext.WriteLine("GAM-68 journey baseline capture: grip acceptance not asserted.");
+                yield break;
+            }
+
+            AssertGripOwnership();
+            foreach (Gam68Sample sample in _samples)
+                AssertGripGeometry(sample);
+            AssertContinuity();
+            TestContext.WriteLine($"GAM-68 journey label={label} directory={captureDir} samples={_samples.Count}");
+        }
+
+        // ---- GAM-68 acceptance ------------------------------------------------
+
+        private readonly List<Vector3> _leftElbowTargets = new List<Vector3>();
+        private readonly List<Vector3> _rightElbowTargets = new List<Vector3>();
+        private float _upperArmLengthM;
+
+        private void RecordContinuity()
+        {
+            _leftElbowTargets.Add(_controller.Adapter.LiveLeftElbowTargetWorld);
+            _rightElbowTargets.Add(_controller.Adapter.LiveRightElbowTargetWorld);
+            PhysicalAthleteRig rig = _controller.AthleteRig;
+            _upperArmLengthM = Vector3.Distance(JointAnchor(rig, "left_upper_arm"), JointAnchor(rig, "left_forearm"));
+        }
+
+        /// <summary>
+        /// The grip is presentation: the finger bones carry no physical body,
+        /// collider or joint, and the plant keeps its 16 bodies / 15 joints with
+        /// a single wrist joint per hand and no hand-bar constraint.
+        /// </summary>
+        private void AssertGripOwnership()
+        {
+            PhysicalAthleteRig rig = _controller.AthleteRig;
+            Assert.That(rig.GetComponent<SquatPresentationGrip>(), Is.Not.Null);
+            foreach (HumanBodyBones handBone in new[] { HumanBodyBones.LeftHand, HumanBodyBones.RightHand })
+            {
+                Transform hand = rig.VisibleAnimator.GetBoneTransform(handBone);
+                for (int child = 0; child < hand.childCount; child++)
+                {
+                    foreach (Transform bone in hand.GetChild(child).GetComponentsInChildren<Transform>(true))
+                    {
+                        Assert.That(bone.GetComponent<Rigidbody>(), Is.Null, $"{bone.name} must not be a physical body.");
+                        Assert.That(bone.GetComponent<Collider>(), Is.Null, $"{bone.name} must not carry a collider.");
+                        Assert.That(bone.GetComponent<Joint>(), Is.Null, $"{bone.name} must not carry a joint.");
+                    }
+                }
+            }
+            foreach (Gam68Sample sample in _samples)
+            {
+                Assert.That(sample.physicalBodyCount, Is.EqualTo(16), "Presentation changed the physical body count.");
+                Assert.That(sample.physicalJointCount, Is.EqualTo(15), "Presentation changed the physical joint count.");
+                Assert.That(sample.leftHandJointCount, Is.EqualTo(1));
+                Assert.That(sample.rightHandJointCount, Is.EqualTo(1));
+                Assert.That(sample.leftHandFixedJointCount + sample.rightHandFixedJointCount, Is.EqualTo(0));
+                Assert.That(sample.gripId, Is.EqualTo(SquatPresentationGrip.PresentationId));
+            }
+        }
+
+        /// <summary>
+        /// Bilateral grip geometry in every captured phase. Limits:
+        ///  * the signed palmar normal faces the shaft and deviates no more
+        ///    than the wrist's authored 36 deg swing cone that the grip
+        ///    coordination is allowed to consume;
+        ///  * the palm is on the shaft: no deeper than the measured proximal
+        ///    finger pad (soft tissue) and no farther than the grip's own
+        ///    off-bar criterion (one measured palm span);
+        ///  * index to little fingers wrap the shaft: no phalanx bone enters
+        ///    the shaft (penetration within the measured distal pad depth) and
+        ///    every fingertip pad is within one proximal pad depth of it;
+        ///  * thumb phalanges obey the same rule with the thumb's own measured
+        ///    distal pad depth (12.5 mm).
+        /// </summary>
+        private static void AssertGripGeometry(Gam68Sample sample)
+        {
+            const float WristConeDeg = 36f;
+            float proximalPad = SquatPresentationGrip.FingerPadDepthM[0];
+            float distalPad = SquatPresentationGrip.FingerPadDepthM[2];
+            foreach (bool left in new[] { true, false })
+            {
+                string side = left ? "left" : "right";
+                float normal = left ? sample.leftPalmNormalErrorDeg : sample.rightPalmNormalErrorDeg;
+                float gap = left ? sample.leftPalmGapM : sample.rightPalmGapM;
+                Assert.That(normal, Is.LessThan(WristConeDeg),
+                    $"{sample.phase}: {side} palmar surface is {normal:F1} deg from facing the shaft.");
+                Assert.That(gap, Is.GreaterThan(-proximalPad),
+                    $"{sample.phase}: {side} palm sinks {-gap * 1000f:F1} mm into the shaft.");
+                Assert.That(gap, Is.LessThan(SquatPresentationGrip.OffBarPalmGapM),
+                    $"{sample.phase}: {side} palm floats {gap * 1000f:F1} mm off the shaft.");
+
+                float[] tips = Parse(left ? sample.leftTipClearanceMm : sample.rightTipClearanceMm);
+                float[] penetration = Parse(left ? sample.leftMaxPenetrationMm : sample.rightMaxPenetrationMm);
+                Assert.That(tips.Length, Is.EqualTo(5));
+                for (int finger = 0; finger < 5; finger++)
+                {
+                    // Pad depth of the segment in question: the bone stays out of the shaft.
+                    float boneLimit = finger < 4 ? distalPad : SquatPresentationGrip.ThumbPadDepthM[2];
+                    Assert.That(penetration[finger], Is.LessThanOrEqualTo(boneLimit * 1000f),
+                        $"{sample.phase}: {side} finger {finger} enters the shaft by {penetration[finger]:F1} mm.");
+                    if (finger < 4)
+                        Assert.That(tips[finger], Is.LessThanOrEqualTo(proximalPad * 1000f),
+                            $"{sample.phase}: {side} fingertip {finger} floats {tips[finger]:F1} mm off the shaft.");
+                }
+            }
+        }
+
+        /// <summary>
+        /// The previous coordination picked the elbow from 15 deg swivel steps,
+        /// so it could jump by a chord of 2 r sin(7.5 deg) between ticks. The
+        /// continuous solve must never jump by that much in one frame.
+        /// </summary>
+        private void AssertContinuity()
+        {
+            Assert.That(_leftElbowTargets.Count, Is.GreaterThan(20), "The judged squat must be sampled densely.");
+            float chord = 2f * _upperArmLengthM * Mathf.Sin(7.5f * Mathf.Deg2Rad);
+            float maxJump = 0f;
+            for (int index = 1; index < _leftElbowTargets.Count; index++)
+            {
+                maxJump = Mathf.Max(maxJump, Vector3.Distance(_leftElbowTargets[index], _leftElbowTargets[index - 1]));
+                maxJump = Mathf.Max(maxJump, Vector3.Distance(_rightElbowTargets[index], _rightElbowTargets[index - 1]));
+            }
+            TestContext.WriteLine(
+                $"GAM-68 elbow target max frame jump {maxJump * 1000f:F1} mm (swivel-step chord {chord * 1000f:F1} mm).");
+            Assert.That(maxJump, Is.LessThan(chord), "The elbow target jumped like a discrete swivel step.");
+        }
+
+        private static float[] Parse(string csv)
+        {
+            if (string.IsNullOrEmpty(csv))
+                return Array.Empty<float>();
+            string[] parts = csv.Split(',');
+            var values = new float[parts.Length];
+            for (int index = 0; index < parts.Length; index++)
+                values[index] = float.Parse(parts[index], CultureInfo.InvariantCulture);
+            return values;
+        }
+
+        private IEnumerator CaptureJourneyPhase(string captureDir, string phase)
+        {
+            _capturedPhases.Add(phase);
+            yield return null;
+            Sample(phase);
+            Gam68Sample last = _samples[_samples.Count - 1];
+            last.gamePhase = _controller.PlayerGamePhase.ToString();
+            last.screen = _ui != null ? _ui.CurrentScreen.ToString() : string.Empty;
+            WriteMeasurements(captureDir);
+            TestContext.WriteLine(
+                $"GAM-68 journey phase={phase} game={last.gamePhase} leftGap={last.leftPalmGapM * 1000f:F1}mm " +
+                $"rightGap={last.rightPalmGapM * 1000f:F1}mm leftNormal={last.leftPalmNormalErrorDeg:F1}deg " +
+                $"rightNormal={last.rightPalmNormalErrorDeg:F1}deg");
+            CaptureWithHud(captureDir, phase + "_hud");
+            yield return RenderViews(captureDir, phase);
+            yield return null;
+        }
+
+        private void CaptureWithHud(string directory, string fileName)
+        {
+            if (_cameraDirector == null || _cameraDirector.TargetCamera == null ||
+                SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
+                return;
+            Camera camera = _cameraDirector.TargetCamera;
+            Canvas canvas = _ui != null ? _ui.GetComponent<Canvas>() : null;
+            RenderMode previousMode = RenderMode.ScreenSpaceOverlay;
+            Camera previousCamera = null;
+            float previousPlane = 100f;
+            if (canvas != null)
+            {
+                _ui.RefreshUiImmediate();
+                previousMode = canvas.renderMode;
+                previousCamera = canvas.worldCamera;
+                previousPlane = canvas.planeDistance;
+                canvas.renderMode = RenderMode.ScreenSpaceCamera;
+                canvas.worldCamera = camera;
+                canvas.planeDistance = 0.25f;
+                Canvas.ForceUpdateCanvases();
+            }
+            try
+            {
+                Render(directory, fileName, camera, 1920, 1080);
+            }
+            finally
+            {
+                if (canvas != null)
+                {
+                    canvas.renderMode = previousMode;
+                    canvas.worldCamera = previousCamera;
+                    canvas.planeDistance = previousPlane;
+                }
+            }
+        }
+
+        private IEnumerator WaitForReloadedController(SquatPhysicalPrototypeController previous)
+        {
+            for (int frame = 0; frame < 1500; frame++)
+            {
+                SquatPhysicalPrototypeController candidate = UnityEngine.Object.FindFirstObjectByType<SquatPhysicalPrototypeController>();
+                FoundationBootstrap bootstrap = UnityEngine.Object.FindFirstObjectByType<FoundationBootstrap>();
+                if (candidate != null && candidate != previous && candidate.IsInitialized &&
+                    bootstrap != null && bootstrap.Runtime != null && bootstrap.Runtime.IsInitialized)
+                {
+                    _controller = candidate;
+                    _bootstrap = bootstrap;
+                    _ui = UnityEngine.Object.FindFirstObjectByType<PowerliftingGameUiController>();
+                    _cameraDirector = UnityEngine.Object.FindFirstObjectByType<PowerliftingCameraDirector>();
+                    _gym = UnityEngine.Object.FindFirstObjectByType<PowerliftingGymEnvironment>();
+                    yield return null;
+                    yield break;
+                }
+                yield return new WaitForSecondsRealtime(0.01f);
+            }
+            Assert.Fail("Scene did not reload after the load or retry selection.");
+        }
+
+        private static IEnumerator WaitRealtime(float seconds)
+        {
+            float end = Time.realtimeSinceStartup + seconds;
+            while (Time.realtimeSinceStartup < end)
+                yield return null;
+        }
+
         private IEnumerator CapturePhase(string captureDir, string phase)
         {
             _capturedPhases.Add(phase);
@@ -265,6 +621,21 @@ namespace PowerliftingSimulator.Tests
             sample.rightElbowTelemetry = JointTelemetry(rig, "right_forearm");
             sample.leftWristTelemetry = JointTelemetry(rig, "left_hand");
             sample.rightWristTelemetry = JointTelemetry(rig, "right_hand");
+            SquatPresentationGrip grip = rig.GetComponent<SquatPresentationGrip>();
+            if (grip != null)
+            {
+                sample.gripId = SquatPresentationGrip.PresentationId;
+                sample.leftTipClearanceMm = Mm(grip.LeftTipClearancesM);
+                sample.rightTipClearanceMm = Mm(grip.RightTipClearancesM);
+                sample.leftMaxPenetrationMm = Mm(grip.LeftMaxPenetrationM);
+                sample.rightMaxPenetrationMm = Mm(grip.RightMaxPenetrationM);
+                sample.leftWrapDeg = Deg(grip.LeftWrapDeg);
+                sample.rightWrapDeg = Deg(grip.RightWrapDeg);
+                sample.leftJointFlexionDeg = Deg(grip.LeftJointFlexionDeg);
+                sample.rightJointFlexionDeg = Deg(grip.RightJointFlexionDeg);
+            }
+            sample.leftElbowPosteriorM = ElbowPosterior(rig, true, center);
+            sample.rightElbowPosteriorM = ElbowPosterior(rig, false, center);
             sample.virtualBarCenter = V(VirtualReferenceBarCenter());
             sample.liveBarCenter = V(center);
             sample.virtualToLiveBarErrorM = Vector3.Distance(ParseV(sample.virtualBarCenter), center);
@@ -314,6 +685,34 @@ namespace PowerliftingSimulator.Tests
         {
             float along = Vector3.Dot(point - shaftOrigin, axis);
             return shaftOrigin + axis * along;
+        }
+
+        private static string Mm(IReadOnlyList<float> values)
+        {
+            var parts = new List<string>(values.Count);
+            foreach (float value in values)
+                parts.Add((value * 1000f).ToString("F1", CultureInfo.InvariantCulture));
+            return string.Join(",", parts);
+        }
+
+        private static string Deg(IReadOnlyList<float> values)
+        {
+            var parts = new List<string>(values.Count);
+            foreach (float value in values)
+                parts.Add(value.ToString("F1", CultureInfo.InvariantCulture));
+            return string.Join(",", parts);
+        }
+
+        /// <summary>
+        /// Elbow joint anchor behind the shoulder joint anchor (m). Backward is
+        /// the horizontal direction from the thorax toward the bar on its back.
+        /// </summary>
+        private static float ElbowPosterior(PhysicalAthleteRig rig, bool isLeft, Vector3 barCenter)
+        {
+            Vector3 shoulder = JointAnchor(rig, isLeft ? "left_upper_arm" : "right_upper_arm");
+            Vector3 elbow = JointAnchor(rig, isLeft ? "left_forearm" : "right_forearm");
+            Vector3 forward = Vector3.ProjectOnPlane(rig.Segments["thorax"].Body.position - barCenter, Vector3.up).normalized;
+            return Vector3.Dot(elbow - shoulder, -forward);
         }
 
         private static float ElbowAngle(PhysicalAthleteRig rig, bool isLeft)
@@ -441,6 +840,19 @@ namespace PowerliftingSimulator.Tests
 
                 SetView(camera, focus + new Vector3(0.10f, 0.38f, -1.55f), focus + new Vector3(0f, 0.27f, 0f), 36f);
                 Render(captureDir, phase + "_rear_close", camera);
+
+                SetView(camera, focus + new Vector3(-1.65f, 0.55f, -1.75f), focus + new Vector3(0f, 0.10f, 0f), 38f);
+                Render(captureDir, phase + "_threequarter", camera);
+
+                Transform leftHand = _controller.AthleteRig.VisibleAnimator.GetBoneTransform(HumanBodyBones.LeftHand);
+                if (leftHand != null)
+                {
+                    Vector3 handFocus = leftHand.position + new Vector3(0f, 0.04f, 0f);
+                    SetView(camera, handFocus + new Vector3(-0.30f, 0.22f, -0.42f), handFocus, 34f);
+                    Render(captureDir, phase + "_left_hand_close", camera);
+                    SetView(camera, handFocus + new Vector3(0.22f, 0.30f, 0.38f), handFocus, 38f);
+                    Render(captureDir, phase + "_left_hand_side", camera);
+                }
             }
             finally
             {
@@ -462,10 +874,11 @@ namespace PowerliftingSimulator.Tests
             camera.fieldOfView = fov;
         }
 
-        private static void Render(string directory, string fileName, Camera camera)
+        private static void Render(string directory, string fileName, Camera camera) =>
+            Render(directory, fileName, camera, 1600, 1000);
+
+        private static void Render(string directory, string fileName, Camera camera, int width, int height)
         {
-            const int width = 1600;
-            const int height = 1000;
             RenderTexture rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
             RenderTexture previousTarget = camera.targetTexture;
             RenderTexture previousActive = RenderTexture.active;
@@ -554,6 +967,8 @@ namespace PowerliftingSimulator.Tests
         private sealed class Gam68Sample
         {
             public string phase;
+            public string gamePhase;
+            public string screen;
             public int tick;
             public float sq;
             public string state;
@@ -615,6 +1030,17 @@ namespace PowerliftingSimulator.Tests
             public string virtualBarCenter;
             public string liveBarCenter;
             public float virtualToLiveBarErrorM;
+            public string gripId;
+            public string leftTipClearanceMm;
+            public string rightTipClearanceMm;
+            public string leftMaxPenetrationMm;
+            public string rightMaxPenetrationMm;
+            public string leftWrapDeg;
+            public string rightWrapDeg;
+            public string leftJointFlexionDeg;
+            public string rightJointFlexionDeg;
+            public float leftElbowPosteriorM;
+            public float rightElbowPosteriorM;
             public string barInThoraxLocal;
             public string saddleAnchorInThoraxLocal;
         }
