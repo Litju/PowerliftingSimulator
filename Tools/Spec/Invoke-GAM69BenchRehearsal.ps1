@@ -116,7 +116,11 @@ $psi.FileName = (Get-Command ffmpeg).Source
 # stale frame for a Direct3D window.
 $cp = [GamInput+POINT]@{ X = 0; Y = 0 }; [GamInput]::ClientToScreen($script:hwnd, [ref]$cp) | Out-Null
 $cr = New-Object GamInput+RECT; [GamInput]::GetClientRect($script:hwnd, [ref]$cr) | Out-Null
-$vw = (($cr.Right - $cr.Left) -band -2); $vh = (($cr.Bottom - $cr.Top) -band -2)
+Add-Type -AssemblyName System.Windows.Forms
+$screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+$cp.X = [Math]::Max(0, $cp.X); $cp.Y = [Math]::Max(0, $cp.Y)
+$vw = ([Math]::Min($cr.Right - $cr.Left, $screen.Width - $cp.X) -band -2)
+$vh = ([Math]::Min($cr.Bottom - $cr.Top, $screen.Height - $cp.Y) -band -2)
 $psi.Arguments = "-y -loglevel error -f gdigrab -framerate 30 -offset_x $($cp.X) -offset_y $($cp.Y) -video_size ${vw}x${vh} -i desktop -c:v libx264 -preset veryfast -pix_fmt yuv420p `"$video`""
 Note "video region $($cp.X),$($cp.Y) ${vw}x${vh}"
 $psi.UseShellExecute = $false
