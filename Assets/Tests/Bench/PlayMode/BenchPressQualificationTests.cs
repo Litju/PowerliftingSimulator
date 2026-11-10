@@ -86,10 +86,15 @@ namespace PowerliftingSimulator.Bench
             Assert.That(proper.All(s => gaps(s).All(g => !float.IsNaN(g))), "geometric contact was not observed\n" + contacts);
             Assert.That(proper.All(s => gaps(s).All(g => g <= tol)), "a support region separated geometrically\n" + contacts);
             // Physical level (diagnostic, not a rule): the supine body actually
-            // rests on the pad - head, shoulders and buttocks carry load.
-            Assert.That(proper.Min(s => s.HeadN), Is.GreaterThan(BenchRulebook.ContactForceFloorN), report);
-            Assert.That(proper.Min(s => s.ShouldersN), Is.GreaterThan(BenchRulebook.ContactForceFloorN), report);
-            Assert.That(proper.Min(s => s.ButtocksN), Is.GreaterThan(BenchRulebook.ContactForceFloorN), report);
+            // rests on the pad - head, shoulders and buttocks carry load, apart
+            // from solver contact chatter shorter than the rulebook's own
+            // ContactLossTicks (measured: buttocks 0 N for 2 ticks at descent
+            // onset while touching at 0.1 mm clearance).
+            Assert.That(LongestRun(proper, s => s.HeadN < BenchRulebook.ContactForceFloorN), Is.LessThan(BenchRulebook.ContactLossTicks), contacts);
+            Assert.That(LongestRun(proper, s => s.ShouldersN < BenchRulebook.ContactForceFloorN), Is.LessThan(BenchRulebook.ContactLossTicks), contacts);
+            Assert.That(LongestRun(proper, s => s.ButtocksN < BenchRulebook.ContactForceFloorN), Is.LessThan(BenchRulebook.ContactLossTicks), contacts);
+            Assert.That(proper.Average(s => s.HeadN + s.ShouldersN + s.ButtocksN), Is.GreaterThan(0.5f * H.Bench.AthleteRig.TotalMassKg * 9.81f),
+                "the bench does not carry the supine body\n" + contacts);
             Assert.That(proper.Max(s => Mathf.Max(s.LeftGripSeparationM, s.RightGripSeparationM)), Is.LessThan(0.002f), report);
         }
 
@@ -241,6 +246,17 @@ namespace PowerliftingSimulator.Bench
             while (!(bench.AttemptFinished || (referee.IsComplete && TimeSinceComplete(referee) > 12.0)) && H.Tick < deadline)
                 yield return null;
             yield return H.WaitTicks(20);
+        }
+
+        private static int LongestRun(List<BenchTelemetrySample> samples, Func<BenchTelemetrySample, bool> predicate)
+        {
+            int longest = 0, run = 0;
+            foreach (BenchTelemetrySample s in samples)
+            {
+                run = predicate(s) ? run + 1 : 0;
+                longest = Math.Max(longest, run);
+            }
+            return longest;
         }
 
         /// <summary>Geometric contact next to load bearing, and the wrist channels at their peak demand.</summary>

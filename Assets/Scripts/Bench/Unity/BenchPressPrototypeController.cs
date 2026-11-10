@@ -203,6 +203,7 @@ namespace PowerliftingSimulator.Bench.Unity
             SquatPresentationGrip grip = athleteRig.GetComponent<SquatPresentationGrip>() ??
                 athleteRig.gameObject.AddComponent<SquatPresentationGrip>();
             grip.Configure(athleteRig, barbell);
+            grip.ThumbAroundShaft = true; // IPF 4.2: thumbs around the bar
 
             foundation.Runtime.MarkInitialPhysicalStateValidated();
         }

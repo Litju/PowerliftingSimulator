@@ -69,6 +69,15 @@ namespace PowerliftingSimulator.Squat.Unity
         private int _physicalBodyCountAtBuild;
         private int _physicalJointCountAtBuild;
 
+        /// <summary>
+        /// Opt-in (GAM-69 bench): a thumbs-around grip. The thumb is lifted off
+        /// the palm plane over the shaft and closed around it, instead of being
+        /// swung within the palm plane to lie along the shaft. IPF 4.2 requires
+        /// the thumbs around the bar for the bench press. Default off: the
+        /// accepted squat presentation is unchanged.
+        /// </summary>
+        public bool ThumbAroundShaft { get; set; }
+
         public string CalibrationId => SquatPalmSurface.CalibrationId;
         public bool IsCalibrated => _left != null && _right != null;
         public float LeftPalmGapM => _left != null ? _left.PalmGapM : float.NaN;
@@ -155,6 +164,15 @@ namespace PowerliftingSimulator.Squat.Unity
                     Transform bone = finger.Bones[joint];
                     Transform child = finger.Bones[joint + 1];
                     float target = 0f;
+                    if (onBar && finger.IsThumb && joint == 0 && ThumbAroundShaft)
+                    {
+                        Quaternion cmc = ThumbAroundCarpometacarpal(finger, palmNormal, barCenter, axis);
+                        bone.rotation = cmc * bone.rotation;
+                        cmc.ToAngleAxis(out float cmcDeg, out _);
+                        finger.Angles[joint] = cmcDeg;
+                        wrap += cmcDeg;
+                        continue;
+                    }
                     if (onBar && finger.IsThumb && joint == 0)
                     {
                         target = ThumbCarpometacarpalAngle(finger, palmNormal, barCenter, axis);
@@ -207,6 +225,60 @@ namespace PowerliftingSimulator.Squat.Unity
                 hand.MaxPenetrations[fingerIndex] = Mathf.Max(0f, penetration);
                 hand.WrapDegrees[fingerIndex] = wrap;
             }
+        }
+
+        /// <summary>
+        /// Thumbs-around CMC pose: search the in-plane swing (about the palmar
+        /// normal, within the opposition arc) and the palmar abduction (about the
+        /// in-palm axis across the thumb, lifting it off the palm) for the pose
+        /// whose rigid phalanges clear the shaft while crossing it as squarely as
+        /// possible and as close to its surface as possible. The MCP and IP joints
+        /// then close onto the shaft by contact, so the thumb wraps around it.
+        /// </summary>
+        private static Quaternion ThumbAroundCarpometacarpal(
+            FingerPresentation thumb, Vector3 palmNormal, Vector3 barCenter, Vector3 axis)
+        {
+            Vector3 pivot = thumb.Bones[0].position;
+            Vector3 bindDir = (thumb.Bones[thumb.JointCount].position - thumb.Bones[1].position).normalized;
+            Vector3 abductionAxis = Vector3.Cross(palmNormal, bindDir).normalized;
+            Quaternion best = Quaternion.identity;
+            float bestScore = float.PositiveInfinity;
+            float bestInfeasible = float.NegativeInfinity;
+            Quaternion bestInfeasibleRotation = Quaternion.identity;
+            float swingLimit = ThumbFlexionMaxDeg[0];
+            for (float swing = -swingLimit; swing <= swingLimit; swing += 3f)
+            {
+                for (float lift = -60f; lift <= 60f; lift += 3f)
+                {
+                    Quaternion turn = Quaternion.AngleAxis(lift, abductionAxis) * Quaternion.AngleAxis(swing, palmNormal);
+                    float minimum = float.PositiveInfinity;
+                    for (int joint = 1; joint < thumb.JointCount; joint++)
+                    {
+                        Vector3 from = pivot + turn * (thumb.Bones[joint].position - pivot);
+                        Vector3 to = pivot + turn * (thumb.Bones[joint + 1].position - pivot);
+                        minimum = Mathf.Min(minimum, SegmentClearance(from, to, barCenter, axis, BarRadiusM + ThumbPadDepthM[joint]));
+                    }
+                    if (minimum < 0f)
+                    {
+                        if (minimum > bestInfeasible)
+                        {
+                            bestInfeasible = minimum;
+                            bestInfeasibleRotation = turn;
+                        }
+                        continue;
+                    }
+                    Vector3 dir = (turn * (thumb.Bones[thumb.JointCount].position - thumb.Bones[1].position)).normalized;
+                    // Square across the shaft, close to it, and a small rotation.
+                    float score = Mathf.Abs(Vector3.Dot(dir, axis)) + minimum / 0.02f +
+                        0.002f * (Mathf.Abs(swing) + Mathf.Abs(lift));
+                    if (score < bestScore)
+                    {
+                        bestScore = score;
+                        best = turn;
+                    }
+                }
+            }
+            return float.IsPositiveInfinity(bestScore) ? bestInfeasibleRotation : best;
         }
 
         /// <summary>

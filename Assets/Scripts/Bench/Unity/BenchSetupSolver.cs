@@ -205,7 +205,7 @@ namespace PowerliftingSimulator.Bench.Unity
         private const double WristNeutralWeight = 4.0d;
 
         /// <summary>Grip point moved from mid-palm toward the wrist: the bar low in the palm.</summary>
-        public const float GripTowardWristM = 0.020f;
+        public const float GripTowardWristM = 0.000f;
         public const float ShouldersFromUprightLineM = 0.20f;  // the lifter's chosen lying position
         public const float SafetyBelowTouchM = 0.035f;
         public const float LimitMarginDeg = 4f;
@@ -667,11 +667,13 @@ namespace PowerliftingSimulator.Bench.Unity
                     // Keyframe mode: palm toward the feet at a solved tilt.
                     r.Add(1.5d * (n.x - normalTarget.x)); r.Add(1.5d * (n.y - normalTarget.y)); r.Add(1.5d * (n.z - normalTarget.z));
                     r.Add(0.3d * (x[rollIndex] - rollSeed));
-                    // Wrist near neutral: moderate extension (mirrored by side), no swing.
+                    // Wrist near neutral in extension only (mirrored by side).
+                    // Swing is left to the knuckle-line term: this rig has no
+                    // forearm rotation joint, so the wrist swing is what lays the
+                    // knuckles along the shaft. Penalizing it turned the hand on
+                    // the bar and the fingers curled beside the shaft, not around it.
                     double extension = (left ? 1d : -1d) * WristPreferredExtensionDeg * Mathf.Deg2Rad;
                     r.Add(WristNeutralWeight * (x[4] - extension));
-                    r.Add(WristNeutralWeight * x[5]);
-                    r.Add(WristNeutralWeight * x[6]);
                 }
                 BenchKinematics.LimitResiduals(shoulder, qs, LimitMarginDeg, r, 25d);
                 BenchKinematics.LimitResiduals(elbow, qe, LimitMarginDeg, r, 25d);

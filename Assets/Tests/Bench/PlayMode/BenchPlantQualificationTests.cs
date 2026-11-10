@@ -38,13 +38,12 @@ namespace PowerliftingSimulator.Bench
             H.Write("gateA-plant.txt", b.ToString());
 
             Assert.That(BenchSetupSolver.IsRejected(m), Is.False, string.Join("\n", m.Notes));
-            // Wrist near neutral at lockout (owner-reported bent-back wrists:
-            // the earlier grip sat at 64 deg extension + 31 deg swing).
+            // Wrist extension near neutral at lockout (owner-reported bent-back
+            // wrists: the earlier grip sat at 64 deg extension). Swing is not
+            // bounded here: with no forearm rotation joint it is what lays the
+            // knuckles along the shaft; the finger wrap is checked in Gate B.
             foreach (Vector3 wrist in new[] { m.LeftWristLockoutDeg, m.RightWristLockoutDeg })
-            {
                 Assert.That(Mathf.Abs(wrist.x), Is.LessThanOrEqualTo(35f), "wrist extension at lockout\n" + b);
-                Assert.That(new Vector2(wrist.y, wrist.z).magnitude, Is.LessThanOrEqualTo(15f), "wrist swing at lockout\n" + b);
-            }
             Assert.That(m.Equipment.Violations(), Is.Empty);
             // The lift-off is not judged. A residual here is a kinematic
             // inconsistency of the commanded references against the locked
@@ -175,6 +174,8 @@ namespace PowerliftingSimulator.Bench
                 w.Max(s => Mathf.Max(s.LeftSlipM, s.RightSlipM)) * 1000f));
             AppendArmEffort(b, w);
             AppendHiddenAttachmentAudit(b, H.Bench, out int foreignJoints);
+            CaptureHands("gateB-hold-hands");
+            string wrap = DescribeAndAssertFingerWrap(b);
             H.Write("gateB-hold.txt", b.ToString());
             H.WriteTelemetry("gateB-hold.csv");
 
@@ -264,6 +265,101 @@ namespace PowerliftingSimulator.Bench
         }
 
         // ---------------- helpers ----------------
+
+        /// <summary>Close-up renders of each hand on the bar (from the feet side and from above), saved with the receipts.</summary>
+        private static void CaptureHands(string name)
+        {
+            var go = new GameObject("GAM69_HandCaptureCamera");
+            Camera cam = go.AddComponent<Camera>();
+            cam.fieldOfView = 32f;
+            cam.nearClipPlane = 0.02f;
+            var rt = new RenderTexture(900, 700, 24);
+            var tex = new Texture2D(900, 700, TextureFormat.RGB24, false);
+            try
+            {
+                foreach (string side in new[] { "left", "right" })
+                {
+                    Vector3 hand = H.Bench.AthleteRig.Segments[side + "_hand"].Body.position;
+                    var views = new (string tag, Vector3 offset)[]
+                    {
+                        ("feetside", new Vector3(side == "left" ? -0.12f : 0.12f, 0.05f, 0.42f)),
+                        ("above", new Vector3(side == "left" ? -0.10f : 0.10f, 0.40f, 0.10f)),
+                        ("outside", new Vector3(side == "left" ? -0.40f : 0.40f, 0.06f, 0.05f))
+                    };
+                    foreach (var view in views)
+                    {
+                        go.transform.position = hand + view.offset;
+                        go.transform.LookAt(hand, Vector3.up);
+                        cam.targetTexture = rt;
+                        cam.Render();
+                        RenderTexture.active = rt;
+                        tex.ReadPixels(new Rect(0, 0, 900, 700), 0, 0);
+                        tex.Apply();
+                        RenderTexture.active = null;
+                        System.IO.File.WriteAllBytes(System.IO.Path.Combine(H.EvidenceDirectory, $"{name}-{side}-{view.tag}.png"), tex.EncodeToPNG());
+                    }
+                }
+            }
+            finally
+            {
+                cam.targetTexture = null;
+                Object.Destroy(rt);
+                Object.Destroy(tex);
+                Object.Destroy(go);
+            }
+        }
+
+        /// <summary>
+        /// The visible grip, with the accepted squat's wrap criteria
+        /// (GAM68UpperLimbPresentationTests): palm facing the shaft within the
+        /// 36 deg wrist cone, palm neither sunk into nor floating off it, no
+        /// finger inside the shaft, each fingertip within the proximal pad depth
+        /// of the shaft. A hand turned on the bar fails here.
+        /// </summary>
+        private static string DescribeAndAssertFingerWrap(StringBuilder b)
+        {
+            Squat.Unity.SquatPresentationGrip grip = H.Bench.AthleteRig.GetComponent<Squat.Unity.SquatPresentationGrip>();
+            Assert.That(grip, Is.Not.Null, "bench presentation grip missing");
+            float proximalPad = Squat.Unity.SquatPresentationGrip.FingerPadDepthM[0];
+            float distalPad = Squat.Unity.SquatPresentationGrip.FingerPadDepthM[2];
+            foreach (bool left in new[] { true, false })
+            {
+                string side = left ? "left" : "right";
+                float normal = left ? grip.LeftPalmNormalErrorDeg : grip.RightPalmNormalErrorDeg;
+                float gap = left ? grip.LeftPalmGapM : grip.RightPalmGapM;
+                IReadOnlyList<float> tips = left ? grip.LeftTipClearancesM : grip.RightTipClearancesM;
+                IReadOnlyList<float> pen = left ? grip.LeftMaxPenetrationM : grip.RightMaxPenetrationM;
+                IReadOnlyList<float> wrapDeg = left ? grip.LeftWrapDeg : grip.RightWrapDeg;
+                b.AppendLine(string.Format(C, "  {0} hand: palm normal error {1:F1} deg, palm gap {2:F1} mm, tip clearance mm [{3}], penetration mm [{4}], wrap deg [{5}]",
+                    side, normal, gap * 1000f,
+                    string.Join(", ", tips.Select(t => (t * 1000f).ToString("F1", C))),
+                    string.Join(", ", pen.Select(t => (t * 1000f).ToString("F1", C))),
+                    string.Join(", ", wrapDeg.Select(t => t.ToString("F0", C)))));
+            }
+            string report = b.ToString();
+            foreach (bool left in new[] { true, false })
+            {
+                string side = left ? "left" : "right";
+                Assert.That(left ? grip.LeftPalmNormalErrorDeg : grip.RightPalmNormalErrorDeg, Is.LessThan(36f), side + " palm does not face the shaft\n" + report);
+                float gap = left ? grip.LeftPalmGapM : grip.RightPalmGapM;
+                Assert.That(gap, Is.GreaterThan(-proximalPad), side + " palm sinks into the shaft\n" + report);
+                Assert.That(gap, Is.LessThan(Squat.Unity.SquatPresentationGrip.OffBarPalmGapM), side + " palm floats off the shaft\n" + report);
+                IReadOnlyList<float> tips = left ? grip.LeftTipClearancesM : grip.RightTipClearancesM;
+                IReadOnlyList<float> pen = left ? grip.LeftMaxPenetrationM : grip.RightMaxPenetrationM;
+                for (int finger = 0; finger < 5; finger++)
+                {
+                    float boneLimit = finger < 4 ? distalPad : Squat.Unity.SquatPresentationGrip.ThumbPadDepthM[2];
+                    Assert.That(pen[finger], Is.LessThanOrEqualTo(boneLimit), $"{side} finger {finger} enters the shaft\n" + report);
+                    if (finger < 4)
+                        Assert.That(tips[finger], Is.LessThanOrEqualTo(proximalPad), $"{side} fingertip {finger} does not wrap the shaft\n" + report);
+                }
+                // IPF 4.2 thumbs-around: the thumb closes around the shaft, not along it.
+                Assert.That(grip.ThumbAroundShaft, "the bench presentation must use the thumbs-around grip");
+                IReadOnlyList<float> wrapDeg = left ? grip.LeftWrapDeg : grip.RightWrapDeg;
+                Assert.That(wrapDeg[4], Is.GreaterThanOrEqualTo(90f), $"{side} thumb does not wrap around the shaft\n" + report);
+            }
+            return report;
+        }
 
         private static Vector3 MeanV(List<BenchTelemetrySample> w, System.Func<BenchTelemetrySample, Vector3> f)
         {
