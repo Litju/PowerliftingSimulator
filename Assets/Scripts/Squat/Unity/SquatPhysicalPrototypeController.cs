@@ -152,6 +152,7 @@ namespace PowerliftingSimulator.Squat.Unity
             athleteRig.SetGameplayPerformanceProfile(true);
             _adapter.CaptureStandingComReference();
             athleteRig.PrimeCommandSource();
+            EnsurePresentationGrip();
             ValidateInitialSubstrate();
 
             _observationCollector = new SquatObservationCollector(
@@ -225,6 +226,21 @@ namespace PowerliftingSimulator.Squat.Unity
                 if (_rightFootContact == null)
                     _rightFootContact = rightFoot.Body.gameObject.AddComponent<PhysicalFootContactDetector>();
             }
+        }
+
+        /// <summary>
+        /// Adds the presentation-only grip after the physical rig and bar exist.
+        /// The component only poses skinned finger bones from the realized
+        /// hand pose and the live shaft; it creates no physical body or joint.
+        /// </summary>
+        private void EnsurePresentationGrip()
+        {
+            if (athleteRig == null || barbell == null)
+                return;
+            SquatPresentationGrip grip = athleteRig.GetComponent<SquatPresentationGrip>();
+            if (grip == null)
+                grip = athleteRig.gameObject.AddComponent<SquatPresentationGrip>();
+            grip.Configure(athleteRig, barbell);
         }
 
         private void Update()

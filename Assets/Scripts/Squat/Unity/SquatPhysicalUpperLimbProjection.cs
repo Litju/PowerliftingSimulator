@@ -16,7 +16,8 @@ namespace PowerliftingSimulator.Squat.Unity
             Quaternion hand,
             float flexionDeg,
             float handPositionResidualM,
-            float handOrientationResidualDeg)
+            float handOrientationResidualDeg,
+            Vector3 handPositionErrorWorld = default)
         {
             UpperArm = upperArm;
             Forearm = forearm;
@@ -24,6 +25,7 @@ namespace PowerliftingSimulator.Squat.Unity
             FlexionDeg = flexionDeg;
             HandPositionResidualM = handPositionResidualM;
             HandOrientationResidualDeg = handOrientationResidualDeg;
+            HandPositionErrorWorld = handPositionErrorWorld;
         }
 
         /// <summary>Logical shoulder target.</summary>
@@ -38,6 +40,9 @@ namespace PowerliftingSimulator.Squat.Unity
         public float FlexionDeg { get; }
         public float HandPositionResidualM { get; }
         public float HandOrientationResidualDeg { get; }
+
+        /// <summary>Realized minus requested hand position (world), for task-space correction.</summary>
+        public Vector3 HandPositionErrorWorld { get; }
     }
 
     /// <summary>
@@ -65,6 +70,9 @@ namespace PowerliftingSimulator.Squat.Unity
     public static class SquatPhysicalUpperLimbProjection
     {
         public const string ProjectionId = "GAM11_TASK_SPACE_UPPER_LIMB_PROJECTION_V1";
+
+        /// <summary>Hand placement tolerance of the bar-support task (see the reach scoring below).</summary>
+        public const float HandTaskToleranceM = 0.025f;
 
         public static PhysicalUpperLimbTargets Project(
             PhysicalAthleteRig rig,
@@ -112,6 +120,7 @@ namespace PowerliftingSimulator.Squat.Unity
             float bestScore = float.PositiveInfinity;
             float bestResidual = float.PositiveInfinity;
             float bestFlexion = 0f;
+            Vector3 bestError = Vector3.zero;
             bool found = false;
 
             foreach (float normalSign in new[] { 1f, -1f })
@@ -146,6 +155,7 @@ namespace PowerliftingSimulator.Squat.Unity
                         found = true;
                         bestScore = score;
                         bestResidual = residual;
+                        bestError = hand - limb.HandCenter;
                         bestFlexion = flexion;
                         best = candidateForearm;
                         upperArmBody = candidateUpperArm;
@@ -164,7 +174,8 @@ namespace PowerliftingSimulator.Squat.Unity
                 clampedHandLogical,
                 bestFlexion,
                 bestResidual,
-                Quaternion.Angle(realisedHandBody, desiredHandBody));
+                Quaternion.Angle(realisedHandBody, desiredHandBody),
+                bestError);
         }
 
         /// <summary>
