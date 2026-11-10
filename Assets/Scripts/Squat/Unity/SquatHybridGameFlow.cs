@@ -23,17 +23,51 @@ namespace PowerliftingSimulator.Squat.Unity
         RETRY
     }
 
+    /// <summary>
+    /// Authored support assignment. This is the kinematic phase's authored
+    /// statement of which foot is planted; it is not a measured dynamic load
+    /// share and fabricates no contact impulse.
+    /// </summary>
+    public enum SquatAuthoredSupport : byte
+    {
+        NONE,
+        BOTH,
+        LEFT,
+        RIGHT
+    }
+
     /// <summary>Owns the animation/physics authority switches for the player-facing squat flow.</summary>
     public sealed class SquatHybridGameFlow
     {
         private const float WalkoutDurationSeconds = 2.9f;
         private const float RerackDurationSeconds = 2.4f;
         private const float RequiredReadySeconds = 0.2f;
+
+        // Phase cues. The mechanics are driven by the authored root motion,
+        // not by these clocks; they only select the player-facing phase label.
         private const float FirstStepStartSeconds = 0.8f;
-        private const float FirstStepEndSeconds = 1.45f;
         private const float SecondStepStartSeconds = 1.45f;
-        private const float SecondStepEndSeconds = 2.1f;
         private const float SettleStartSeconds = 2.1f;
+
+        // The existing WalkoutSequence root track. The unrack clears the hooks
+        // by 0.05 m and each of the two steps is 0.155 m, for the accepted
+        // 0.36 m overall displacement. These are the authored keyframe values;
+        // the foot targets and support transfers are derived from them.
+        private const float AuthoredUnrackClearanceMeters = 0.05f;
+        private const float AuthoredStepDisplacementMeters = 0.155f;
+        private const float AuthoredWalkoutDistanceMeters =
+            AuthoredUnrackClearanceMeters + 2f * AuthoredStepDisplacementMeters;
+
+        // The authored pelvis dips just enough for the most-extended leg to
+        // retain its measured setup length; this is a reachability margin in
+        // the kinematic solve, not a joint limit or a balance rule.
+        private const float MinimumReachMarginMeters = 0.005f;
+
+        private const string SupportBoth = "DOUBLE_SUPPORT";
+        private const string LeftSwingLifted = "LEFT_SWING_FOOT_LIFTED_AT_AUTHORED_ROOT_DISPLACEMENT";
+        private const string RightSwingLifted = "RIGHT_SWING_FOOT_LIFTED_AT_AUTHORED_ROOT_DISPLACEMENT";
+        private const string LeftSwingPlanted = "LEFT_SWING_FOOT_PLANTED_AT_AUTHORED_PLANTAR_TARGET";
+        private const string RightSwingPlanted = "RIGHT_SWING_FOOT_PLANTED_AT_AUTHORED_PLANTAR_TARGET";
 
         private readonly Transform _owner;
         private readonly PhysicalAthleteRig _athleteRig;
@@ -45,6 +79,9 @@ namespace PowerliftingSimulator.Squat.Unity
         private readonly Dictionary<string, int> _segmentIndexes = new Dictionary<string, int>(StringComparer.Ordinal);
         private readonly Vector3[] _basePositions;
         private readonly Quaternion[] _baseRotations;
+        private readonly Vector3[] _handoffPositions;
+        private readonly Quaternion[] _handoffRotations;
+        private readonly bool[] _rootAuthoredBody;
 
         private Animator _animator;
         private SquatRootMotionRelay _rootMotionRelay;
@@ -57,6 +94,17 @@ namespace PowerliftingSimulator.Squat.Unity
         private bool _locomotionAuthority;
         private bool _walkoutStarted;
         private bool _handoffPending;
+        private Vector3 _handoffBarPosition;
+        private Quaternion _handoffBarRotation;
+
+        private LegKinematics _leftLeg;
+        private LegKinematics _rightLeg;
+        private Vector3 _basePelvisPosition;
+        private Quaternion _basePelvisRotation;
+        private Vector3 _authoredWalkDirection;
+        private Vector3 _authoredForward;
+        private float _swingClearanceMeters;
+        private bool _authoredGeometryCaptured;
 
         public SquatHybridGameFlow(
             Transform owner,
@@ -78,10 +126,14 @@ namespace PowerliftingSimulator.Squat.Unity
             _segments.Sort((left, right) => string.CompareOrdinal(left.Recipe.Id, right.Recipe.Id));
             _basePositions = new Vector3[_segments.Count];
             _baseRotations = new Quaternion[_segments.Count];
+            _handoffPositions = new Vector3[_segments.Count];
+            _handoffRotations = new Quaternion[_segments.Count];
+            _rootAuthoredBody = new bool[_segments.Count];
             for (int index = 0; index < _segments.Count; index++)
                 _segmentIndexes.Add(_segments[index].Recipe.Id, index);
 
             Phase = SquatPlayerGamePhase.LOAD;
+            AuthoredSupport = SquatAuthoredSupport.NONE;
             if (locomotionController != null)
                 CreateRootMotionAnimator(locomotionController);
         }
@@ -92,7 +144,13 @@ namespace PowerliftingSimulator.Squat.Unity
         public float WalkoutDistanceMeters => _rootMotionDisplacement.magnitude;
         public float MaximumHandoffPoseErrorMeters { get; private set; }
         public float MaximumHandoffBarAngularErrorDegrees { get; private set; }
+        public float MaximumHandoffBodyAngularErrorDegrees { get; private set; }
         public bool HasLocomotionAuthority => _locomotionAuthority;
+        public SquatAuthoredSupport AuthoredSupport { get; private set; }
+        public int AuthoredSupportTransferCount { get; private set; }
+        public int AuthoredTouchdownCount { get; private set; }
+        public float LastAuthoredTouchdownSeconds { get; private set; }
+        public string LastAuthoredSupportBasis { get; private set; } = string.Empty;
 
         private int RequiredReadySampleCount => Mathf.Max(1, Mathf.CeilToInt(RequiredReadySeconds / (float)SimulationConstants.FixedDeltaTimeSeconds));
 
@@ -109,7 +167,10 @@ namespace PowerliftingSimulator.Squat.Unity
                 return false;
 
             CaptureBodyPose();
+            Array.Copy(_basePositions, _handoffPositions, _basePositions.Length);
+            Array.Copy(_baseRotations, _handoffRotations, _baseRotations.Length);
             CaptureBarPresentationAttachment();
+            CaptureAuthoredLocomotionGeometry();
             _athleteRig.SetCommandSource(null);
             SetKinematicAuthority(true);
             _locomotionAuthority = true;
@@ -117,18 +178,29 @@ namespace PowerliftingSimulator.Squat.Unity
             _walkoutStarted = false;
             _handoffPending = false;
             _phaseElapsedSeconds = 0f;
+            AuthoredSupport = SquatAuthoredSupport.BOTH;
+            AuthoredSupportTransferCount = 0;
+            AuthoredTouchdownCount = 0;
+            LastAuthoredTouchdownSeconds = 0f;
+            LastAuthoredSupportBasis = SupportBoth;
             Phase = SquatPlayerGamePhase.SETUP;
             return true;
         }
 
         public bool BeginWalkout()
         {
-            if (Phase != SquatPlayerGamePhase.SETUP || !_locomotionAuthority || _animator == null)
+            if (Phase != SquatPlayerGamePhase.SETUP || !_locomotionAuthority || _animator == null ||
+                !_authoredGeometryCaptured)
                 return false;
 
             _rootMotionDisplacement = Vector3.zero;
             _phaseElapsedSeconds = 0f;
             _walkoutStarted = true;
+            AuthoredSupport = SquatAuthoredSupport.BOTH;
+            AuthoredSupportTransferCount = 0;
+            AuthoredTouchdownCount = 0;
+            LastAuthoredTouchdownSeconds = 0f;
+            LastAuthoredSupportBasis = SupportBoth;
             _animator.Play("Base Layer.WALKOUT_SEQUENCE", 0, 0f);
             Phase = SquatPlayerGamePhase.UNRACK;
             return true;
@@ -142,9 +214,9 @@ namespace PowerliftingSimulator.Squat.Unity
                 _phaseElapsedSeconds += Mathf.Max(0f, deltaTimeSeconds);
                 if (_phaseElapsedSeconds < FirstStepStartSeconds)
                     Phase = SquatPlayerGamePhase.UNRACK;
-                else if (_phaseElapsedSeconds < FirstStepEndSeconds)
+                else if (_phaseElapsedSeconds < SecondStepStartSeconds)
                     Phase = SquatPlayerGamePhase.WALKOUT_STEP_1;
-                else if (_phaseElapsedSeconds < SecondStepEndSeconds)
+                else if (_phaseElapsedSeconds < SettleStartSeconds)
                     Phase = SquatPlayerGamePhase.WALKOUT_STEP_2;
                 else
                     Phase = SquatPlayerGamePhase.SETTLE;
@@ -157,22 +229,26 @@ namespace PowerliftingSimulator.Squat.Unity
                 Rigidbody barBody = _barbell.Body != null && _barbell.Body.gameObject.activeInHierarchy
                     ? _barbell.Body
                     : null;
-                Vector3 barPositionBeforeHandoff = barBody == null ? Vector3.zero : barBody.position;
-                Quaternion barRotationBeforeHandoff = barBody == null ? Quaternion.identity : barBody.rotation;
                 SetKinematicAuthority(false);
                 _athleteRig.SetCommandSource(_adapter);
                 MaximumHandoffPoseErrorMeters = 0f;
                 MaximumHandoffBarAngularErrorDegrees = 0f;
+                MaximumHandoffBodyAngularErrorDegrees = 0f;
                 for (int index = 0; index < _segments.Count; index++)
+                {
                     MaximumHandoffPoseErrorMeters = Mathf.Max(
                         MaximumHandoffPoseErrorMeters,
-                        Vector3.Distance(_segments[index].Body.position, _basePositions[index] + _rootMotionDisplacement));
+                        Vector3.Distance(_segments[index].Body.position, _handoffPositions[index]));
+                    MaximumHandoffBodyAngularErrorDegrees = Mathf.Max(
+                        MaximumHandoffBodyAngularErrorDegrees,
+                        Quaternion.Angle(_segments[index].Body.rotation, _handoffRotations[index]));
+                }
                 if (barBody != null)
                 {
                     MaximumHandoffPoseErrorMeters = Mathf.Max(
                         MaximumHandoffPoseErrorMeters,
-                        Vector3.Distance(barBody.position, barPositionBeforeHandoff));
-                    MaximumHandoffBarAngularErrorDegrees = Quaternion.Angle(barBody.rotation, barRotationBeforeHandoff);
+                        Vector3.Distance(barBody.position, _handoffBarPosition));
+                    MaximumHandoffBarAngularErrorDegrees = Quaternion.Angle(barBody.rotation, _handoffBarRotation);
                 }
                 _orchestrator.BeginAttempt();
                 Phase = SquatPlayerGamePhase.JUDGED_SQUAT;
@@ -210,12 +286,16 @@ namespace PowerliftingSimulator.Squat.Unity
             if (!_locomotionAuthority)
                 return;
 
-            ApplyKinematicPose();
-            ApplyStepPose();
+            if (Phase == SquatPlayerGamePhase.RERACK)
+                ApplyKinematicPose();
+            else
+                ApplyAuthoredPose();
+            UpdateAuthoredSupport();
             FollowBarPresentationAttachment();
 
             if (_walkoutStarted && _phaseElapsedSeconds >= WalkoutDurationSeconds && IsWalkoutPhase(Phase))
             {
+                CaptureHandoffPose();
                 _locomotionAuthority = false;
                 _handoffPending = true;
                 Phase = SquatPlayerGamePhase.PHYSICS_HANDOFF;
@@ -299,9 +379,343 @@ namespace PowerliftingSimulator.Squat.Unity
                 !_athleteRig.Segments.TryGetValue("thorax", out PhysicalAthleteRig.SegmentRuntime thorax))
                 return;
 
-            Transform carrier = thorax.Body.transform;
-            _barLocalPosition = carrier.InverseTransformPoint(_barbell.Body.position);
+            Rigidbody carrier = thorax.Body;
+            _barLocalPosition = Quaternion.Inverse(carrier.rotation) * (_barbell.Body.position - carrier.position);
             _barLocalRotation = Quaternion.Inverse(carrier.rotation) * _barbell.Body.rotation;
+        }
+
+        /// <summary>
+        /// Captures the accepted setup pose's leg anchors and measured segment
+        /// lengths once. The authored walkout then keeps those physical lengths
+        /// and joint coincidences; it never stretches a bone to reach a target.
+        /// </summary>
+        private void CaptureAuthoredLocomotionGeometry()
+        {
+            if (!_segmentIndexes.ContainsKey("pelvis"))
+                throw new InvalidOperationException("The authored walkout requires the canonical pelvis body.");
+            _basePelvisPosition = _basePositions[_segmentIndexes["pelvis"]];
+            _basePelvisRotation = _baseRotations[_segmentIndexes["pelvis"]];
+
+            _leftLeg = CaptureLeg("left");
+            _rightLeg = CaptureLeg("right");
+            _authoredWalkDirection = HorizontalDirection(_animator.transform.forward, Vector3.forward);
+            _authoredForward = MeasureAthleteForward();
+
+            _leftLeg.LandingAnkle = _leftLeg.BaseAnkle + _authoredWalkDirection * AuthoredWalkoutDistanceMeters;
+            _rightLeg.LandingAnkle = _rightLeg.BaseAnkle + _authoredWalkDirection * AuthoredWalkoutDistanceMeters;
+            _swingClearanceMeters = Mathf.Clamp(_leftLeg.FootHeightMeters * 0.75f, 0.04f, 0.10f);
+
+            for (int index = 0; index < _segments.Count; index++)
+            {
+                string id = _segments[index].Recipe.Id;
+                _rootAuthoredBody[index] = !IsLegSegment(id);
+            }
+            _authoredGeometryCaptured = true;
+        }
+
+        /// <summary>
+        /// The imported reference rig's root forward is not the visible
+        /// athlete's facing: the canonical import carries a 180-degree bind
+        /// correction. The toes are the measured facing. The walkout moves
+        /// backward along -Z, so a knee that used the root forward would bend
+        /// away from the toes. Deriving the bend side from the toe bones keeps
+        /// the authored swing knee on the athlete's anterior side.
+        /// </summary>
+        private Vector3 MeasureAthleteForward()
+        {
+            Animator reference = _athleteRig.ReferenceAnimator;
+            Transform leftFoot = reference.GetBoneTransform(HumanBodyBones.LeftFoot);
+            Transform leftToes = reference.GetBoneTransform(HumanBodyBones.LeftToes);
+            Transform rightFoot = reference.GetBoneTransform(HumanBodyBones.RightFoot);
+            Transform rightToes = reference.GetBoneTransform(HumanBodyBones.RightToes);
+            if (leftFoot != null && leftToes != null && rightFoot != null && rightToes != null)
+            {
+                Vector3 toeDirection = Vector3.ProjectOnPlane(
+                    (leftToes.position - leftFoot.position) +
+                    (rightToes.position - rightFoot.position),
+                    Vector3.up);
+                if (toeDirection.sqrMagnitude > 1e-8f)
+                    return toeDirection.normalized;
+            }
+            return HorizontalDirection(reference.transform.forward, _authoredWalkDirection);
+        }
+
+        private LegKinematics CaptureLeg(string side)
+        {
+            string thighId = side + "_thigh";
+            string shankId = side + "_shank";
+            string footId = side + "_foot";
+            if (!_segmentIndexes.TryGetValue(thighId, out int thighIndex) ||
+                !_segmentIndexes.TryGetValue(shankId, out int shankIndex) ||
+                !_segmentIndexes.TryGetValue(footId, out int footIndex))
+                throw new InvalidOperationException($"The authored walkout could not resolve the {side} leg segments.");
+
+            Rigidbody thigh = _segments[thighIndex].Body;
+            Rigidbody shank = _segments[shankIndex].Body;
+            Rigidbody foot = _segments[footIndex].Body;
+            ConfigurableJoint hip = thigh.GetComponent<ConfigurableJoint>();
+            ConfigurableJoint knee = shank.GetComponent<ConfigurableJoint>();
+            ConfigurableJoint ankle = foot.GetComponent<ConfigurableJoint>();
+            if (hip == null || knee == null || ankle == null ||
+                hip.connectedBody == null || knee.connectedBody != thigh || ankle.connectedBody != shank)
+                throw new InvalidOperationException($"The authored walkout requires the canonical {side} hip/knee/ankle joint chain.");
+            if (!(foot.GetComponent<Collider>() is BoxCollider footBox))
+                throw new InvalidOperationException($"The authored walkout requires a box foot collider on {footId}.");
+
+            Vector3 baseHip = thigh.position + thigh.rotation * hip.anchor;
+            Vector3 baseKnee = shank.position + shank.rotation * knee.anchor;
+            Vector3 baseAnkle = foot.position + foot.rotation * ankle.anchor;
+            float thighLength = Vector3.Distance(baseHip, baseKnee);
+            float shankLength = Vector3.Distance(baseKnee, baseAnkle);
+            if (!float.IsFinite(thighLength) || !float.IsFinite(shankLength) ||
+                thighLength < 0.10f || shankLength < 0.10f)
+                throw new InvalidOperationException($"The authored walkout measured an invalid {side} leg length.");
+
+            return new LegKinematics
+            {
+                Side = side,
+                Thigh = thigh,
+                Shank = shank,
+                Foot = foot,
+                HipInPelvis = hip.connectedAnchor,
+                HipInThigh = hip.anchor,
+                KneeInThigh = knee.connectedAnchor,
+                KneeInShank = knee.anchor,
+                AnkleInShank = ankle.connectedAnchor,
+                AnkleInFoot = ankle.anchor,
+                BaseHip = baseHip,
+                BaseKnee = baseKnee,
+                BaseAnkle = baseAnkle,
+                BaseThighRotation = _baseRotations[thighIndex],
+                BaseShankRotation = _baseRotations[shankIndex],
+                BaseFootRotation = _baseRotations[footIndex],
+                BaseHipToKneeDirection = (baseKnee - baseHip).normalized,
+                BaseKneeToAnkleDirection = (baseAnkle - baseKnee).normalized,
+                ThighLength = thighLength,
+                ShankLength = shankLength,
+                BaseHipAnkleDistance = Vector3.Distance(baseHip, baseAnkle),
+                MaximumReach = thighLength + shankLength - MinimumReachMarginMeters,
+                FootHeightMeters = footBox.size.y,
+                LandingAnkle = baseAnkle
+            };
+        }
+
+        private void ApplyAuthoredPose()
+        {
+            if (!_authoredGeometryCaptured)
+                return;
+
+            Vector3 horizontalRoot = new Vector3(_rootMotionDisplacement.x, 0f, _rootMotionDisplacement.z);
+            float rootTravel = Mathf.Max(0f, Vector3.Dot(horizontalRoot, _authoredWalkDirection));
+            float leftProgress = Mathf.Clamp01(
+                (rootTravel - AuthoredUnrackClearanceMeters) / AuthoredStepDisplacementMeters);
+            float rightProgress = Mathf.Clamp01(
+                (rootTravel - AuthoredUnrackClearanceMeters - AuthoredStepDisplacementMeters) /
+                AuthoredStepDisplacementMeters);
+            Vector3 leftAnkle = EvaluateSwingAnkle(_leftLeg, leftProgress);
+            Vector3 rightAnkle = EvaluateSwingAnkle(_rightLeg, rightProgress);
+            float pelvisY = SolveAuthoredPelvisY(
+                horizontalRoot, leftAnkle, rightAnkle, leftProgress, rightProgress);
+            Vector3 offset = new Vector3(
+                horizontalRoot.x,
+                pelvisY - _basePelvisPosition.y,
+                horizontalRoot.z);
+
+            for (int index = 0; index < _segments.Count; index++)
+            {
+                if (!_rootAuthoredBody[index])
+                    continue;
+                SetBodyPose(
+                    _segments[index].Body,
+                    _basePositions[index] + offset,
+                    _baseRotations[index]);
+            }
+
+            PlaceLeg(_leftLeg, leftAnkle, offset);
+            PlaceLeg(_rightLeg, rightAnkle, offset);
+        }
+
+        /// <summary>
+        /// The swing foot follows the accepted root track: it leaves its
+        /// authored plantar anchor, travels the full walkout displacement with
+        /// zero endpoint velocity, and clears the platform by a height derived
+        /// from the measured foot collider. Both feet end level at the
+        /// walkout's accepted displacement.
+        /// </summary>
+        private Vector3 EvaluateSwingAnkle(LegKinematics leg, float progress)
+        {
+            if (progress <= 0f)
+                return leg.BaseAnkle;
+            if (progress >= 1f)
+                return leg.LandingAnkle;
+
+            float smooth = progress * progress * (3f - 2f * progress);
+            float lift = _swingClearanceMeters * Mathf.Sin(progress * Mathf.PI) * Mathf.Sin(progress * Mathf.PI);
+            return leg.BaseAnkle +
+                _authoredWalkDirection * (AuthoredWalkoutDistanceMeters * smooth) +
+                Vector3.up * lift;
+        }
+
+        /// <summary>
+        /// The pelvis height is not animated arbitrarily. It is the lowest
+        /// height at which the most-extended leg still holds the measured setup
+        /// hip-to-ankle length (or, for a lifted swing leg, its measured
+        /// maximum reach). This keeps a planted foot's leg geometry possible
+        /// while the pelvis travels between the two authored foot placements.
+        /// </summary>
+        private float SolveAuthoredPelvisY(
+            Vector3 horizontalRoot,
+            Vector3 leftAnkle,
+            Vector3 rightAnkle,
+            float leftProgress,
+            float rightProgress)
+        {
+            float leftY = SolveLegPelvisY(_leftLeg, leftAnkle, horizontalRoot, leftProgress);
+            float rightY = SolveLegPelvisY(_rightLeg, rightAnkle, horizontalRoot, rightProgress);
+            return Mathf.Min(_basePelvisPosition.y, Mathf.Min(leftY, rightY));
+        }
+
+        private float SolveLegPelvisY(
+            LegKinematics leg,
+            Vector3 ankle,
+            Vector3 horizontalRoot,
+            float swingProgress)
+        {
+            Vector3 hipHorizontal = new Vector3(
+                leg.BaseHip.x + horizontalRoot.x,
+                0f,
+                leg.BaseHip.z + horizontalRoot.z);
+            Vector3 ankleHorizontal = new Vector3(ankle.x, 0f, ankle.z);
+            float horizontal = Vector3.Distance(hipHorizontal, ankleHorizontal);
+            float lift = Mathf.Max(0f, ankle.y - leg.BaseAnkle.y);
+            float liftFraction = _swingClearanceMeters > 1e-4f
+                ? Mathf.Clamp01(lift / _swingClearanceMeters)
+                : 0f;
+            bool swinging = swingProgress > 0f && swingProgress < 1f;
+            float effectiveDistance = swinging
+                ? Mathf.Lerp(leg.BaseHipAnkleDistance, leg.MaximumReach, liftFraction)
+                : leg.BaseHipAnkleDistance;
+            float verticalSquared = effectiveDistance * effectiveDistance - horizontal * horizontal;
+            float vertical = verticalSquared > 0f ? Mathf.Sqrt(verticalSquared) : 0f;
+            float hipOffsetY = leg.BaseHip.y - _basePelvisPosition.y;
+            return ankle.y + vertical - hipOffsetY;
+        }
+
+        /// <summary>
+        /// Analytic two-bone placement in the sagittal plane. The knee is
+        /// placed toward the athlete's measured forward direction, and each
+        /// body is positioned from its own captured joint anchor so the hip,
+        /// knee and ankle anchors coincide exactly at the measured segment
+        /// lengths.
+        /// </summary>
+        private void PlaceLeg(LegKinematics leg, Vector3 ankle, Vector3 offset)
+        {
+            Vector3 hip = leg.BaseHip + offset;
+            Vector3 hipToAnkle = ankle - hip;
+            float distance = hipToAnkle.magnitude;
+            float reach = leg.ThighLength + leg.ShankLength;
+            float clampedDistance = Mathf.Clamp(
+                distance,
+                Mathf.Abs(leg.ThighLength - leg.ShankLength) + 1e-4f,
+                reach - 1e-4f);
+            Vector3 direction = distance > 1e-6f ? hipToAnkle / distance : Vector3.down;
+            float along = (clampedDistance * clampedDistance +
+                leg.ThighLength * leg.ThighLength -
+                leg.ShankLength * leg.ShankLength) / (2f * clampedDistance);
+            float heightSquared = leg.ThighLength * leg.ThighLength - along * along;
+            float height = heightSquared > 0f ? Mathf.Sqrt(heightSquared) : 0f;
+            Vector3 bend = Vector3.ProjectOnPlane(_authoredForward, direction);
+            if (bend.sqrMagnitude < 1e-6f)
+                bend = Vector3.ProjectOnPlane(Vector3.forward, direction);
+            if (bend.sqrMagnitude < 1e-6f)
+                bend = Vector3.right;
+            bend.Normalize();
+            Vector3 knee = hip + direction * along + bend * height;
+
+            Quaternion thighRotation = Quaternion.FromToRotation(
+                leg.BaseHipToKneeDirection,
+                (knee - hip).normalized) * leg.BaseThighRotation;
+            Vector3 thighPosition = hip - thighRotation * leg.HipInThigh;
+            Quaternion shankRotation = Quaternion.FromToRotation(
+                leg.BaseKneeToAnkleDirection,
+                (ankle - knee).normalized) * leg.BaseShankRotation;
+            Vector3 shankPosition = knee - shankRotation * leg.KneeInShank;
+            Quaternion footRotation = leg.BaseFootRotation;
+            Vector3 footPosition = ankle - footRotation * leg.AnkleInFoot;
+
+            SetBodyPose(leg.Thigh, thighPosition, thighRotation);
+            SetBodyPose(leg.Shank, shankPosition, shankRotation);
+            SetBodyPose(leg.Foot, footPosition, footRotation);
+        }
+
+        private void UpdateAuthoredSupport()
+        {
+            if (Phase == SquatPlayerGamePhase.RERACK || !_walkoutStarted)
+            {
+                SetAuthoredSupport(SquatAuthoredSupport.BOTH, SupportBoth);
+                return;
+            }
+
+            float rootTravel = Mathf.Max(
+                0f,
+                Vector3.Dot(
+                    new Vector3(_rootMotionDisplacement.x, 0f, _rootMotionDisplacement.z),
+                    _authoredWalkDirection));
+            float leftProgress = Mathf.Clamp01(
+                (rootTravel - AuthoredUnrackClearanceMeters) / AuthoredStepDisplacementMeters);
+            float rightProgress = Mathf.Clamp01(
+                (rootTravel - AuthoredUnrackClearanceMeters - AuthoredStepDisplacementMeters) /
+                AuthoredStepDisplacementMeters);
+            bool leftSwinging = leftProgress > 0f && leftProgress < 1f;
+            bool rightSwinging = rightProgress > 0f && rightProgress < 1f;
+            if (leftSwinging)
+            {
+                SetAuthoredSupport(SquatAuthoredSupport.RIGHT, LeftSwingLifted);
+                return;
+            }
+            if (rightSwinging)
+            {
+                SetAuthoredSupport(SquatAuthoredSupport.LEFT, RightSwingLifted);
+                return;
+            }
+
+            string basis = AuthoredSupport == SquatAuthoredSupport.RIGHT
+                ? LeftSwingPlanted
+                : AuthoredSupport == SquatAuthoredSupport.LEFT
+                    ? RightSwingPlanted
+                    : SupportBoth;
+            SetAuthoredSupport(SquatAuthoredSupport.BOTH, basis);
+        }
+
+        private void SetAuthoredSupport(SquatAuthoredSupport support, string basis)
+        {
+            if (AuthoredSupport == support)
+                return;
+
+            SquatAuthoredSupport previous = AuthoredSupport;
+            AuthoredSupport = support;
+            AuthoredSupportTransferCount++;
+            LastAuthoredSupportBasis = basis;
+            if (support == SquatAuthoredSupport.BOTH &&
+                (previous == SquatAuthoredSupport.LEFT || previous == SquatAuthoredSupport.RIGHT))
+            {
+                AuthoredTouchdownCount++;
+                LastAuthoredTouchdownSeconds = _phaseElapsedSeconds;
+            }
+        }
+
+        private void CaptureHandoffPose()
+        {
+            for (int index = 0; index < _segments.Count; index++)
+            {
+                _handoffPositions[index] = _segments[index].Body.position;
+                _handoffRotations[index] = _segments[index].Body.rotation;
+            }
+            if (_barbell != null && _barbell.Body != null && _barbell.Body.gameObject.activeInHierarchy)
+            {
+                _handoffBarPosition = _barbell.Body.position;
+                _handoffBarRotation = _barbell.Body.rotation;
+            }
         }
 
         private void ApplyKinematicPose()
@@ -309,61 +723,11 @@ namespace PowerliftingSimulator.Squat.Unity
             Vector3 displacement = _rootMotionDisplacement;
             for (int index = 0; index < _segments.Count; index++)
             {
-                Rigidbody body = _segments[index].Body;
-                body.position = _basePositions[index] + displacement;
-                body.rotation = _baseRotations[index];
+                SetBodyPose(
+                    _segments[index].Body,
+                    _basePositions[index] + displacement,
+                    _baseRotations[index]);
             }
-        }
-
-        private void ApplyStepPose()
-        {
-            if (Phase != SquatPlayerGamePhase.WALKOUT_STEP_1 && Phase != SquatPlayerGamePhase.WALKOUT_STEP_2)
-                return;
-
-            bool left = Phase == SquatPlayerGamePhase.WALKOUT_STEP_1;
-            float start = left ? FirstStepStartSeconds : SecondStepStartSeconds;
-            float end = left ? FirstStepEndSeconds : SecondStepEndSeconds;
-            float progress = Mathf.Clamp01((_phaseElapsedSeconds - start) / (end - start));
-            float flexionDegrees = 34f * Mathf.Sin(progress * Mathf.PI);
-            ApplyKneeFlexion(left ? "left" : "right", flexionDegrees);
-        }
-
-        private void ApplyKneeFlexion(string side, float flexionDegrees)
-        {
-            if (!_segmentIndexes.TryGetValue(side + "_thigh", out int thighIndex) ||
-                !_segmentIndexes.TryGetValue(side + "_shank", out int shankIndex) ||
-                !_segmentIndexes.TryGetValue(side + "_foot", out int footIndex))
-                return;
-
-            Rigidbody thigh = _segments[thighIndex].Body;
-            Rigidbody shank = _segments[shankIndex].Body;
-            Rigidbody foot = _segments[footIndex].Body;
-            ConfigurableJoint knee = shank.GetComponent<ConfigurableJoint>();
-            ConfigurableJoint ankle = foot.GetComponent<ConfigurableJoint>();
-            if (knee == null || ankle == null || knee.connectedBody == null)
-                return;
-
-            Vector3 displacement = _rootMotionDisplacement;
-            Vector3 thighPosition = _basePositions[thighIndex] + displacement;
-            Quaternion thighRotation = _baseRotations[thighIndex];
-            Vector3 shankPosition = _basePositions[shankIndex] + displacement;
-            Quaternion shankRotation = _baseRotations[shankIndex];
-            Vector3 footPosition = _basePositions[footIndex] + displacement;
-            Quaternion footRotation = _baseRotations[footIndex];
-
-            Vector3 pivot = thighPosition + thighRotation * knee.connectedAnchor;
-            Vector3 axis = (shankRotation * knee.axis).normalized;
-            Vector3 ankleOffset = shankRotation * ankle.connectedAnchor;
-            Vector3 positiveStep = Quaternion.AngleAxis(1f, axis) * ankleOffset;
-            float flexionSign = positiveStep.y >= ankleOffset.y ? 1f : -1f;
-            Quaternion flexedRotation = Quaternion.AngleAxis(flexionSign * flexionDegrees, axis) * shankRotation;
-            Vector3 flexedPosition = pivot - flexedRotation * knee.anchor;
-            Vector3 anklePivot = flexedPosition + flexedRotation * ankle.connectedAnchor;
-
-            shank.position = flexedPosition;
-            shank.rotation = flexedRotation;
-            foot.position = anklePivot - footRotation * ankle.anchor;
-            foot.rotation = footRotation;
         }
 
         private void FollowBarPresentationAttachment()
@@ -372,9 +736,18 @@ namespace PowerliftingSimulator.Squat.Unity
                 !_athleteRig.Segments.TryGetValue("thorax", out PhysicalAthleteRig.SegmentRuntime thorax))
                 return;
 
-            Transform carrier = thorax.Body.transform;
-            _barbell.Body.position = carrier.TransformPoint(_barLocalPosition);
-            _barbell.Body.rotation = carrier.rotation * _barLocalRotation;
+            Rigidbody carrier = thorax.Body;
+            SetBodyPose(
+                _barbell.Body,
+                carrier.position + carrier.rotation * _barLocalPosition,
+                carrier.rotation * _barLocalRotation);
+        }
+
+        private static void SetBodyPose(Rigidbody body, Vector3 position, Quaternion rotation)
+        {
+            body.position = position;
+            body.rotation = rotation;
+            body.transform.SetPositionAndRotation(position, rotation);
         }
 
         private void SetKinematicAuthority(bool animationAuthority)
@@ -404,6 +777,19 @@ namespace PowerliftingSimulator.Squat.Unity
             }
         }
 
+        private static bool IsLegSegment(string id) =>
+            id.EndsWith("_thigh", StringComparison.Ordinal) ||
+            id.EndsWith("_shank", StringComparison.Ordinal) ||
+            id.EndsWith("_foot", StringComparison.Ordinal);
+
+        private static Vector3 HorizontalDirection(Vector3 value, Vector3 fallback)
+        {
+            Vector3 horizontal = Vector3.ProjectOnPlane(value, Vector3.up);
+            if (horizontal.sqrMagnitude < 1e-8f)
+                horizontal = Vector3.ProjectOnPlane(fallback, Vector3.up);
+            return horizontal.sqrMagnitude < 1e-8f ? Vector3.forward : horizontal.normalized;
+        }
+
         private static bool IsFinite(Vector3 value) =>
             float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
 
@@ -412,5 +798,33 @@ namespace PowerliftingSimulator.Squat.Unity
             phase == SquatPlayerGamePhase.WALKOUT_STEP_1 ||
             phase == SquatPlayerGamePhase.WALKOUT_STEP_2 ||
             phase == SquatPlayerGamePhase.SETTLE;
+
+        private sealed class LegKinematics
+        {
+            public string Side;
+            public Rigidbody Thigh;
+            public Rigidbody Shank;
+            public Rigidbody Foot;
+            public Vector3 HipInPelvis;
+            public Vector3 HipInThigh;
+            public Vector3 KneeInThigh;
+            public Vector3 KneeInShank;
+            public Vector3 AnkleInShank;
+            public Vector3 AnkleInFoot;
+            public Vector3 BaseHip;
+            public Vector3 BaseKnee;
+            public Vector3 BaseAnkle;
+            public Quaternion BaseThighRotation;
+            public Quaternion BaseShankRotation;
+            public Quaternion BaseFootRotation;
+            public Vector3 BaseHipToKneeDirection;
+            public Vector3 BaseKneeToAnkleDirection;
+            public float ThighLength;
+            public float ShankLength;
+            public float BaseHipAnkleDistance;
+            public float MaximumReach;
+            public float FootHeightMeters;
+            public Vector3 LandingAnkle;
+        }
     }
 }
