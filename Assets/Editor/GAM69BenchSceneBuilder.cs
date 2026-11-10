@@ -100,6 +100,33 @@ public static class GAM69BenchSceneBuilder
         EditorBuildSettings.scenes = scenes.ToArray();
     }
 
+    /// <summary>
+    /// Builds the Windows player from the scenes exactly as committed (no
+    /// scene regeneration), so the executable corresponds to the checked-out
+    /// commit. The caller records the commit and checks the tree is clean.
+    /// </summary>
+    [MenuItem("Powerlifting Simulator/GAM-69/3. Build Windows Player From Committed Scenes")]
+    public static void BuildWindowsPlayerFromCommittedScenes()
+    {
+        foreach (string scene in new[] { SquatScenePath, BenchPressPrototypeController.ScenePath })
+        {
+            if (!File.Exists(scene))
+                throw new InvalidOperationException("Missing committed scene " + scene);
+        }
+        string exe = Path.GetFullPath(WindowsExecutablePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(exe));
+        BuildReport report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+        {
+            scenes = new[] { SquatScenePath, BenchPressPrototypeController.ScenePath },
+            locationPathName = exe,
+            target = BuildTarget.StandaloneWindows64,
+            options = BuildOptions.None
+        });
+        if (report.summary.result != BuildResult.Succeeded || !File.Exists(exe))
+            throw new InvalidOperationException($"GAM-69 Windows build failed: {report.summary.result}, errors={report.summary.totalErrors}");
+        Debug.Log($"GAM-69 Windows build (committed scenes) succeeded: {exe} ({new FileInfo(exe).Length} bytes, {report.summary.totalTime.TotalSeconds:F1}s, warnings={report.summary.totalWarnings}).");
+    }
+
     [MenuItem("Powerlifting Simulator/GAM-69/2. Build Windows Player (Squat + Bench)")]
     public static void BuildWindowsPlayer()
     {
