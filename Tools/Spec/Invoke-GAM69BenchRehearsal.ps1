@@ -33,6 +33,7 @@ public static class GamInput {
     [StructLayout(LayoutKind.Sequential)] public struct INPUT { public uint type; public UNION u; }
     [DllImport("user32.dll", SetLastError = true)] public static extern uint SendInput(uint n, INPUT[] inputs, int size);
     [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
+    [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
     [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int cmd);
     [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
     [DllImport("user32.dll")] public static extern bool GetClientRect(IntPtr h, out RECT r);
@@ -52,6 +53,10 @@ public static class GamInput {
     }
 }
 "@
+
+# Physical pixels: without this, on a scaled display the client rect is
+# virtualized and screenshots capture only part of the game window.
+[GamInput]::SetProcessDPIAware() | Out-Null
 
 $Scan = @{ Space = 0x39; Enter = 0x1C; S = 0x1F; W = 0x11; Esc = 0x01; R = 0x13; G = 0x22; C = 0x2E }
 
@@ -107,7 +112,13 @@ Start-Sleep -Seconds 6
 $video = Join-Path $OutDir 'bench-rehearsal.mp4'
 $psi = New-Object System.Diagnostics.ProcessStartInfo
 $psi.FileName = (Get-Command ffmpeg).Source
-$psi.Arguments = "-y -loglevel error -f gdigrab -framerate 30 -i `"title=$($proc.MainWindowTitle)`" -c:v libx264 -preset veryfast -pix_fmt yuv420p `"$video`""
+# Capture the window's screen region: gdigrab by window title returns a
+# stale frame for a Direct3D window.
+$cp = [GamInput+POINT]@{ X = 0; Y = 0 }; [GamInput]::ClientToScreen($script:hwnd, [ref]$cp) | Out-Null
+$cr = New-Object GamInput+RECT; [GamInput]::GetClientRect($script:hwnd, [ref]$cr) | Out-Null
+$vw = (($cr.Right - $cr.Left) -band -2); $vh = (($cr.Bottom - $cr.Top) -band -2)
+$psi.Arguments = "-y -loglevel error -f gdigrab -framerate 30 -offset_x $($cp.X) -offset_y $($cp.Y) -video_size ${vw}x${vh} -i desktop -c:v libx264 -preset veryfast -pix_fmt yuv420p `"$video`""
+Note "video region $($cp.X),$($cp.Y) ${vw}x${vh}"
 $psi.UseShellExecute = $false
 $psi.RedirectStandardInput = $true
 $psi.CreateNoWindow = $true

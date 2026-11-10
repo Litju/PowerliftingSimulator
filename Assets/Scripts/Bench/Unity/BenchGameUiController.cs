@@ -62,6 +62,7 @@ namespace PowerliftingSimulator.Bench.Unity
         private GameObject _setupPanel, _liftPanel, _resultPanel;
         private Text _setupChecks, _setupStatus;
         private Button _liftOffButton;
+        private BenchMotionPhase _loggedPhase = BenchMotionPhase.Racked;
 
         public BenchScreen Screen { get; private set; } = BenchScreen.Setup;
         public string DisplayedSetupChecks => _setupChecks != null ? _setupChecks.text : string.Empty;
@@ -176,7 +177,14 @@ namespace PowerliftingSimulator.Bench.Unity
                 return;
             }
 
-            if (Screen == BenchScreen.Setup && _bench.Controller.Phase != BenchMotionPhase.Racked)
+            BenchMotionPhase phaseNow = _bench.Controller.Phase;
+            if (phaseNow != _loggedPhase)
+            {
+                BenchIntent i = _bench.Controller.LastIntent;
+                Debug.Log($"GAM69_UI phase {_loggedPhase}->{phaseNow} tick={_bench.LastObservation.Tick} intent lower={i.Lower01:F2} press={i.Press01:F2} confirm={i.Confirm} abort={i.Abort}");
+                _loggedPhase = phaseNow;
+            }
+            if (Screen == BenchScreen.Setup && phaseNow != BenchMotionPhase.Racked)
                 Show(BenchScreen.Lift);
             UpdateSignals();
             bool due = false;

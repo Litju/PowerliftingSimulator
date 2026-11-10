@@ -34,12 +34,14 @@ namespace PowerliftingSimulator.Bench.Unity
         public bool RetryRequested { get; private set; }
 
         /// <summary>A fresh attempt at the same load: reloads the bench scene (new plant, referee and record).</summary>
-        public void Retry()
+        public void Retry() => Retry("api");
+
+        private void Retry(string source)
         {
             Resolve();
             _audio.PlayClick();
             RetryRequested = true;
-            Debug.Log("GAM69_UI retry");
+            Debug.Log($"GAM69_UI retry source={source}");
             if (_bench != null)
                 _bench.ReloadWithLoad(_bench.LoadKg);
         }
@@ -49,7 +51,7 @@ namespace PowerliftingSimulator.Bench.Unity
             if (Screen != BenchScreen.Result)
                 return;
             if (keyboard.rKey.wasPressedThisFrame)
-                Retry();
+                Retry("key-R");
             else if (keyboard.gKey.wasPressedThisFrame || keyboard.backspaceKey.wasPressedThisFrame)
                 ReturnToGym();
         }
@@ -84,6 +86,8 @@ namespace PowerliftingSimulator.Bench.Unity
                 _verdictPlayed = true;
                 _audio.PlayVerdict(_bench.Referee.IsGoodLift);
                 Debug.Log($"GAM69_UI verdict={(_bench.Referee.IsGoodLift ? "GOOD_LIFT" : "NO_LIFT")} faults={_bench.Referee.Faults.Count}");
+                foreach (BenchFaultRecord f in _bench.Referee.Faults)
+                    Debug.Log($"GAM69_UI fault {f.RuleReference} {f.Fault} tick={f.Tick} {f.Detail}");
             }
         }
 
@@ -175,7 +179,7 @@ namespace PowerliftingSimulator.Bench.Unity
             Label(p, "LampsCaption", "chief referee decision", new Vector2(0f, 98f), new Vector2(600f, 24f), 15, FontStyle.Italic, Muted, TextAnchor.MiddleCenter);
             _resultReasons = Label(p, "Reasons", string.Empty, new Vector2(0f, 10f), new Vector2(1080f, 140f), 20, FontStyle.Bold, Color.white, TextAnchor.UpperCenter);
             _resultMetrics = Label(p, "Metrics", string.Empty, new Vector2(0f, -150f), new Vector2(1080f, 150f), 17, FontStyle.Normal, Muted, TextAnchor.UpperCenter);
-            MakeButton(p, "Retry", "RETRY  [R]", new Vector2(-220f, -300f), new Vector2(360f, 76f), Red, 24, Retry);
+            MakeButton(p, "Retry", "RETRY  [R]", new Vector2(-220f, -300f), new Vector2(360f, 76f), Red, 24, () => Retry("button"));
             MakeButton(p, "Gym", "RETURN TO GYM  [G]", new Vector2(220f, -300f), new Vector2(360f, 76f), Slate, 22, ReturnToGym);
         }
     }
