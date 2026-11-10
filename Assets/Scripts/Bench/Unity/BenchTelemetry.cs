@@ -27,6 +27,18 @@ namespace PowerliftingSimulator.Bench.Unity
         public float[] ArmSolverTorqueNm;  // |currentTorque| in joint space
         public bool SpotterActive;
         public BenchCommand Command;
+        // Geometric contact (rule input) next to the force diagnostics above.
+        public float HeadGapM, ShouldersGapM, ButtocksGapM, LeftFootGapM, RightFootGapM;
+        public bool HeadContact, ShouldersContact, ButtocksContact, LeftFootPlanted, RightFootPlanted;
+        // Wrist channels: requested vs applied vs realized, binding swing/twist
+        // demand per channel and the finite ceiling (maximumForce) it is against.
+        public Vector3 LeftWristRequestedDeg, LeftWristAppliedDeg, LeftWristRealizedDeg;
+        public Vector3 RightWristRequestedDeg, RightWristAppliedDeg, RightWristRealizedDeg;
+        public float LeftWristTwistDemand, LeftWristSwingDemand, RightWristTwistDemand, RightWristSwingDemand;
+        public float LeftWristCeilingNm, RightWristCeilingNm;
+        // Foot-loop actuation: the leg reference depth (m, + = into the floor)
+        // the loop commanded this tick, against its saturation bounds.
+        public float LeftLegDepthM, RightLegDepthM;
     }
 
     public sealed class BenchTelemetry
@@ -49,7 +61,11 @@ namespace PowerliftingSimulator.Bench.Unity
                 "lElbowDeg,rElbowDeg,lShoulderCmd,lElbowCmd,lWristCmd,rShoulderCmd,rElbowCmd,rWristCmd," +
                 "lShoulderReal,lElbowReal,lWristReal,rShoulderReal,rElbowReal,rWristReal," +
                 "lShoulderDemand,lElbowDemand,lWristDemand,rShoulderDemand,rElbowDemand,rWristDemand," +
-                "lShoulderTq,lElbowTq,lWristTq,rShoulderTq,rElbowTq,rWristTq,spotter");
+                "lShoulderTq,lElbowTq,lWristTq,rShoulderTq,rElbowTq,rWristTq,spotter," +
+                "headGap,shouldersGap,buttocksGap,lFootGap,rFootGap,headContact,shouldersContact,buttocksContact,lFootPlanted,rFootPlanted," +
+                "lWristReqX,lWristReqY,lWristReqZ,lWristAppX,lWristAppY,lWristAppZ,lWristRealX,lWristRealY,lWristRealZ," +
+                "rWristReqX,rWristReqY,rWristReqZ,rWristAppX,rWristAppY,rWristAppZ,rWristRealX,rWristRealY,rWristRealZ," +
+                "lWristTwistDemand,lWristSwingDemand,rWristTwistDemand,rWristSwingDemand,lWristCeilingNm,rWristCeilingNm,lLegDepth,rLegDepth");
             foreach (BenchTelemetrySample s in _samples)
             {
                 b.Append(s.Tick).Append(',').Append(s.TimeS.ToString("F3", c)).Append(',').Append(s.Phase).Append(',').Append(s.RefereeState).Append(',').Append(s.Command).Append(',');
@@ -64,7 +80,17 @@ namespace PowerliftingSimulator.Bench.Unity
                     for (int i = 0; i < 6; i++)
                         b.Append(block == null ? "nan" : F(block[i])).Append(',');
                 }
-                b.Append(s.SpotterActive ? 1 : 0).AppendLine();
+                b.Append(s.SpotterActive ? 1 : 0).Append(',');
+                foreach (float v in new[] { s.HeadGapM, s.ShouldersGapM, s.ButtocksGapM, s.LeftFootGapM, s.RightFootGapM })
+                    b.Append(F(v)).Append(',');
+                foreach (bool v in new[] { s.HeadContact, s.ShouldersContact, s.ButtocksContact, s.LeftFootPlanted, s.RightFootPlanted })
+                    b.Append(v ? 1 : 0).Append(',');
+                V(b, s.LeftWristRequestedDeg); V(b, s.LeftWristAppliedDeg); V(b, s.LeftWristRealizedDeg);
+                V(b, s.RightWristRequestedDeg); V(b, s.RightWristAppliedDeg); V(b, s.RightWristRealizedDeg);
+                b.Append(F(s.LeftWristTwistDemand)).Append(',').Append(F(s.LeftWristSwingDemand)).Append(',')
+                    .Append(F(s.RightWristTwistDemand)).Append(',').Append(F(s.RightWristSwingDemand)).Append(',')
+                    .Append(F(s.LeftWristCeilingNm)).Append(',').Append(F(s.RightWristCeilingNm)).Append(',')
+                    .Append(F(s.LeftLegDepthM)).Append(',').Append(F(s.RightLegDepthM)).AppendLine();
             }
             return b.ToString();
         }

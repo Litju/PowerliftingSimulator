@@ -48,6 +48,73 @@ namespace PowerliftingSimulator.Bench.Unity
         public static void Clear() => s_roles.Clear();
     }
 
+    /// <summary>Geometric contact observation, independent of load.</summary>
+    public static class BenchGeometry
+    {
+        /// <summary>Search range of <see cref="VerticalClearance"/>; a clearance at or above it reads as this value.</summary>
+        public const float ClearanceSearchM = 0.05f;
+
+        /// <summary>
+        /// Rule-level contact measurement: the smallest downward shift (world
+        /// -Y) that brings <paramref name="region"/> into overlap with the
+        /// horizontal <paramref name="surface"/> below it (bench pad top,
+        /// platform), found by bisection on exact penetration queries to
+        /// 0.1 mm. 0 when already touching. Independent of load.
+        /// </summary>
+        public static float VerticalClearance(Collider region, Collider surface)
+        {
+            if (region == null || surface == null)
+                return float.NaN;
+            Vector3 p = region.transform.position;
+            Quaternion q = region.transform.rotation;
+            bool Overlaps(float d) => Physics.ComputePenetration(region, p + Vector3.down * d, q,
+                surface, surface.transform.position, surface.transform.rotation, out _, out _);
+            if (Overlaps(0f))
+                return 0f;
+            if (!Overlaps(ClearanceSearchM))
+                return ClearanceSearchM;
+            float lo = 0f, hi = ClearanceSearchM;
+            while (hi - lo > 0.0001f)
+            {
+                float mid = 0.5f * (lo + hi);
+                if (Overlaps(mid))
+                    hi = mid;
+                else
+                    lo = mid;
+            }
+            return hi;
+        }
+
+        /// <summary>
+        /// Approximate separation of two convex colliders by alternating
+        /// closest-point projection. Converges slowly for nearly parallel
+        /// faces (it overestimates there), so it is used only to confirm that
+        /// pairs known to be far apart read far apart - never for contact.
+        /// </summary>
+        public static float Gap(Collider a, Collider b)
+        {
+            if (a == null || b == null)
+                return float.NaN;
+            if (Physics.ComputePenetration(a, a.transform.position, a.transform.rotation,
+                    b, b.transform.position, b.transform.rotation, out _, out _))
+                return 0f;
+            Vector3 p = a.bounds.center;
+            Vector3 q = b.ClosestPoint(p);
+            for (int i = 0; i < 12; i++)
+            {
+                p = a.ClosestPoint(q);
+                Vector3 next = b.ClosestPoint(p);
+                if ((next - q).sqrMagnitude < 1e-12f)
+                {
+                    q = next;
+                    break;
+                }
+                q = next;
+            }
+            return Vector3.Distance(p, q);
+        }
+    }
+
     /// <summary>
     /// Accumulates the solver's normal impulses on one Rigidbody, per surface
     /// it touches, across every substep of a tick. The tick-averaged force is

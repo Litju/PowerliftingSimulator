@@ -72,8 +72,21 @@ namespace PowerliftingSimulator.Bench
             float saturatedShare = liftProper.Count(s => s.ArmDemand.Max() > PoweredJointController.ModeledDemandSaturationThreshold) / (float)liftProper.Count;
             Assert.That(saturatedShare, Is.LessThanOrEqualTo(0.01f), report);
             Assert.That(liftProper.Max(s => s.ArmDemand.Max()), Is.LessThan(1.25f), report);
-            // Supports held throughout the lift proper.
+            // Supports held throughout the lift proper. Rule level: geometric
+            // contact of every region on every tick (what the referee judges).
             List<BenchTelemetrySample> proper = t.Where(s => s.Tick >= start && s.Tick <= rack).ToList();
+            string contacts = DescribeContacts(proper);
+            H.Write("gateC-legal-contacts.txt", contacts);
+            Assert.That(proper.All(s => s.HeadContact && s.ShouldersContact && s.ButtocksContact), contacts);
+            Assert.That(proper.All(s => s.LeftFootPlanted && s.RightFootPlanted), contacts);
+            // The geometry must actually be observed (NaN would silently fall
+            // back to force) and every region must touch geometrically.
+            float tol = (float)BenchRulebook.ContactGapToleranceM;
+            Func<BenchTelemetrySample, float[]> gaps = s => new[] { s.HeadGapM, s.ShouldersGapM, s.ButtocksGapM, s.LeftFootGapM, s.RightFootGapM };
+            Assert.That(proper.All(s => gaps(s).All(g => !float.IsNaN(g))), "geometric contact was not observed\n" + contacts);
+            Assert.That(proper.All(s => gaps(s).All(g => g <= tol)), "a support region separated geometrically\n" + contacts);
+            // Physical level (diagnostic, not a rule): the supine body actually
+            // rests on the pad - head, shoulders and buttocks carry load.
             Assert.That(proper.Min(s => s.HeadN), Is.GreaterThan(BenchRulebook.ContactForceFloorN), report);
             Assert.That(proper.Min(s => s.ShouldersN), Is.GreaterThan(BenchRulebook.ContactForceFloorN), report);
             Assert.That(proper.Min(s => s.ButtocksN), Is.GreaterThan(BenchRulebook.ContactForceFloorN), report);
@@ -228,6 +241,28 @@ namespace PowerliftingSimulator.Bench
             while (!(bench.AttemptFinished || (referee.IsComplete && TimeSinceComplete(referee) > 12.0)) && H.Tick < deadline)
                 yield return null;
             yield return H.WaitTicks(20);
+        }
+
+        /// <summary>Geometric contact next to load bearing, and the wrist channels at their peak demand.</summary>
+        private static string DescribeContacts(List<BenchTelemetrySample> p)
+        {
+            var b = new StringBuilder();
+            b.AppendLine($"lift proper ticks {p.Count}; contact tolerance {BenchRulebook.ContactGapToleranceM * 1000d:F1} mm, force floor {BenchRulebook.ContactForceFloorN:F1} N");
+            void Row(string name, Func<BenchTelemetrySample, float> gap, Func<BenchTelemetrySample, float> force, Func<BenchTelemetrySample, bool> contact) =>
+                b.AppendLine(string.Format(C, "  {0,-10} gap max {1,6:F2} mm mean {2,6:F2} mm | force min {3,6:F1} mean {4,6:F1} N, ticks < floor {5,3} | rule contact lost {6} ticks",
+                    name, p.Max(gap) * 1000f, p.Average(gap) * 1000f, p.Min(force), p.Average(force), p.Count(s => force(s) < BenchRulebook.ContactForceFloorN), p.Count(s => !contact(s))));
+            Row("head", s => s.HeadGapM, s => s.HeadN, s => s.HeadContact);
+            Row("shoulders", s => s.ShouldersGapM, s => s.ShouldersN, s => s.ShouldersContact);
+            Row("buttocks", s => s.ButtocksGapM, s => s.ButtocksN, s => s.ButtocksContact);
+            Row("left foot", s => s.LeftFootGapM, s => s.LeftFootN, s => s.LeftFootPlanted);
+            Row("right foot", s => s.RightFootGapM, s => s.RightFootN, s => s.RightFootPlanted);
+            BenchTelemetrySample peak = p.OrderByDescending(s => Mathf.Max(s.LeftWristSwingDemand, s.LeftWristTwistDemand, s.RightWristSwingDemand, s.RightWristTwistDemand)).First();
+            b.AppendLine(string.Format(C, "wrist peak demand tick {0} phase {1} pressS {2:F3}: ceiling L {3:F1} R {4:F1} N m", peak.Tick, peak.Phase, peak.PressS, peak.LeftWristCeilingNm, peak.RightWristCeilingNm));
+            b.AppendLine(string.Format(C, "  L requested {0} applied {1} realized {2} deg, twist {3:F3} swing {4:F3}",
+                peak.LeftWristRequestedDeg.ToString("F2"), peak.LeftWristAppliedDeg.ToString("F2"), peak.LeftWristRealizedDeg.ToString("F2"), peak.LeftWristTwistDemand, peak.LeftWristSwingDemand));
+            b.AppendLine(string.Format(C, "  R requested {0} applied {1} realized {2} deg, twist {3:F3} swing {4:F3}",
+                peak.RightWristRequestedDeg.ToString("F2"), peak.RightWristAppliedDeg.ToString("F2"), peak.RightWristRealizedDeg.ToString("F2"), peak.RightWristTwistDemand, peak.RightWristSwingDemand));
+            return b.ToString();
         }
 
         private static double TimeSinceComplete(BenchReferee referee) =>

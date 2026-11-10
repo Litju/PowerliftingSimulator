@@ -49,6 +49,9 @@ namespace PowerliftingSimulator.Bench
                 (Bench.Model != null ? "\n" + Bench.Model.Describe() : string.Empty));
         }
 
+        /// <summary>Adopts a bench that was loaded by the game flow itself (gym routing, retry).</summary>
+        public static void Adopt(BenchPressPrototypeController bench) => Bench = bench;
+
         public static ulong Tick => Bench.Foundation.Runtime.CurrentTime.Tick;
 
         public static IEnumerator WaitUntilTick(ulong tick, float timeoutSeconds = 60f)

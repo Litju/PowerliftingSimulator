@@ -64,6 +64,28 @@ namespace PowerliftingSimulator.Bench
             Assert.That(Mathf.Abs(m.HeadGapM), Is.LessThan(0.002f));
             Assert.That(Mathf.Abs(m.LeftSoleGapM), Is.LessThan(0.003f));
             Assert.That(Mathf.Abs(m.RightSoleGapM), Is.LessThan(0.003f));
+
+            // Geometric contact detector control: pairs known to be apart
+            // read a real separation, pairs known to touch read ~0.
+            var segs = bench.AthleteRig.Segments;
+            Collider floor = bench.AthleteRig.PlatformCollider, pad = bench.Equipment.Pad;
+            float headToFloor = BenchGeometry.Gap(segs["head_neck"].Collider, floor);
+            float footToPad = BenchGeometry.Gap(segs["left_foot"].Collider, pad);
+            float handToFloor = BenchGeometry.Gap(segs["right_hand"].Collider, floor);
+            float footToFloor = BenchGeometry.VerticalClearance(segs["left_foot"].Collider, floor);
+            float headToPad = BenchGeometry.VerticalClearance(segs["head_neck"].Collider, pad);
+            // A region lifted clear reads its clearance (or the search cap).
+            float handClearance = BenchGeometry.VerticalClearance(segs["right_hand"].Collider, floor);
+            Assert.That(handClearance, Is.EqualTo(BenchGeometry.ClearanceSearchM), "clearance search should saturate for a raised hand");
+            string gapReport = string.Format(C, "gap control: head-floor {0:F3} m, foot-pad {1:F3} m, hand-floor {2:F3} m | foot-floor {3:F4} m, head-pad {4:F4} m",
+                headToFloor, footToPad, handToFloor, footToFloor, headToPad);
+            H.Write("gateA-gap-control.txt", gapReport);
+            Assert.That(headToFloor, Is.GreaterThan(0.25f), gapReport);
+            Assert.That(footToPad, Is.GreaterThan(0.02f), gapReport);
+            Assert.That(handToFloor, Is.GreaterThan(0.5f), gapReport);
+            Assert.That(BenchGeometry.VerticalClearance(segs["pelvis"].Collider, pad), Is.LessThanOrEqualTo((float)BenchRulebook.ContactGapToleranceM), gapReport);
+            Assert.That(footToFloor, Is.LessThanOrEqualTo((float)BenchRulebook.ContactGapToleranceM), gapReport);
+            Assert.That(headToPad, Is.LessThanOrEqualTo((float)BenchRulebook.ContactGapToleranceM), gapReport);
         }
 
         [UnityTest]
@@ -110,7 +132,9 @@ namespace PowerliftingSimulator.Bench
             Rigidbody bar = H.Bench.Barbell.Body;
             float barWeight = bar.mass * G;
 
-            // Which frame Unity reports Joint.currentForce in, decided by equilibrium.
+            // Joint.currentForce contract, measured by BenchJointForceFrameControlTests
+            // with rotated bodies: world frame, force on the joint's own body (the
+            // hand). The hands' force on the bar is the reaction, -(L + R).
             Vector3 rawSum = Vector3.zero, localSum = Vector3.zero;
             foreach (BenchTelemetrySample s in w)
                 rawSum += s.LeftHandForceRaw + s.RightHandForceRaw;
@@ -132,10 +156,11 @@ namespace PowerliftingSimulator.Bench
                 contact.ToString("F2"), H.Mean(w, s => s.BarRackN), H.Mean(w, s => s.BarChestN), H.Mean(w, s => s.BarSafetyN)));
             b.AppendLine(string.Format(C, "bar mean acceleration {0} m/s2, speed now {1:F4} m/s, angular speed {2:F4} rad/s",
                 barAcc.ToString("F3"), bar.linearVelocity.magnitude, bar.angularVelocity.magnitude));
-            b.AppendLine(string.Format(C, "bar FBD residual |m a - (m g + F_hands + F_contact)| using raw sum: {0:F2} N",
-                (bar.mass * barAcc - (bar.mass * Physics.gravity + rawSum + contact)).magnitude));
-            b.AppendLine(string.Format(C, "bar FBD residual with sign-flipped hand force: {0:F2} N",
+            b.AppendLine(string.Format(C, "bar FBD residual |m a - (m g + F_hands->bar + F_contact)|, F_hands->bar = -(L+R): {0:F2} N",
                 (bar.mass * barAcc - (bar.mass * Physics.gravity - rawSum + contact)).magnitude));
+            b.AppendLine(string.Format(C, "rejected alternative (raw read as force on the bar): {0:F2} N",
+                (bar.mass * barAcc - (bar.mass * Physics.gravity + rawSum + contact)).magnitude));
+            b.AppendLine(string.Format(C, "bar rotation from identity {0:F2} deg", Quaternion.Angle(Quaternion.identity, bar.rotation)));
             b.AppendLine(string.Format(C, "athlete+bar vertical environment reaction {0:F1} N vs weight {1:F1} N", supportY, athleteWeight + barWeight));
             b.AppendLine(string.Format(C, "elbows L {0:F2} R {1:F2} deg; grip drift max L {2:F3} R {3:F3} mm; slip max {4:F3} mm",
                 H.Mean(w, s => s.LeftElbowFlexDeg), H.Mean(w, s => s.RightElbowFlexDeg),
@@ -146,11 +171,12 @@ namespace PowerliftingSimulator.Bench
             H.Write("gateB-hold.txt", b.ToString());
             H.WriteTelemetry("gateB-hold.csv");
 
-            double fbdRaw = (bar.mass * barAcc - (bar.mass * Physics.gravity + rawSum + contact)).magnitude;
-            double fbdFlip = (bar.mass * barAcc - (bar.mass * Physics.gravity - rawSum + contact)).magnitude;
+            double fbdContract = (bar.mass * barAcc - (bar.mass * Physics.gravity - rawSum + contact)).magnitude;
             Assert.That(H.Mean(w, s => s.BarRackN) + H.Mean(w, s => s.BarChestN) + H.Mean(w, s => s.BarSafetyN), Is.LessThan(1.0),
                 "held bar touches the rests, chest or safeties\n" + b);
-            Assert.That(System.Math.Min(fbdRaw, fbdFlip), Is.LessThan(0.05 * barWeight), "bar free-body diagram does not close with the measured hand forces\n" + b);
+            // Strict: the measured contract, no choice of sign or frame after the fact.
+            Assert.That(fbdContract, Is.LessThan(0.05 * barWeight), "bar free-body diagram does not close with the measured hand forces\n" + b);
+            Assert.That(rawSum.y, Is.LessThan(0f), "the bar must pull the hands down\n" + b);
             Assert.That(rawSum.magnitude, Is.EqualTo(barWeight).Within(0.05 * barWeight), "hands do not carry the bar weight\n" + b);
             Assert.That(leftRaw.magnitude, Is.GreaterThan(0.3f * barWeight), "left arm not carrying its share\n" + b);
             Assert.That(rightRaw.magnitude, Is.GreaterThan(0.3f * barWeight), "right arm not carrying its share\n" + b);

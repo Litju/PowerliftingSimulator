@@ -559,7 +559,12 @@ namespace PowerliftingSimulator.Bench.Unity
                 Mathf.Abs(ri.x - li.x),
                 reverse,
                 _spotter != null,
-                s["thorax"].Body.linearVelocity.y);
+                s["thorax"].Body.linearVelocity.y,
+                BenchGeometry.VerticalClearance(s["head_neck"].Collider, _equipment.Pad),
+                BenchGeometry.VerticalClearance(s["thorax"].Collider, _equipment.Pad),
+                BenchGeometry.VerticalClearance(s["pelvis"].Collider, _equipment.Pad),
+                BenchGeometry.VerticalClearance(s["left_foot"].Collider, athleteRig.PlatformCollider),
+                BenchGeometry.VerticalClearance(s["right_foot"].Collider, athleteRig.PlatformCollider));
         }
 
         private static Vector3 JointAnchor(PoweredJointController pc, string id)
@@ -602,6 +607,7 @@ namespace PowerliftingSimulator.Bench.Unity
                 torque[i] = d.SolverTorqueJointSpaceNm.magnitude;
             }
 
+            PoweredJointDiagnostic lw = Diagnostic("left_hand"), rw = Diagnostic("right_hand");
             _telemetry.Add(new BenchTelemetrySample
             {
                 Tick = time.Tick,
@@ -631,6 +637,16 @@ namespace PowerliftingSimulator.Bench.Unity
                 LeftFootN = (float)o.LeftFootFloorForceN,
                 RightFootN = (float)o.RightFootFloorForceN,
                 FeetOnBenchN = (float)o.FeetOnBenchForceN,
+                HeadGapM = (float)o.HeadBenchGapM,
+                ShouldersGapM = (float)o.ShouldersBenchGapM,
+                ButtocksGapM = (float)o.ButtocksBenchGapM,
+                LeftFootGapM = (float)o.LeftFootFloorGapM,
+                RightFootGapM = (float)o.RightFootFloorGapM,
+                HeadContact = o.HeadInContact,
+                ShouldersContact = o.ShouldersInContact,
+                ButtocksContact = o.ButtocksInContact,
+                LeftFootPlanted = o.LeftFootPlanted,
+                RightFootPlanted = o.RightFootPlanted,
                 BarChestN = (float)o.BarChestForceN,
                 BarBeltN = (float)o.BarBeltForceN,
                 BarRackN = (float)o.BarRackForceN,
@@ -641,8 +657,41 @@ namespace PowerliftingSimulator.Bench.Unity
                 ArmRealizedDeg = realized,
                 ArmDemand = demand,
                 ArmSolverTorqueNm = torque,
-                SpotterActive = _spotter != null
+                SpotterActive = _spotter != null,
+                LeftWristRequestedDeg = LogDeg(lw.RequestedTarget),
+                LeftWristAppliedDeg = LogDeg(lw.AppliedTarget),
+                LeftWristRealizedDeg = LogDeg(lw.ActualRelative),
+                RightWristRequestedDeg = LogDeg(rw.RequestedTarget),
+                RightWristAppliedDeg = LogDeg(rw.AppliedTarget),
+                RightWristRealizedDeg = LogDeg(rw.ActualRelative),
+                LeftWristTwistDemand = lw.TwistDriveDemandFraction,
+                LeftWristSwingDemand = lw.SwingDriveDemandFraction,
+                RightWristTwistDemand = rw.TwistDriveDemandFraction,
+                RightWristSwingDemand = rw.SwingDriveDemandFraction,
+                LeftWristCeilingNm = lw.MaximumForceNm,
+                RightWristCeilingNm = rw.MaximumForceNm,
+                LeftLegDepthM = _controller.LeftLegDepthM,
+                RightLegDepthM = _controller.RightLegDepthM
             });
+        }
+
+        private PoweredJointDiagnostic Diagnostic(string id)
+        {
+            PoweredJointController.PoweredJointRuntime joint = athleteRig.PoweredController.GetJoint(id);
+            return joint.HasPostPhysicsDiagnostic ? joint.PostPhysicsDiagnostic : joint.Diagnostic;
+        }
+
+        /// <summary>Joint-space rotation as a rotation vector, degrees (X is the twist/flexion axis).</summary>
+        private static Vector3 LogDeg(Quaternion q)
+        {
+            q.Normalize();
+            if (q.w < 0f)
+                q = new Quaternion(-q.x, -q.y, -q.z, -q.w);
+            float s = Mathf.Sqrt(q.x * q.x + q.y * q.y + q.z * q.z);
+            if (s < 1e-7f)
+                return Vector3.zero;
+            float angle = 2f * Mathf.Atan2(s, q.w) * Mathf.Rad2Deg;
+            return new Vector3(q.x, q.y, q.z) / s * angle;
         }
 
         /// <summary>Sum of every contact force the environment and body apply to the bar this tick, world frame.</summary>

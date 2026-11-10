@@ -45,7 +45,12 @@ namespace PowerliftingSimulator.Bench
             double forefingerSpacingM,
             bool reverseGrip,
             bool spotterContact,
-            double thoraxVelocityY)
+            double thoraxVelocityY,
+            double headBenchGapM = double.NaN,
+            double shouldersBenchGapM = double.NaN,
+            double buttocksBenchGapM = double.NaN,
+            double leftFootFloorGapM = double.NaN,
+            double rightFootFloorGapM = double.NaN)
         {
             Tick = tick;
             TimeSeconds = timeSeconds;
@@ -80,6 +85,11 @@ namespace PowerliftingSimulator.Bench
             ReverseGrip = reverseGrip;
             SpotterContact = spotterContact;
             ThoraxVelocityY = thoraxVelocityY;
+            HeadBenchGapM = headBenchGapM;
+            ShouldersBenchGapM = shouldersBenchGapM;
+            ButtocksBenchGapM = buttocksBenchGapM;
+            LeftFootFloorGapM = leftFootFloorGapM;
+            RightFootFloorGapM = rightFootFloorGapM;
         }
 
         public ulong Tick { get; }
@@ -118,6 +128,18 @@ namespace PowerliftingSimulator.Bench
         public bool SpotterContact { get; }
         public double ThoraxVelocityY { get; }
 
+        /// <summary>
+        /// Vertical clearance, metres, of the body region's collider above
+        /// the bench pad (head, shoulders, buttocks) or the platform
+        /// (feet); 0 when touching or overlapping. NaN when not observed, in
+        /// which case contact falls back to the force evidence alone.
+        /// </summary>
+        public double HeadBenchGapM { get; }
+        public double ShouldersBenchGapM { get; }
+        public double ButtocksBenchGapM { get; }
+        public double LeftFootFloorGapM { get; }
+        public double RightFootFloorGapM { get; }
+
         public bool BarMoving => BarSpeedMps > BenchRulebook.MotionlessSpeedMps ||
             Math.Abs(BarLeftEndVelocityY) > BenchRulebook.MotionlessSpeedMps ||
             Math.Abs(BarRightEndVelocityY) > BenchRulebook.MotionlessSpeedMps;
@@ -133,12 +155,28 @@ namespace PowerliftingSimulator.Bench
         public bool GripLegal => BothGripsAttached && !ReverseGrip &&
             ForefingerSpacingM <= BenchRulebook.MaxForefingerSpacingM;
 
-        public bool HeadInContact => HeadBenchForceN >= BenchRulebook.ContactForceFloorN;
-        public bool ShouldersInContact => ShouldersBenchForceN >= BenchRulebook.ContactForceFloorN;
-        public bool ButtocksInContact => ButtocksBenchForceN >= BenchRulebook.ContactForceFloorN;
+        // Rule-level contact (4.2(2), 4.2.1(2), 4.2.1(9)) is geometric: the
+        // region touches its surface. A positive normal force proves contact,
+        // but zero force does not prove separation - a flat foot resting on
+        // the platform may carry nothing while the legs push elsewhere, and
+        // feet may move while staying flat. Load-bearing is kept separately as
+        // a diagnostic and is never a rule input on its own.
+        public bool HeadInContact => Touching(HeadBenchForceN, HeadBenchGapM);
+        public bool ShouldersInContact => Touching(ShouldersBenchForceN, ShouldersBenchGapM);
+        public bool ButtocksInContact => Touching(ButtocksBenchForceN, ButtocksBenchGapM);
 
-        public bool LeftFootPlanted => LeftFootFlat && LeftFootFloorForceN >= BenchRulebook.ContactForceFloorN;
-        public bool RightFootPlanted => RightFootFlat && RightFootFloorForceN >= BenchRulebook.ContactForceFloorN;
+        public bool LeftFootPlanted => LeftFootFlat && Touching(LeftFootFloorForceN, LeftFootFloorGapM);
+        public bool RightFootPlanted => RightFootFlat && Touching(RightFootFloorForceN, RightFootFloorGapM);
+
+        /// <summary>Diagnostic only: the region carries at least the contact force floor.</summary>
+        public bool HeadLoadBearing => HeadBenchForceN >= BenchRulebook.ContactForceFloorN;
+        public bool ShouldersLoadBearing => ShouldersBenchForceN >= BenchRulebook.ContactForceFloorN;
+        public bool ButtocksLoadBearing => ButtocksBenchForceN >= BenchRulebook.ContactForceFloorN;
+        public bool LeftFootLoadBearing => LeftFootFloorForceN >= BenchRulebook.ContactForceFloorN;
+        public bool RightFootLoadBearing => RightFootFloorForceN >= BenchRulebook.ContactForceFloorN;
+
+        private static bool Touching(double forceN, double gapM) =>
+            forceN >= BenchRulebook.ContactForceFloorN || gapM <= BenchRulebook.ContactGapToleranceM;
 
         public bool BarOnChest => BarChestForceN >= BenchRulebook.ChestTouchForceN;
         public bool BarOnBelt => BarBeltForceN >= BenchRulebook.ChestTouchForceN;

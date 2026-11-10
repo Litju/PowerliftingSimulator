@@ -59,6 +59,13 @@ namespace PowerliftingSimulator.Bench
         public const double ContactForceFloorN = 5.0;
         public const int ContactLossTicks = 3;
 
+        // Geometric contact. A region whose collider is within this distance
+        // of its surface (bench pad, platform) touches it, whatever load it
+        // carries. Game approximation: 5 mm is half PhysX's default 10 mm
+        // contact offset and well below any deliberate lift of a head, hip or
+        // heel. Either positive force or this geometry counts as contact.
+        public const double ContactGapToleranceM = 0.005;
+
         // Bar touch on the chest or abdomen.
         public const double ChestTouchForceN = 5.0;
 

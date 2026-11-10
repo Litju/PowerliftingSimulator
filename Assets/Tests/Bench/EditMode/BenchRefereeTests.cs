@@ -155,6 +155,36 @@ namespace PowerliftingSimulator.Bench
         }
 
         [Test]
+        public void CONTACT_IS_GEOMETRIC_AN_UNLOADED_FLAT_FOOT_OR_HEAD_IS_STILL_IN_CONTACT()
+        {
+            // Zero normal force alone does not prove separation (GAM-69 review).
+            BenchReferee unloadedFoot = Run(LegalLift(o => o.UnloadedFlatFootTicks = 40));
+            BenchReferee unloadedHead = Run(LegalLift(o => o.UnloadedHeadTicks = 40));
+            BenchReferee raised = Run(LegalLift(o => o.RaisedFootTicks = 6));
+            Assert.That(unloadedFoot.IsGoodLift, Faults(unloadedFoot));
+            Assert.That(unloadedHead.IsGoodLift, Faults(unloadedHead));
+            Assert.That(raised.HasFault(BenchFault.FootLifted), Faults(raised));
+            Assert.That(raised.IsGoodLift, Is.False);
+        }
+
+        [Test]
+        public void UNOBSERVED_GEOMETRY_FALLS_BACK_TO_FORCE_EVIDENCE()
+        {
+            var flat = new BenchObservation(0, 0, 1, 0, 0, 0, 0, 1, 1, 2, 2, false, false,
+                0, 300, 250, 0, 150, true, true, 0, 0, 0, 0, 0, true, true, 0, 0, 0.74, false, false, 0);
+            Assert.That(flat.HeadInContact, Is.False);
+            Assert.That(flat.LeftFootPlanted, Is.False);
+            Assert.That(flat.ShouldersInContact, Is.True);
+            var touching = new BenchObservation(0, 0, 1, 0, 0, 0, 0, 1, 1, 2, 2, false, false,
+                0, 300, 250, 0, 150, true, true, 0, 0, 0, 0, 0, true, true, 0, 0, 0.74, false, false, 0,
+                0.0, double.NaN, double.NaN, 0.004, double.NaN);
+            Assert.That(touching.HeadInContact, Is.True);
+            Assert.That(touching.HeadLoadBearing, Is.False);
+            Assert.That(touching.LeftFootPlanted, Is.True);
+            Assert.That(touching.LeftFootLoadBearing, Is.False);
+        }
+
+        [Test]
         public void FOOT_ON_THE_BENCH_IS_A_FAULT()
         {
             BenchReferee referee = Run(LegalLift(o => o.FootOnBenchTicks = 5));
@@ -279,6 +309,9 @@ namespace PowerliftingSimulator.Bench
             public int FootLiftedTicks;
             public int FootNotFlatTicks;
             public int FootOnBenchTicks;
+            public int UnloadedFlatFootTicks;
+            public int RaisedFootTicks;
+            public int UnloadedHeadTicks;
             public bool BarDownwardMidPress;
             public bool OneEndDownwardMidPress;
             public bool MissChest;
@@ -367,6 +400,14 @@ namespace PowerliftingSimulator.Bench
                 lift.Hold(10, s => s.BarSpeed = 0.0);
             if (o.FootLiftedTicks > 0)
                 lift.Hold(o.FootLiftedTicks, s => s.LeftFootN = 0);
+            // Geometry observed: a flat foot touching the platform with no load,
+            // a foot 20 mm above it, and a head resting on the pad unloaded.
+            if (o.UnloadedFlatFootTicks > 0)
+                lift.Hold(o.UnloadedFlatFootTicks, s => { s.LeftFootN = 0; s.LeftFootGap = 0.0005; });
+            if (o.RaisedFootTicks > 0)
+                lift.Hold(o.RaisedFootTicks, s => { s.LeftFootN = 0; s.LeftFootGap = 0.020; });
+            if (o.UnloadedHeadTicks > 0)
+                lift.Hold(o.UnloadedHeadTicks, s => { s.HeadN = 0; s.HeadGap = 0.001; });
             if (o.FootNotFlatTicks > 0)
                 lift.Hold(o.FootNotFlatTicks, s => s.LeftFootFlat = false);
             if (o.FootOnBenchTicks > 0)
@@ -408,6 +449,8 @@ namespace PowerliftingSimulator.Bench
             public double LeftFootN = 150, RightFootN = 150;
             public bool LeftFootFlat = true, RightFootFlat = true;
             public double FeetOnBenchN;
+            public double HeadGap = double.NaN, ShouldersGap = double.NaN, ButtocksGap = double.NaN;
+            public double LeftFootGap = double.NaN, RightFootGap = double.NaN;
             public double ChestN, BeltN, RackN, SafetyN;
             public bool LeftGrip = true, RightGrip = true;
             public double LeftSlip, RightSlip;
@@ -474,7 +517,8 @@ namespace PowerliftingSimulator.Bench
                     s.LeftFootFlat, s.RightFootFlat, s.FeetOnBenchN,
                     s.ChestN, s.BeltN, s.RackN, s.SafetyN,
                     s.LeftGrip, s.RightGrip, s.LeftSlip, s.RightSlip,
-                    s.ForefingerSpacing, s.ReverseGrip, s.Spotter, s.ThoraxVy));
+                    s.ForefingerSpacing, s.ReverseGrip, s.Spotter, s.ThoraxVy,
+                    s.HeadGap, s.ShouldersGap, s.ButtocksGap, s.LeftFootGap, s.RightFootGap));
                 _tick++;
             }
         }

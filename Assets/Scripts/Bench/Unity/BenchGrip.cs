@@ -99,13 +99,28 @@ namespace PowerliftingSimulator.Bench.Unity
         }
 
         /// <summary>
-        /// ENGINE_SOLVER_DIAGNOSTIC: the constraint force the solver applied
-        /// for this grip, as Unity reports it on the joint. The qualification
-        /// test establishes which frame this is in by static equilibrium
-        /// before any controller uses it.
+        /// ENGINE_SOLVER_DIAGNOSTIC: the raw <c>Joint.currentForce</c>.
+        /// Unity 6000.3 documents it as "relative to connectedBody"; the
+        /// bounded control BenchJointForceFrameControlTests measured on
+        /// 6000.3.22f1, with both bodies at arbitrary rotations, that it is
+        /// the constraint force on the joint's own body (here the hand) in the
+        /// world frame. <see cref="ForceOnHandWorld"/> and
+        /// <see cref="ForceOnBarWorld"/> apply that measured contract.
+        /// It is the solver's constraint reaction, not a decomposed muscular
+        /// hand force.
         /// </summary>
         public Vector3 SolverForceRaw => Joint == null ? Vector3.zero : Joint.currentForce;
 
+        /// <summary>Raw <c>Joint.currentTorque</c>: the moment on the hand about the grip anchor, world frame (same control).</summary>
         public Vector3 SolverTorqueRaw => Joint == null ? Vector3.zero : Joint.currentTorque;
+
+        /// <summary>Force the bar applies to the hand, world frame, newtons.</summary>
+        public Vector3 ForceOnHandWorld => SolverForceRaw;
+
+        /// <summary>Force the hand applies to the bar, world frame (action-reaction of <see cref="ForceOnHandWorld"/>).</summary>
+        public Vector3 ForceOnBarWorld => -SolverForceRaw;
+
+        /// <summary>The measured contract as a pure function, for the control test: raw value -> force on the joint's own body, world.</summary>
+        public static Vector3 RawForceToOwnerWorld(Vector3 raw) => raw;
     }
 }

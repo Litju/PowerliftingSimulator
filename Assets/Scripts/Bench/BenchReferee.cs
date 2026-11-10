@@ -287,11 +287,11 @@ namespace PowerliftingSimulator.Bench
 
         private BenchCommand MonitorLiftProper(in BenchObservation o)
         {
-            Track(ref _headLoss, !o.HeadInContact, BenchFault.HeadRaised, o, $"head bench force {o.HeadBenchForceN:F1} N");
-            Track(ref _shoulderLoss, !o.ShouldersInContact, BenchFault.ShouldersRaised, o, $"shoulder bench force {o.ShouldersBenchForceN:F1} N");
-            Track(ref _buttockLoss, !o.ButtocksInContact, BenchFault.ButtocksRaised, o, $"buttocks bench force {o.ButtocksBenchForceN:F1} N");
-            Track(ref _leftFootLoss, !o.LeftFootPlanted, BenchFault.FootLifted, o, $"left foot {o.LeftFootFloorForceN:F1} N flat={o.LeftFootFlat}");
-            Track(ref _rightFootLoss, !o.RightFootPlanted, BenchFault.FootLifted, o, $"right foot {o.RightFootFloorForceN:F1} N flat={o.RightFootFlat}");
+            Track(ref _headLoss, !o.HeadInContact, BenchFault.HeadRaised, o, $"head bench force {o.HeadBenchForceN:F1} N gap {Mm(o.HeadBenchGapM)}");
+            Track(ref _shoulderLoss, !o.ShouldersInContact, BenchFault.ShouldersRaised, o, $"shoulder bench force {o.ShouldersBenchForceN:F1} N gap {Mm(o.ShouldersBenchGapM)}");
+            Track(ref _buttockLoss, !o.ButtocksInContact, BenchFault.ButtocksRaised, o, $"buttocks bench force {o.ButtocksBenchForceN:F1} N gap {Mm(o.ButtocksBenchGapM)}");
+            Track(ref _leftFootLoss, !o.LeftFootPlanted, BenchFault.FootLifted, o, $"left foot {o.LeftFootFloorForceN:F1} N gap {Mm(o.LeftFootFloorGapM)} flat={o.LeftFootFlat}");
+            Track(ref _rightFootLoss, !o.RightFootPlanted, BenchFault.FootLifted, o, $"right foot {o.RightFootFloorForceN:F1} N gap {Mm(o.RightFootFloorGapM)} flat={o.RightFootFlat}");
             Track(ref _footOnBench, o.FeetOnBenchForceN >= BenchRulebook.ContactForceFloorN, BenchFault.FootOnBench, o, $"feet on bench {o.FeetOnBenchForceN:F1} N");
 
             if (o.LeftHandSlipM > BenchRulebook.HandLateralSlipM || o.RightHandSlipM > BenchRulebook.HandLateralSlipM)
@@ -479,6 +479,8 @@ namespace PowerliftingSimulator.Bench
             State = BenchRefereeState.Completed;
             return Issue(command, o, basis);
         }
+
+        private static string Mm(double gapM) => double.IsNaN(gapM) ? "n/a" : $"{gapM * 1000d:F1} mm";
 
         private static string DescribeNotReady(in BenchObservation o)
         {
