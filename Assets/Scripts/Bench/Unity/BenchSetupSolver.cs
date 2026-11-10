@@ -111,6 +111,8 @@ namespace PowerliftingSimulator.Bench.Unity
         public Vector3 BarRack;
         public Vector3 BarLockout;
         public Vector3 BarTouch;
+        /// <summary>Solved lockout wrist rotation vector, joint space, degrees (X = extension).</summary>
+        public Vector3 LeftWristLockoutDeg, RightWristLockoutDeg;
         public float GripHalfWidth;
         public float ForefingerSpacingM;
         public Vector3 LeftGripAnchorLocal;
@@ -169,6 +171,8 @@ namespace PowerliftingSimulator.Bench.Unity
         public const float TouchBelowChestSurfaceM = 0.004f;   // reference slightly inside the chest so contact happens
         public const float TouchCaudalOffsetM = 0.06f;         // lower-chest touch, caudal of the thorax centre
         public const float LiftOffClearanceM = 0.060f;         // well above the 0.020 m front lip
+        public const float RackReachMarginM = 0.010f;          // lift-off top kept this far inside locked reach
+        public const float MaxRackElbowFlexDeg = 45f;
         /// <summary>
         /// Initial contact closure of the supported surfaces (thorax, pelvis,
         /// head) into the pad. A unilateral contact carries load only once it
@@ -185,6 +189,20 @@ namespace PowerliftingSimulator.Bench.Unity
         /// Measured without it: a foot unloaded to 0 N right after Start.
         /// </summary>
         public const float FootDriveIntoFloorM = 0.004f;
+
+        /// <summary>
+        /// Preferred wrist extension of the grip keyframes (joint-space twist
+        /// about the wrist's flexion axis), degrees. A bench grip carries the bar
+        /// low in the palm over the forearm with moderate extension. Without a
+        /// wrist term the bar-over-wrist stacking residual drove the solved grip
+        /// to 64 deg extension plus 31 deg swing, 6 deg from the 70 deg stop:
+        /// a visibly bent-back wrist and the wrist channel closest to its
+        /// ceiling (owner-reported, GAM-69).
+        /// </summary>
+        public const float WristPreferredExtensionDeg = 20f;
+
+        /// <summary>Weight of the wrist-neutrality residual, per radian.</summary>
+        private const double WristNeutralWeight = 4.0d;
 
         /// <summary>Grip point moved from mid-palm toward the wrist: the bar low in the palm.</summary>
         public const float GripTowardWristM = 0.020f;
@@ -308,21 +326,63 @@ namespace PowerliftingSimulator.Bench.Unity
             model.BarLockout = new Vector3(0f, lockY, model.ShoulderMidZ);
             _leftWristHold = lockout[2];
             _rightWristHold = lockout[5];
+            // Closed-chain grip consistency: both hands are locked to one rigid
+            // bar, which can only roll about its own axis. Along every path a
+            // hand keeps its lockout orientation relative to the bar, rolled by
+            // one bar roll shared by both hands; the wrist angle is whatever the
+            // forearm and that hand orientation make it. Holding the wrist fixed
+            // relative to the forearm instead is unreachable whenever a forearm
+            // leaves the sagittal plane, and the locked grip then fights the
+            // wrist drives (measured swing drift ~11 deg, demand > 1.2).
+            Dictionary<string, Pose> lockoutPoses = ArmPoses(thorax, lockout);
+            _leftHandHold = lockoutPoses["left_hand"].rotation;
+            _rightHandHold = lockoutPoses["right_hand"].rotation;
+            _lastLeftRollDeg = 0f;
+            _lastRightRollDeg = 0f;
+            model.LeftWristLockoutDeg = WristRotationVectorDeg(lockout[2]);
+            model.RightWristLockoutDeg = WristRotationVectorDeg(lockout[5]);
+            model.Notes.Add(string.Format(CultureInfo.InvariantCulture,
+                "lockout wrist rotvec (deg; X = extension) L {0} R {1}",
+                model.LeftWristLockoutDeg.ToString("F1"), model.RightWristLockoutDeg.ToString("F1")));
             model.LockoutElbowFlexDeg = LockoutElbowFlexDeg;
-            Quaternion[] rack = SolveArmsAtFreeHeight(thorax, model, uprightZ, RackElbowFlexDeg, lockout, out float rackY, out double rackRes);
+            // Rack height from measured reach, as a lifter sets the J-hooks: the
+            // lift-off raises the bar LiftOffClearanceM above the rests over the
+            // face, so rack + clearance must be reachable with locked elbows
+            // there. Bend the racked elbows until it is.
+            _lastLeftRollDeg = _lastRightRollDeg = 0f;
+            SolveArmsAtFreeHeight(thorax, model, uprightZ, LockoutElbowFlexDeg, lockout, out float reachY, out _);
+            float rackElbow = RackElbowFlexDeg;
+            Quaternion[] rack;
+            float rackY;
+            double rackRes;
+            while (true)
+            {
+                _lastLeftRollDeg = _lastRightRollDeg = 0f;
+                rack = SolveArmsAtFreeHeight(thorax, model, uprightZ, rackElbow, lockout, out rackY, out rackRes);
+                if (rackY + LiftOffClearanceM + RackReachMarginM <= reachY || rackElbow >= MaxRackElbowFlexDeg)
+                    break;
+                rackElbow += 5f;
+            }
             model.BarRack = new Vector3(0f, rackY, uprightZ);
-            model.RackElbowFlexDeg = RackElbowFlexDeg;
+            model.RackElbowFlexDeg = rackElbow;
+            model.Notes.Add(string.Format(CultureInfo.InvariantCulture,
+                "rack from reach: locked reach over the uprights y={0:F4} m, rack elbow {1:F0} deg -> rack y={2:F4} m (+clearance {3:F3} m)",
+                reachY, rackElbow, rackY, LiftOffClearanceM));
+            if (rackY + LiftOffClearanceM > reachY)
+                model.Notes.Add("REJECT: the lift-off clearance above the rests is out of reach");
             model.BarTouch = new Vector3(0f, model.ChestTopY + barRadius - TouchBelowChestSurfaceM, touchZ);
             if (lockRes > 0.003 || rackRes > 0.003)
                 model.Notes.Add($"REJECT: lockout/rack keyframes unreachable (residual {lockRes:F4}/{rackRes:F4} m)");
 
             // 7. Paths.
-            // The lift-off moves a bar that sits in the hooks: the wrist must
-            // stay put (a changing wrist reference cannot be realized while the
-            // hand is locked to a supported bar; measured wrist demand 2.0).
+            // Along both paths each hand holds its lockout orientation relative
+            // to the bar (closed-chain consistent, see above). Weighted strongly:
+            // a reference the locked grip cannot follow loads the wrist drives
+            // through the velocity feedforward (measured demand 1.9-2.0 before).
             _wristHoldWeight = 20d;
             // Built from the lockout back to the rests so its lockout end is
             // the same configuration the press path starts from.
+            _lastLeftRollDeg = _lastRightRollDeg = 0f; // bar roll 0 at lockout
             model.LiftPath = BuildPath("liftoff", thorax, model, lockout, t =>
             {
                 Vector3 up = model.BarRack + Vector3.up * LiftOffClearanceM;
@@ -330,10 +390,8 @@ namespace PowerliftingSimulator.Bench.Unity
                     ? Vector3.Lerp(model.BarRack, up, t / 0.3f)
                     : Vector3.Lerp(up, model.BarLockout, Smooth((t - 0.3f) / 0.7f));
             }, s => s >= 0.999f ? LockoutElbowFlexDeg : (float?)null, reverse: true);
-            // Same lesson on the press path: a drifting wrist reference against
-            // a loaded locked grip saturates the wrist drives through the
-            // velocity feedforward (measured demand 1.9 at 4-5 deg error).
             _wristHoldWeight = 20d;
+            _lastLeftRollDeg = _lastRightRollDeg = 0f; // bar roll 0 at lockout
             model.PressPath = BuildPath("press", thorax, model, lockout, t =>
             {
                 float e = Smooth(t);
@@ -521,6 +579,8 @@ namespace PowerliftingSimulator.Bench.Unity
         private double _wristHoldWeight = 1d;
         private Quaternion? _leftWristHold;
         private Quaternion? _rightWristHold;
+        private Quaternion _leftHandHold = Quaternion.identity;
+        private Quaternion _rightHandHold = Quaternion.identity;
 
         private Quaternion[] SolveArm(Pose thorax, BenchPlantModel model, bool left, Vector3 barCenter, float? elbowDeg, bool freeHeight,
             Quaternion[] seed, out Vector3 reachedBarCenter, out double residualM)
@@ -588,20 +648,30 @@ namespace PowerliftingSimulator.Bench.Unity
                     r.Add(8d * (x[3] - elbowDeg.Value * Mathf.Deg2Rad));
                 if (wristHold.HasValue)
                 {
-                    // Path mode: the hand keeps its lockout relation to the
-                    // forearm; the bar rolls with the hands. No palm target.
-                    Quaternion dw = Quaternion.Inverse(wristHold.Value) * qw;
-                    dw.ToAngleAxis(out float dwDeg, out Vector3 dwAxis);
-                    if (dwDeg > 180f) dwDeg -= 360f;
-                    Vector3 dwVec = float.IsFinite(dwAxis.x) ? dwAxis * (dwDeg * Mathf.Deg2Rad) : Vector3.zero;
-                    r.Add(_wristHoldWeight * dwVec.x); r.Add(_wristHoldWeight * dwVec.y); r.Add(_wristHoldWeight * dwVec.z);
-                    r.Add(0d); r.Add(0d); r.Add(0d); r.Add(0d);
+                    // Path mode: the hand keeps its lockout orientation relative
+                    // to the bar, rolled by the bar roll (x[rollIndex], from 0
+                    // at lockout) about the bar axis. Both hands share that roll:
+                    // the right arm is tied to the roll the left just solved.
+                    Quaternion handTarget = Quaternion.AngleAxis((float)(x[rollIndex] * Mathf.Rad2Deg), Vector3.right) *
+                        (left ? _leftHandHold : _rightHandHold);
+                    Quaternion dh = Quaternion.Inverse(handTarget) * hand.rotation;
+                    dh.ToAngleAxis(out float dhDeg, out Vector3 dhAxis);
+                    if (dhDeg > 180f) dhDeg -= 360f;
+                    Vector3 dhVec = float.IsFinite(dhAxis.x) ? dhAxis * (dhDeg * Mathf.Deg2Rad) : Vector3.zero;
+                    r.Add(_wristHoldWeight * dhVec.x); r.Add(_wristHoldWeight * dhVec.y); r.Add(_wristHoldWeight * dhVec.z);
+                    r.Add(left ? 0.3d * (x[rollIndex] - rollSeed) : _wristHoldWeight * (x[rollIndex] - _lastLeftRollDeg * Mathf.Deg2Rad));
+                    r.Add(0d); r.Add(0d); r.Add(0d);
                 }
                 else
                 {
                     // Keyframe mode: palm toward the feet at a solved tilt.
                     r.Add(1.5d * (n.x - normalTarget.x)); r.Add(1.5d * (n.y - normalTarget.y)); r.Add(1.5d * (n.z - normalTarget.z));
                     r.Add(0.3d * (x[rollIndex] - rollSeed));
+                    // Wrist near neutral: moderate extension (mirrored by side), no swing.
+                    double extension = (left ? 1d : -1d) * WristPreferredExtensionDeg * Mathf.Deg2Rad;
+                    r.Add(WristNeutralWeight * (x[4] - extension));
+                    r.Add(WristNeutralWeight * x[5]);
+                    r.Add(WristNeutralWeight * x[6]);
                 }
                 BenchKinematics.LimitResiduals(shoulder, qs, LimitMarginDeg, r, 25d);
                 BenchKinematics.LimitResiduals(elbow, qe, LimitMarginDeg, r, 25d);
@@ -634,7 +704,25 @@ namespace PowerliftingSimulator.Bench.Unity
                 p = bestP;
             }
 
-            double[] solved = BenchKinematics.LevenbergMarquardt(p, residualFunction, 300, out _);
+            double[] solved = BenchKinematics.LevenbergMarquardt(p, residualFunction, 300, out double solvedCost);
+            if (!wristHold.HasValue)
+            {
+                // The keyframe has two wrist basins (about 20 and 64 deg
+                // extension); which one a single descent lands in depends on
+                // the seed, and the two sides could land in different ones.
+                // Also descend from the preferred wrist and keep the cheaper.
+                double[] alt = (double[])p.Clone();
+                alt[4] = (left ? 1d : -1d) * WristPreferredExtensionDeg * Mathf.Deg2Rad;
+                alt[5] = 0d;
+                alt[6] = 0d;
+                alt[rollIndex] = -WristPreferredExtensionDeg * Mathf.Deg2Rad;
+                double[] altSolved = BenchKinematics.LevenbergMarquardt(alt, residualFunction, 300, out double altCost);
+                if (altCost < solvedCost)
+                {
+                    solved = altSolved;
+                    solvedCost = altCost;
+                }
+            }
             Quaternion s1 = BenchKinematics.FromParameters(shoulder, solved, 0);
             Quaternion e1 = BenchKinematics.FromParameters(elbow, solved, 3);
             Quaternion w1 = BenchKinematics.FromParameters(wrist, solved, 4);
@@ -649,6 +737,15 @@ namespace PowerliftingSimulator.Bench.Unity
             LastRollDeg = roll;
             reachedBarCenter = new Vector3(0f, ty, barCenter.z);
             return new[] { s1, e1, w1 };
+        }
+
+        private static Vector3 WristRotationVectorDeg(Quaternion q)
+        {
+            q = PoweredJointController.NormalizeCanonical(q);
+            q.ToAngleAxis(out float degrees, out Vector3 axis);
+            if (degrees > 180f)
+                degrees -= 360f;
+            return float.IsFinite(axis.x) ? axis * degrees : Vector3.zero;
         }
 
         private BenchArmPath BuildPath(string name, Pose thorax, BenchPlantModel model, Quaternion[] start,
