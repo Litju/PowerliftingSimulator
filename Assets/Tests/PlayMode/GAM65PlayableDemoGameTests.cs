@@ -134,10 +134,12 @@ namespace PowerliftingSimulator.Tests
             yield return null;
             CaptureGameFrame(captureDir, "03_training_gym_overview.png");
 
-            // Verify Bench and Deadlift stations are clearly marked unavailable in D0
-            _ui.InspectBenchStationUnavailable();
+            // GAM-69: the Bench station is now playable (it routes to its own
+            // scene); inspecting it focuses the bay without leaving the gym.
+            // Deadlift stays marked unavailable.
+            _ui.InspectBenchStation();
             Assert.That(_cameraDirector.StationFocus, Is.EqualTo(GymStationFocus.BenchStation));
-            Assert.That(_ui.GymStationNotice, Does.Contain("NOT AVAILABLE IN D0"));
+            Assert.That(_ui.GymStationNotice, Does.Contain("PLAYABLE"));
             _cameraDirector.SnapToTargetImmediate();
             yield return null;
             CaptureGameFrame(captureDir, "04_gym_bench_station_unavailable_d0.png");

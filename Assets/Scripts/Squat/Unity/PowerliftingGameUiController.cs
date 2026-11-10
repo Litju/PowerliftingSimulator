@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace PowerliftingSimulator.Squat.Unity
@@ -16,6 +17,13 @@ namespace PowerliftingSimulator.Squat.Unity
     public sealed class PowerliftingGameUiController : MonoBehaviour
     {
         private static PowerliftingScreenState? s_nextScreenAfterReload;
+
+        /// <summary>
+        /// GAM-69: the bench station is its own scene with its own lift-local
+        /// physics, controller and referee. The gym only routes to it by name;
+        /// the squat assembly does not reference the bench.
+        /// </summary>
+        public const string BenchSceneName = "BenchPressPrototype";
 
         [SerializeField] private SquatPhysicalPrototypeController squatController;
         [SerializeField] private PowerliftingCameraDirector cameraDirector;
@@ -31,7 +39,7 @@ namespace PowerliftingSimulator.Squat.Unity
         private bool _settingsOpen;
         private bool _quitRequested;
         private string _gymStationNotice =
-            "Select the Competition Squat Station to begin your training session. Bench Press and Deadlift stations are staged in the 3D gym for upcoming milestones.";
+            "Select the Competition Squat Station or the Bench Press Station to begin your training session. The Deadlift platform is staged for an upcoming milestone.";
 
         // Screen root panels
         private GameObject _mainMenuPanel;
@@ -268,7 +276,7 @@ namespace PowerliftingSimulator.Squat.Unity
             }
 
             _gymStationNotice =
-                "Select the Competition Squat Station (Center) to configure the barbell and perform a physically judged squat. Bench Press and Deadlift stations are environmental previews in D0.";
+                "Select the Competition Squat Station (Center) or the Bench Press Station (Left) to perform a physically judged lift. The Deadlift platform is an environmental preview.";
             TransitionToScreen(PowerliftingScreenState.TrainingGym, false);
             cameraDirector?.SetGymStationFocus(GymStationFocus.AllStationsOverview, false);
             UpdateGymStationCardHighlights(GymStationFocus.AllStationsOverview);
@@ -318,15 +326,25 @@ namespace PowerliftingSimulator.Squat.Unity
             TransitionToScreen(PowerliftingScreenState.SquatPreparation, false);
         }
 
-        public void InspectBenchStationUnavailable()
+        public void InspectBenchStation()
         {
             audioDirector?.PlayUiClick();
             cameraDirector?.SetGymStationFocus(GymStationFocus.BenchStation, false);
             UpdateGymStationCardHighlights(GymStationFocus.BenchStation);
             _gymStationNotice =
-                "BENCH PRESS STATION — NOT AVAILABLE IN D0: Environmental competition bench rack & 115 kg barbell staged for upcoming lift milestones. Select the Competition Squat Station to lift.";
+                "BENCH PRESS STATION — PLAYABLE: physically simulated, IPF-judged bench press with the 25 kg competition bar (bar + collars). Heavier loads are not yet physically qualified.";
             if (_gymNoticeText != null)
                 _gymNoticeText.text = _gymStationNotice;
+        }
+
+        /// <summary>Enters the bench station: loads the bench scene, which owns its own setup, lift and result flow.</summary>
+        public void SelectBenchStation()
+        {
+            InspectBenchStation();
+            _gymStationNotice = "Entering the Bench Press Station…";
+            if (_gymNoticeText != null)
+                _gymNoticeText.text = _gymStationNotice;
+            SceneManager.LoadScene(BenchSceneName, LoadSceneMode.Single);
         }
 
         public void InspectDeadliftStationUnavailable()
@@ -1097,19 +1115,19 @@ namespace PowerliftingSimulator.Squat.Unity
                 new Color(0.92f, 0.82f, 0.48f, 1f),
                 TextAnchor.MiddleCenter);
 
-            // Left Card: Bench Press (Unavailable in D0)
+            // Left Card: Bench Press (GAM-69, playable at the qualified 25 kg)
             RectTransform benchCard = CreateStationCard(
                 bottomDeck,
                 "BenchStationCard",
                 new Vector2(-600f, -24f),
                 new Vector2(550f, 248f),
                 "BENCH PRESS STATION",
-                "NOT AVAILABLE IN D0 BUILD",
-                new Color(0.62f, 0.38f, 0.12f, 1f),
-                "Competition bench rack & 115 kg display barbell staged in the left bay for upcoming lift milestones.",
-                "PREVIEW STATION (UNAVAILABLE IN D0)",
-                new Color(0.22f, 0.25f, 0.30f, 1f),
-                InspectBenchStationUnavailable,
+                "PLAYABLE · 25 kg QUALIFIED",
+                new Color(0.14f, 0.56f, 0.34f, 1f),
+                "Physically judged bench press: Lift-off, START, Touch & Pause, PRESS, Lockout, RACK & Rerack.",
+                "SELECT BENCH STATION  —  ENTER BENCH",
+                new Color(0.78f, 0.14f, 0.18f, 1f),
+                SelectBenchStation,
                 out _benchStationCardBg);
 
             // Center Card: Competition Squat (Available & Qualified)
