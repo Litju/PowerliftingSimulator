@@ -118,14 +118,23 @@ namespace PowerliftingSimulator.Bench
                     AddChanged(Instructions, ui.DisplayedInstruction);
                 }
                 BenchAudioCues audio = Object.FindFirstObjectByType<BenchAudioCues>();
-                if (audio != null && !string.IsNullOrEmpty(audio.LastCue))
-                    AddChanged(Cues, audio.LastCue);
+                if (audio != null && audio.CueHistory.Count >= Cues.Count)
+                {
+                    Cues.Clear();
+                    Cues.AddRange(audio.CueHistory);
+                }
                 BarKinematicEver |= bench.Barbell.Body.isKinematic || !bench.Barbell.Body.useGravity;
                 SpotterSeen |= bench.SpotterActive;
                 if (bench.Referee.StartGiven && !bench.Referee.IsComplete)
                 {
-                    foreach (Joint j in bench.Barbell.Body.GetComponents<Joint>())
-                        ForeignBarJointsDuringJudgedLift++;
+                    // Any joint owned by the bar or connected to it, other than the two grips.
+                    Rigidbody bar = bench.Barbell.Body;
+                    foreach (Joint j in Object.FindObjectsByType<Joint>(FindObjectsSortMode.None))
+                    {
+                        bool touchesBar = j.connectedBody == bar || j.GetComponent<Rigidbody>() == bar;
+                        if (touchesBar && j != bench.LeftGrip.Joint && j != bench.RightGrip.Joint)
+                            ForeignBarJointsDuringJudgedLift++;
+                    }
                 }
             }
 

@@ -17,7 +17,12 @@ namespace PowerliftingSimulator.Bench.Unity
         private PowerliftingSettingsManager _settings;
         private AudioClip _start, _press, _rack, _replace, _good, _noLift, _click, _clank;
 
+        private readonly System.Collections.Generic.List<string> _history = new System.Collections.Generic.List<string>();
+
         public string LastCue { get; private set; } = string.Empty;
+
+        /// <summary>Every cue played in this scene, in order (also when audio is muted or unavailable).</summary>
+        public System.Collections.Generic.IReadOnlyList<string> CueHistory => _history;
 
         private void Awake()
         {
@@ -62,6 +67,7 @@ namespace PowerliftingSimulator.Bench.Unity
         private void Play(AudioClip clip, float scale, string cue)
         {
             LastCue = cue;
+            _history.Add(cue);
             if (clip == null || _source == null)
                 return;
             float volume = _settings != null ? _settings.EffectiveVolume : AudioListener.volume;
