@@ -1,0 +1,13 @@
+{
+    "name": "PowerliftingSimulator.Bench.Tests.EditMode",
+    "rootNamespace": "PowerliftingSimulator.Bench",
+    "references": [
+        "PowerliftingSimulator.Bench"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ]
+}
