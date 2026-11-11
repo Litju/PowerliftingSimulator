@@ -1,0 +1,14 @@
+{
+    "name": "PowerliftingSimulator.Deadlift.Tests.PlayMode",
+    "rootNamespace": "PowerliftingSimulator.Deadlift",
+    "references": [
+        "PowerliftingSimulator.Foundation",
+        "PowerliftingSimulator.Foundation.Unity",
+        "PowerliftingSimulator.Athlete",
+        "PowerliftingSimulator.Equipment"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": []
+}
