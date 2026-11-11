@@ -1,0 +1,23 @@
+{
+    "name": "PowerliftingSimulator.Bench.Unity",
+    "rootNamespace": "PowerliftingSimulator.Bench.Unity",
+    "references": [
+        "PowerliftingSimulator.Bench",
+        "PowerliftingSimulator.Foundation",
+        "PowerliftingSimulator.Foundation.Unity",
+        "PowerliftingSimulator.Athlete",
+        "PowerliftingSimulator.Equipment",
+        "PowerliftingSimulator.Squat.Unity",
+        "Unity.InputSystem",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

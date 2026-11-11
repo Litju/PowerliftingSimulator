@@ -9,6 +9,9 @@ EditorBuildSettings:
     path: Assets/Scenes/Prototype/SquatPhysicalPrototype.unity
     guid: d5eebd4abb0040b5b438e4882738a708
   - enabled: 1
+    path: Assets/Scenes/Prototype/BenchPressPrototype.unity
+    guid: 829ae6642cb21184690a1f882af2fa9a
+  - enabled: 1
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   - enabled: 1

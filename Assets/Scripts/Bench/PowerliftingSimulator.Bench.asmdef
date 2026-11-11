@@ -1,0 +1,14 @@
+{
+    "name": "PowerliftingSimulator.Bench",
+    "rootNamespace": "PowerliftingSimulator.Bench",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}
