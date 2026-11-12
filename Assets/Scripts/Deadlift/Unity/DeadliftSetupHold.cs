@@ -12,11 +12,32 @@ namespace PowerliftingSimulator.Deadlift.Unity
     /// full effort at the athlete's finite family capacities, scaled by
     /// <see cref="StrengthScale"/> per joint family (1 = canonical). It never
     /// writes a body, the bar or a force.
+    ///
+    /// Optional static gravity reference (GAM-70, same physics as the accepted
+    /// squat's GAM-50 R9 trim, implemented here so the squat stays untouched):
+    /// a PD drive of stiffness K holding a load torque tau_g settles at the
+    /// error e = tau_g / K, so commanding the solved pose q* realizes q* - e,
+    /// not q*. <see cref="ComputeStaticGravityBias"/> measures tau_g once,
+    /// from the placed bodies at the initial condition, as the gravity moment
+    /// of each joint's free side about its anchor (grounded legs: the parent
+    /// side, with the upper body shared equally by the two legs; trunk, neck
+    /// and arms: the child subtree), and offsets each reference by tau_g / K in
+    /// the joint's logical frame, bounded by the joint's finite capacity. It is
+    /// a fixed reference correction, not feedback: it never reads state after
+    /// the initial condition.
     /// </summary>
     public sealed class DeadliftSetupHold : IPhysicalAthleteCommandSource
     {
+        private static readonly string[] UpperBody =
+        {
+            "pelvis", "abdomen", "thorax", "head_neck", "left_upper_arm", "right_upper_arm",
+            "left_forearm", "right_forearm", "left_hand", "right_hand"
+        };
+
         private readonly IReadOnlyDictionary<string, Quaternion> _targets;
         private readonly Dictionary<string, float> _scale = new Dictionary<string, float>(StringComparer.Ordinal);
+        private readonly Dictionary<string, Quaternion> _bias = new Dictionary<string, Quaternion>(StringComparer.Ordinal);
+        private readonly Dictionary<string, float> _biasTorqueNm = new Dictionary<string, float>(StringComparer.Ordinal);
 
         public DeadliftSetupHold(IReadOnlyDictionary<string, Quaternion> logicalTargets)
         {
@@ -28,6 +49,103 @@ namespace PowerliftingSimulator.Deadlift.Unity
 
         public bool Enabled { get; set; } = true;
 
+        /// <summary>Per-joint static gravity reference offset angle (deg) after <see cref="ComputeStaticGravityBias"/>.</summary>
+        public float BiasDegrees(string jointId) => _bias.TryGetValue(jointId, out Quaternion q) ? Quaternion.Angle(Quaternion.identity, q) : 0f;
+
+        /// <summary>Magnitude of the gravity torque (N m, capacity-bounded) each bias compensates.</summary>
+        public float BiasTorqueNm(string jointId) => _biasTorqueNm.TryGetValue(jointId, out float t) ? t : 0f;
+
+        public void ComputeStaticGravityBias(PhysicalAthleteRig rig)
+        {
+            if (rig == null)
+                throw new ArgumentNullException(nameof(rig));
+            _bias.Clear();
+            _biasTorqueNm.Clear();
+            Vector3 g = Physics.gravity;
+            foreach (PoweredJointController.PoweredJointRuntime joint in rig.PoweredController.Joints)
+            {
+                if (!joint.Profile.HasValue || !_targets.ContainsKey(joint.Id))
+                    continue;
+                // Same scope as the accepted GAM-50 R9 term: hips, knees and the
+                // two trunk joints. The ankles get none (they are the balance
+                // actuator; a static ankle term was measured to saturate the
+                // ankle drives at tick 10, run p8), nor do neck and arms.
+                bool inScope = joint.Id.EndsWith("_thigh", StringComparison.Ordinal) || joint.Id.EndsWith("_shank", StringComparison.Ordinal) ||
+                               joint.Id == "abdomen" || joint.Id == "thorax";
+                if (!inScope)
+                    continue;
+                ConfigurableJoint cj = joint.Joint;
+                Vector3 pivot = cj.transform.TransformPoint(cj.anchor);
+                Vector3 x = cj.transform.TransformDirection(cj.axis).normalized;
+                Vector3 y = Vector3.ProjectOnPlane(cj.transform.TransformDirection(cj.secondaryAxis), x).normalized;
+                Vector3 z = Vector3.Cross(x, y);
+                string side = joint.Id.StartsWith("left_", StringComparison.Ordinal) ? "left" : "right";
+                bool leg = joint.Id.EndsWith("_thigh", StringComparison.Ordinal) || joint.Id.EndsWith("_shank", StringComparison.Ordinal) ||
+                           joint.Id.EndsWith("_foot", StringComparison.Ordinal);
+
+                Vector3 moment = Vector3.zero;
+                void Add(string id, float share)
+                {
+                    Rigidbody b = rig.Segments[id].Body;
+                    moment += Vector3.Cross(b.worldCenterOfMass - pivot, b.mass * share * g);
+                }
+
+                if (leg)
+                {
+                    foreach (string id in UpperBody)
+                        Add(id, 0.5f);
+                    if (joint.Id.EndsWith("_shank", StringComparison.Ordinal) || joint.Id.EndsWith("_foot", StringComparison.Ordinal))
+                        Add(side + "_thigh", 1f);
+                    if (joint.Id.EndsWith("_foot", StringComparison.Ordinal))
+                        Add(side + "_shank", 1f);
+                }
+                else
+                {
+                    foreach (PhysicalSegmentRecipe recipe in PhysicalAthleteDefinition.Segments)
+                        if (InSubtree(recipe.Id, joint.Id))
+                            Add(recipe.Id, 1f);
+                }
+
+                // Drive torque on the child equals K e. Free child side: K e = -G;
+                // free parent side (grounded leg): K e = +G (GAM-50 R9 convention).
+                Vector3 required = leg ? moment : -moment;
+                Vector3 local = new Vector3(Vector3.Dot(required, x), Vector3.Dot(required, y), Vector3.Dot(required, z));
+                if (joint.Recipe.Kind == PhysicalJointKind.Hinge)
+                    local = new Vector3(local.x, 0f, 0f);
+                float capacity = joint.Profile.Value.BaseCapacityNm * (_scale.TryGetValue(joint.Id, out float s) ? s : 1f);
+                float magnitude = Mathf.Min(local.magnitude, capacity);
+                _biasTorqueNm[joint.Id] = magnitude;
+                float angleRad = magnitude / joint.Profile.Value.Spring;
+                _bias[joint.Id] = local.sqrMagnitude < 1e-12f ? Quaternion.identity : Quaternion.AngleAxis(angleRad * Mathf.Rad2Deg, local.normalized);
+            }
+        }
+
+        /// <summary>Carries another hold's initial-condition gravity reference over unchanged (no new measurement).</summary>
+        public void CopyStaticGravityBias(DeadliftSetupHold source)
+        {
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+            _bias.Clear();
+            _biasTorqueNm.Clear();
+            foreach (KeyValuePair<string, Quaternion> b in source._bias) _bias[b.Key] = b.Value;
+            foreach (KeyValuePair<string, float> t in source._biasTorqueNm) _biasTorqueNm[t.Key] = t.Value;
+        }
+
+        private static bool InSubtree(string segmentId, string rootId)
+        {
+            string current = segmentId;
+            while (current != null)
+            {
+                if (current == rootId)
+                    return true;
+                string parent = null;
+                foreach (PhysicalSegmentRecipe r in PhysicalAthleteDefinition.Segments)
+                    if (r.Id == current) { parent = r.ParentId; break; }
+                current = parent;
+            }
+            return false;
+        }
+
         public void PrepareCommands(
             PhysicalObservation previousObservation,
             SimulationTime time,
@@ -37,7 +155,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
             foreach (KeyValuePair<string, Quaternion> target in _targets)
             {
                 float scale = _scale.TryGetValue(target.Key, out float s) ? s : 1f;
-                sink.ApplyCommand(target.Key, new JointCommand(target.Value, Vector3.zero, Enabled ? 1f : 0f, scale), time.Tick);
+                Quaternion q = _bias.TryGetValue(target.Key, out Quaternion b) ? target.Value * b : target.Value;
+                sink.ApplyCommand(target.Key, new JointCommand(q, Vector3.zero, Enabled ? 1f : 0f, scale), time.Tick);
             }
         }
     }

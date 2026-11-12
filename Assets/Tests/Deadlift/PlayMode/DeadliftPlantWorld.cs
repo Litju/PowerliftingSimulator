@@ -122,6 +122,10 @@ namespace PowerliftingSimulator.Deadlift
         /// athlete at the solved setup pose, all velocities zero.
         /// </summary>
         public void PlaceAtSetup(float loadKg, bool attachGrips, bool ignoreBarVsGraspingLimbs = true)
+            => PlaceAtSetup(loadKg, attachGrips, attachGrips, ignoreBarVsGraspingLimbs);
+
+        /// <summary>As above, with each hand's grip chosen separately (GAM-70 A3 single-grip control).</summary>
+        public void PlaceAtSetup(float loadKg, bool attachLeft, bool attachRight, bool ignoreBarVsGraspingLimbs)
         {
             DeadliftSetupSpec spec = Model.Spec;
             Foundation.Runtime.HoldPhysicsUntilInitialStateValidated();
@@ -156,13 +160,17 @@ namespace PowerliftingSimulator.Deadlift
             if (ignoreBarVsGraspingLimbs)
                 IgnoreGraspedBarCollisions();
 
-            if (attachGrips)
+            if (attachLeft)
             {
                 LeftGrip = new BenchGrip("left");
-                RightGrip = new BenchGrip("right");
                 LeftGrip.Attach(Rig.Segments["left_hand"].Body, Bar.Body, Model.LeftGripAnchorLocal);
+                TickZeroMaxGripSeparationM = Mathf.Max(TickZeroMaxGripSeparationM, LeftGrip.AnchorSeparationM);
+            }
+            if (attachRight)
+            {
+                RightGrip = new BenchGrip("right");
                 RightGrip.Attach(Rig.Segments["right_hand"].Body, Bar.Body, Model.RightGripAnchorLocal);
-                TickZeroMaxGripSeparationM = Mathf.Max(LeftGrip.AnchorSeparationM, RightGrip.AnchorSeparationM);
+                TickZeroMaxGripSeparationM = Mathf.Max(TickZeroMaxGripSeparationM, RightGrip.AnchorSeparationM);
             }
 
             Hold = new DeadliftSetupHold(Model.SetupLogical);
@@ -326,7 +334,15 @@ namespace PowerliftingSimulator.Deadlift
                 s.RightGripForceRaw = RightGrip.SolverForceRaw;
             }
             Samples.Add(s);
+            AfterSample?.Invoke(time, observation, intent);
         }
+
+        /// <summary>
+        /// Extra read-only observers run inside the single authoritative
+        /// post-physics callback, after this world's own sample (the runtime
+        /// allows one callback owner).
+        /// </summary>
+        public event Action<SimulationTime, PhysicalObservation, PlayerIntentFrame> AfterSample;
 
         public Vector3 WholeBodyCom()
         {
