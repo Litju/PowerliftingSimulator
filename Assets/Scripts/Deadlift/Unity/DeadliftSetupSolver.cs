@@ -41,7 +41,64 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public List<double[]> WarmStarts = new List<double[]>();   // solutions of earlier rungs, tried as extra seeds
         public float MaxKneeFlexionDeg = 999f;             // standing carry: cap leg flexion
         public float MaxHipFlexionDeg = 999f;
+
+        // GAM-70 corrected feasibility formulation.
+        //
+        // CorrectedHandFrame is an OBSERVATION correction only: it measures the
+        // knuckle line as the real index-to-little MCP line instead of the
+        // palm-centre-to-index proxy (38.21 deg apart on this rig). It does not
+        // change which way the palm faces; that is Grip, a declared technique
+        // choice (IPF 2026 s4.3(1): the grip is optional). Pronated is the
+        // legacy target set (palm normal toward the athlete, index medial).
+        public bool CorrectedHandFrame = false;
+        public DeadliftGripStyle Grip = DeadliftGripStyle.Pronated;
+        public bool FreeStance = false;                    // stance width and toe-out are technique, not anatomy
+        public bool FreeForeAft = false;                   // feet-to-bar fore-aft distance is technique, not anatomy
+        public DeadliftTechnique Technique = DeadliftTechnique.Undeclared;
+        public DeadliftSupportMode Support = DeadliftSupportMode.GrippedGroundedBar;
+        public float BarMassKg = 75f;                      // the grounded bar of Gate A1
+        public bool RequireBarOverFoot = false;            // coaching preference only; reproduces the prior candidate when true
+        // Physical necessity behind the coaching rule: when the plates unload
+        // (hand pull = m_bar g) the feet are the only external support, so a
+        // quasi-static break from the same posture needs the athlete+bar COM
+        // inside the sole hull (rigid-body statics, Hibbeler). It constrains the
+        // bar position only through this moment balance.
+        public bool RequireLiftOffSupport = true;
+        public bool RequireShouldersAboveHips = true;      // candidate definition (hip-hinge setup), not an IPF rule
+        public bool GripWidthIsHard = false;               // grip width is a technique choice
+        public float SupportMarginM = 0.010f;              // COP margin inside the support polygon
+        public float BarLimbClearanceM = 0.0f;             // 0 = touching is allowed, penetration is not
+        public float RequiredJointMarginDeg = 0.0f;        // extra robustness margin on top of the authored range
+        public float ArmStraightnessWeight = 6f;           // preference only
+        public float TechniqueClearanceM = 0.010f;         // hand-vs-knee lateral separation for a declared technique
     }
+
+    /// <summary>
+    /// Which side of the shaft the palm is on. Both are chirally consistent for
+    /// a rigid hand: pronated = palm toward the athlete, index MCP medial (the
+    /// usual overhand deadlift grip); supinated = palm away from the athlete,
+    /// index MCP lateral (double underhand). IPF 2026 s4.3(1) leaves the grip
+    /// optional, so neither is a legality requirement.
+    /// </summary>
+    public enum DeadliftGripStyle { Pronated, Supinated }
+
+    /// <summary>
+    /// Coordination variant a candidate declares. Conventional: grip outside the
+    /// knees. Sumo: grip inside the knees. Undeclared: no hands-vs-knees requirement.
+    /// </summary>
+    public enum DeadliftTechnique { Undeclared, Conventional, Sumo }
+
+    /// <summary>
+    /// Contact mode used for the static support requirement.
+    /// FeetOnly: athlete standing at the setup, hands not loading the bar; the
+    /// feet alone carry the athlete's weight and moment.
+    /// GrippedGroundedBar: hands on the grounded bar; the bar can pull the hands
+    /// down by at most its weight (the plates carry the rest) and cannot push them
+    /// horizontally (it rolls). The athlete is statically supportable if some
+    /// hand pull in [0, m_bar g] puts the foot centre of pressure inside the
+    /// support polygon.
+    /// </summary>
+    public enum DeadliftSupportMode { FeetOnly, GrippedGroundedBar }
 
     public sealed class DeadliftPlantModel
     {
@@ -61,6 +118,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public float HipFlexionDeg;
         public readonly List<string> Notes = new List<string>();
         public readonly List<JointMargin> Margins = new List<JointMargin>();
+        public readonly List<FootAxisResidual> FootResiduals = new List<FootAxisResidual>();
+        public DeadliftFeasibilityReport Feasibility;
 
         public string Describe()
         {
@@ -73,6 +132,79 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 b.AppendLine(n);
             return b.ToString();
         }
+    }
+
+    /// <summary>
+    /// The original A2 Gate reported one scalar "foot residual" built from a
+    /// vertical sole error and two stance-target errors. They are physically
+    /// different things: the first says whether the sole is on the platform,
+    /// the second says whether the foot is where a technique preference put
+    /// it. Recorded separately so a preference miss cannot be read as a
+    /// support failure.
+    /// </summary>
+    public readonly struct FootAxisResidual
+    {
+        public FootAxisResidual(string side, float soleY, float lateralError, float foreAftError,
+            float pitchDeg, float rollDeg, float yawDeg, float ankleAboveSoleM, float heelZ, float toeZ)
+        {
+            Side = side;
+            SoleY = soleY;
+            LateralError = lateralError;
+            ForeAftError = foreAftError;
+            PitchDeg = pitchDeg;
+            RollDeg = rollDeg;
+            YawDeg = yawDeg;
+            AnkleAboveSoleM = ankleAboveSoleM;
+            HeelZ = heelZ;
+            ToeZ = toeZ;
+        }
+
+        public string Side { get; }
+        public float SoleY { get; }
+        public float LateralError { get; }
+        public float ForeAftError { get; }
+        public float PitchDeg { get; }
+        public float RollDeg { get; }
+        public float YawDeg { get; }
+        public float AnkleAboveSoleM { get; }
+        public float HeelZ { get; }
+        public float ToeZ { get; }
+
+        public override string ToString() => string.Format(CultureInfo.InvariantCulture,
+            "{0,-5} sole y {1,8:F3} mm | stance x err {2,8:F3} mm z err {3,8:F3} mm | sole pitch {4,6:F2} roll {5,6:F2} yaw {6,6:F2} deg | ankle above sole {7:F4} m",
+            Side, SoleY * 1000d, LateralError * 1000d, ForeAftError * 1000d, PitchDeg, RollDeg, YawDeg, AnkleAboveSoleM);
+    }
+
+    /// <summary>
+    /// A hand's measured grip frame in hand-body local coordinates. The palm
+    /// surface, its outward normal and the anchor one shaft radius out along
+    /// that normal come from the accepted GAM-68 skin calibration. The three
+    /// MCP landmarks are the actual proximal finger-bone bases on the
+    /// canonical avatar. <see cref="IndexMcpLocal"/> is what the original A2
+    /// used as a "knuckle line" (together with the anchor), which is not a
+    /// line between the knuckles; the true line is index to little.
+    /// </summary>
+    public readonly struct HandFrameLocal
+    {
+        public HandFrameLocal(Vector3 palmCenter, Vector3 palmNormal, Vector3 anchor,
+            Vector3 indexMcp, Vector3 middleMcp, Vector3 littleMcp, float shaftRadius)
+        {
+            PalmCenterLocal = palmCenter;
+            PalmNormalLocal = palmNormal;
+            AnchorLocal = anchor;
+            IndexMcpLocal = indexMcp;
+            MiddleMcpLocal = middleMcp;
+            LittleMcpLocal = littleMcp;
+            ShaftRadiusM = shaftRadius;
+        }
+
+        public Vector3 PalmCenterLocal { get; }
+        public Vector3 PalmNormalLocal { get; }
+        public Vector3 AnchorLocal { get; }
+        public Vector3 IndexMcpLocal { get; }
+        public Vector3 MiddleMcpLocal { get; }
+        public Vector3 LittleMcpLocal { get; }
+        public float ShaftRadiusM { get; }
     }
 
     public readonly struct JointMargin
@@ -120,6 +252,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
         private readonly Quaternion _pelvisStanding;
         private readonly float _leftSign;
         private readonly Vector3 _leftAnchorLocal, _rightAnchorLocal, _leftNormalLocal, _rightNormalLocal, _leftIndexLocal, _rightIndexLocal;
+        private readonly Vector3 _leftPalmCenterLocal, _rightPalmCenterLocal, _leftMiddleLocal, _rightMiddleLocal, _leftLittleLocal, _rightLittleLocal;
+        private readonly Dictionary<string, BoxCollider> _footBoxes = new Dictionary<string, BoxCollider>(StringComparer.Ordinal);
         private readonly Dictionary<string, float> _mass = new Dictionary<string, float>(StringComparer.Ordinal);
         private float _totalMass;
 
@@ -138,29 +272,82 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 _mass[s.Key] = s.Value.Body.mass;
                 _totalMass += s.Value.Body.mass;
             }
-            MeasureHandFrame(true, out _leftAnchorLocal, out _leftNormalLocal, out _leftIndexLocal);
-            MeasureHandFrame(false, out _rightAnchorLocal, out _rightNormalLocal, out _rightIndexLocal);
+            MeasureHandFrame(true, out _leftAnchorLocal, out _leftNormalLocal, out _leftIndexLocal,
+                out _leftPalmCenterLocal, out _leftMiddleLocal, out _leftLittleLocal);
+            MeasureHandFrame(false, out _rightAnchorLocal, out _rightNormalLocal, out _rightIndexLocal,
+                out _rightPalmCenterLocal, out _rightMiddleLocal, out _rightLittleLocal);
+            foreach (string side in new[] { "left", "right" })
+                _footBoxes[side] = (BoxCollider)rig.Segments[side + "_foot"].Collider;
         }
+
+        /// <summary>The measured grip frame of one hand, in that hand body's local coordinates.</summary>
+        public HandFrameLocal MeasureHand(bool left) => new HandFrameLocal(
+            left ? _leftPalmCenterLocal : _rightPalmCenterLocal,
+            left ? _leftNormalLocal : _rightNormalLocal,
+            left ? _leftAnchorLocal : _rightAnchorLocal,
+            left ? _leftIndexLocal : _rightIndexLocal,
+            left ? _leftMiddleLocal : _rightMiddleLocal,
+            left ? _leftLittleLocal : _rightLittleLocal,
+            AnchorBarRadius);
 
         public BenchKinematics Kinematics => _kin;
 
         /// <summary>Lateral sign (+1/-1) of the athlete's left side in world X.</summary>
         public float LeftSign => _leftSign;
 
+        public BoxCollider FootBox(string side) => _footBoxes[side];
+
+        /// <summary>Logical joint rotations of a parameter vector (the production joint-space targets).</summary>
+        public Dictionary<string, Quaternion> LogicalRotations(double[] x)
+        {
+            Dictionary<string, Quaternion> q = Logical(x, out _);
+            return q;
+        }
+
+        public Pose PelvisPoseOf(double[] x) => PelvisPose(x);
+
+        /// <summary>Builds the placed pose and diagnostics from an already-found parameter vector.</summary>
+        public DeadliftPlantModel BuildModel(double[] x, DeadliftSetupSpec spec)
+        {
+            var model = new DeadliftPlantModel { Spec = spec, SolverCost = 0d, Solution = (double[])x.Clone() };
+            Finish(model, x, spec);
+            return model;
+        }
+
+        /// <summary>Maximum straight-arm length from the shoulder anchor to the palm anchor, from the rig's own bones.</summary>
+        public float StraightArmReachM(bool left)
+        {
+            string side = left ? "left" : "right";
+            Pose pelvis = new Pose(_rig.Segments["pelvis"].Body.position, _rig.Segments["pelvis"].Body.rotation);
+            Dictionary<string, Pose> bind = _kin.Solve(pelvis, new Dictionary<string, Quaternion>(StringComparer.Ordinal));
+            Vector3 shoulder = _kin.JointAnchorWorld(bind, side + "_upper_arm");
+            Vector3 elbow = _kin.JointAnchorWorld(bind, side + "_forearm");
+            Vector3 wrist = _kin.JointAnchorWorld(bind, side + "_hand");
+            Pose hand = bind[side + "_hand"];
+            HandFrameLocal frame = MeasureHand(left);
+            Vector3 anchor = hand.position + hand.rotation * frame.AnchorLocal;
+            return Vector3.Distance(shoulder, elbow) + Vector3.Distance(elbow, wrist) + Vector3.Distance(wrist, anchor);
+        }
+
         public static float AnchorBarRadius { get; } = 0.0145f;
 
-        private void MeasureHandFrame(bool left, out Vector3 anchor, out Vector3 normal, out Vector3 indexLocal)
+        private void MeasureHandFrame(bool left, out Vector3 anchor, out Vector3 normal, out Vector3 indexLocal,
+            out Vector3 palmCenterLocal, out Vector3 middleLocal, out Vector3 littleLocal)
         {
             Animator reference = _rig.ReferenceAnimator;
             Transform bone = reference.GetBoneTransform(left ? HumanBodyBones.LeftHand : HumanBodyBones.RightHand);
             Transform index = reference.GetBoneTransform(left ? HumanBodyBones.LeftIndexProximal : HumanBodyBones.RightIndexProximal);
+            Transform middle = reference.GetBoneTransform(left ? HumanBodyBones.LeftMiddleProximal : HumanBodyBones.RightMiddleProximal);
+            Transform little = reference.GetBoneTransform(left ? HumanBodyBones.LeftLittleProximal : HumanBodyBones.RightLittleProximal);
             Transform body = _rig.Segments[left ? "left_hand" : "right_hand"].Body.transform;
             Vector3 palmCenterBone = left ? SquatPalmSurface.LeftPalmCenterLocal : SquatPalmSurface.RightPalmCenterLocal;
             Vector3 palmNormalBone = left ? SquatPalmSurface.LeftPalmNormalLocal : SquatPalmSurface.RightPalmNormalLocal;
-            Vector3 palmCenter = body.InverseTransformPoint(bone.TransformPoint(palmCenterBone));
+            palmCenterLocal = body.InverseTransformPoint(bone.TransformPoint(palmCenterBone));
             normal = body.InverseTransformDirection(bone.TransformDirection(palmNormalBone)).normalized;
-            anchor = palmCenter + normal * AnchorBarRadius;
+            anchor = palmCenterLocal + normal * AnchorBarRadius;
             indexLocal = body.InverseTransformPoint(index.position);
+            middleLocal = body.InverseTransformPoint(middle.position);
+            littleLocal = body.InverseTransformPoint(little.position);
         }
 
         private Dictionary<string, Quaternion> Logical(double[] x, out Quaternion[] arms)
@@ -330,7 +517,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
 
             // Hands: palm anchor on the shaft, palm normal and MCP line.
             float roll = (float)x[Roll];
-            Vector3 normalTarget = Quaternion.AngleAxis(roll * Mathf.Rad2Deg, Vector3.right) * Vector3.back;
+            bool supinated = spec.Grip == DeadliftGripStyle.Supinated;
+            Vector3 normalTarget = Quaternion.AngleAxis(roll * Mathf.Rad2Deg, Vector3.right) *
+                (supinated ? Vector3.forward : Vector3.back);
             foreach (bool left in new[] { true, false })
             {
                 string side = left ? "left" : "right";
@@ -339,13 +528,17 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 Vector3 anchorLocal = left ? _leftAnchorLocal : _rightAnchorLocal;
                 Vector3 normalLocal = left ? _leftNormalLocal : _rightNormalLocal;
                 Vector3 indexLocal = left ? _leftIndexLocal : _rightIndexLocal;
+                Vector3 littleLocal = left ? _leftLittleLocal : _rightLittleLocal;
                 Vector3 grip = hand.position + hand.rotation * anchorLocal;
                 Vector3 n = hand.rotation * normalLocal;
-                Vector3 mcp = hand.rotation * (indexLocal - anchorLocal);
+                Vector3 mcp = hand.rotation * (spec.CorrectedHandFrame ? indexLocal - littleLocal : indexLocal - anchorLocal);
                 mcp -= Vector3.Project(mcp, n);
                 mcp.Normalize();
-                // Index finger medial (thumb-around overhand grip).
-                Vector3 mcpTarget = new Vector3(-lateral, 0f, 0f);
+                // Pronated (overhand, palm toward the athlete): index medial.
+                // Supinated (palm away): index lateral. With the fingers pointing
+                // down both are the rig's own hand chirality (n x (index-little)
+                // = +finger axis on the left hand, mirrored on the right).
+                Vector3 mcpTarget = new Vector3(supinated ? lateral : -lateral, 0f, 0f);
                 r.Add(80d * (grip.x - lateral * spec.GripHalfWidth));
                 r.Add(80d * (grip.y - spec.BarAxisY));
                 r.Add(80d * (grip.z - spec.BarZ));
@@ -509,6 +702,36 @@ namespace PowerliftingSimulator.Deadlift.Unity
             return Mathf.Min(Vector3.Angle(mcp, Vector3.right), Vector3.Angle(mcp, Vector3.left));
         }
 
+        /// <summary>
+        /// Angle (deg) between the actual index-to-little metacarpal line and
+        /// the shaft axis at the model's pose. This is the line a wrapping
+        /// grip puts along the bar; the legacy proxy is palm-center-to-index.
+        /// </summary>
+        public float TrueMcpLineAngleDeg(DeadliftPlantModel model, bool left)
+        {
+            Pose hand = model.Poses[left ? "left_hand" : "right_hand"];
+            HandFrameLocal frame = MeasureHand(left);
+            Vector3 line = hand.rotation * (frame.IndexMcpLocal - frame.LittleMcpLocal);
+            line -= Vector3.Project(line, hand.rotation * frame.PalmNormalLocal);
+            return Mathf.Min(Vector3.Angle(line, Vector3.right), Vector3.Angle(line, Vector3.left));
+        }
+
+        /// <summary>Measured world frame of one hand at a posed model: palm surface, true knuckle line, grip anchor.</summary>
+        public void MeasureHandWorld(DeadliftPlantModel model, bool left, out Vector3 wrist, out Vector3 palmCenter,
+            out Vector3 palmNormal, out Vector3 anchor, out Vector3 indexMcp, out Vector3 littleMcp, out Vector3 middleMcp)
+        {
+            string side = left ? "left" : "right";
+            Pose hand = model.Poses[side + "_hand"];
+            HandFrameLocal frame = MeasureHand(left);
+            wrist = _kin.JointAnchorWorld(model.Poses, side + "_hand");
+            palmCenter = hand.position + hand.rotation * frame.PalmCenterLocal;
+            palmNormal = (hand.rotation * frame.PalmNormalLocal).normalized;
+            anchor = hand.position + hand.rotation * frame.AnchorLocal;
+            indexMcp = hand.position + hand.rotation * frame.IndexMcpLocal;
+            littleMcp = hand.position + hand.rotation * frame.LittleMcpLocal;
+            middleMcp = hand.position + hand.rotation * frame.MiddleMcpLocal;
+        }
+
         public void CapsuleSegment(Dictionary<string, Pose> poses, string id, out Vector3 a, out Vector3 b, out float radius)
         {
             CapsuleCollider c = (CapsuleCollider)_rig.Segments[id].Collider;
@@ -573,13 +796,30 @@ namespace PowerliftingSimulator.Deadlift.Unity
             double footMax = 0d;
             foreach (string side in new[] { "left", "right" })
             {
-                BoxCollider footBox = (BoxCollider)_rig.Segments[side + "_foot"].Collider;
+                BoxCollider footBox = _footBoxes[side];
                 Pose foot = model.Poses[side + "_foot"];
                 Vector3 sole = foot.position + foot.rotation * (footBox.center - new Vector3(0f, footBox.size.y * 0.5f, 0f));
                 float lateral = side == "left" ? _leftSign : -_leftSign;
                 footMax = Math.Max(footMax, Math.Abs(sole.y));
                 footMax = Math.Max(footMax, Math.Abs(sole.x - lateral * spec.StanceHalfWidth));
                 footMax = Math.Max(footMax, Math.Abs(sole.z));
+
+                Vector3 up = foot.rotation * Vector3.up;
+                Vector3 fwd = foot.rotation * Vector3.forward;
+                Vector3 heel = foot.position + foot.rotation * (footBox.center + new Vector3(0f, -footBox.size.y * 0.5f, -footBox.size.z * 0.5f));
+                Vector3 toe = foot.position + foot.rotation * (footBox.center + new Vector3(0f, -footBox.size.y * 0.5f, footBox.size.z * 0.5f));
+                Vector3 ankle = _kin.JointAnchorWorld(model.Poses, side + "_foot");
+                model.FootResiduals.Add(new FootAxisResidual(
+                    side,
+                    sole.y,
+                    sole.x - lateral * spec.StanceHalfWidth,
+                    sole.z,
+                    Mathf.Atan2(fwd.y, new Vector2(fwd.x, fwd.z).magnitude) * Mathf.Rad2Deg,
+                    Vector3.Angle(up, Vector3.up),
+                    Mathf.Atan2(fwd.x, fwd.z) * Mathf.Rad2Deg,
+                    ankle.y - sole.y,
+                    heel.z,
+                    toe.z));
             }
             model.MaxFootResidualM = footMax;
 
