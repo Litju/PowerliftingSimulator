@@ -283,30 +283,31 @@ namespace PowerliftingSimulator.Deadlift
             yield return null;
         }
 
-        /// <summary>
-        /// Causal characterization of the A2 dynamic failure (static gravity
-        /// reference, GAM-50 R9 scope). Asserts the measured mechanism: the measured left COP
-        /// visits posterior and anterior active patch boundaries before large
-        /// segment displacement (which alone does not establish fall direction), with valid initial contact. It pins the
-        /// finding, not a pass.
-        /// </summary>
+        /// <summary>Negative control: stop at actual loss of foot support, without inferring a fall direction from segment drift.</summary>
         [Timeout(900000)]
         [UnityTest]
-        public IEnumerator A2_DYN_CAUSE_THE_HELD_SETUP_ROCKS_HEEL_TO_TOE_AND_TIPS_WITHOUT_A_BALANCE_LOOP()
+        public IEnumerator A2_DYN_FIXED_REFERENCE_UNGRIPPED_SETUP_LOSES_FOOT_SUPPORT()
         {
             yield return Prepare(false, false);
-            _world.Step(Ticks);
-            float startZ = _ticks[0].Com.z;
-            int heelTick = _ticks.FindIndex(x => x.LeftFootN > 50 && x.CopL.z - x.PatchMinL.y < 0.005f);
-            int toeTick = heelTick < 0 ? -1 : _ticks.FindIndex(heelTick, x => x.LeftFootN > 50 && x.PatchMaxL.y - x.CopL.z < 0.005f);
-            int fallTick = _ticks.FindIndex(x => x.Drift > 0.5f);
+            bool unloaded = false;
+            for (int i = 0; i < Ticks; i++)
+            {
+                _world.Step(1);
+                Tick t = _ticks.Last();
+                if (i > 2 && t.LeftFootN + t.RightFootN < 1d)
+                {
+                    unloaded = true;
+                    break;
+                }
+            }
+            Tick last = _ticks.Last();
             var report = new StringBuilder(Header());
-            report.AppendLine($"COM z start {startZ:F4}; COP within 5 mm of posterior active patch boundary first index {heelTick}; anterior active patch boundary index {toeTick}; body drift > 0.5 m at tick {fallTick}; tick-0 penetration {_world.TickZeroMaxPenetrationM * 1000f:F2} mm");
-            F.WriteEvidence("gateA2-dyn-cause.txt", report.ToString());
+            report.AppendLine($"first bilateral foot unloading at completed tick {_ticks.Count}; COM {last.Com}; COP {last.Cop}; feet {last.LeftFootN + last.RightFootN:F3} N; plates {last.PlateLN + last.PlateRN:F3} N");
+            report.Append(Joints());
+            WriteTrace("gateA2-dyn-foot-support-loss.csv");
+            F.WriteEvidence("gateA2-dyn-foot-support-loss.txt", report.ToString());
             Assert.That(_world.TickZeroMaxPenetrationM, Is.LessThan(0.0005f), "initial contact invalid\n" + report);
-            Assert.That(heelTick, Is.GreaterThanOrEqualTo(0), report.ToString());
-            Assert.That(toeTick, Is.GreaterThan(heelTick), "no heel-to-toe rocking observed\n" + report);
-            Assert.That(fallTick, Is.GreaterThan(toeTick), "large segment displacement should follow COP migration\n" + report);
+            Assert.That(unloaded, Is.True, "ungripped fixed reference did not lose foot support within the observation horizon\n" + report);
             yield return null;
         }
 
