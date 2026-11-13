@@ -74,6 +74,48 @@ namespace PowerliftingSimulator.Deadlift.Unity
         /// <summary>Optional A3 pretension servo; when set it selects the grounded reference's hand pull each tick.</summary>
         public DeadliftPretensionLoop Pretension { get; set; }
 
+        /// <summary>
+        /// GAM-70 Gate 3: bounded player pull-intent reference shaper. It adds
+        /// hip/knee/trunk extension to the solved target; it is not a joint
+        /// writer and never touches the bar. Null on the grounded A2/A3 hold.
+        /// </summary>
+        public DeadliftPullController Pull { get; set; }
+
+        public float PullHipExtensionDeg { get; private set; }
+        public float PullKneeExtensionDeg { get; private set; }
+        public float PullTrunkExtensionDeg { get; private set; }
+
+        /// <summary>
+        /// GAM-70 Gate 3: explicit two-contact-mode load schedule. When set, the
+        /// static reference and the regulator's per-foot COP targets follow the
+        /// measured plate-unload fraction from the grounded C4 solution to the
+        /// separated-bar boundary solution. Never set in A2/A3.
+        /// </summary>
+        public DeadliftBarBreakReference BarBreakReference { get; private set; }
+        public float BarBreakFraction { get; private set; }
+        private float _appliedBarBreakFraction = float.NaN;
+
+        public void UseBarBreakReference(DeadliftBarBreakReference reference)
+        {
+            BarBreakReference = reference ?? throw new ArgumentNullException(nameof(reference));
+            _appliedBarBreakFraction = float.NaN;
+            if (Regulator != null)
+            {
+                Regulator.FootCopTarget = id =>
+                    Pull != null && Pull.LoadScheduleFraction > 0.0005f
+                        ? reference.FootCop(id, BarBreakFraction)
+                        : (GroundedReference != null ? GroundedReference.FootCop(id) : reference.FootCop(id, 0f));
+                Regulator.FootLoadRatio = id =>
+                {
+                    if (Pull != null && Pull.LoadScheduleFraction > 0.0005f)
+                        return reference.FootNormalN(id, BarBreakFraction) / Mathf.Max(reference.FootNormalN(id, 0f), 1f);
+                    return GroundedReference != null
+                        ? GroundedReference.FootNormalN(id) / Mathf.Max(GroundedReference.FootNormalAtZeroN(id), 1f)
+                        : 1f;
+                };
+            }
+        }
+
         /// <summary>The A3 pretension reference, when installed with <see cref="UseGroundedReference"/>.</summary>
         public DeadliftGroundedReference GroundedReference { get; private set; }
 
@@ -266,7 +308,39 @@ namespace PowerliftingSimulator.Deadlift.Unity
             IPhysicalAthleteJointCommandSink sink)
         {
             Pretension?.Update();
+            if (Pull != null)
+            {
+                Pull.Update(intent);
+                PullHipExtensionDeg = Pull.HipExtensionDeg;
+                PullKneeExtensionDeg = Pull.KneeExtensionDeg;
+                PullTrunkExtensionDeg = Pull.TrunkExtensionDeg;
+            }
+            else
+            {
+                PullHipExtensionDeg = PullKneeExtensionDeg = PullTrunkExtensionDeg = 0f;
+            }
             ApplyGroundedReference();
+            if (BarBreakReference != null && Pull != null)
+            {
+                // Command-driven load schedule: the player's applied pull, not
+                // the measured plate unload, selects the reference blend. The
+                // measured plate force is still the transition evidence; using
+                // it as the schedule input would close a positive feedback loop.
+                BarBreakFraction = Pull.LoadScheduleFraction;
+                if (BarBreakFraction <= 0.0005f)
+                {
+                    if (!float.IsNaN(_appliedBarBreakFraction))
+                    {
+                        SetStaticReference(_referenceRig, GroundedReference.DriveTorquesAxes());
+                        _appliedBarBreakFraction = float.NaN;
+                    }
+                }
+                else if (float.IsNaN(_appliedBarBreakFraction) || Mathf.Abs(BarBreakFraction - _appliedBarBreakFraction) > 0.001f)
+                {
+                    SetStaticReference(_referenceRig, BarBreakReference.Torques(BarBreakFraction));
+                    _appliedBarBreakFraction = BarBreakFraction;
+                }
+            }
             Regulator?.Update();
             foreach (KeyValuePair<string, Quaternion> target in _targets)
             {
@@ -279,6 +353,12 @@ namespace PowerliftingSimulator.Deadlift.Unity
                          Quaternion.AngleAxis(Regulator.RollOffsetDegFor(target.Key), Vector3.forward);
                 if (Regulator != null && (target.Key == "left_thigh" || target.Key == "right_thigh"))
                     q *= Quaternion.AngleAxis(Regulator.HipOffsetDegFor(target.Key == "left_thigh" ? "left_foot" : "right_foot"), Vector3.up);
+                if (Pull != null && (target.Key == "left_thigh" || target.Key == "right_thigh"))
+                    q *= Quaternion.AngleAxis(PullHipExtensionDeg, Vector3.right);
+                if (Pull != null && (target.Key == "left_shank" || target.Key == "right_shank"))
+                    q *= Quaternion.AngleAxis(-PullKneeExtensionDeg, Vector3.right);
+                if (Pull != null && (target.Key == "abdomen" || target.Key == "thorax"))
+                    q *= Quaternion.AngleAxis(PullTrunkExtensionDeg, Vector3.right);
                 if (IdentificationOffsets.TryGetValue(target.Key, out Quaternion idq))
                     q *= idq;
                 sink.ApplyCommand(target.Key, new JointCommand(q, Vector3.zero, Enabled ? 1f : 0f, scale), time.Tick);
