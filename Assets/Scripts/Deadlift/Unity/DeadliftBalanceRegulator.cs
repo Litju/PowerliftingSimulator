@@ -52,6 +52,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
             public DeadliftFootPressureSensor Sensor;
             public Vector3 Axis;
             public bool Engaged;
+            public float T0, AcrossIntegral, HipOffset, LastAcross = float.NaN;
             public float S0, Integral, Offset, LastDeviationCommand, LastS = float.NaN, LastTarget = float.NaN;
         }
 
@@ -100,12 +101,37 @@ namespace PowerliftingSimulator.Deadlift.Unity
 
         /// <summary>Mean of the two offsets (for traces).</summary>
         public float OffsetDeg => 0.5f * (_feet[0].Offset + _feet[1].Offset);
+        /// <summary>
+        /// Across-sole (foot roll) loop on the hip y channel. Measured (frozen-regulator +1 deg
+        /// hip-y steps, H = 0): left +45.4 mm, right +54.4 mm across the sole (up x sole axis)
+        /// at the first effective tick, with &lt;= 4.3 mm along-sole coupling; the ankle hinge
+        /// moves the COP along the sole (+63 / +71 mm) with &lt;= 9 mm across. The hinge ankle
+        /// and knee leave foot roll unactuated, so the frozen baseline drifts 37 mm across in
+        /// 10 ticks; only the hip can act on it. Same law as the along loop. REJECTED (off): with it
+        /// A3 fails earlier (bar lifted tick 263) and +/-0.25 deg ankle excitation destabilizes
+        /// the hold within ~120 ticks; independent ankle/hip COP loops reduce robustness.
+        /// </summary>
+        public bool AcrossLoop { get; set; }
+        public float AcrossKpDegPerM { get; set; } = IdentifiedCopGrowthPerTick / 0.05f;
+        public float AcrossKiDegPerMPerTick { get; set; } = 3f;
+        public float MaxHipOffsetDeg { get; set; } = 3f;
+
+        /// <summary>Hip y-channel offset (deg) for the thigh above the given foot.</summary>
+        public float HipOffsetDegFor(string footId) => footId == "left_foot" ? _feet[0].HipOffset : footId == "right_foot" ? _feet[1].HipOffset : 0f;
+
         public float OffsetDegFor(string footId) => footId == "left_foot" ? _feet[0].Offset : footId == "right_foot" ? _feet[1].Offset : 0f;
         public float LastTargetCopZ => _feet[0].LastTarget;
         public float LastCopZ => _feet[0].LastS;
 
         /// <summary>Measured COP of one foot along its sole axis (m), last completed tick.</summary>
         public float CopAlongAxis(string footId) => footId == "left_foot" ? _feet[0].LastS : _feet[1].LastS;
+
+        /// <summary>Measured COP of one foot across its sole (m, along up x axis: medial for the left foot is +), last completed tick.</summary>
+        public float CopAcrossAxis(string footId)
+        {
+            Foot f = footId == "left_foot" ? _feet[0] : _feet[1];
+            return f.Sensor.NormalImpulse > 1e-6 ? Vector3.Dot(f.Sensor.Cop, Vector3.Cross(Vector3.up, f.Axis)) : float.NaN;
+        }
 
         /// <summary>
         /// Plant-identification hook: when frozen, measurements are still
@@ -115,6 +141,10 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public bool Frozen { get; set; }
         public float IdentificationStepDegLeft { get; set; }
         public float IdentificationStepDegRight { get; set; }
+
+        /// <summary>Closed-loop identification hook: small excitation (deg) added after the law, per foot. Zero in judged attempts.</summary>
+        public float ExcitationDegLeft { get; set; }
+        public float ExcitationDegRight { get; set; }
         private readonly float[] _frozenAt = new float[2];
         private bool _wasFrozen;
 
@@ -209,9 +239,26 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     next = KpDegPerM * e + foot.Integral;
                 }
                 saturated |= Mathf.Abs(next) > MaxOffsetDeg;
+                next += foot.Id == "left_foot" ? ExcitationDegLeft : ExcitationDegRight;
                 foot.Offset = Mathf.Clamp(next, -MaxOffsetDeg, MaxOffsetDeg);
                 foot.LastS = s;
                 foot.LastTarget = target;
+
+                if (AcrossLoop)
+                {
+                    Vector3 across = Vector3.Cross(Vector3.up, foot.Axis);
+                    float a = Vector3.Dot(foot.Sensor.Cop, across);
+                    if (FootCopTarget != null)
+                        foot.T0 = Vector3.Dot(FootCopTarget(foot.Id), across);
+                    else if (float.IsNaN(foot.LastAcross))
+                        foot.T0 = a;
+                    float ea = foot.T0 - a;
+                    foot.AcrossIntegral = Mathf.Clamp(foot.AcrossIntegral + AcrossKiDegPerMPerTick * ea, -MaxHipOffsetDeg, MaxHipOffsetDeg);
+                    float h = AcrossKpDegPerM * ea + foot.AcrossIntegral;
+                    saturated |= Mathf.Abs(h) > MaxHipOffsetDeg;
+                    foot.HipOffset = Mathf.Clamp(h, -MaxHipOffsetDeg, MaxHipOffsetDeg);
+                    foot.LastAcross = a;
+                }
             }
             Saturated = saturated;
         }

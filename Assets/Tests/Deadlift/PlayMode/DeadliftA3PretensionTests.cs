@@ -234,5 +234,101 @@ namespace PowerliftingSimulator.Deadlift
         }
 
         private const int IdFreezeTick = 240;
+
+        /// <summary>
+        /// Foot-roll actuator identification at H = 0: the qualified hold runs to tick 100,
+        /// then the regulator is frozen and a +1 deg target step is applied to one joint
+        /// channel (left hip x/y/z, left ankle x for reference). Records left/right COP
+        /// along and across the sole vs the frozen baseline. Diagnostic.
+        /// </summary>
+        [UnityTest, Timeout(2400000), Explicit("GAM-70 foot-roll actuator identification; run on demand")]
+        public IEnumerator A3_FootRollActuatorIdentification()
+        {
+            var csv = new StringBuilder("case,tick,alongL,acrossL,alongR,acrossR,feetL,feetR\n");
+            var cases = new (string n, string joint, Vector3 axis)[]
+            {
+                ("base", null, Vector3.zero), ("ankleR-x", "right_foot", Vector3.right),
+                ("hipL-y", "left_thigh", Vector3.up), ("hipR-y", "right_thigh", Vector3.up)
+            };
+            foreach (var c in cases)
+            {
+                yield return Prepare(true, true, false);
+                InstallRegulatedReference();
+                for (int i = 1; i <= 110; i++)
+                {
+                    if (i == 101)
+                    {
+                        _regulator.Frozen = true;
+                        if (c.joint != null)
+                            _world.Hold.IdentificationOffsets[c.joint] = Quaternion.AngleAxis(1f, c.axis);
+                    }
+                    _world.Step(1);
+                    if (i >= 98)
+                    {
+                        var t = _ticks.Last();
+                        string f(float v) => v.ToString("G7", CultureInfo.InvariantCulture);
+                        csv.AppendLine(string.Join(",", c.n, i - 100, f(_regulator.CopAlongAxis("left_foot")), f(_regulator.CopAcrossAxis("left_foot")),
+                            f(_regulator.CopAlongAxis("right_foot")), f(_regulator.CopAcrossAxis("right_foot")), t.LeftFootN, t.RightFootN));
+                    }
+                }
+                _world.Hold.IdentificationOffsets.Clear();
+                yield return _world.Teardown();
+                _world = null;
+            }
+            F.WriteEvidence("a3-rollid.csv", csv.ToString());
+        }
+
+        /// <summary>
+        /// Closed-loop identification for a higher-order per-foot model: the qualified
+        /// regulator runs, plus an independent deterministic PRBS (+/-0.25 deg, hold 1-3
+        /// ticks) on each ankle reference. H = 0 for 800 ticks, and the closed-loop
+        /// pretension ramp to 50 % of half the bar weight. Stops at the first support
+        /// change. Diagnostic; data feed an offline ARX fit.
+        /// </summary>
+        [UnityTest, Timeout(2400000), Explicit("GAM-70 A3 closed-loop ARX identification; run on demand")]
+        public IEnumerator A3_ClosedLoopArxIdentification()
+        {
+            float wbHalf = 0.5f * 75f * 9.81f;
+            var csv = new StringBuilder("case,tick,H,uL,uR,sL,sR,ankErrL,ankErrR,ankVelL,ankVelR,kneeVelL,kneeVelR,hipVelL,hipVelR,footWL,footWR,comZ,comVz,feetL,feetR,plates,grip\n");
+            foreach (float frac in new[] { 0f, 0.5f })
+            {
+                yield return Prepare(true, true, false);
+                InstallPretensionReference(0.75f * wbHalf, true, true);
+                var rng = new System.Random(70 + (int)(frac * 10));
+                float eL = 0f, eR = 0f; int holdL = 0, holdR = 0;
+                int total = frac == 0f ? 800 : A3Base + A3Ramp + A3Hold;
+                string name = frac == 0f ? "H0" : "H182";
+                for (int i = 1; i <= total; i++)
+                {
+                    float h = frac == 0f || i <= A3Base ? 0f : i <= A3Base + A3Ramp ? frac * wbHalf * (i - A3Base) / A3Ramp : frac * wbHalf;
+                    _pretension.TrySetTarget(h);
+                    if (i > 20)
+                    {
+                        if (--holdL <= 0) { eL = rng.Next(2) == 0 ? -0.25f : 0.25f; holdL = 1 + rng.Next(3); }
+                        if (--holdR <= 0) { eR = rng.Next(2) == 0 ? -0.25f : 0.25f; holdR = 1 + rng.Next(3); }
+                    }
+                    _regulator.ExcitationDegLeft = eL;
+                    _regulator.ExcitationDegRight = eR;
+                    _world.Step(1);
+                    var t = _ticks.Last();
+                    PowerliftingSimulator.Athlete.PoweredJointDiagnostic D(string id) =>
+                        _world.Rig.PoweredController.Joints.First(j => j.Id == id).PostPhysicsDiagnostic;
+                    string f(float v) => v.ToString("G7", CultureInfo.InvariantCulture);
+                    string W(string id) => _world.Rig.Segments[id].Body.angularVelocity.ToString("G6").Replace(',', ';');
+                    csv.AppendLine(string.Join(",", name, i, f(_groundedRef.HandPullN), f(_regulator.OffsetDegFor("left_foot")), f(_regulator.OffsetDegFor("right_foot")),
+                        f(_regulator.CopAlongAxis("left_foot")), f(_regulator.CopAlongAxis("right_foot")),
+                        f(D("left_foot").ErrorRad.x), f(D("right_foot").ErrorRad.x), f(D("left_foot").ActualAngularVelocityRadS.x), f(D("right_foot").ActualAngularVelocityRadS.x),
+                        f(D("left_shank").ActualAngularVelocityRadS.x), f(D("right_shank").ActualAngularVelocityRadS.x),
+                        f(D("left_thigh").ActualAngularVelocityRadS.x), f(D("right_thigh").ActualAngularVelocityRadS.x), W("left_foot"), W("right_foot"),
+                        f(t.Com.z), f(_regulator.LastComVz), t.LeftFootN, t.RightFootN, t.PlateLN + t.PlateRN, -(t.GripRawL.y + t.GripRawR.y)));
+                    if (t.PlateLN + t.PlateRN < 1 || t.LeftFootN + t.RightFootN < 1)
+                        break;
+                }
+                _regulator.ExcitationDegLeft = _regulator.ExcitationDegRight = 0f;
+                yield return _world.Teardown();
+                _world = null;
+            }
+            F.WriteEvidence("a3-arx.csv", csv.ToString());
+        }
     }
 }

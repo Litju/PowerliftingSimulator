@@ -68,3 +68,46 @@ Revised next action: closed-loop identification of a higher-order per-foot
 model (small excitation under the qualified regulator, ARX order 2-3 using
 foot/shank angle and rate plus COP), then a state-feedback regulator designed
 on it and verified on A2 before A3. A3 acceptance remains FAILED.
+
+--- Closed-loop identification, foot-roll actuators, two-loop regulator (2026-11-13, later) ---
+Robustness probe (A3_ClosedLoopArxIdentification): qualified regulator + independent
+deterministic PRBS +/-0.25 deg (hold 1-3 ticks) on each ankle. At H = 0 the hold
+oscillates with ankle offsets saturating at +/-4 deg, grip force swinging to ~630 N
+and COM moving ~5 cm (plates down to ~100 N); same under pretension.
+=> A2 PASS holds only UNDISTURBED; the qualified hold has almost no robustness
+   margin. This qualifies A2 as stated in its test and no further.
+Per-foot ARX(2..4) fits of along-sole COP on the unsaturated samples (88-166):
+R2 0.73-0.97, rms 11-25 mm, left/right models inconsistent -> not usable; the
+plant is dominated by contact saturation and transitions.
+Foot-roll actuator identification (frozen regulator at tick 100, +1 deg step,
+first effective tick, deltas vs frozen baseline):
+  ankle L x: along +63.4 mm, across -9.1   | ankle R x: along +70.7, across +3.5
+  hip L x:   along +14.1, across +2.7      | hip L z:   along -3.4, across +18.5
+  hip L y:   along +4.3,  across +45.4     | hip R y:   along +2.8, across +54.4
+  Frozen baseline drifts 37 mm ACROSS the left sole in 10 ticks: foot roll about
+  the sole long axis is unstable and unactuated by the hinge ankle/knee.
+Two-loop regulator (ankle along + hip-y across, same law): A2 still passes
+undisturbed, but A3 bar lifts tick 263 (COM 573 mm), the PRBS probe fails within
+~120 ticks, the no-grip control collapses. REJECTED (AcrossLoop = false).
+Qualified A2 configuration re-verified: A2 PASS, C4 PASS, C5 control PASS,
+identical numbers (a2final-results.xml d1b08dc12735e9516201e38db1669d0cd8b8321830a6e3b5612bb9c2ea906ef3).
+Receipts: roll-results.xml a37249d534e97ed5915ba4ef03bb32d59d4fbef1f35744f687188490759de4ac
+rollid-results.xml 70a7943e1b814283951aa6ff657785a8cb38af2c92a4fd241198d81d390c08fb
+rollid2-results.xml ee4666c300412fa76b3889be0a648b98e065d8f60176c7dfff59a5b3e84b9c49
+arx-results.xml b1c1376356a6c0dffd641b50c29d0b9c2a209951d444b5a1f5ca649a9a5bc3a4
+
+DEMONSTRATED LIMITATION (current A3 boundary)
+The grounded gripped B2 setup has a fast per-foot contact mode (e-folding about one
+10 ms tick) that includes foot roll about the sole long axis. With the canonical
+hinge ankle and knee, roll is reachable only through the hip ball drive. Four
+reference-shaping regulator structures were measured and rejected (COP integral;
+combined COP proportional; delay-compensated predictive; ankle+hip two-loop); the
+per-foot along-sole proportional law holds only undisturbed. Within the brief's
+constraints (no new joints, no profile/strength/limit/solver/contact changes, no
+reopening B2 without new evidence) no further evidence-supported regulator remains
+at the 100 Hz command rate. The bar-break and later primitives are blocked on this.
+Evidence now exists for owner decisions the brief reserved:
+  (a) an ankle inversion/eversion DOF (measured: roll unactuated, unstable);
+  (b) a B2 stance with less toe-out (42 deg couples AP sway into foot roll);
+  (c) the foot contact/inertia model (mode timescale ~ one tick).
+A3 acceptance remains FAILED.
