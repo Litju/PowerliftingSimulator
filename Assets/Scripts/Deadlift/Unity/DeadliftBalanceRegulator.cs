@@ -143,6 +143,19 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public float HipOffsetDegFor(string footId) => footId == "left_foot" ? _feet[0].HipOffset : footId == "right_foot" ? _feet[1].HipOffset : 0f;
 
         public float OffsetDegFor(string footId) => footId == "left_foot" ? _feet[0].Offset : footId == "right_foot" ? _feet[1].Offset : 0f;
+
+        /// <summary>Along-sole integral state (deg) of one foot; read-only trace of the qualified loop.</summary>
+        public float IntegralDegFor(string footId) => footId == "left_foot" ? _feet[0].Integral : footId == "right_foot" ? _feet[1].Integral : 0f;
+        /// <summary>Across-sole (roll) integral state (deg) of one foot.</summary>
+        public float RollIntegralDegFor(string footId) => footId == "left_foot" ? _feet[0].RollIntegral : footId == "right_foot" ? _feet[1].RollIntegral : 0f;
+        /// <summary>Along-sole target (m, world projection) used by the qualified loop on the last tick.</summary>
+        public float TargetAlongFor(string footId) => footId == "left_foot" ? _feet[0].LastTarget : footId == "right_foot" ? _feet[1].LastTarget : 0f;
+        /// <summary>Measured along-sole COP (m, world projection) on the last completed tick.</summary>
+        public float MeasuredAlongFor(string footId) => footId == "left_foot" ? _feet[0].LastS : footId == "right_foot" ? _feet[1].LastS : 0f;
+        /// <summary>Across-sole target (m, world projection); set when the roll loop is active.</summary>
+        public float TargetAcrossFor(string footId) => footId == "left_foot" ? _feet[0].T0 : footId == "right_foot" ? _feet[1].T0 : 0f;
+        /// <summary>Measured across-sole COP (m, world projection) on the last completed tick.</summary>
+        public float MeasuredAcrossFor(string footId) => footId == "left_foot" ? _feet[0].LastAcross : footId == "right_foot" ? _feet[1].LastAcross : 0f;
         public float LastTargetCopZ => _feet[0].LastTarget;
         public float LastCopZ => _feet[0].LastS;
 
