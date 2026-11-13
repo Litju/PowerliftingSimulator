@@ -27,7 +27,7 @@ namespace PowerliftingSimulator.Deadlift
     /// after it only the solver moves bodies, and the only joint-command writer
     /// is DeadliftSetupHold through PoweredJointController.
     /// </summary>
-    public sealed class DeadliftSetupDynamicTests
+    public sealed partial class DeadliftSetupDynamicTests
     {
         private static readonly CultureInfo C = CultureInfo.InvariantCulture;
         private const float BarKg = 75f;
@@ -51,9 +51,10 @@ namespace PowerliftingSimulator.Deadlift
         private sealed class Tick
         {
             public double LeftFootN, RightFootN, PlateLN, PlateRN, BarOtherN, BarLegN;
-            public Vector3 CopL, CopR, Com, BarPos, GripRawL, GripRawR;
+            public Vector3 CopL, CopR, Cop, Com, BarPos, GripRawL, GripRawR;
             public int FootPtsL, FootPtsR;
             public Vector2 PatchMinL, PatchMaxL, PatchMinR, PatchMaxR;
+            public float CopMargin;
             public float MaxBodySpeed, Drift, MaxErrDeg, MaxDemand, SepL, SepR;
             public string MaxDemandJoint;
         }
@@ -107,9 +108,11 @@ namespace PowerliftingSimulator.Deadlift
             float maxSpeed = _world.Rig.Segments.Values.Max(x => x.Body.linearVelocity.magnitude);
             _ticks.Add(new Tick
             {
+                CopMargin = CopMargin(),
                 LeftFootN = _copL.NormalImpulse / dt, RightFootN = _copR.NormalImpulse / dt,
                 PlateLN = _plates.LeftNormalImpulse / dt, PlateRN = _plates.RightNormalImpulse / dt, BarOtherN = _plates.OtherImpulse.y / dt,
                 BarLegN = _world.Sensors["bar"].NormalForce(BenchSurface.AthleteLeg) + _world.Sensors["bar"].NormalForce(BenchSurface.AthleteFoot),
+                Cop = CombinedCop(_copL.NormalImpulse, _copL.Cop, _copR.NormalImpulse, _copR.Cop),
                 CopL = _copL.Cop, CopR = _copR.Cop, Com = _world.WholeBodyCom(), BarPos = _world.Bar.Body.position,
                 FootPtsL = _copL.Points, FootPtsR = _copR.Points,
                 PatchMinL = _copL.PatchMin, PatchMaxL = _copL.PatchMax, PatchMinR = _copR.PatchMin, PatchMaxR = _copR.PatchMax,
@@ -123,7 +126,7 @@ namespace PowerliftingSimulator.Deadlift
         {
             Vector3 sum = Vector3.zero; int n = 0;
             foreach (Tick x in t) { sum += f(x); n++; }
-            return n == 0 ? Vector3.zero : sum / n;
+            return n == 0 ? new Vector3(float.NaN, float.NaN, float.NaN) : sum / n;
         }
 
         /// <summary>Common measured summary of a run segment.</summary>
@@ -149,15 +152,9 @@ namespace PowerliftingSimulator.Deadlift
             m.DemandTail = worst.MaxDemand; m.DemandJoint = worst.MaxDemandJoint;
             m.SepMax = seg.Max(x => Mathf.Max(float.IsNaN(x.SepL) ? 0f : x.SepL, float.IsNaN(x.SepR) ? 0f : x.SepR));
             Vector3 com = MeanV(seg, x => x.Com);
-            double nl = m.FeetL, nr = m.FeetR;
-            Vector3 cop = (nl + nr) > 1e-6 ? (MeanV(seg, x => x.CopL) * (float)nl + MeanV(seg, x => x.CopR) * (float)nr) / (float)(nl + nr) : Vector3.zero;
+            Vector3 cop = MeanV(seg.Where(x => !float.IsNaN(x.Cop.x)), x => x.Cop);
             Tick last = seg[seg.Count - 1];
-            var patch = new List<Vector2>
-            {
-                last.PatchMinL, new Vector2(last.PatchMinL.x, last.PatchMaxL.y), last.PatchMaxL, new Vector2(last.PatchMaxL.x, last.PatchMinL.y),
-                last.PatchMinR, new Vector2(last.PatchMinR.x, last.PatchMaxR.y), last.PatchMaxR, new Vector2(last.PatchMaxR.x, last.PatchMinR.y)
-            };
-            m.CopInPatch = (last.FootPtsL > 0 && last.FootPtsR > 0) ? DeadliftSupportGeometry.SignedDistance(DeadliftSupportGeometry.Hull(patch), new Vector2(cop.x, cop.z)) : float.NaN;
+            m.CopInPatch = seg.Where(x => !float.IsNaN(x.CopMargin)).Select(x => x.CopMargin).DefaultIfEmpty(float.NaN).Min();
             m.Com = com; m.Cop = cop;
             Vector3 handsOnAthlete = l + r;            // measured contract: raw = force on the hand
             m.AthleteResidual = (float)(m.Feet + handsOnAthlete.y - wa);   // vertical, athlete quasi-static
@@ -215,7 +212,7 @@ namespace PowerliftingSimulator.Deadlift
         /// is static at the end (tail body speed &lt; 10 mm/s), and the realized COP
         /// is inside the realized contact patch.
         /// </summary>
-        [Explicit("GAM-70 A2 dynamic acceptance FAILS (2026-11-12): heel-toe sway grows and the athlete tips backward; no drive saturates before the fall. Missing mechanism: COM/COP balance regulation. Evidence Logs/GAM70/gateA2-dyn-*.txt")]
+        [Explicit("GAM-70 A2 dynamic acceptance FAILS (2026-11-12): ungripped fixed-reference hold fails; gripped stability and causal mechanism require independent qualification. Evidence Logs/GAM70/gateA2-dyn-*.txt")]
         [Timeout(900000)]
         [UnityTest]
         public IEnumerator A2_DYN_ACCEPTED_SETUP_IS_HELD_BY_THE_MODELED_ACTUATORS_ON_THE_REAL_PLANT()
@@ -288,9 +285,9 @@ namespace PowerliftingSimulator.Deadlift
 
         /// <summary>
         /// Causal characterization of the A2 dynamic failure (static gravity
-        /// reference, GAM-50 R9 scope). Asserts the measured mechanism: the COM
-        /// leaves the heel side and returns toward the toe at least once (sagittal
-        /// rocking) before the body falls, with valid initial contact. It pins the
+        /// reference, GAM-50 R9 scope). Asserts the measured mechanism: the measured left COP
+        /// visits posterior and anterior active patch boundaries before large
+        /// segment displacement (which alone does not establish fall direction), with valid initial contact. It pins the
         /// finding, not a pass.
         /// </summary>
         [Timeout(900000)]
@@ -300,16 +297,16 @@ namespace PowerliftingSimulator.Deadlift
             yield return Prepare(false, false);
             _world.Step(Ticks);
             float startZ = _ticks[0].Com.z;
-            int heelTick = _ticks.FindIndex(x => x.LeftFootN > 50 && x.CopL.z < -0.2f);
-            int toeTick = heelTick < 0 ? -1 : _ticks.FindIndex(heelTick, x => x.LeftFootN > 50 && x.CopL.z > 0.0f);
+            int heelTick = _ticks.FindIndex(x => x.LeftFootN > 50 && x.CopL.z - x.PatchMinL.y < 0.005f);
+            int toeTick = heelTick < 0 ? -1 : _ticks.FindIndex(heelTick, x => x.LeftFootN > 50 && x.PatchMaxL.y - x.CopL.z < 0.005f);
             int fallTick = _ticks.FindIndex(x => x.Drift > 0.5f);
             var report = new StringBuilder(Header());
-            report.AppendLine($"COM z start {startZ:F4}; COP at heel edge first tick {heelTick}; back to toe side tick {toeTick}; body drift > 0.5 m at tick {fallTick}; tick-0 penetration {_world.TickZeroMaxPenetrationM * 1000f:F2} mm");
+            report.AppendLine($"COM z start {startZ:F4}; COP within 5 mm of posterior active patch boundary first index {heelTick}; anterior active patch boundary index {toeTick}; body drift > 0.5 m at tick {fallTick}; tick-0 penetration {_world.TickZeroMaxPenetrationM * 1000f:F2} mm");
             F.WriteEvidence("gateA2-dyn-cause.txt", report.ToString());
             Assert.That(_world.TickZeroMaxPenetrationM, Is.LessThan(0.0005f), "initial contact invalid\n" + report);
             Assert.That(heelTick, Is.GreaterThanOrEqualTo(0), report.ToString());
             Assert.That(toeTick, Is.GreaterThan(heelTick), "no heel-to-toe rocking observed\n" + report);
-            Assert.That(fallTick, Is.GreaterThan(toeTick), "the fall should follow the rocking\n" + report);
+            Assert.That(fallTick, Is.GreaterThan(toeTick), "large segment displacement should follow COP migration\n" + report);
             yield return null;
         }
 

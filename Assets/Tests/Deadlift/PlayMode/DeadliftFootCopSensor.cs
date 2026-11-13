@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace PowerliftingSimulator.Deadlift
@@ -18,6 +19,9 @@ namespace PowerliftingSimulator.Deadlift
         private int _pendingPoints;
         private Vector2 _pMin = new Vector2(float.MaxValue, float.MaxValue), _pMax = new Vector2(float.MinValue, float.MinValue);
 
+        private readonly List<Vector2> _pendingPatch = new List<Vector2>();
+        public readonly List<Vector2> ActivePatch = new List<Vector2>();
+
         public Collider Ground { get; set; }
         public double NormalImpulse { get; private set; }
         public Vector3 Impulse { get; private set; }
@@ -28,9 +32,12 @@ namespace PowerliftingSimulator.Deadlift
 
         public void CompleteTick()
         {
+            ActivePatch.Clear();
+            ActivePatch.AddRange(_pendingPatch);
+            _pendingPatch.Clear();
             NormalImpulse = _pendingN;
             Impulse = _pendingImpulse;
-            Cop = _pendingN > 1e-9 ? _pendingMoment / (float)_pendingN : Vector3.zero;
+            Cop = _pendingN > 1e-9 ? _pendingMoment / (float)_pendingN : new Vector3(float.NaN, float.NaN, float.NaN);
             Points = _pendingPoints;
             PatchMin = _pMin;
             PatchMax = _pMax;
@@ -61,6 +68,7 @@ namespace PowerliftingSimulator.Deadlift
                 _pendingImpulse += impulse;
                 _pendingMoment += n * contact.point;
                 _pendingPoints++;
+                _pendingPatch.Add(new Vector2(contact.point.x, contact.point.z));
                 _pMin = Vector2.Min(_pMin, new Vector2(contact.point.x, contact.point.z));
                 _pMax = Vector2.Max(_pMax, new Vector2(contact.point.x, contact.point.z));
             }
