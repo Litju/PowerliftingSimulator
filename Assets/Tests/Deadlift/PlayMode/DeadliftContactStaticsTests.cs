@@ -124,11 +124,13 @@ namespace PowerliftingSimulator.Deadlift
         }
 
         private DeadliftBalanceRegulator _regulator;
+        private bool _regulatorComLoop = true;
+        private float _regulatorKi = 3f;
 
         private void InstallRegulatedReference()
         {
             InstallContactReference(0f, null);
-            _regulator = new DeadliftBalanceRegulator(_world.Rig, _world.Rig.PlatformCollider);
+            _regulator = new DeadliftBalanceRegulator(_world.Rig, _world.Rig.PlatformCollider) { ComFeedback = _regulatorComLoop, KiDegPerMPerTick = _regulatorKi };
             _world.Hold.Regulator = _regulator;
             _world.Rig.PrimeCommandSource();
         }

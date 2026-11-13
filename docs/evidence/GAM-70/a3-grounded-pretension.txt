@@ -1,0 +1,41 @@
+GAM-70 grounded A3 pretension, 2026-11-13 - PARTIAL, acceptance FAILS (kept Explicit)
+
+Source: A2 PASS commit df1060b plus DeadliftGroundedReference, DeadliftPretensionLoop.
+Plant: A2-qualified B2 hold (C4 reference + per-foot ankle COP regulator), 75 kg
+bar, both grips. Command: H per hand 0 for 1 s, ramp to 183.9 N (50 % of half the
+bar weight) over 1 s, hold 2 s. Target transfer 2H = 367.9 N.
+
+Reference: C4 torques and per-foot COP moments are exactly affine in H at the
+fixed configuration; two statics solutions give the reference for any H.
+Commands outside [0, Hmax] are rejected (invalid command control: over-max,
+negative and NaN all rejected).
+
+Results (Logs/GAM70/a3-*.csv):
+* Open-loop feedforward: transfer overshoots (plates -448.6 N for 2H 367.9 N),
+  creeps, bar lifts tick 257. With feet and both rigid grips grounded the
+  hand force is statically indeterminate from joint torques alone.
+* Closed-loop pretension (integral on measured hand-bar vertical force,
+  Joint.currentForce contract): realizes the target. Ticks 232-256: grip
+  353-371 N, plates 366-381 N (expected 368), feet 1337-1369 N, bar on plates.
+  Then a growing ~16-tick (~6 Hz) oscillation in ankle regulator offsets, COM z
+  and grip force; regulator saturates tick 288; bar lifts tick 304. Fresh repeat
+  identical.
+* Bounded A/Bs (A2 hold still PASSES in each): outer COM loop off -> bar lifts
+  tick 276; regulator integral off -> bar lifts tick 338. Neither is the cause.
+* Controls: no grip -> zero transfer (plates 735.6 N unchanged); left grip only
+  (same loop) -> settles at 367.8 N transfer, no tilt, no lift; drives off
+  (capacity 0; Hold.Enabled is ignored in Controlled mode, measured) ->
+  collapse, COM drop 302 mm.
+
+Conclusion: the rigid-grip load path and contact-consistent pretension reference
+work; the A2 balance regulator, identified at H = 0, is not qualified for the
+pretensioned contact mode (more foot load, bar-coupled hands). This disproves
+only the H = 0 regulator gains under pretension, not the plant.
+Next single action: identify the per-foot ankle->COP plant (a, b) at the
+pretensioned state (H = 184 N, fresh plants, +/-1 deg) and derive Kp for that
+contact mode (or schedule it on measured foot load), then rerun A3.
+Not started: bar break, knee passage, lockout, DOWN/return, referee, gym, Windows build.
+
+Receipts: a3b-results.xml 717f5efced0b84451109d20fffe9c4dbc42c94683df53046c6a0afb9a3f3d83d
+comab-results.xml 32547eb02f341c92e02c2b80cc71641d6aaa15c49c40b79cd60d0215d11429a6
+kiab-results.xml dae43133681bf64b5a10f1cd727f83f71f8180ff2503eac4aa48578db6f5d169

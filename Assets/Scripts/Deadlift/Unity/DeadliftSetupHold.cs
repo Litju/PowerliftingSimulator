@@ -65,6 +65,39 @@ namespace PowerliftingSimulator.Deadlift.Unity
         /// </summary>
         public DeadliftBalanceRegulator Regulator { get; set; }
 
+        private PhysicalAthleteRig _referenceRig;
+        private float _appliedHandPullN = float.NaN;
+
+        /// <summary>Optional A3 pretension servo; when set it selects the grounded reference's hand pull each tick.</summary>
+        public DeadliftPretensionLoop Pretension { get; set; }
+
+        /// <summary>The A3 pretension reference, when installed with <see cref="UseGroundedReference"/>.</summary>
+        public DeadliftGroundedReference GroundedReference { get; private set; }
+
+        /// <summary>
+        /// GAM-70 A3: drive the static reference from a commanded hand pull.
+        /// Each tick, if the accepted command changed, the reference torques are
+        /// re-taken from the contact-consistent statics at that pull; the
+        /// regulator's per-foot COP targets follow the same statics.
+        /// </summary>
+        public void UseGroundedReference(PhysicalAthleteRig rig, DeadliftGroundedReference reference)
+        {
+            _referenceRig = rig ?? throw new ArgumentNullException(nameof(rig));
+            GroundedReference = reference ?? throw new ArgumentNullException(nameof(reference));
+            _appliedHandPullN = float.NaN;
+            if (Regulator != null)
+                Regulator.FootCopTarget = reference.FootCop;
+            ApplyGroundedReference();
+        }
+
+        private void ApplyGroundedReference()
+        {
+            if (GroundedReference == null || GroundedReference.HandPullN == _appliedHandPullN)
+                return;
+            SetStaticReference(_referenceRig, GroundedReference.DriveTorquesAxes());
+            _appliedHandPullN = GroundedReference.HandPullN;
+        }
+
         /// <summary>Per-joint static gravity reference offset angle (deg) after <see cref="ComputeStaticGravityBias"/>.</summary>
         public float BiasDegrees(string jointId) => _bias.TryGetValue(jointId, out Quaternion q) ? Quaternion.Angle(Quaternion.identity, q) : 0f;
 
@@ -222,6 +255,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
             PlayerIntentFrame intent,
             IPhysicalAthleteJointCommandSink sink)
         {
+            Pretension?.Update();
+            ApplyGroundedReference();
             Regulator?.Update();
             foreach (KeyValuePair<string, Quaternion> target in _targets)
             {

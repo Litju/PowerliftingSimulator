@@ -47,6 +47,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
 
         private sealed class Foot
         {
+            public string Id;
             public DeadliftFootPressureSensor Sensor;
             public Vector3 Axis;
             public bool Engaged;
@@ -61,12 +62,20 @@ namespace PowerliftingSimulator.Deadlift.Unity
             _feet = new[] { MakeFoot("left_foot", ground), MakeFoot("right_foot", ground) };
         }
 
+        /// <summary>Enables the outer COM term d; when false each foot COP is servoed to its statics target only.</summary>
+        public bool ComFeedback { get; set; } = true;
         public float Kx { get; set; } = 0.4f;
         public float KvSeconds { get; set; } = 0.25f;
         public float KpDegPerM { get; set; } = IdentifiedCopGrowthPerTick / IdentifiedFootCopGainMPerDeg;
         public float KiDegPerMPerTick { get; set; } = 3f;
         public float MaxOffsetDeg { get; set; } = 4f;
         public float SupportMarginM { get; set; } = 0.01f;
+
+        /// <summary>
+        /// Optional per-foot COP target (world) from the contact-consistent
+        /// statics, e.g. under pretension. Without it the first measured COP is used.
+        /// </summary>
+        public Func<string, Vector3> FootCopTarget { get; set; }
 
         public bool Saturated { get; private set; }
         public float LastComZ { get; private set; }
@@ -85,7 +94,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
             s.Ground = ground;
             Vector3 f = Vector3.ProjectOnPlane(body.transform.forward, Vector3.up).normalized;
             s.Axis = f;
-            return new Foot { Sensor = s, Axis = f };
+            return new Foot { Id = id, Sensor = s, Axis = f };
         }
 
         /// <summary>Called once per tick before commands are prepared; consumes the last completed tick's contacts.</summary>
@@ -108,7 +117,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 _z0 = c.z;
                 _comEngaged = true;
             }
-            float d = (1f + Kx) * (c.z - _z0) + KvSeconds * p.z;
+            float d = ComFeedback ? (1f + Kx) * (c.z - _z0) + KvSeconds * p.z : 0f;
 
             bool saturated = false;
             foreach (Foot foot in _feet)
@@ -120,7 +129,12 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     continue;
                 }
                 float s = Vector3.Dot(foot.Sensor.Cop, foot.Axis);
-                if (!foot.Engaged)
+                if (FootCopTarget != null)
+                {
+                    foot.S0 = Vector3.Dot(FootCopTarget(foot.Id), foot.Axis);
+                    foot.Engaged = true;
+                }
+                else if (!foot.Engaged)
                 {
                     foot.S0 = s;
                     foot.Engaged = true;
