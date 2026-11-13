@@ -5,6 +5,7 @@ using System.Text;
 using NUnit.Framework;
 using PowerliftingSimulator.Athlete;
 using PowerliftingSimulator.Bench.Unity;
+using PowerliftingSimulator.Deadlift.Unity;
 using UnityEngine;
 using UnityEngine.TestTools;
 using F = PowerliftingSimulator.Deadlift.IsolatedBarWorld;
@@ -43,9 +44,10 @@ namespace PowerliftingSimulator.Deadlift
             Vector3 com0 = _world.WholeBodyCom();
             Vector3 bar0 = _world.Bar.Body.position;
             float minPlate = float.MaxValue, minFoot = float.MaxValue, maxSep = 0f, maxComDev = 0f, maxBarDisp = 0f,
-                maxDemand = 0f, maxProx = 0f, maxOffset = 0f, maxBarLeg = 0f, maxOther = 0f;
+                maxDemand = 0f, maxProx = 0f, maxOffset = 0f, maxBarLeg = 0f, maxOther = 0f,
+                maxSecDemand = 0f, maxSecProx = 0f, minSecTravel = float.MaxValue;
             string maxProxJoint = "";
-            bool saturated = false;
+            bool saturated = false, secChannels = true;
             Vector3 vSum = Vector3.zero; float vMax = 0f; int vN = 0;
             for (int i = 1; i <= HoldTicks; i++)
             {
@@ -68,6 +70,14 @@ namespace PowerliftingSimulator.Deadlift
                         maxProx = j.PostPhysicsDiagnostic.LimitProximity;
                         maxProxJoint = j.Id;
                     }
+                foreach (string footId in new[] { "left_foot", "right_foot" })
+                {
+                    PoweredJointDiagnostic d = _world.Rig.PoweredController.GetJoint(footId).PostPhysicsDiagnostic;
+                    secChannels &= d.HasSecondaryChannel;
+                    maxSecDemand = Mathf.Max(maxSecDemand, d.SecondaryDriveDemandFraction);
+                    maxSecProx = Mathf.Max(maxSecProx, d.SecondaryLimitProximity);
+                    minSecTravel = Mathf.Min(minSecTravel, Mathf.Min(d.SecondaryTravelToNegativeLimitDeg, d.SecondaryTravelToPositiveLimitDeg));
+                }
                 if (i > HoldTicks - SettleTicks)
                 {
                     Vector3 v = _world.Rig.Segments.Values.Aggregate(Vector3.zero, (a, b) => a + b.Body.mass * b.Body.linearVelocity) / _world.Rig.TotalMassKg;
@@ -81,10 +91,12 @@ namespace PowerliftingSimulator.Deadlift
                 "{0}: ticks {1} | min plate {2:F1} N (bound {3:F1}) | min foot {4:F1} N (bound {5:F1}) | grip drift max {6:F3} mm | " +
                 "COM deviation max {7:F2} mm | settled mean COM speed {8:F2} mm/s, max {9:F1} mm/s | bar displacement max {10:F2} mm | " +
                 "max demand {11:F3} (contract {12:F2}) | max limit proximity {13:F4} ({14}; stop-contact bound {15:F4}) | " +
-                "regulator max |offset| {16:F2} deg saturated {17} | bar-limb contact max {18:F1} N | non-foot platform max {19:F1} N",
+                "regulator max |offset| {16:F2} deg saturated {17} | bar-limb contact max {18:F1} N | non-foot platform max {19:F1} N | " +
+                "Z channels {20} | Z demand max {21:F3} | Z limit proximity max {22:F4} | Z travel min {23:F2} deg",
                 label, HoldTicks, minPlate, 0.25f * wb * 0.5f, minFoot, 0.5f * footRef, maxSep * 1000f, maxComDev * 1000f,
                 vMean.magnitude * 1000f, vMax * 1000f, maxBarDisp * 1000f, maxDemand, PoweredJointController.ModeledDemandSaturationThreshold,
-                maxProx, maxProxJoint, hipStopProximity, maxOffset, saturated, maxBarLeg, maxOther));
+                maxProx, maxProxJoint, hipStopProximity, maxOffset, saturated, maxBarLeg, maxOther,
+                secChannels ? "both" : "MISSING", maxSecDemand, maxSecProx, minSecTravel));
             if (minPlate < 0.25f * wb * 0.5f) fail(label + ": plate support dropped");
             if (minFoot < 0.5f * footRef) fail(label + ": foot support dropped");
             if (maxBarLeg > 1f) fail(label + ": bar touched a limb");
@@ -96,6 +108,14 @@ namespace PowerliftingSimulator.Deadlift
             if (saturated) fail(label + ": regulator saturated");
             if (maxDemand >= PoweredJointController.ModeledDemandSaturationThreshold) fail(label + ": a drive saturated");
             if (maxProx >= hipStopProximity) fail(label + ": a joint reached its limit contact distance");
+            if (_ankleRoll)
+            {
+                if (!secChannels) fail(label + ": an ankle Z channel is missing");
+                if (maxSecDemand >= PoweredJointController.ModeledDemandSaturationThreshold) fail(label + ": the ankle roll drive saturated");
+                // 2 deg contactDistance on a 15 deg symmetric stop, as the hip stop bound above.
+                if (maxSecProx >= 1f - 2f / DeadliftAnkleRoll.LimitDegrees) fail(label + ": the ankle roll reached its limit contact distance");
+                if (minSecTravel <= 0f) fail(label + ": the ankle roll crossed its declared stop");
+            }
             yield return _world.Teardown();
             _world = null;
         }

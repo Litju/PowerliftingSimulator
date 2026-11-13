@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using NUnit.Framework;
+using PowerliftingSimulator.Athlete;
 using PowerliftingSimulator.Deadlift.Unity;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -57,6 +58,8 @@ namespace PowerliftingSimulator.Deadlift
         {
             public double PlatesBase, PlatesEnd, FeetBase, FeetEnd, GripBase, GripEnd, PlateAsymEnd;
             public float MinPlate = float.MaxValue, BarDisp, ComDev, Sep, BarTiltDeg, ComDrop;
+            public float MaxSecDemand, MaxSecProx, MinSecTravel = float.MaxValue;
+            public bool SecChannels = true;
             public bool Saturated;
             public string Event = "none";
         }
@@ -66,6 +69,8 @@ namespace PowerliftingSimulator.Deadlift
             yield return Prepare(left, right, false);
             float wbHalf = 0.5f * _world.Bar.Body.mass * -Physics.gravity.y;
             InstallPretensionReference(closedLoop ? 0.75f * wbHalf : targetN, drives, closedLoop);
+            if (_ankleRoll && drives)
+                DeadliftAnkleRoll.ValidateAppliedAuthority(_world.Rig);
             var trace = new StringBuilder("tick,hCmd,plates,feet,gripUpOnBar,plateL,plateR,comZ,regL,regR,barY,barTiltDeg\n");
             Vector3 com0 = _world.WholeBodyCom(), bar0 = _world.Bar.Body.position;
             Quaternion barQ0 = _world.Bar.Body.rotation;
@@ -89,6 +94,14 @@ namespace PowerliftingSimulator.Deadlift
                 r.ComDrop = Mathf.Max(r.ComDrop, com0.y - t.Com.y);
                 r.Sep = Mathf.Max(r.Sep, Mathf.Max(float.IsNaN(t.SepL) ? 0f : t.SepL, float.IsNaN(t.SepR) ? 0f : t.SepR));
                 r.Saturated |= _regulator.Saturated;
+                foreach (string footId in new[] { "left_foot", "right_foot" })
+                {
+                    PoweredJointDiagnostic d = _world.Rig.PoweredController.GetJoint(footId).PostPhysicsDiagnostic;
+                    r.SecChannels &= d.HasSecondaryChannel;
+                    r.MaxSecDemand = Mathf.Max(r.MaxSecDemand, d.SecondaryDriveDemandFraction);
+                    r.MaxSecProx = Mathf.Max(r.MaxSecProx, d.SecondaryLimitProximity);
+                    r.MinSecTravel = Mathf.Min(r.MinSecTravel, Mathf.Min(d.SecondaryTravelToNegativeLimitDeg, d.SecondaryTravelToPositiveLimitDeg));
+                }
                 if (r.Event == "none")
                 {
                     if (plates < 1 && _world.Bar.Body.linearVelocity.y > 0) r.Event = "bar-lifted@" + i;
@@ -127,6 +140,9 @@ namespace PowerliftingSimulator.Deadlift
             report.AppendLine(Line("control: open-loop feedforward only", open, target));
             var both = new A3Result(); yield return RunPretension("bilateral", true, true, true, target, both);
             report.AppendLine(Line("bilateral", both, target));
+            report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "bilateral Z channels {0} | Z demand max {1:F3} | Z limit proximity max {2:F4} | Z travel min {3:F2} deg",
+                both.SecChannels ? "both" : "MISSING", both.MaxSecDemand, both.MaxSecProx, both.MinSecTravel));
             var both2 = new A3Result(); yield return RunPretension("bilateral-repeat", true, true, true, target, both2);
             report.AppendLine(Line("bilateral fresh repeat", both2, target));
             var none = new A3Result(); yield return RunPretension("nogrip", false, false, true, target, none);
@@ -170,6 +186,10 @@ namespace PowerliftingSimulator.Deadlift
             Assert.That(both.ComDev, Is.LessThan(0.01f), "COM moved\n" + rep);
             Assert.That(both.Sep, Is.LessThan(0.001f), "grip drift\n" + rep);
             Assert.That(both.Saturated, Is.False, "regulator saturated\n" + rep);
+            Assert.That(both.SecChannels, Is.True, "an ankle Z channel is missing under pretension\n" + rep);
+            Assert.That(both.MaxSecDemand, Is.LessThan(PoweredJointController.ModeledDemandSaturationThreshold), "the ankle roll drive saturated under pretension\n" + rep);
+            Assert.That(both.MaxSecProx, Is.LessThan(1f - 2f / DeadliftAnkleRoll.LimitDegrees), "the ankle roll reached its limit contact distance under pretension\n" + rep);
+            Assert.That(both.MinSecTravel, Is.GreaterThan(0f), "the ankle roll crossed its stop under pretension\n" + rep);
 
             Assert.That(none.PlatesEnd - none.PlatesBase, Is.GreaterThan(-0.1f * twoH), "no-grip control transferred bar load\n" + rep);
             // One hand alone carries the commanded total through a distinctly asymmetric load path.
