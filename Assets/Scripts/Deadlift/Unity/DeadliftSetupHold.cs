@@ -49,6 +49,22 @@ namespace PowerliftingSimulator.Deadlift.Unity
 
         public bool Enabled { get; set; } = true;
 
+        /// <summary>
+        /// How a static reference offset b is composed with the solved target q*.
+        /// Right (historical, as GAM-50 R9): q* b, b on the child's current axes.
+        /// Left (GAM-70 C5): b q*, so the drive's measured logical-frame error
+        /// log(T q^-1) equals b itself at q = q*. The two coincide for hinges.
+        /// </summary>
+        public bool ComposeReferenceOnLeft { get; set; }
+
+        /// <summary>
+        /// Optional GAM-70 balance regulator. When set, its per-foot ankle
+        /// offset (deg, about each ankle hinge axis) is added to that ankle's
+        /// reference every tick. It only shapes references; this hold remains
+        /// the single command source and PoweredJointController the single writer.
+        /// </summary>
+        public DeadliftBalanceRegulator Regulator { get; set; }
+
         /// <summary>Per-joint static gravity reference offset angle (deg) after <see cref="ComputeStaticGravityBias"/>.</summary>
         public float BiasDegrees(string jointId) => _bias.TryGetValue(jointId, out Quaternion q) ? Quaternion.Angle(Quaternion.identity, q) : 0f;
 
@@ -131,6 +147,60 @@ namespace PowerliftingSimulator.Deadlift.Unity
             foreach (KeyValuePair<string, float> t in source._biasTorqueNm) _biasTorqueNm[t.Key] = t.Value;
         }
 
+        /// <summary>
+        /// GAM-70 C2 ablation control: removes the already-computed static
+        /// reference of every joint <paramref name="keep"/> rejects. A kept
+        /// reference is never recomputed, rescaled or re-measured.
+        /// </summary>
+        public void RetainStaticGravityBias(Func<string, bool> keep)
+        {
+            if (keep == null)
+                throw new ArgumentNullException(nameof(keep));
+            var drop = new List<string>();
+            foreach (string id in _bias.Keys)
+                if (!keep(id))
+                    drop.Add(id);
+            foreach (string id in drop)
+            {
+                _bias.Remove(id);
+                _biasTorqueNm.Remove(id);
+            }
+        }
+
+        /// <summary>
+        /// GAM-70 C4: installs a fixed reference from an explicitly solved,
+        /// contact-consistent joint torque set (N m on each child's joint axes,
+        /// the same frame and sign as <see cref="ComputeStaticGravityBias"/>),
+        /// replacing any previous reference. Offset = tau / K about the torque
+        /// direction; hinge joints use the axis component only. No capacity
+        /// clamp: the caller must have proven the set within the ceilings.
+        /// </summary>
+        public void SetStaticReference(PhysicalAthleteRig rig, IReadOnlyDictionary<string, Vector3> torqueAxesNm)
+        {
+            if (rig == null)
+                throw new ArgumentNullException(nameof(rig));
+            if (torqueAxesNm == null)
+                throw new ArgumentNullException(nameof(torqueAxesNm));
+            _bias.Clear();
+            _biasTorqueNm.Clear();
+            foreach (PoweredJointController.PoweredJointRuntime joint in rig.PoweredController.Joints)
+            {
+                if (!joint.Profile.HasValue || !_targets.ContainsKey(joint.Id) || !torqueAxesNm.TryGetValue(joint.Id, out Vector3 local))
+                    continue;
+                if (joint.Recipe.Kind == PhysicalJointKind.Hinge)
+                    local = new Vector3(local.x, 0f, 0f);
+                _biasTorqueNm[joint.Id] = local.magnitude;
+                float angleRad = local.magnitude / joint.Profile.Value.Spring;
+                _bias[joint.Id] = local.sqrMagnitude < 1e-12f ? Quaternion.identity : Quaternion.AngleAxis(angleRad * Mathf.Rad2Deg, local.normalized);
+            }
+        }
+
+        /// <summary>Joints that currently carry a static reference offset.</summary>
+        public IEnumerable<string> StaticGravityBiasJoints => _bias.Keys;
+
+        /// <summary>The offset quaternion (logical frame) applied after the joint's solved target.</summary>
+        public Quaternion StaticGravityBias(string jointId) => _bias.TryGetValue(jointId, out Quaternion q) ? q : Quaternion.identity;
+
         private static bool InSubtree(string segmentId, string rootId)
         {
             string current = segmentId;
@@ -152,10 +222,15 @@ namespace PowerliftingSimulator.Deadlift.Unity
             PlayerIntentFrame intent,
             IPhysicalAthleteJointCommandSink sink)
         {
+            Regulator?.Update();
             foreach (KeyValuePair<string, Quaternion> target in _targets)
             {
                 float scale = _scale.TryGetValue(target.Key, out float s) ? s : 1f;
-                Quaternion q = _bias.TryGetValue(target.Key, out Quaternion b) ? target.Value * b : target.Value;
+                Quaternion q = _bias.TryGetValue(target.Key, out Quaternion b)
+                    ? (ComposeReferenceOnLeft ? b * target.Value : target.Value * b)
+                    : target.Value;
+                if (Regulator != null && (target.Key == "left_foot" || target.Key == "right_foot"))
+                    q *= Quaternion.AngleAxis(Regulator.OffsetDegFor(target.Key), Vector3.right);
                 sink.ApplyCommand(target.Key, new JointCommand(q, Vector3.zero, Enabled ? 1f : 0f, scale), time.Tick);
             }
         }

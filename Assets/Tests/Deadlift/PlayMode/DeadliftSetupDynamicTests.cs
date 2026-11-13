@@ -65,7 +65,7 @@ namespace PowerliftingSimulator.Deadlift
         private DeadliftSetupAcceptance _accepted;
         private bool _gravityReference;
 
-        private IEnumerator Prepare(bool attachLeft, bool attachRight, bool gravityReference = true)
+        private IEnumerator Prepare(bool attachLeft, bool attachRight, bool gravityReference = true, System.Func<string, bool> keepReference = null)
         {
             _ticks.Clear();
             yield return DeadliftPlantWorld.Load();
@@ -82,6 +82,8 @@ namespace PowerliftingSimulator.Deadlift
             {
                 // Static gravity reference from the placed initial condition, then re-prime (still before tick 0).
                 _world.Hold.ComputeStaticGravityBias(_world.Rig);
+                if (keepReference != null)
+                    _world.Hold.RetainStaticGravityBias(keepReference);
                 _world.Rig.PrimeCommandSource();
             }
             _gravityReference = gravityReference;
