@@ -667,6 +667,33 @@ namespace PowerliftingSimulator.Athlete
             return renderer;
         }
 
+        /// <summary>
+        /// GAM-70 deadlift-local option (never used by squat or bench): unlocks each
+        /// ankle hinge's Z axis (joint frame z = flexion axis x secondary ~ the foot's
+        /// long axis, i.e. inversion/eversion) with a symmetric limit, keeping axial
+        /// rotation (Y) locked. Allowed only on a dynamic rig at rest before tick 0.
+        /// The caller must then power the axis through
+        /// PoweredJointController.EnableSecondaryChannel.
+        /// </summary>
+        public void EnableAnkleRoll(float limitDegrees)
+        {
+            if (!(limitDegrees > 0f && limitDegrees <= 30f))
+                throw new ArgumentOutOfRangeException(nameof(limitDegrees));
+            foreach (JointRuntime j in _joints)
+            {
+                if (j.Recipe.ChildId != "left_foot" && j.Recipe.ChildId != "right_foot")
+                    continue;
+                if (j.Recipe.Kind != PhysicalJointKind.Hinge)
+                    throw new InvalidOperationException("Ankle roll requires the canonical hinge ankle.");
+                j.Joint.angularZMotion = ConfigurableJointMotion.Limited;
+                j.Joint.angularZLimit = Limit(limitDegrees);
+            }
+            AnkleRollLimitDegrees = limitDegrees;
+        }
+
+        /// <summary>Null on the canonical rig; the deadlift ankle-roll limit when enabled.</summary>
+        public float? AnkleRollLimitDegrees { get; private set; }
+
         private void ValidateRuntime()
         {
             if (_segments.Count != 16 || _joints.Count != 15)

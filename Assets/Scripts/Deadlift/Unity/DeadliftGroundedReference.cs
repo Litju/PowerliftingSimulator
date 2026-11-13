@@ -66,6 +66,14 @@ namespace PowerliftingSimulator.Deadlift.Unity
             return Vector3.LerpUnclamped(m0, m1, Fraction) / n;
         }
 
+        /// <summary>C4 statics normal reaction of one foot at the commanded pull (affine in H).</summary>
+        public float FootNormalN(string footId) => footId == "left_foot"
+            ? Mathf.LerpUnclamped(_zero.FootLN, _max.FootLN, Fraction)
+            : Mathf.LerpUnclamped(_zero.FootRN, _max.FootRN, Fraction);
+
+        /// <summary>The same foot's reaction at H = 0.</summary>
+        public float FootNormalAtZeroN(string footId) => footId == "left_foot" ? _zero.FootLN : _zero.FootRN;
+
         public float PlateSumN => Mathf.LerpUnclamped(_zero.PlateLN + _zero.PlateRN, _max.PlateLN + _max.PlateRN, Fraction);
         public float FootSumN => Mathf.LerpUnclamped(_zero.FootLN + _zero.FootRN, _max.FootLN + _max.FootRN, Fraction);
     }

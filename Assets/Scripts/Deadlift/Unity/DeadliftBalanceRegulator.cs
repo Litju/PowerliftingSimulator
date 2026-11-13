@@ -52,7 +52,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
             public DeadliftFootPressureSensor Sensor;
             public Vector3 Axis;
             public bool Engaged;
-            public float T0, AcrossIntegral, HipOffset, LastAcross = float.NaN;
+            public float T0, AcrossIntegral, HipOffset, RollOffset, RollIntegral, LastAcross = float.NaN;
             public float S0, Integral, Offset, LastDeviationCommand, LastS = float.NaN, LastTarget = float.NaN;
         }
 
@@ -95,6 +95,14 @@ namespace PowerliftingSimulator.Deadlift.Unity
         /// </summary>
         public Func<string, Vector3> FootCopTarget { get; set; }
 
+        /// <summary>
+        /// Optional gain schedule: ratio N_foot(H) / N_foot(0) from the contact statics.
+        /// Measured: the ankle's COP gain falls as 1/N_foot (64.5 -> 47.5 mm/deg from
+        /// 491 to 674 N per foot), so multiplying Kp and Ki by this ratio keeps the loop
+        /// gain K b of the along and roll loops at its qualified H = 0 value.
+        /// </summary>
+        public Func<string, float> FootLoadRatio { get; set; }
+
         public bool Saturated { get; private set; }
         public float LastComZ { get; private set; }
         public float LastComVz { get; private set; }
@@ -115,6 +123,21 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public float AcrossKpDegPerM { get; set; } = IdentifiedCopGrowthPerTick / 0.05f;
         public float AcrossKiDegPerMPerTick { get; set; } = 3f;
         public float MaxHipOffsetDeg { get; set; } = 3f;
+
+        /// <summary>
+        /// GAM-70 across-sole loop on the deadlift-local ankle roll drive (requires
+        /// DeadliftAnkleRoll). Measured with roll enabled (frozen +1 deg roll steps, H = 0):
+        /// -10.6 / -10.7 mm across the left / right sole at the first effective tick, &lt;= 0.4 mm
+        /// on the other foot or along the sole: a local, decoupled actuator (unlike hip y,
+        /// which also moved the other foot). Gain a/b with b = -0.0107 m/deg.
+        /// </summary>
+        public bool RollLoop { get; set; }
+        public float RollKpDegPerM { get; set; } = -IdentifiedCopGrowthPerTick / 0.0107f;
+        public float RollKiDegPerMPerTick { get; set; } = -3f * (0.05f / 0.0107f);
+        public float MaxRollOffsetDeg { get; set; } = 8f;
+
+        /// <summary>Ankle roll (joint z) offset (deg) for the given foot.</summary>
+        public float RollOffsetDegFor(string footId) => footId == "left_foot" ? _feet[0].RollOffset : footId == "right_foot" ? _feet[1].RollOffset : 0f;
 
         /// <summary>Hip y-channel offset (deg) for the thigh above the given foot.</summary>
         public float HipOffsetDegFor(string footId) => footId == "left_foot" ? _feet[0].HipOffset : footId == "right_foot" ? _feet[1].HipOffset : 0f;
@@ -219,7 +242,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 if (hi > lo)
                     target = Mathf.Clamp(target, lo, hi);
                 float e = target - s;
-                foot.Integral = Mathf.Clamp(foot.Integral + KiDegPerMPerTick * e, -MaxOffsetDeg, MaxOffsetDeg);
+                float g = FootLoadRatio != null ? FootLoadRatio(foot.Id) : 1f;
+                foot.Integral = Mathf.Clamp(foot.Integral + g * KiDegPerMPerTick * e, -MaxOffsetDeg, MaxOffsetDeg);
                 float next;
                 if (Predictive)
                 {
@@ -236,7 +260,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 }
                 else
                 {
-                    next = KpDegPerM * e + foot.Integral;
+                    next = g * KpDegPerM * e + foot.Integral;
                 }
                 saturated |= Mathf.Abs(next) > MaxOffsetDeg;
                 next += foot.Id == "left_foot" ? ExcitationDegLeft : ExcitationDegRight;
@@ -244,6 +268,21 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 foot.LastS = s;
                 foot.LastTarget = target;
 
+                if (RollLoop)
+                {
+                    Vector3 across = Vector3.Cross(Vector3.up, foot.Axis);
+                    float a = Vector3.Dot(foot.Sensor.Cop, across);
+                    if (FootCopTarget != null)
+                        foot.T0 = Vector3.Dot(FootCopTarget(foot.Id), across);
+                    else if (float.IsNaN(foot.LastAcross))
+                        foot.T0 = a;
+                    float ea = foot.T0 - a;
+                    foot.RollIntegral = Mathf.Clamp(foot.RollIntegral + g * RollKiDegPerMPerTick * ea, -MaxRollOffsetDeg, MaxRollOffsetDeg);
+                    float r = g * RollKpDegPerM * ea + foot.RollIntegral;
+                    saturated |= Mathf.Abs(r) > MaxRollOffsetDeg;
+                    foot.RollOffset = Mathf.Clamp(r, -MaxRollOffsetDeg, MaxRollOffsetDeg);
+                    foot.LastAcross = a;
+                }
                 if (AcrossLoop)
                 {
                     Vector3 across = Vector3.Cross(Vector3.up, foot.Axis);

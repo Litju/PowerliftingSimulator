@@ -105,8 +105,11 @@ namespace PowerliftingSimulator.Deadlift
         {
             var report = new StringBuilder();
             var failures = new System.Collections.Generic.List<string>();
+            _ankleRoll = System.Environment.GetEnvironmentVariable("GAM70_ANKLE_ROLL") != "0";   // qualified deadlift plant: ankle roll DOF on
+            report.AppendLine("ankle roll DOF " + (_ankleRoll ? "ON" : "off"));
             yield return RunA2Hold("fresh plant 1", report, failures.Add);
             yield return RunA2Hold("fresh plant 2", report, failures.Add);
+            _ankleRoll = false;
             F.WriteEvidence("a2-dynamic-hold.txt", report.ToString());
             Assert.That(failures, Is.Empty, string.Join("; ", failures) + "\n" + report);
         }

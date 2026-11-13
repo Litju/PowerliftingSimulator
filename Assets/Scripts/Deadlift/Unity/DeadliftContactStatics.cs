@@ -45,7 +45,12 @@ namespace PowerliftingSimulator.Deadlift.Unity
             public Vector3 TorqueWorldNm;
             public Vector3 TorqueAxesNm;   // on the child's joint axes
             public float DriveTwistNm, DriveSwingNm, CeilingNm, Spring;
-            public float DemandFraction => Mathf.Max(Mathf.Abs(DriveTwistNm), Kind == PhysicalJointKind.Hinge ? 0f : DriveSwingNm) / Mathf.Max(CeilingNm, 1e-3f);
+            /// <summary>Hinge with a powered roll channel (z): its z torque is a drive demand against <see cref="RollCeilingNm"/>.</summary>
+            public bool RollDriven;
+            public float RollCeilingNm, RollSpring;
+            public float DemandFraction => RollDriven
+                ? Mathf.Max(Mathf.Abs(DriveTwistNm) / Mathf.Max(CeilingNm, 1e-3f), Mathf.Abs(TorqueAxesNm.z) / Mathf.Max(RollCeilingNm, 1e-3f))
+                : Mathf.Max(Mathf.Abs(DriveTwistNm), Kind == PhysicalJointKind.Hinge ? 0f : DriveSwingNm) / Mathf.Max(CeilingNm, 1e-3f);
             public float OffsetDeg => (Kind == PhysicalJointKind.Hinge ? Mathf.Abs(TorqueAxesNm.x) : TorqueAxesNm.magnitude) / Spring * Mathf.Rad2Deg;
         }
 
@@ -150,12 +155,18 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     TorqueAxesNm = new Vector3(Vector3.Dot(tau, x), Vector3.Dot(tau, y), Vector3.Dot(tau, z)),
                     CeilingNm = joint.Profile.Value.BaseCapacityNm * ceilingScale, Spring = joint.Profile.Value.Spring
                 };
+                if (joint.SecondaryProfile.HasValue)
+                {
+                    load.RollDriven = true;
+                    load.RollCeilingNm = joint.SecondaryProfile.Value.BaseCapacityNm * ceilingScale;
+                    load.RollSpring = joint.SecondaryProfile.Value.Spring;
+                }
                 load.DriveTwistNm = load.TorqueAxesNm.x;
                 load.DriveSwingNm = Mathf.Max(Mathf.Abs(load.TorqueAxesNm.y), Mathf.Abs(load.TorqueAxesNm.z));
                 s.Joints.Add(load);
                 if (load.DemandFraction > 1f)
-                    s.Violations.Add(string.Format(CultureInfo.InvariantCulture, "{0} drive demand {1:F1}/{2:F1} N m exceeds its ceiling", joint.Id,
-                        Mathf.Max(Mathf.Abs(load.DriveTwistNm), load.Kind == PhysicalJointKind.Hinge ? 0f : load.DriveSwingNm), load.CeilingNm));
+                    s.Violations.Add(string.Format(CultureInfo.InvariantCulture, "{0} drive demand fraction {1:F3} exceeds its ceiling (twist {2:F1} N m, roll {3:F1} N m)", joint.Id,
+                        load.DemandFraction, load.DriveTwistNm, load.RollDriven ? load.TorqueAxesNm.z : 0f));
             }
             return s;
         }
@@ -165,7 +176,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
         {
             var d = new Dictionary<string, Vector3>(StringComparer.Ordinal);
             foreach (JointLoad j in Joints)
-                d[j.Id] = j.Kind == PhysicalJointKind.Hinge ? new Vector3(j.TorqueAxesNm.x, 0f, 0f) : j.TorqueAxesNm;
+                d[j.Id] = j.Kind == PhysicalJointKind.Hinge
+                    ? new Vector3(j.TorqueAxesNm.x, 0f, j.RollDriven ? j.TorqueAxesNm.z : 0f)
+                    : j.TorqueAxesNm;
             return d;
         }
 

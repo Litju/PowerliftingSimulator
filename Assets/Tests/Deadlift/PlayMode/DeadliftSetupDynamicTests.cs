@@ -64,6 +64,7 @@ namespace PowerliftingSimulator.Deadlift
         private DeadliftBarContactSensor _plates;
         private DeadliftSetupAcceptance _accepted;
         private bool _gravityReference;
+        private bool _ankleRoll;
 
         private IEnumerator Prepare(bool attachLeft, bool attachRight, bool gravityReference = true, System.Func<string, bool> keepReference = null)
         {
@@ -78,6 +79,8 @@ namespace PowerliftingSimulator.Deadlift
             Assert.That(_accepted.Passed, Is.True, "the recorded initial condition no longer passes the independent A2 table\n" + _accepted.Table());
             _world.UseModel(model);
             _world.PlaceAtSetup(BarKg, attachLeft, attachRight, ignoreBarVsGraspingLimbs: true);
+            if (_ankleRoll)
+                PowerliftingSimulator.Deadlift.Unity.DeadliftAnkleRoll.Enable(_world.Rig);   // GAM-70 deadlift-local DOF, before tick 0
             if (gravityReference)
             {
                 // Static gravity reference from the placed initial condition, then re-prime (still before tick 0).

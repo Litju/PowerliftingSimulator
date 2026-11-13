@@ -89,7 +89,10 @@ namespace PowerliftingSimulator.Deadlift.Unity
             GroundedReference = reference ?? throw new ArgumentNullException(nameof(reference));
             _appliedHandPullN = float.NaN;
             if (Regulator != null)
+            {
                 Regulator.FootCopTarget = reference.FootCop;
+                Regulator.FootLoadRatio = id => reference.FootNormalN(id) / reference.FootNormalAtZeroN(id);
+            }
             ApplyGroundedReference();
         }
 
@@ -224,10 +227,14 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 if (!joint.Profile.HasValue || !_targets.ContainsKey(joint.Id) || !torqueAxesNm.TryGetValue(joint.Id, out Vector3 local))
                     continue;
                 if (joint.Recipe.Kind == PhysicalJointKind.Hinge)
-                    local = new Vector3(local.x, 0f, 0f);
+                    local = new Vector3(local.x, 0f, joint.SecondaryProfile.HasValue ? local.z : 0f);
                 _biasTorqueNm[joint.Id] = local.magnitude;
-                float angleRad = local.magnitude / joint.Profile.Value.Spring;
-                _bias[joint.Id] = local.sqrMagnitude < 1e-12f ? Quaternion.identity : Quaternion.AngleAxis(angleRad * Mathf.Rad2Deg, local.normalized);
+                // Per-axis offset: a hinge's powered roll channel has its own spring.
+                float kx = joint.Profile.Value.Spring;
+                float ks = joint.SecondaryProfile.HasValue ? joint.SecondaryProfile.Value.Spring : kx;
+                Vector3 rotationRad = new Vector3(local.x / kx, local.y / ks, local.z / ks);
+                _bias[joint.Id] = rotationRad.sqrMagnitude < 1e-16f ? Quaternion.identity
+                    : Quaternion.AngleAxis(rotationRad.magnitude * Mathf.Rad2Deg, rotationRad.normalized);
             }
         }
 
@@ -268,7 +275,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     ? (ComposeReferenceOnLeft ? b * target.Value : target.Value * b)
                     : target.Value;
                 if (Regulator != null && (target.Key == "left_foot" || target.Key == "right_foot"))
-                    q *= Quaternion.AngleAxis(Regulator.OffsetDegFor(target.Key), Vector3.right);
+                    q *= Quaternion.AngleAxis(Regulator.OffsetDegFor(target.Key), Vector3.right) *
+                         Quaternion.AngleAxis(Regulator.RollOffsetDegFor(target.Key), Vector3.forward);
                 if (Regulator != null && (target.Key == "left_thigh" || target.Key == "right_thigh"))
                     q *= Quaternion.AngleAxis(Regulator.HipOffsetDegFor(target.Key == "left_thigh" ? "left_foot" : "right_foot"), Vector3.up);
                 if (IdentificationOffsets.TryGetValue(target.Key, out Quaternion idq))
