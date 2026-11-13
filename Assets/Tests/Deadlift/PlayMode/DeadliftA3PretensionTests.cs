@@ -187,5 +187,52 @@ namespace PowerliftingSimulator.Deadlift
             _regulatorKi = 3f;
             F.WriteEvidence("regulator-ki-ab.txt", report.ToString() + "A2 failures: " + string.Join("; ", failures));
         }
+
+        /// <summary>
+        /// A3 plant identification in the pretensioned contact mode: fresh plants run the
+        /// qualified closed-loop pretension to H (0 or 50 % of half the bar weight), then at
+        /// tick <see cref="IdFreezeTick"/> the pretension loop is removed (H held) and the
+        /// regulator is frozen with a per-foot ankle step (0, +1 bilateral, +1 left only).
+        /// Per-foot COP along the sole axis is recorded for the following ticks. Diagnostic.
+        /// </summary>
+        [UnityTest, Timeout(2400000), Explicit("GAM-70 A3 pretension-mode ankle identification; run on demand")]
+        public IEnumerator A3_PretensionModeAnkleIdentification()
+        {
+            float wbHalf = 0.5f * 75f * 9.81f;
+            var csv = new StringBuilder("case,H,tick,sL,sR,feetL,feetR,plates,grip\n");
+            foreach (float frac in new[] { 0f, 0.5f })
+            foreach (var step in new (string n, float l, float r)[] { ("0", 0f, 0f), ("both+1", 1f, 1f), ("left+1", 1f, 0f) })
+            {
+                yield return Prepare(true, true, false);
+                InstallPretensionReference(0.75f * wbHalf, true, true);
+                float target = frac * wbHalf;
+                for (int i = 1; i <= IdFreezeTick + 12; i++)
+                {
+                    float h = i <= A3Base ? 0f : i <= A3Base + A3Ramp ? target * (i - A3Base) / A3Ramp : target;
+                    if (i == IdFreezeTick + 1)
+                    {
+                        _world.Hold.Pretension = null;   // H held at its current command
+                        _regulator.IdentificationStepDegLeft = step.l;
+                        _regulator.IdentificationStepDegRight = step.r;
+                        _regulator.Frozen = true;
+                    }
+                    if (_world.Hold.Pretension != null)
+                        _pretension.TrySetTarget(h);
+                    _world.Step(1);
+                    if (i >= IdFreezeTick - 3)
+                    {
+                        var t = _ticks.Last();
+                        csv.AppendLine(string.Join(",", step.n, _groundedRef.HandPullN.ToString("F1", CultureInfo.InvariantCulture), i - IdFreezeTick,
+                            _regulator.CopAlongAxis("left_foot").ToString("G7", CultureInfo.InvariantCulture), _regulator.CopAlongAxis("right_foot").ToString("G7", CultureInfo.InvariantCulture),
+                            t.LeftFootN, t.RightFootN, t.PlateLN + t.PlateRN, -(t.GripRawL.y + t.GripRawR.y)));
+                    }
+                }
+                yield return _world.Teardown();
+                _world = null;
+            }
+            F.WriteEvidence("a3-id.csv", csv.ToString());
+        }
+
+        private const int IdFreezeTick = 240;
     }
 }

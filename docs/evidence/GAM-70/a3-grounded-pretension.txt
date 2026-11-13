@@ -39,3 +39,32 @@ Not started: bar break, knee passage, lockout, DOWN/return, referee, gym, Window
 Receipts: a3b-results.xml 717f5efced0b84451109d20fffe9c4dbc42c94683df53046c6a0afb9a3f3d83d
 comab-results.xml 32547eb02f341c92e02c2b80cc71641d6aaa15c49c40b79cd60d0215d11429a6
 kiab-results.xml dae43133681bf64b5a10f1cd727f83f71f8180ff2503eac4aa48578db6f5d169
+
+--- Pretension-mode identification and predictive regulator (follow-up, same day) ---
+A3_PretensionModeAnkleIdentification (fresh plants; closed-loop pretension to H,
+then at tick 240 the pretension loop is removed and the regulator frozen with a
++1 deg ankle step; per-foot COP along the sole axis vs the frozen baseline):
+  H = 0     (feet 491 N/foot): step response 0 at t+1, +64.5 mm at t+2, +174 mm t+3
+  H = 182 N (feet 674 N/foot): 0 at t+1, +47.5 mm at t+2, +125 mm t+3
+  Unilateral steps stay on their own foot (cross-foot <= 5.5 mm by t+3).
+  b scales as 1/N_foot (0.0645 x 491/674 = 0.047 m/deg, measured 0.0475).
+  Frozen baselines diverge ~2.0-2.3x per tick. A target written at tick k first
+  shows in the COP measured after tick k+1.
+Fitted model x_{k+1} = a x_k + b u_{k-1} implies no stable proportional gain
+(Jury: a-1 < bK < 1 empty for a >= 2); a delay-compensated predictive law
+(a 2.1, b = 31.7/N_foot, lambda 0.8) is stable on that model in simulation.
+On the REAL plant it FAILS: A2 hold loses the plates (min 0.0 N, COM 62 mm,
+drive demand 1.03); A3 bar lifts tick 68. The proportional law that the model
+predicts unstable still passes A2. This REFUTES the first-order delayed COP
+model: the per-foot ankle/foot/COP plant is higher order (foot and shank angle
+and rate are states) and frozen-step identification cannot capture it.
+Predictive law kept in source as Predictive = false (rejected); qualified A2
+configuration restored and re-verified: A2 PASS, C5 negative control PASS,
+identical numbers (a2re-results.xml bef71df20dafa4603c31833f282d5647bb00371e73c17d893628ae5a93a36acf).
+a3id-results.xml 5d123f9e14afe8aab53a9523a8fa0764e4c195a3af324f6d47c974e1d19ba89d
+pred-results.xml 4d12961ff68044b00aa30338666e86af0aba67621b2db8f71d4e2dd149ccaf77
+
+Revised next action: closed-loop identification of a higher-order per-foot
+model (small excitation under the qualified regulator, ARX order 2-3 using
+foot/shank angle and rate plus COP), then a state-feedback regulator designed
+on it and verified on A2 before A3. A3 acceptance remains FAILED.

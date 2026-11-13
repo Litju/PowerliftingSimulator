@@ -1,5 +1,6 @@
 using System;
 using PowerliftingSimulator.Athlete;
+using PowerliftingSimulator.Foundation;
 using UnityEngine;
 
 namespace PowerliftingSimulator.Deadlift.Unity
@@ -51,7 +52,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
             public DeadliftFootPressureSensor Sensor;
             public Vector3 Axis;
             public bool Engaged;
-            public float S0, Integral, Offset, LastS = float.NaN, LastTarget = float.NaN;
+            public float S0, Integral, Offset, LastDeviationCommand, LastS = float.NaN, LastTarget = float.NaN;
         }
 
         public DeadliftBalanceRegulator(PhysicalAthleteRig rig, Collider ground)
@@ -69,6 +70,22 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public float KpDegPerM { get; set; } = IdentifiedCopGrowthPerTick / IdentifiedFootCopGainMPerDeg;
         public float KiDegPerMPerTick { get; set; } = 3f;
         public float MaxOffsetDeg { get; set; } = 4f;
+
+        /// <summary>
+        /// Delay-compensated per-foot law (REJECTED, off). Identified at H = 0 and H = 182 N
+        /// per hand (frozen-regulator +1 deg steps, fresh plants): the ankle target
+        /// acts on the COP one tick later; b = 64.5 / 47.5 mm/deg at 491 / 674 N per
+        /// foot, i.e. b = Cb / N_foot with Cb = 31.7 N m/deg; free growth a = 2.3 / 2.0
+        /// per tick. With a one-tick delay and a &gt;= 2 no proportional gain is stable
+        /// (Jury: a - 1 &lt; b K &lt; 1 is empty); the proportional law only chattered
+        /// in a bounded limit cycle at H = 0 and diverged under pretension. This law
+        /// predicts x_{k+1} and places the closed-loop pole at (1 - Lambda) a;
+        /// Lambda &gt; 1 - 1/a keeps it inside the unit circle.
+        /// </summary>
+        public bool Predictive { get; set; }
+        public float CopTorqueGainNPerDeg { get; set; } = 31.7f;
+        public float GrowthPerTick { get; set; } = 2.1f;
+        public float Lambda { get; set; } = 0.8f;
         public float SupportMarginM { get; set; } = 0.01f;
 
         /// <summary>
@@ -86,6 +103,20 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public float OffsetDegFor(string footId) => footId == "left_foot" ? _feet[0].Offset : footId == "right_foot" ? _feet[1].Offset : 0f;
         public float LastTargetCopZ => _feet[0].LastTarget;
         public float LastCopZ => _feet[0].LastS;
+
+        /// <summary>Measured COP of one foot along its sole axis (m), last completed tick.</summary>
+        public float CopAlongAxis(string footId) => footId == "left_foot" ? _feet[0].LastS : _feet[1].LastS;
+
+        /// <summary>
+        /// Plant-identification hook: when frozen, measurements are still
+        /// consumed but each foot's offset is held at its last value plus
+        /// <see cref="IdentificationStepDeg"/> for that foot. Never used in a judged attempt.
+        /// </summary>
+        public bool Frozen { get; set; }
+        public float IdentificationStepDegLeft { get; set; }
+        public float IdentificationStepDegRight { get; set; }
+        private readonly float[] _frozenAt = new float[2];
+        private bool _wasFrozen;
 
         private Foot MakeFoot(string id, Collider ground)
         {
@@ -119,6 +150,20 @@ namespace PowerliftingSimulator.Deadlift.Unity
             }
             float d = ComFeedback ? (1f + Kx) * (c.z - _z0) + KvSeconds * p.z : 0f;
 
+            if (Frozen)
+            {
+                if (!_wasFrozen) { _frozenAt[0] = _feet[0].Offset; _frozenAt[1] = _feet[1].Offset; _wasFrozen = true; }
+                for (int i = 0; i < 2; i++)
+                {
+                    Foot f = _feet[i];
+                    f.Sensor.CompleteTick();
+                    f.LastS = f.Sensor.NormalImpulse > 1e-6 ? Vector3.Dot(f.Sensor.Cop, f.Axis) : float.NaN;
+                    f.Offset = _frozenAt[i] + (i == 0 ? IdentificationStepDegLeft : IdentificationStepDegRight);
+                }
+                return;
+            }
+            _wasFrozen = false;
+
             bool saturated = false;
             foreach (Foot foot in _feet)
             {
@@ -145,7 +190,24 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     target = Mathf.Clamp(target, lo, hi);
                 float e = target - s;
                 foot.Integral = Mathf.Clamp(foot.Integral + KiDegPerMPerTick * e, -MaxOffsetDeg, MaxOffsetDeg);
-                float next = KpDegPerM * e + foot.Integral;
+                float next;
+                if (Predictive)
+                {
+                    // Delay-compensated law on the identified per-foot plant
+                    //   x_{k+1} = a x_k + b v_{k-1},  x = s - s*,  v = u - I,  b = Cb / N_foot.
+                    float normalN = (float)(foot.Sensor.NormalImpulse / SimulationConstants.FixedDeltaTimeSeconds);
+                    float b = CopTorqueGainNPerDeg / Mathf.Max(normalN, 50f);
+                    float x = -e;
+                    float predicted = GrowthPerTick * x + b * foot.LastDeviationCommand;
+                    float v = -Lambda * GrowthPerTick * predicted / b;
+                    v = Mathf.Clamp(v, -MaxOffsetDeg - foot.Integral, MaxOffsetDeg - foot.Integral);
+                    foot.LastDeviationCommand = v;
+                    next = v + foot.Integral;
+                }
+                else
+                {
+                    next = KpDegPerM * e + foot.Integral;
+                }
                 saturated |= Mathf.Abs(next) > MaxOffsetDeg;
                 foot.Offset = Mathf.Clamp(next, -MaxOffsetDeg, MaxOffsetDeg);
                 foot.LastS = s;
