@@ -84,7 +84,22 @@ namespace PowerliftingSimulator.Athlete
             float swingDriveDemandFraction,
             float modeledDemand,
             float limitProximity,
-            Vector3 solverTorqueJointSpaceNm)
+            Vector3 solverTorqueJointSpaceNm,
+            bool hasSecondaryChannel = false,
+            float secondaryRequestedAngleDeg = 0f,
+            float secondaryAppliedAngleDeg = 0f,
+            float secondaryActualAngleDeg = 0f,
+            float secondaryErrorRad = 0f,
+            float secondaryActualAngularVelocityRadS = 0f,
+            float secondaryTravelToNegativeLimitDeg = 0f,
+            float secondaryTravelToPositiveLimitDeg = 0f,
+            float secondaryDriveDemandNm = 0f,
+            float secondaryDriveDemandFraction = 0f,
+            float secondaryMaximumForceNm = 0f,
+            bool secondaryDriveSaturated = false,
+            bool secondaryTargetRateLimited = false,
+            float secondaryLimitProximity = 0f,
+            float secondarySolverTorqueNm = 0f)
         {
             RequestedTarget = requestedTarget;
             AppliedTarget = appliedTarget;
@@ -102,6 +117,21 @@ namespace PowerliftingSimulator.Athlete
             ModeledDemand = modeledDemand;
             LimitProximity = limitProximity;
             SolverTorqueJointSpaceNm = solverTorqueJointSpaceNm;
+            HasSecondaryChannel = hasSecondaryChannel;
+            SecondaryRequestedAngleDeg = secondaryRequestedAngleDeg;
+            SecondaryAppliedAngleDeg = secondaryAppliedAngleDeg;
+            SecondaryActualAngleDeg = secondaryActualAngleDeg;
+            SecondaryErrorRad = secondaryErrorRad;
+            SecondaryActualAngularVelocityRadS = secondaryActualAngularVelocityRadS;
+            SecondaryTravelToNegativeLimitDeg = secondaryTravelToNegativeLimitDeg;
+            SecondaryTravelToPositiveLimitDeg = secondaryTravelToPositiveLimitDeg;
+            SecondaryDriveDemandNm = secondaryDriveDemandNm;
+            SecondaryDriveDemandFraction = secondaryDriveDemandFraction;
+            SecondaryMaximumForceNm = secondaryMaximumForceNm;
+            SecondaryDriveSaturated = secondaryDriveSaturated;
+            SecondaryTargetRateLimited = secondaryTargetRateLimited;
+            SecondaryLimitProximity = secondaryLimitProximity;
+            SecondarySolverTorqueNm = secondarySolverTorqueNm;
         }
 
         public Quaternion RequestedTarget { get; }
@@ -119,6 +149,31 @@ namespace PowerliftingSimulator.Athlete
         public float SwingDriveDemandFraction { get; }
         public float ModeledDemand { get; }
         public float LimitProximity { get; }
+
+        /// <summary>
+        /// GAM-70: true when this joint has an independently powered secondary
+        /// hinge channel (the deadlift ankle roll). Every secondary value below
+        /// belongs to that Z channel only and is never combined with the X
+        /// flexion values above.
+        /// </summary>
+        public bool HasSecondaryChannel { get; }
+        public float SecondaryRequestedAngleDeg { get; }
+        public float SecondaryAppliedAngleDeg { get; }
+        public float SecondaryActualAngleDeg { get; }
+        public float SecondaryErrorRad { get; }
+        public float SecondaryActualAngularVelocityRadS { get; }
+        public float SecondaryTravelToNegativeLimitDeg { get; }
+        public float SecondaryTravelToPositiveLimitDeg { get; }
+        public float SecondaryDriveDemandNm { get; }
+        public float SecondaryDriveDemandFraction { get; }
+        public float SecondaryMaximumForceNm { get; }
+        public bool SecondaryDriveSaturated { get; }
+        public bool SecondaryTargetRateLimited { get; }
+        public float SecondaryLimitProximity { get; }
+        public float SecondarySolverTorqueNm { get; }
+
+        /// <summary>X (flexion) channel demand has reached its own finite ceiling.</summary>
+        public bool PrimaryDriveSaturated => TwistDriveDemandFraction >= 1f;
 
         /// <summary>
         /// ENGINE_SOLVER_DIAGNOSTIC. The constraint torque PhysX actually
@@ -370,12 +425,15 @@ namespace PowerliftingSimulator.Athlete
                     command.TargetRelativeAngularVelocityRadS, profile.MaxTargetRateRadS);
                 if (configurable.configuredInWorldSpace ||
                     configurable.rotationDriveMode != RotationDriveMode.XYAndZ ||
+                    (joint.SecondaryProfile.HasValue &&
+                        (configurable.angularZMotion != ConfigurableJointMotion.Limited || configurable.angularYMotion != ConfigurableJointMotion.Locked)) ||
                     Quaternion.Angle(configurable.targetRotation, ToUnityTargetRotation(joint.AppliedTarget)) > 0.001f ||
                     Vector3.Distance(configurable.targetAngularVelocity, ToUnityTargetAngularVelocity(targetVelocity)) > 0.00001f ||
                     targetVelocity.magnitude > profile.MaxTargetRateRadS + 0.00001f ||
                     !DriveMatches(configurable.angularXDrive, profile, maximumForce) ||
-                    !DriveMatches(configurable.angularYZDrive, profile, maximumForce,
-                        joint.Recipe.Kind == PhysicalJointKind.Ball) ||
+                    !(joint.SecondaryProfile.HasValue
+                        ? DriveMatches(configurable.angularYZDrive, joint.SecondaryProfile.Value, SecondaryForce(joint, maximumForce))
+                        : DriveMatches(configurable.angularYZDrive, profile, maximumForce, joint.Recipe.Kind == PhysicalJointKind.Ball)) ||
                     !DriveMatches(configurable.slerpDrive, default, 0f, false))
                     throw new InvalidOperationException($"Joint '{joint.Id}' does not match its active PhysX drive contract.");
             }
@@ -552,9 +610,83 @@ namespace PowerliftingSimulator.Athlete
             configurable.rotationDriveMode = RotationDriveMode.XYAndZ;
             configurable.angularXDrive = Drive(profile, maximumForce);
             configurable.angularYZDrive = joint.Recipe.Kind == PhysicalJointKind.Hinge
-                ? ZeroDrive()
+                ? (joint.SecondaryProfile.HasValue ? Drive(joint.SecondaryProfile.Value, SecondaryForce(joint, maximumForce)) : ZeroDrive())
                 : Drive(profile, maximumForce);
             configurable.slerpDrive = ZeroDrive();
+        }
+
+        /// <summary>The secondary ceiling scales with the same strength scale and activation as the primary.</summary>
+        private static float SecondaryForce(PoweredJointRuntime joint, float primaryMaximumForce)
+        {
+            float primaryBase = joint.Profile.Value.BaseCapacityNm;
+            float scaleAndActivation = primaryBase > 0f ? primaryMaximumForce / primaryBase : 0f;
+            return joint.SecondaryProfile.Value.BaseCapacityNm * scaleAndActivation;
+        }
+
+        /// <summary>
+        /// GAM-70: powers the unlocked secondary axis of a hinge with its own declared
+        /// profile. Only for a joint whose rig unlocked that axis; canonical joints never call it.
+        /// Initialization only: late or repeated activation may not alter a running plant.
+        /// </summary>
+        public void EnableSecondaryChannel(string jointId, JointFamilyProfile profile)
+        {
+            if (profile.Id == null || !(profile.BaseCapacityNm > 0f) || !(profile.Spring > 0f) || !(profile.Damper >= 0f) ||
+                !float.IsFinite(profile.Spring) || !float.IsFinite(profile.Damper) || !float.IsFinite(profile.BaseCapacityNm) ||
+                !float.IsFinite(profile.MaxTargetRateRadS) || profile.MaxTargetRateRadS <= 0f)
+                throw new ArgumentOutOfRangeException(nameof(profile));
+            foreach (PoweredJointRuntime joint in _joints)
+            {
+                if (joint.Id != jointId)
+                    continue;
+                if (joint.Recipe.Kind != PhysicalJointKind.Hinge || !joint.Profile.HasValue)
+                    throw new InvalidOperationException($"Joint '{jointId}' is not a powered hinge.");
+                if (joint.SecondaryProfile.HasValue)
+                    throw new InvalidOperationException($"Joint '{jointId}' already has a powered secondary channel.");
+                if (joint.Joint.angularZMotion != ConfigurableJointMotion.Limited || joint.Joint.angularYMotion != ConfigurableJointMotion.Locked)
+                    throw new InvalidOperationException($"Joint '{jointId}' does not expose exactly one unlocked secondary axis (Z limited, Y locked).");
+                joint.SecondaryProfile = profile;
+                return;
+            }
+            throw new ArgumentException($"Unknown joint '{jointId}'.", nameof(jointId));
+        }
+
+        public int SecondaryChannelCount
+        {
+            get
+            {
+                int count = 0;
+                foreach (PoweredJointRuntime joint in _joints)
+                    if (joint.SecondaryProfile.HasValue)
+                        count++;
+                return count;
+            }
+        }
+
+        /// <summary>
+        /// Re-asserts the powered topology contract independently of the rig
+        /// recipe: no powered hinged joint may leave its secondary axes in an
+        /// ambiguous state, and no joint may gain a channel after the first step.
+        /// </summary>
+        public void ValidatePoweredTopology()
+        {
+            foreach (PoweredJointRuntime joint in _joints)
+            {
+                ConfigurableJoint cj = joint.Joint;
+                if (joint.SecondaryProfile.HasValue)
+                {
+                    if (joint.Recipe.Kind != PhysicalJointKind.Hinge)
+                        throw new InvalidOperationException($"Joint '{joint.Id}' carries a secondary channel on a non-hinge.");
+                    if (cj.angularZMotion != ConfigurableJointMotion.Limited || cj.angularYMotion != ConfigurableJointMotion.Locked)
+                        throw new InvalidOperationException($"Joint '{joint.Id}' secondary axis is not the declared Z-limited/Y-locked channel.");
+                    if (Mathf.Abs(cj.angularZLimit.limit) <= 0f)
+                        throw new InvalidOperationException($"Joint '{joint.Id}' secondary limit is not positive.");
+                }
+                else if (joint.Recipe.Kind == PhysicalJointKind.Hinge)
+                {
+                    if (cj.angularZMotion != ConfigurableJointMotion.Locked || cj.angularYMotion != ConfigurableJointMotion.Locked)
+                        throw new InvalidOperationException($"Canonical hinge '{joint.Id}' no longer has both swing axes locked.");
+                }
+            }
         }
 
         // Capacity is an actuator ceiling, not a gain. The GAM-7 family
@@ -631,6 +763,39 @@ namespace PowerliftingSimulator.Athlete
                 errorRad,
                 targetVelocity - actualVelocity,
                 maximumForce);
+
+            bool hasSecondary = joint.SecondaryProfile.HasValue;
+            float secondaryRequestedDeg = 0f, secondaryAppliedDeg = 0f, secondaryActualDeg = 0f;
+            float secondaryErrorRad = 0f, secondaryVelocityRadS = 0f;
+            float secondaryTravelNegative = 0f, secondaryTravelPositive = 0f;
+            float secondaryDemandNm = 0f, secondaryDemandFraction = 0f, secondaryMaximumForce = 0f;
+            float secondaryLimitProximity = 0f, secondarySolverTorque = 0f;
+            bool secondarySaturated = false, secondaryRateLimited = false;
+            if (hasSecondary)
+            {
+                // The powered secondary channel of a hinge: its own profile,
+                // its own ceiling, and its own diagnostics. Never merged into
+                // the X flexion demand above.
+                JointFamilyProfile sp = joint.SecondaryProfile.Value;
+                Vector3 ve = targetVelocity - actualVelocity;
+                secondaryRequestedDeg = SignedEulerZ(joint.RequestedCommand.TargetRelativeRotation);
+                secondaryAppliedDeg = SignedEulerZ(joint.AppliedTarget);
+                secondaryActualDeg = SignedEulerZ(actual);
+                secondaryErrorRad = errorRad.z;
+                secondaryVelocityRadS = actualVelocity.z;
+                float zLimit = Mathf.Max(0.001f, joint.Joint.angularZLimit.limit);
+                secondaryTravelNegative = zLimit + secondaryActualDeg;
+                secondaryTravelPositive = zLimit - secondaryActualDeg;
+                secondaryMaximumForce = SecondaryForce(joint, maximumForce);
+                secondaryDemandNm = Mathf.Abs(sp.Spring * secondaryErrorRad + sp.Damper * (targetVelocity.z - actualVelocity.z));
+                secondaryDemandFraction = secondaryDemandNm / Mathf.Max(secondaryMaximumForce, 0.001f);
+                secondarySaturated = secondaryDemandFraction >= 1f;
+                secondaryRateLimited = Mathf.Abs(secondaryAppliedDeg - secondaryRequestedDeg) > 0.01f;
+                secondaryLimitProximity = Mathf.Clamp01(Mathf.Abs(secondaryActualDeg) / zLimit);
+                // Keep the primary demand purely X so a roll-channel number
+                // can never pass as flexion authority or vice versa.
+                demand = new PoweredDriveDemand(demand.TwistNm, float.NaN, demand.TwistFraction, float.NaN, demand.TwistFraction);
+            }
             float xDegrees = SignedTwistDegrees(actual, Vector3.right);
             float limit = xDegrees >= 0f ? Mathf.Max(0.001f, joint.Recipe.HighDegrees) : Mathf.Max(0.001f, -joint.Recipe.LowDegrees);
             float proximity = Mathf.Clamp01(Mathf.Abs(xDegrees) / limit);
@@ -654,7 +819,22 @@ namespace PowerliftingSimulator.Athlete
                 demand.SwingFraction,
                 demand.MaximumChannelFraction,
                 proximity,
-                solverTorque);
+                solverTorque,
+                hasSecondary,
+                secondaryRequestedDeg,
+                secondaryAppliedDeg,
+                secondaryActualDeg,
+                secondaryErrorRad,
+                secondaryVelocityRadS,
+                secondaryTravelNegative,
+                secondaryTravelPositive,
+                secondaryDemandNm,
+                secondaryDemandFraction,
+                secondaryMaximumForce,
+                secondarySaturated,
+                secondaryRateLimited,
+                secondaryLimitProximity,
+                secondarySolverTorque);
         }
 
         private static PoweredDriveDemand ModelDriveDemand(
@@ -750,6 +930,17 @@ namespace PowerliftingSimulator.Athlete
             return SignedTwistDegrees(NormalizeCanonical(rotation), axis) * Mathf.Deg2Rad;
         }
 
+        /// <summary>
+        /// Signed Z Euler angle (Unity ZXY order) in the joint-space frame.
+        /// This is the channel scalar used for the declared Z limit, because it
+        /// stays meaningful when the flexion channel is also non-zero.
+        /// </summary>
+        public static float SignedEulerZ(Quaternion rotation)
+        {
+            rotation = NormalizeCanonical(rotation);
+            return Mathf.DeltaAngle(0f, rotation.eulerAngles.z);
+        }
+
         private static float SignedTwistDegrees(Quaternion rotation, Vector3 axis)
         {
             Vector3 vector = new Vector3(rotation.x, rotation.y, rotation.z);
@@ -796,6 +987,12 @@ namespace PowerliftingSimulator.Athlete
             public PoweredJointDiagnostic PostPhysicsDiagnostic { get; internal set; }
             public bool HasPostPhysicsDiagnostic { get; internal set; }
             public ulong LastCommandTick { get; internal set; }
+
+            /// <summary>
+            /// Optional powered secondary (YZ) channel of a hinge whose rig unlocked one
+            /// secondary axis (GAM-70 deadlift ankle roll). Null for every canonical joint.
+            /// </summary>
+            public JointFamilyProfile? SecondaryProfile { get; internal set; }
 
             internal PhysicalAthleteRig.JointRuntime Runtime { get; }
 

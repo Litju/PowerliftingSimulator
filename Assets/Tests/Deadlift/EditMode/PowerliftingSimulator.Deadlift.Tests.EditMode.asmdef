@@ -1,0 +1,13 @@
+{
+    "name": "PowerliftingSimulator.Deadlift.Tests.EditMode",
+    "rootNamespace": "PowerliftingSimulator.Deadlift",
+    "references": [
+        "PowerliftingSimulator.Equipment"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ]
+}

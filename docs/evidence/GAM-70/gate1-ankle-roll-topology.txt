@@ -1,0 +1,77 @@
+GAM-70 Gate 1 - ankle-roll topology, limits, drive channels and realized response
+2026-11-13, Unity 6000.3.22f1, PlayMode on the real B2 plant + an isolated hinge fixture
+
+Disposition: PASS for the deadlift-local variant. Canonical squat/bench topology is unchanged;
+both ankle Z channels are versioned, independently instrumented and physically powered.
+One measured plant limitation is recorded at the end (loaded soft-stop coupling under a
+deliberately out-of-range 60 deg command).
+
+Schema GAM70_DEADLIFT_ANKLE_ROLL_V1 / canonical GAM6_CANONICAL_16_BODY_15_JOINT_V1
+
+1. Canonical rig before activation (fresh production plant, both grips):
+   rig bodies 16, joints 15, powered 15, passive 0, secondary channels 0
+   left_foot: X Limited, Y Locked, Z Locked, zLimit 0, no secondary profile
+   right_foot: X Limited, Y Locked, Z Locked, zLimit 0, no secondary profile
+   PhysicalAthleteRig.ValidateCanonicalTopology() passes. No extra rigid body under the
+   physical root (16 bodies). The hand bodies also carry the two qualified BenchGrip
+   constraints; the rig graph itself remains 15 ConfigurableJoints.
+
+2. Variant activation (before tick 0, after build; initialization prime is not a tick):
+   left_foot  zLimit 15.000 deg, ceiling 60.000 N m, K 306.667, D 17.600
+   right_foot zLimit 15.000 deg, ceiling 60.000 N m, K 306.667, D 17.600
+   world axes: x = horizontal flexion axis, y = (0,1,0), z = sole long axis
+   sole dot for each z axis = 1.000000 (the Z channel is the sole long axis)
+   after enable: 16 bodies / 15 rig joints / 2 powered secondary channels
+   applied PhysX drives: X max 450 N m; Z spring 306.6667, damper 17.6, max 60 N m;
+   rotationDriveMode XYAndZ; the existing PoweredJointController is the only writer.
+
+3. Lifecycle controls:
+   - repeated Enable with the same declared limit is a no-op;
+   - redefining the active limit (10 deg) is refused;
+   - a second secondary channel on the same ankle is refused;
+   - activation after the first physics tick is refused (rig.HasPhysicsStepped true);
+   - canonical ValidateCanonicalTopology passes before activation, and the variant
+     ValidateAnkleRollTopology/ValidateAppliedAuthority pass after priming.
+
+4. Realized Z channel on the loaded B2 plant (paired fresh plants, regulator frozen
+   identically, isolated left-ankle step, difference from the quiet control):
+   quiet: actual 0.052 -> 0.080 deg (delta 0.028), COP across -9.5 mm
+   +1 deg: actual 0.052 -> 0.146 / 0.224 / 0.274 deg (delta 0.221)
+           requested 1.852, applied 1.852, demand 3.51 / 60 N m (frac 0.059),
+           velocity 0.273 rad/s, travel -15.27 / +14.73 deg, proximity 0.018
+   -1 deg: actual 0.052 -> -0.110 deg (delta -0.162), demand 2.76 / 60 N m
+   measured effect vs quiet: +1 +0.193 deg, -1 -0.191 deg
+   COP across effect vs quiet: +1 -16.99 mm, -1 +16.75 mm (sign reverses)
+   cross-foot effect: +0.75 mm (local, decoupled)
+   realized Y twist (locked axis): 0.000 deg for both signs
+   X flexion at the same samples: -9.75 / -9.73 deg (the Z measurement is separate)
+
+5. Isolated hinge limit fixture (same hinge topology and secondary profile, no contact):
+   commanded +45 deg: realized max 15.000 deg, final 15.000 deg
+   active ceiling 60 N m; modeled demand 160.57 N m (fraction 2.676) -> saturated true
+   the declared +/-15 deg stop is enforced exactly; the drive is clamped by the 60 N m
+   finite authority, and the channel reports its own saturation.
+
+6. A2/A3 acceptance extension (same commits):
+   A2 two fresh 1000-tick holds PASS; per-ankle Z demand max 0.065, Z limit proximity
+   max 0.0037, minimum Z travel 14.94 deg, both channels present.
+   A3 bilateral pretension PASS; Z demand max 0.052, Z limit proximity 0.0034, minimum
+   Z travel 14.95 deg, both channels present; the identical load transfer is reproduced.
+
+7. MEASURED LIMITATION (not hidden, not fixed by changing the range):
+   A deliberately out-of-range 60 deg Z command on the loaded foot realizes a maximum
+   19.664 deg (final 18.400 deg) with the limit proximity at 1 and the drive saturated.
+   The isolated fixture shows the joint's hard stop is 15.000 deg, so the extra 4.66 deg
+   is the loaded soft-limit/contact/cross-axis coupling under a command no game input
+   can issue (the balance loop clamps its roll offset to 8 deg; the pretension reference
+   commands 0 N m roll at B2). The declared +/-15 deg range is unchanged. This limitation
+   is carried into the bar-break phase; the roll command path is bounded at 8 deg.
+
+Reproduce (fresh Unity process, no -nographics):
+  -testFilter GATE1_
+Result: 6 run, 6 passed, 0 failed (Logs/g1-results.xml).
+
+Evidence files: Logs/GAM70/gate1-topology.txt, gate1-ankle-roll-z.txt,
+gate1-ankle-roll-z.csv, gate1-ankle-roll-limit-fixture.txt; A2/A3 output in
+Logs/GAM70/a2-dynamic-hold.txt and a3-grounded-pretension.txt.
+Test source: Assets/Tests/Deadlift/PlayMode/DeadliftAnkleRollTopologyTests.cs.
