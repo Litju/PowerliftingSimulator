@@ -85,11 +85,12 @@ def analyze(path: str) -> str:
             f"actual X {f(r, 'aXLact'):+7.2f}/{f(r, 'aXRact'):+7.2f} deg  applied X {f(r, 'aXLapp'):+7.2f}/{f(r, 'aXRapp'):+7.2f} deg")
         out.append(
             f"             ankle X demand L/R {f(r, 'aXLdem'):7.1f}/{f(r, 'aXRdem'):7.1f} N m "
-            f"({f(r, 'aXLfrac'):.2f}/{f(r, 'aXRfrac'):.2f} x {f(r, 'aXLcap'):.0f} N m) prox {f(r, 'aXLprox'):.3f}/{f(r, 'aXRprox'):.3f}")
+            f"({f(r, 'aXLfrac'):.2f}/{f(r, 'aXRfrac'):.2f} x {f(r, 'aXLcap'):.0f} N m) prox {f(r, 'aXLprox'):.3f}/{f(r, 'aXRprox'):.3f} "
+            f"solver X {f(r, 'aXLsol'):+7.1f}/{f(r, 'aXRsol'):+7.1f} N m")
         out.append(
             f"             ankle Z demand L/R {f(r, 'aXZdem'):7.1f}/{f(r, 'aZRdem'):7.1f} N m "
             f"({f(r, 'aXZfrac'):.2f}/{f(r, 'aZRfrac'):.2f} x {f(r, 'aXZcap'):.0f} N m) prox {f(r, 'aXZprox'):.3f}/{f(r, 'aZRprox'):.3f} "
-            f"gain L/R {f(r, 'regGL'):.2f}/{f(r, 'regGR'):.2f}")
+            f"solver Z {f(r, 'aXZsol'):+7.1f}/{f(r, 'aZRsol'):+7.1f} N m gain L/R {f(r, 'regGL'):.2f}/{f(r, 'regGR'):.2f}")
     return "\n".join(out)
 
 

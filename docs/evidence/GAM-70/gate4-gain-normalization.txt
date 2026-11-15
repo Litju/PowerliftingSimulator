@@ -1,0 +1,137 @@
+GAM-70 Gate 4B - load-gain normalization, and post-separation diagnosis
+2026-11-14, Unity 6000.3.22f1, fresh B2 plants, real 75 kg bar, both rigid grips
+
+Disposition: neither the reference-ownership defect (Gate 4A) nor a static
+continuous load-gain normalization explains the post-separation support
+failure. The ownership repair is kept because it is physically correct and
+makes the failure legible, but it does not restore support. The static
+continuous normalization is a FAILED hypothesis. A measured continuous
+normalization keeps both feet on the platform for the full 900 ticks but turns
+the failure into a large bounded limit cycle with intermittent X and Z drive
+saturation and no sustained bar rise. No gain value, capacity, contact
+parameter, pull trajectory, load schedule or solver value was changed.
+
+1. Gate 2 design. Three fresh plants run the fixed explicit ownership, the same
+   constant Kp = 36.67 deg/m, Ki = 3 deg/(m tick), +-4 deg ankle offset,
+   +-8 deg roll offset and the same +-15 deg roll stop. Only
+   `DeadliftBalanceRegulator.FootLoadRatio` (the multiplier g) changes:
+   N0 control: committed mode-span schedule
+      g = N_blend(f) / N_grounded(H_ceiling = 275.9 N);
+   N1 static H=0: same blend, one denominator anchored at the qualified H=0
+      statics, g = N_blend(f) / N(H=0);
+   N2 measured H=0: g = realized foot normal / N(H=0), continuous across the
+      handoff and posture-adaptive; no other term changes.
+   Rationale for N1/N2: the identified ankle COP gain falls as 1/N_foot
+   (64.5 -> 47.5 mm/deg from 491 -> 674 N per foot, Cb = 31.7 N m/deg). The
+   committed N0 denominator switches from N(H_actual) to N(H_ceiling) at the
+   handoff, which is a step because H_actual = 60.7 N there, not 275.9 N.
+
+2. Measured results (900 ticks, full intent, abort at 600 in all three):
+   N0 control: g 1.108 -> 1.120; bar max 0.3456 m (rise 122.6 mm); min foot
+      0.0 N at tick 690; COM 583.3 mm; X/Z demand 1.822/1.332; COP target
+      tracking error max 1057/1060 mm.
+   N1 static H=0: g 1.731 -> 1.750; bar max 0.3471 m (rise 124.0 mm); min foot
+      0.0 N at tick 861; COM 594.9 mm; X/Z demand 1.980/1.332; COP error
+      1065/1080 mm. The loss is later but the collapse is the same
+      (COM y 0.369 m, COM z -0.637 m, speed 0.53 m/s at loss).
+   N2 measured H=0: g 2.054/0.689 at ramp end, 1.357/1.289 at end (per-foot,
+      asymmetric realized loads); bar max 0.2772 m (rise 54.2 mm), settles near
+      0.248 m (+25 mm); no support loss in 900 ticks (min foot 84.8 N at
+      tick 428); COM 160.2 mm; peak X demand 1086/938 N m at tick 875 (2.41 /
+      2.08 x 450); peak Z demand 178/96 N m at tick 876 (2.96 / 1.60 x 60);
+      roll limit proximity 1.000 both feet; COP error max 432/428 mm.
+   N2 is not a sustained lift: the bar oscillates 0.235-0.277 m (54 mm), the COM z
+   oscillates over 0.23 m, and both ankle channels saturate during the cycle.
+   It is a bounded limit cycle that keeps support, not a qualified movement.
+   Hypothesis "a continuous H = 0 gain multiplier fixes the support failure"
+   is therefore partially refuted: the static form fails; the measured form
+   trades gross support loss for saturated oscillation and stall.
+   The reported "COP error" is the per-foot projected target/measurement
+   difference; it includes the moving-foot frame and lost-contact ticks, so it
+   is a task-space tracking indicator, not a loop-gain metric.
+
+3. Stop-and-diagnose at the measured ramp end (tick 407, fraction 1.0; all
+   cases share this state before their gain law acts):
+   - Task space: COM (-0.0131, 0.5607, -0.0851) m, velocity
+     (-0.112, +0.039, +0.254) m/s; combined foot COP (-0.1200, -0.0975) m;
+     COM-COP horizontal offset 107.6 mm. The accepted A2 hold bounds COM
+     motion at 5 mm; the pull is already outside that static premise before
+     the handoff. Foot loads 1180/1143 N, i.e. 2323 N total against the
+     1716.75 N athlete+bar weight: +499.5 N net upward external on the
+     athlete and +107.4 N on the bar.
+   - Joint authority: ankle X modeled demand 87.4/196.3 N m
+     (0.19/0.44 x 450 N m); ankle Z 12.6/54.7 N m (0.21/0.91 x 60 N m).
+     Actual ankle X -14.73/-17.73 deg against applied targets
+     -5.33/-10.12 deg, i.e. 9.4/7.6 deg of plant error. Reported constraint
+     (solver) torque at the same tick: X +0.6/-1.4 N m, Z 0/0 N m. The
+     solver readout is not a motor-torque measurement (repository contract);
+     it cannot certify realized drive torque, and the actual motion is the
+     only evidence of what the plant did.
+   - First support loss: N0/B at tick 690, feet 434.4/16.3 N, COM
+     (0.0006, 0.3710, -0.6165) m, speed 0.67 m/s, COM-COP 479.8 mm; ankle X
+     demand only 32.7/53.3 N m, Z 0.2/46.2 N m, right roll proximity 1.000.
+     The first loss is a task-space/roll event, NOT an ankle X torque
+     deficit. The 933 N m X demand reported in the Gate 3 receipt occurs much
+     later (tick 805) during the post-loss bar bounce and must not be read as
+     the first cause.
+   - Moving reference validity: the static reference was solved at the
+     original B2 posture and a nominal hand pull. At the handoff the actually
+     applied grounded reference is H = 60.7 N (ankle 19.1 N m), because the
+     pretension loop has been driven down by the player's pull, while the
+     load schedule's grounded endpoint is the H = 275.9 N statics
+     (ankle 61.3 N m). The first schedule tick (f = 0.1) therefore steps the
+     ankle reference from 19.1 to 63.1 N m (+44.0 N m) before the 0.1 s ramp
+     even completes. This is a separate measured discontinuity, not ownership
+     and not gain normalization, and it is a direct consequence of applying
+     posture-fixed statics to a moved, dynamically loaded configuration.
+   - At the end of the 900-tick window, N2 holds the bar +25 mm with both feet
+     loaded (725.7/663.7 N) and COM back near the start (0.5733, -0.0968) m,
+     but ankle X demand is still 244.5/209.0 N m and the bar is not rising.
+     Knee passage is therefore not demonstrated and is not attempted.
+
+4. Causal disposition.
+   - Reference ownership: real defect, repaired, NOT the cause of the support
+     failure. Both the legacy writer competition and explicit ownership lose
+     support; legacy at tick 708 with the bar re-grounded, explicit at 690
+     with the bar launched 122 mm and the athlete collapsing.
+   - Gain normalization: the mode-span denominator step is real (at the measured
+     handoff the committed g steps 1.124 -> 1.012 because H_actual = 60.7 N,
+     not the 275.9 N schedule endpoint), but correcting it statically (N1)
+     only delays the same collapse. The measured form (N2)
+     changes the support outcome but is a saturated limit cycle, not a lift.
+     It is recorded as a candidate mechanism for the next gate, not promoted
+     to a qualified controller.
+   - Remaining physical boundary: a posture-fixed static joint reference
+     applied open loop to a moving, gripped, two-foot contact mode whose
+     actual hand load (422-547 N/hand) and foot loads (1160 N/foot) differ
+     from the solved assumptions (367.9 N/hand, 858 N/foot). The next gate
+     must measure the task-space COM/COP requirement and a contact-consistent
+     reference at the actual handoff posture/load before any new controller
+     is designed.
+
+5. Controls on the same build (Logs/g4final-results.xml, 6/6 selected PASS):
+   A2 `A2_DYN_GRIPPED_B2...` and A3 `A3_GROUNDED_BILATERAL...` PASS; no-pull
+   (900 ticks, plates 194.3 N, bar 0.0 mm, min foot 487.8 N) and
+   insufficient-pull 0.10 (no separation) PASS; abort and single-grip remain
+   distinguishable. The full sustained acceptance still FAILS: pull separates
+   at 396, min foot 0.0 N, COM 583.3 mm, bar rise 122.6 mm, tilt 8.4 deg.
+   The physical-separation diagnostic is Explicit and fails the old 100 mm COM
+   bound at 118.7 mm; the bound is preserved, not relaxed.
+
+6. Next physical gate (blocked, do not skip): on fresh plants, at the measured
+   handoff tick, solve the contact-consistent joint torque set at the actual
+   posture and actual measured hand/foot loads, and compare it with the
+   schedule's applied set; measure the task-space COM/COP requirement over the
+   next 0.5 s against the realized support polygon; identify whether the bar
+   rise can be sustained with bilateral support and the existing finite joint
+   authority. Only a measured moving-reference/task-space result may justify
+   one bounded repair. Knee passage is not in scope until sustained bar motion
+   and bilateral foot support are both demonstrated.
+
+Receipts:
+  Logs/g4final-results.xml (A2, A3, Gate 2, Gate 4 A/B, baseline, regression 6/6)
+  Logs/g4sustained-results.xml (sustained acceptance FAIL preserved; separation diagnostic FAIL preserved)
+  Logs/g4controls-results.xml (Gate 3 controls)
+  Logs/GAM70/gate2-normalization-ab.txt
+  Logs/GAM70/gate4-ownership-*.csv
+  Tools/Experiments/Analyze-GAM70PostSeparation.py

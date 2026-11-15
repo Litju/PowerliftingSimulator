@@ -79,10 +79,10 @@ namespace PowerliftingSimulator.Deadlift
                 "refALX,refALZ,refARX,refARZ,refKLX,refKRX,refHLX,refHRX,refAbdX,refThxX," +
                 "plateL,plateR,footL,footR,copLx,copLz,copRx,copRz," +
                 "comX,comY,comZ,vx,vy,vz,barY,barVy,barDisp,barTilt," +
-                "aXLreq,aXLapp,aXLact,aXLvel,aXLdem,aXLfrac,aXLcap,aXLprox," +
-                "aXZreq,aXZapp,aXZact,aXZvel,aXZdem,aXZfrac,aXZcap,aXZprox," +
-                "aXRreq,aXRapp,aXRact,aXRvel,aXRdem,aXRfrac,aXRcap,aXRprox," +
-                "aZRreq,aZRapp,aZRact,aZRvel,aZRdem,aZRfrac,aZRcap,aZRprox," +
+                "aXLreq,aXLapp,aXLact,aXLvel,aXLdem,aXLfrac,aXLcap,aXLprox,aXLsol," +
+                "aXZreq,aXZapp,aXZact,aXZvel,aXZdem,aXZfrac,aXZcap,aXZprox,aXZsol," +
+                "aXRreq,aXRapp,aXRact,aXRvel,aXRdem,aXRfrac,aXRcap,aXRprox,aXRsol," +
+                "aZRreq,aZRapp,aZRact,aZRvel,aZRdem,aZRfrac,aZRcap,aZRprox,aZRsol," +
                 "regOL,regOR,regIL,regIR,regRL,regRR,regGL,regGR," +
                 "gripLy,gripRy,sepL,sepR,event\n";
         }
@@ -290,13 +290,13 @@ namespace PowerliftingSimulator.Deadlift
                     Own(com.x), Own(com.y), Own(com.z), Own(comV.x), Own(comV.y), Own(comV.z),
                     Own(_world.Bar.Body.position.y), Own(barVy), Own(_world.Bar.Body.position.y - bar0.y), Own(tilt),
                     Own(ln.PrimaryRequestedAngleDeg), Own(ln.PrimaryAppliedAngleDeg), Own(ln.PrimaryActualAngleDeg), Own(ln.ActualAngularVelocityRadS.x),
-                    Own(ln.TwistDriveDemandNm), Own(ln.TwistDriveDemandFraction), Own(ln.MaximumForceNm), Own(ln.LimitProximity),
+                    Own(ln.TwistDriveDemandNm), Own(ln.TwistDriveDemandFraction), Own(ln.MaximumForceNm), Own(ln.LimitProximity), Own(ln.SolverTorqueJointSpaceNm.x),
                     Own(ln.SecondaryRequestedAngleDeg), Own(ln.SecondaryAppliedAngleDeg), Own(ln.SecondaryActualAngleDeg), Own(ln.SecondaryActualAngularVelocityRadS),
-                    Own(ln.SecondaryDriveDemandNm), Own(ln.SecondaryDriveDemandFraction), Own(ln.SecondaryMaximumForceNm), Own(ln.SecondaryLimitProximity),
+                    Own(ln.SecondaryDriveDemandNm), Own(ln.SecondaryDriveDemandFraction), Own(ln.SecondaryMaximumForceNm), Own(ln.SecondaryLimitProximity), Own(ln.SecondarySolverTorqueNm),
                     Own(rn.PrimaryRequestedAngleDeg), Own(rn.PrimaryAppliedAngleDeg), Own(rn.PrimaryActualAngleDeg), Own(rn.ActualAngularVelocityRadS.x),
-                    Own(rn.TwistDriveDemandNm), Own(rn.TwistDriveDemandFraction), Own(rn.MaximumForceNm), Own(rn.LimitProximity),
+                    Own(rn.TwistDriveDemandNm), Own(rn.TwistDriveDemandFraction), Own(rn.MaximumForceNm), Own(rn.LimitProximity), Own(rn.SolverTorqueJointSpaceNm.x),
                     Own(rn.SecondaryRequestedAngleDeg), Own(rn.SecondaryAppliedAngleDeg), Own(rn.SecondaryActualAngleDeg), Own(rn.SecondaryActualAngularVelocityRadS),
-                    Own(rn.SecondaryDriveDemandNm), Own(rn.SecondaryDriveDemandFraction), Own(rn.SecondaryMaximumForceNm), Own(rn.SecondaryLimitProximity),
+                    Own(rn.SecondaryDriveDemandNm), Own(rn.SecondaryDriveDemandFraction), Own(rn.SecondaryMaximumForceNm), Own(rn.SecondaryLimitProximity), Own(rn.SecondarySolverTorqueNm),
                     Own(_regulator.OffsetDegFor("left_foot")), Own(_regulator.OffsetDegFor("right_foot")),
                     Own(_regulator.IntegralDegFor("left_foot")), Own(_regulator.IntegralDegFor("right_foot")),
                     Own(_regulator.RollOffsetDegFor("left_foot")), Own(_regulator.RollOffsetDegFor("right_foot")),
