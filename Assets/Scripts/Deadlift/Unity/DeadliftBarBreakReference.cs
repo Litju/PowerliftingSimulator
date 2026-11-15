@@ -20,14 +20,17 @@ namespace PowerliftingSimulator.Deadlift.Unity
     /// </summary>
     public sealed class DeadliftBarBreakReference
     {
-        private readonly DeadliftContactStatics _grounded, _boundary;
+        private readonly DeadliftContactStatics _grounded, _boundary, _zero;
 
-        public DeadliftBarBreakReference(DeadliftContactStatics grounded, DeadliftContactStatics boundary)
+        public DeadliftBarBreakReference(DeadliftContactStatics grounded, DeadliftContactStatics boundary, DeadliftContactStatics atZero = null)
         {
             _grounded = grounded ?? throw new ArgumentNullException(nameof(grounded));
             _boundary = boundary ?? throw new ArgumentNullException(nameof(boundary));
+            _zero = atZero ?? grounded;
             if (!_grounded.Feasible)
                 throw new ArgumentException("the grounded pretension statics must be feasible");
+            if (atZero != null && (!atZero.Feasible || atZero.HandPullN != 0f))
+                throw new ArgumentException("the reference statics must be the feasible H = 0 state");
             if (_boundary.HandPullN <= _grounded.HandPullN)
                 throw new ArgumentException("the boundary must carry more hand load than the grounded state");
             if (_boundary.PlateLN < -0.01f || _boundary.PlateRN < -0.01f)
@@ -71,6 +74,14 @@ namespace PowerliftingSimulator.Deadlift.Unity
             return Mathf.LerpUnclamped(left ? _grounded.FootLN : _grounded.FootRN,
                 left ? _boundary.FootLN : _boundary.FootRN, Mathf.Clamp01(fraction));
         }
+
+        /// <summary>
+        /// The same foot's reaction in the qualified H = 0 grounded statics.
+        /// This is the loop-gain reference the balance regulator was identified
+        /// against, so a continuous load schedule must normalize to it rather
+        /// than to a pretensioned or mode-spanning denominator.
+        /// </summary>
+        public float FootNormalAtZeroN(string footId) => footId == "left_foot" ? _zero.FootLN : _zero.FootRN;
 
         public string Describe() => string.Format(System.Globalization.CultureInfo.InvariantCulture,
             "bar-break load schedule: H {0:F1} -> {1:F1} N per hand, plates {2:F1} -> {3:F1} N, feet {4:F1}/{5:F1} -> {6:F1}/{7:F1} N; boundary joint demand max {8:F3}",

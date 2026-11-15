@@ -35,6 +35,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public float TargetPerHandN { get; private set; }
         public float LastMeasuredPerHandN { get; private set; }
 
+        /// <summary>Number of integral updates executed (Gate 4 ownership trace).</summary>
+        public int UpdateCount { get; private set; }
+
         /// <summary>Accepts a target in [0, reference maximum]; otherwise rejects and keeps the previous target.</summary>
         public bool TrySetTarget(float perHandN)
         {
@@ -46,6 +49,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
 
         public void Update()
         {
+            UpdateCount++;
             LastMeasuredPerHandN = _measuredPerHandN();
             float next = Mathf.Clamp(_reference.HandPullN + KiPerTick * (TargetPerHandN - LastMeasuredPerHandN), 0f, _reference.MaximumHandPullN);
             _reference.TryCommandHandPull(next);

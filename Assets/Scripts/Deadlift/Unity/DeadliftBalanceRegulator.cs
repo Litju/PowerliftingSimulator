@@ -54,6 +54,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
             public bool Engaged;
             public float T0, AcrossIntegral, HipOffset, RollOffset, RollIntegral, LastAcross = float.NaN;
             public float S0, Integral, Offset, LastDeviationCommand, LastS = float.NaN, LastTarget = float.NaN;
+            public float GainScale = 1f;
         }
 
         public DeadliftBalanceRegulator(PhysicalAthleteRig rig, Collider ground)
@@ -146,6 +147,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
 
         /// <summary>Along-sole integral state (deg) of one foot; read-only trace of the qualified loop.</summary>
         public float IntegralDegFor(string footId) => footId == "left_foot" ? _feet[0].Integral : footId == "right_foot" ? _feet[1].Integral : 0f;
+        /// <summary>Load-ratio gain multiplier applied to Kp and Ki on the last tick (Gate 4 trace).</summary>
+        public float GainScaleFor(string footId) => footId == "left_foot" ? _feet[0].GainScale : footId == "right_foot" ? _feet[1].GainScale : 1f;
         /// <summary>Across-sole (roll) integral state (deg) of one foot.</summary>
         public float RollIntegralDegFor(string footId) => footId == "left_foot" ? _feet[0].RollIntegral : footId == "right_foot" ? _feet[1].RollIntegral : 0f;
         /// <summary>Along-sole target (m, world projection) used by the qualified loop on the last tick.</summary>
@@ -256,6 +259,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     target = Mathf.Clamp(target, lo, hi);
                 float e = target - s;
                 float g = FootLoadRatio != null ? FootLoadRatio(foot.Id) : 1f;
+                foot.GainScale = g;
                 foot.Integral = Mathf.Clamp(foot.Integral + g * KiDegPerMPerTick * e, -MaxOffsetDeg, MaxOffsetDeg);
                 float next;
                 if (Predictive)

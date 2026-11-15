@@ -99,7 +99,10 @@ namespace PowerliftingSimulator.Athlete
             bool secondaryDriveSaturated = false,
             bool secondaryTargetRateLimited = false,
             float secondaryLimitProximity = 0f,
-            float secondarySolverTorqueNm = 0f)
+            float secondarySolverTorqueNm = 0f,
+            float primaryRequestedAngleDeg = 0f,
+            float primaryAppliedAngleDeg = 0f,
+            float primaryActualAngleDeg = 0f)
         {
             RequestedTarget = requestedTarget;
             AppliedTarget = appliedTarget;
@@ -132,6 +135,9 @@ namespace PowerliftingSimulator.Athlete
             SecondaryTargetRateLimited = secondaryTargetRateLimited;
             SecondaryLimitProximity = secondaryLimitProximity;
             SecondarySolverTorqueNm = secondarySolverTorqueNm;
+            PrimaryRequestedAngleDeg = primaryRequestedAngleDeg;
+            PrimaryAppliedAngleDeg = primaryAppliedAngleDeg;
+            PrimaryActualAngleDeg = primaryActualAngleDeg;
         }
 
         public Quaternion RequestedTarget { get; }
@@ -171,6 +177,16 @@ namespace PowerliftingSimulator.Athlete
         public bool SecondaryTargetRateLimited { get; }
         public float SecondaryLimitProximity { get; }
         public float SecondarySolverTorqueNm { get; }
+
+        /// <summary>
+        /// GAM-70 Gate 4: signed X (calibrated flexion) angle of the requested,
+        /// rate-limited applied and actual joint state, in degrees, so a trace
+        /// can show command, realized target and plant state separately. The
+        /// roll channel has its own <see cref="Secondary*"/> triple.
+        /// </summary>
+        public float PrimaryRequestedAngleDeg { get; }
+        public float PrimaryAppliedAngleDeg { get; }
+        public float PrimaryActualAngleDeg { get; }
 
         /// <summary>X (flexion) channel demand has reached its own finite ceiling.</summary>
         public bool PrimaryDriveSaturated => TwistDriveDemandFraction >= 1f;
@@ -797,6 +813,8 @@ namespace PowerliftingSimulator.Athlete
                 demand = new PoweredDriveDemand(demand.TwistNm, float.NaN, demand.TwistFraction, float.NaN, demand.TwistFraction);
             }
             float xDegrees = SignedTwistDegrees(actual, Vector3.right);
+            float requestedXDegrees = SignedTwistDegrees(joint.RequestedCommand.TargetRelativeRotation, Vector3.right);
+            float appliedXDegrees = SignedTwistDegrees(joint.AppliedTarget, Vector3.right);
             float limit = xDegrees >= 0f ? Mathf.Max(0.001f, joint.Recipe.HighDegrees) : Mathf.Max(0.001f, -joint.Recipe.LowDegrees);
             float proximity = Mathf.Clamp01(Mathf.Abs(xDegrees) / limit);
             // currentTorque is reported in the joint's own local frame, so it
@@ -834,7 +852,10 @@ namespace PowerliftingSimulator.Athlete
                 secondarySaturated,
                 secondaryRateLimited,
                 secondaryLimitProximity,
-                secondarySolverTorque);
+                secondarySolverTorque,
+                requestedXDegrees,
+                appliedXDegrees,
+                xDegrees);
         }
 
         private static PoweredDriveDemand ModelDriveDemand(

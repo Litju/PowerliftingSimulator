@@ -7,6 +7,20 @@ using UnityEngine;
 namespace PowerliftingSimulator.Deadlift.Unity
 {
     /// <summary>
+    /// GAM-70 Gate 4: which writer currently owns the static joint reference.
+    /// The grounded pretension reference is only valid while the plates carry
+    /// the bar; the airborne load schedule owns it after the measured
+    /// separation. The owner is explicit so a trace can prove who wrote the
+    /// command and so no stale writer can silently overwrite it.
+    /// </summary>
+    public enum DeadliftReferenceOwner : byte
+    {
+        None,
+        GroundedPretension,
+        AirborneBarBreak
+    }
+
+    /// <summary>
     /// The only joint-command writer of the deadlift setup qualification: it
     /// commands every powered joint to hold the solved setup posture with
     /// full effort at the athlete's finite family capacities, scaled by
@@ -95,6 +109,23 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public float BarBreakFraction { get; private set; }
         private float _appliedBarBreakFraction = float.NaN;
 
+        private readonly Dictionary<string, Vector3> _appliedReferenceAxes = new Dictionary<string, Vector3>(StringComparer.Ordinal);
+
+        /// <summary>
+        /// GAM-70 Gate 4: the writer that currently owns the static reference,
+        /// and the reference torque set it last applied (N m on each child's
+        /// joint axes: X flexion, Z the ankle roll channel). Both are
+        /// read-only traces; they never feed the controller.
+        /// </summary>
+        public DeadliftReferenceOwner ReferenceOwner { get; private set; }
+        public IReadOnlyDictionary<string, Vector3> AppliedReferenceAxes => _appliedReferenceAxes;
+        public Vector3 AppliedReferenceAxesFor(string jointId) =>
+            _appliedReferenceAxes.TryGetValue(jointId, out Vector3 v) ? v : Vector3.zero;
+
+        /// <summary>Writes of the grounded reference and of the airborne schedule seen so far (Gate 4 A/B trace).</summary>
+        public int GroundedReferenceWrites { get; private set; }
+        public int AirborneReferenceWrites { get; private set; }
+
         public void UseBarBreakReference(DeadliftBarBreakReference reference)
         {
             BarBreakReference = reference ?? throw new ArgumentNullException(nameof(reference));
@@ -144,6 +175,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 return;
             SetStaticReference(_referenceRig, GroundedReference.DriveTorquesAxes());
             _appliedHandPullN = GroundedReference.HandPullN;
+            ReferenceOwner = DeadliftReferenceOwner.GroundedPretension;
+            GroundedReferenceWrites++;
         }
 
         /// <summary>Per-joint static gravity reference offset angle (deg) after <see cref="ComputeStaticGravityBias"/>.</summary>
@@ -158,6 +191,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 throw new ArgumentNullException(nameof(rig));
             _bias.Clear();
             _biasTorqueNm.Clear();
+            _appliedReferenceAxes.Clear();
             Vector3 g = Physics.gravity;
             foreach (PoweredJointController.PoweredJointRuntime joint in rig.PoweredController.Joints)
             {
@@ -214,6 +248,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 _biasTorqueNm[joint.Id] = magnitude;
                 float angleRad = magnitude / joint.Profile.Value.Spring;
                 _bias[joint.Id] = local.sqrMagnitude < 1e-12f ? Quaternion.identity : Quaternion.AngleAxis(angleRad * Mathf.Rad2Deg, local.normalized);
+                _appliedReferenceAxes[joint.Id] = local.sqrMagnitude < 1e-12f ? Vector3.zero : local * (magnitude / local.magnitude);
             }
         }
 
@@ -224,8 +259,10 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 throw new ArgumentNullException(nameof(source));
             _bias.Clear();
             _biasTorqueNm.Clear();
+            _appliedReferenceAxes.Clear();
             foreach (KeyValuePair<string, Quaternion> b in source._bias) _bias[b.Key] = b.Value;
             foreach (KeyValuePair<string, float> t in source._biasTorqueNm) _biasTorqueNm[t.Key] = t.Value;
+            foreach (KeyValuePair<string, Vector3> t in source._appliedReferenceAxes) _appliedReferenceAxes[t.Key] = t.Value;
         }
 
         /// <summary>
@@ -245,6 +282,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
             {
                 _bias.Remove(id);
                 _biasTorqueNm.Remove(id);
+                _appliedReferenceAxes.Remove(id);
             }
         }
 
@@ -264,12 +302,14 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 throw new ArgumentNullException(nameof(torqueAxesNm));
             _bias.Clear();
             _biasTorqueNm.Clear();
+            _appliedReferenceAxes.Clear();
             foreach (PoweredJointController.PoweredJointRuntime joint in rig.PoweredController.Joints)
             {
                 if (!joint.Profile.HasValue || !_targets.ContainsKey(joint.Id) || !torqueAxesNm.TryGetValue(joint.Id, out Vector3 local))
                     continue;
                 if (joint.Recipe.Kind == PhysicalJointKind.Hinge)
                     local = new Vector3(local.x, 0f, joint.SecondaryProfile.HasValue ? local.z : 0f);
+                _appliedReferenceAxes[joint.Id] = local;
                 _biasTorqueNm[joint.Id] = local.magnitude;
                 // Per-axis offset: a hinge's powered roll channel has its own spring.
                 float kx = joint.Profile.Value.Spring;
@@ -333,12 +373,16 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     {
                         SetStaticReference(_referenceRig, GroundedReference.DriveTorquesAxes());
                         _appliedBarBreakFraction = float.NaN;
+                        ReferenceOwner = DeadliftReferenceOwner.GroundedPretension;
+                        GroundedReferenceWrites++;
                     }
                 }
                 else if (float.IsNaN(_appliedBarBreakFraction) || Mathf.Abs(BarBreakFraction - _appliedBarBreakFraction) > 0.001f)
                 {
                     SetStaticReference(_referenceRig, BarBreakReference.Torques(BarBreakFraction));
                     _appliedBarBreakFraction = BarBreakFraction;
+                    ReferenceOwner = DeadliftReferenceOwner.AirborneBarBreak;
+                    AirborneReferenceWrites++;
                 }
             }
             Regulator?.Update();
