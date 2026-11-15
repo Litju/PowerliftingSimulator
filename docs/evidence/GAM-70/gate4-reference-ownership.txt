@@ -1,57 +1,90 @@
-GAM-70 Gate 4 - post-separation reference ownership, exact-HEAD baseline
-2026-11-14, Unity 6000.3.22f1, fresh B2 plant, real 75 kg bar, both rigid grips
+GAM-70 Gate 4A - post-separation reference ownership (A/B resolved)
+2026-11-14, Unity 6000.3.22f1, fresh B2 plants, real 75 kg bar, both rigid grips
 
-Disposition so far: instrumentation only. The exact-HEAD writer competition is
-now measured per tick; no gain, capacity, contact, trajectory, schedule or
-solver value has been changed yet.
+Disposition: the reference-ownership defect is REAL and REPAIRED, but it did
+NOT cause the post-separation support failure. Both the exact-HEAD writer
+competition and the explicit handoff lose bilateral support. The repair changes
+the failure mode, not the outcome. No gain, capacity, contact parameter, pull
+trajectory, load schedule or solver value was changed in this gate.
 
-1. Channel trace (new, `Assets/Tests/Deadlift/PlayMode/
-   DeadliftReferenceOwnershipTests.cs`). Per tick on a fresh plant:
-   phase, active reference owner, the applied reference torque set (both ankle
-   X/Z and hip, knee, trunk X), grounded hand command H and measured per-hand
-   upward force, airborne load-schedule fraction, pretension integral update
-   count, plate reactions, each foot's normal load and world COP, whole-body
-   COM position and mass-weighted velocity, bar Y/displacement/velocity/tilt,
-   and both ankle channels with requested/applied/actual angle, actual angular
-   velocity, modeled demand, active capacity and limit proximity.
-   The trace is read-only. The extended primary-angle readout was added to
-   `PoweredJointDiagnostic`; no driver value changed.
+1. Instrumentation. Per tick on fresh plants: phase, active reference owner,
+   the applied reference torque set (ankle X/Z, knee, hip, trunk X), grounded
+   hand command H and measured per-hand upward force, airborne load-schedule
+   fraction, pretension update count, plate reactions, each foot's normal load
+   and world COP, whole-body COM position and mass-weighted velocity, bar
+   Y/displacement/velocity/tilt, and both ankle channels with requested,
+   applied and actual angle, velocity, modeled demand, active capacity and
+   limit proximity. Read-only; the only driver-side addition is the primary
+   X angle readout in `PoweredJointDiagnostic`.
 
-2. Exact-HEAD reproduction (Explicit
-   `GATE4_EXACT_HEAD_BASELINE_REPRODUCTION`, PASS on a fresh plant):
-   separation tick 396 (post-state detection; the pull phase enters Separated at
-   398 from the confirmed plate unload and positive bar velocity); pretension
-   ceiling H = 275.9 N per hand; plate sum before the pull 194.3 N.
+2. Exact-HEAD baseline (Explicit `GATE4_EXACT_HEAD_BASELINE_REPRODUCTION`,
+   PASS, fresh plant, legacy writer competition ON): separation tick 396;
+   H = 275.9 N per hand before the pull; plate sum 194.3 N.
    100 ticks after separation: bar rise 17.4 mm, minimum either-foot load
-   104.3 N. Whole 900-tick horizon: minimum either-foot load 0.0 N (support
-   lost), COM deviation 131.8 mm, ankle X modeled demand 2.074 x 450 N m,
-   ankle Z modeled demand 1.634 x 60 N m, ankle Z limit proximity 1.000.
-   These are the committed Gate 3 numbers, so the trace instrumentation did not
-   perturb the plant.
+   104.3 N. Whole 900-tick horizon: minimum foot 0.0 N, COM deviation 131.8 mm,
+   ankle X demand 2.074 x 450 N m, ankle Z demand 1.634 x 60 N m, ankle Z
+   limit proximity 1.000. These reproduce the committed Gate 3 numbers.
+   Over that run: grounded reference writes 695, airborne writes 10; the
+   airborne schedule owns the last write of each ramp tick and loses ownership
+   one tick after the ramp, i.e. exactly when its fraction stops changing;
+   the pretension integral runs 902 times and H falls 275.9 -> 0.0 N.
 
-3. Measured reference-ownership defect. Over the same baseline:
-   - grounded reference writes 695, airborne schedule writes 10;
-   - the airborne schedule owns the last write of each of its 10 ramp ticks
-     (fraction 0.1 -> 1.0 over 0.1 s), then the grounded writer takes ownership
-     back on the very next tick and keeps it to the end;
-   - the pretension integral runs 902 times; H falls 275.9 -> 0.0 N after the
-     plates unload because the measured hand force (the hands now carry the bar)
-     exceeds the grounded target, and every changed H rewrites the grounded
-     reference;
-   - at ramp end the applied reference is the airborne boundary solution
-     (ankle X 77.5/77.5 N m, Z 0/0). After the next grounded write the applied
-     reference is the H = 0 grounded solution, whose statics still assume both
-     plates carry the bar.
-   The first divergence is therefore exactly one tick after the airborne ramp
-   completes: the reference written by the schedule is replaced by a grounded
-   solution solved for a contact mode that no longer exists.
+3. Smallest explicit handoff. `DeadliftSetupHold.ClaimAirborneReference()` is
+   called only from `PrepareCommands` when `DeadliftPullController.Phase`
+   becomes Separated, which the controller sets only from a measured,
+   two-tick-confirmed bilateral plate unload with positive bar velocity. On
+   claim it (a) latches airborne ownership, (b) drops the pretension loop so
+   no integral can continue, (c) forces the next schedule write. While
+   airborne, the grounded reference apply path is skipped; the schedule is
+   written every tick, so no stale grounded reference can survive. The
+   regulator's COP target and load-ratio selector switch on the same latch,
+   not on the fraction value. `ContinueGroundedReferenceAfterSeparation` is an
+   explicit A/B control only (default false).
 
-4. What is not yet claimed: whether this overwrite is the cause of the support
-   failure is not decided by this receipt. The ownership handoff A/B, the
-   no-pull/insufficient-pull/abort controls, A2/A3 reruns and the independent
-   gain-normalization test follow in the same gate.
+4. Ownership A/B (Explicit
+   `GATE4_REFERENCE_OWNERSHIP_AB_ISOLATES_THE_POST_SEPARATION_WRITER`, PASS,
+   two fresh plants): identical bar and foot state to the last common tick 407
+   (pre-divergence max plant delta 0.0 m / 0.0 N), fraction 1.000, both owners
+   airborne. First divergence at tick 408:
+   A (legacy) applies grounded ankle X 8.0/8.0 N m; B applies airborne
+   boundary X 79.3/79.3 N m.
+   A 900-tick outcome: min foot 0.0 N at tick 708, COM 131.8 mm, bar maximum
+   0.2453 m, tilt 0.9 deg, X/Z demand 2.074/1.634.
+   B 900-tick outcome: min foot 0.0 N at tick 690, COM 583.3 mm, bar maximum
+   0.3456 m, tilt 8.4 deg, X/Z demand 1.822/1.332.
+   B never executes a grounded reference write or a pretension update after
+   the handoff (0/0 ramp-to-end). Thus the defect is isolated but is not the
+   cause: the explicitly owned airborne reference fails earlier and deeper.
+
+5. Gate 3 controls on the fixed path (Explicit
+   `GATE3_PLAYER_PULL_BREAKS...`, FAIL preserved): no-pull (900 ticks) keeps
+   plates 194.3 N, bar 0.0 mm, min foot 487.8 N, COM 0.5 mm, no separation.
+   Insufficient pull 0.10 does not separate (min foot 487.8 N, COM 2.3 mm).
+   Abort and single-grip remain distinguishable (separation at 396/410);
+   single-grip is excluded from a clean bilateral break by definition.
+   The full-intent pull separates at 396 then loses support (min foot 0.0 N),
+   so the sustained acceptance FAILS as before. The failure is now:
+   a 2.84 s post-ramp collapse (COM y 0.561 -> 0.371 m, COM z -0.085 ->
+   -0.617 m, COM speed 0.67 m/s) with both plates unloaded, not a grounded
+   reference overwrite.
+   The physical-separation diagnostic is now reclassified Explicit: its old
+   100 mm COM bound was qualified against the defective path, and the fixed
+   event measures 118.7 mm in 100 ticks. The bound is preserved and failing,
+   not relaxed.
+   A2 `A2_DYN_GRIPPED_B2...` and A3 `A3_GROUNDED_BILATERAL...` both PASS on
+   the same build (fresh-plant controls).
+
+6. Executable regression:
+   `GATE4_AIRBORNE_REFERENCE_OWNER_IS_LATCHED_AND_GROUNDED_WRITES_STOP`
+   (normal PlayMode) fails if any grounded reference write or pretension
+   update happens after the airborne ramp, or if the applied airborne reference
+   is not the boundary solution (ankle X 77.5 +/- 3 N m, Z 0 +/- 0.5 N m).
 
 Receipts:
-  Logs/g4base-results.xml (baseline reproduction 1/1 passed)
-  Logs/GAM70/gate4-baseline-head.txt
+  Logs/g4ab-results.xml (baseline / A-B / regression 3/3 passed)
+  Logs/g4controls-results.xml (Gate 3 controls; A2/A3 in Logs/g4gate2-results.xml)
   Logs/GAM70/gate4-ownership-baseline-head.csv
+  Logs/GAM70/gate4-ownership-A-legacy-overwrite.csv
+  Logs/GAM70/gate4-ownership-B-explicit-handoff.csv
+  Logs/GAM70/gate4-ownership-regression.csv
+  Tools/Experiments/Analyze-GAM70PostSeparation.py

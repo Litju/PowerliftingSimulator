@@ -27,6 +27,13 @@ namespace PowerliftingSimulator.Deadlift
     /// </summary>
     public sealed partial class DeadliftSetupDynamicTests
     {
+        private enum NormalizationMode
+        {
+            LegacySchedule,
+            ContinuousStaticH0,
+            MeasuredH0
+        }
+
         private sealed class OwnershipCase
         {
             public string Name;
@@ -34,7 +41,7 @@ namespace PowerliftingSimulator.Deadlift
             public float MaxIntent = 1f;
             public int AbortAtTick = -1;
             public bool LegacyGroundedOverwrite;
-            public bool ContinuousNormalization;
+            public NormalizationMode Normalization = NormalizationMode.LegacySchedule;
             public bool WindowOnly;
             public int WindowAfterSeparation = 100;
             public bool AttachLeft = true, AttachRight = true;
@@ -50,12 +57,21 @@ namespace PowerliftingSimulator.Deadlift
             public float MinFoot = float.MaxValue, MinFootWindow = float.MaxValue;
             public float MaxComDev, MaxComSpeed, MaxDemandX, MaxDemandZ, MaxProxX, MaxProxZ;
             public float MaxBarTilt, MaxSep, MaxGroundedH, MinGroundedH;
+            public float GainLeftAtRampEnd, GainRightAtRampEnd, GainLeftAtEnd, GainRightAtEnd;
+            public float MaxCopErrorLPostRamp, MaxCopErrorRPostRamp;
+            public int CopSamplesPostRamp;
             public int GroundedWritesAtSeparation, AirborneWritesAtSeparation, PretensionUpdatesAtSeparation;
             public int GroundedWritesAtRampEnd, AirborneWritesAtRampEnd, PretensionUpdatesAtRampEnd;
             public int GroundedWritesAtEnd, AirborneWritesAtEnd, PretensionUpdatesAtEnd;
             public bool FootLost, GripAttached = true, BarLimb, OtherPlatform;
+            public bool AirborneClaimedAtEnd;
+            public float AnkleLeftXAtEnd, AnkleLeftZAtEnd;
             public string Event = "none";
             public readonly List<double[]> AppliedReference = new List<double[]>();
+            public readonly List<double> BarYPerTick = new List<double>();
+            public readonly List<double> FootSumPerTick = new List<double>();
+            public readonly List<string> OwnerPerTick = new List<string>();
+            public readonly List<double> FractionPerTick = new List<double>();
             public readonly StringBuilder Rows = new StringBuilder(Header);
 
             public static string Header =>
@@ -109,6 +125,7 @@ namespace PowerliftingSimulator.Deadlift
             DeadliftContactStatics zeroBreak = SolveStatics(0f);
             var schedule = new DeadliftBarBreakReference(groundedBreak, boundaryBreak, zeroBreak);
             _world.Hold.UseBarBreakReference(schedule);
+            _world.Hold.ContinueGroundedReferenceAfterSeparation = c.LegacyGroundedOverwrite;
             _pull = new DeadliftPullController(_world.Rig, _world.Bar, PlateLeftN, PlateRightN)
             {
                 RampPerSecond = 1f,
@@ -121,13 +138,31 @@ namespace PowerliftingSimulator.Deadlift
                 IntentOverride01 = 0f
             };
             _world.Hold.Pull = _pull;
-            if (c.ContinuousNormalization)
+            if (c.Normalization != NormalizationMode.LegacySchedule)
             {
-                // Gate 2: normalize the balance loop to the qualified H = 0
-                // foot statics over the same airborne load schedule. No gain
-                // value is changed; only the multiplier's reference point.
-                _regulator.FootLoadRatio = id => schedule.FootNormalN(id, _pull.LoadScheduleFraction) /
-                                                 Mathf.Max(schedule.FootNormalAtZeroN(id), 1f);
+                // Gate 2: only the loop-gain multiplier's reference point is
+                // changed. Kp and Ki keep their qualified values.
+                if (c.Normalization == NormalizationMode.ContinuousStaticH0)
+                {
+                    _regulator.FootLoadRatio = id =>
+                        _world.Hold.AirborneClaimed
+                            ? schedule.FootNormalN(id, _pull.LoadScheduleFraction) /
+                              Mathf.Max(schedule.FootNormalAtZeroN(id), 1f)
+                            : _groundedRef.FootNormalN(id) / Mathf.Max(_groundedRef.FootNormalAtZeroN(id), 1f);
+                }
+                else
+                {
+                    _regulator.FootLoadRatio = id =>
+                    {
+                        if (!_world.Hold.AirborneClaimed)
+                            return _groundedRef.FootNormalN(id) / Mathf.Max(_groundedRef.FootNormalAtZeroN(id), 1f);
+                        if (_ticks.Count == 0)
+                            return 1f;
+                        Tick last = _ticks[_ticks.Count - 1];
+                        float normalN = id == "left_foot" ? (float)last.LeftFootN : (float)last.RightFootN;
+                        return Mathf.Max(normalN, 1f) / Mathf.Max(schedule.FootNormalAtZeroN(id), 1f);
+                    };
+                }
             }
             _world.Rig.PrimeCommandSource();
             DeadliftAnkleRoll.ValidateAppliedAuthority(_world.Rig);
@@ -188,6 +223,15 @@ namespace PowerliftingSimulator.Deadlift
                     c.AirborneWritesAtRampEnd = _world.Hold.AirborneReferenceWrites;
                     c.PretensionUpdatesAtRampEnd = _pretension.UpdateCount;
                     c.AppliedAtRampEnd = AppliedSignatureText(_world.Hold);
+                    c.GainLeftAtRampEnd = _regulator.GainScaleFor("left_foot");
+                    c.GainRightAtRampEnd = _regulator.GainScaleFor("right_foot");
+                }
+                if (c.SeparationTick != 0 && _pull.LoadScheduleFraction >= 0.999f && _world.Hold.AirborneClaimed)
+                {
+                    float el = Mathf.Abs(_regulator.MeasuredAlongFor("left_foot") - _regulator.TargetAlongFor("left_foot"));
+                    float er = Mathf.Abs(_regulator.MeasuredAlongFor("right_foot") - _regulator.TargetAlongFor("right_foot"));
+                    if (!float.IsNaN(el)) { c.MaxCopErrorLPostRamp = Mathf.Max(c.MaxCopErrorLPostRamp, el); c.CopSamplesPostRamp++; }
+                    if (!float.IsNaN(er)) { c.MaxCopErrorRPostRamp = Mathf.Max(c.MaxCopErrorRPostRamp, er); c.CopSamplesPostRamp++; }
                 }
                 if (rampEndTick < 0 && _pull.Phase == DeadliftPullPhase.Separated && _pull.LoadScheduleFraction >= 0.999f)
                     rampEndTick = i;
@@ -226,6 +270,10 @@ namespace PowerliftingSimulator.Deadlift
                 }
 
                 c.AppliedReference.Add(AppliedSignature(_world.Hold));
+                c.BarYPerTick.Add(_world.Bar.Body.position.y);
+                c.FootSumPerTick.Add(t.LeftFootN + t.RightFootN);
+                c.OwnerPerTick.Add(_world.Hold.ReferenceOwner.ToString());
+                c.FractionPerTick.Add(_pull.LoadScheduleFraction);
 
                 c.Rows.AppendLine(string.Join(",", new[]
                 {
@@ -264,6 +312,11 @@ namespace PowerliftingSimulator.Deadlift
             }
 
             c.PhaseAtEnd = _pull.Phase.ToString();
+            c.AirborneClaimedAtEnd = _world.Hold.AirborneClaimed;
+            c.AnkleLeftXAtEnd = _world.Hold.AppliedReferenceAxesFor("left_foot").x;
+            c.AnkleLeftZAtEnd = _world.Hold.AppliedReferenceAxesFor("left_foot").z;
+            c.GainLeftAtEnd = _regulator.GainScaleFor("left_foot");
+            c.GainRightAtEnd = _regulator.GainScaleFor("right_foot");
             c.GripAttached = (c.AttachLeft ? (_world.LeftGrip != null && _world.LeftGrip.IsAttached) : true) &&
                              (c.AttachRight ? (_world.RightGrip != null && _world.RightGrip.IsAttached) : true);
             F.WriteEvidence("gate4-ownership-" + c.Name + ".csv", c.Rows.ToString());
@@ -317,7 +370,8 @@ namespace PowerliftingSimulator.Deadlift
                 Name = "baseline-head",
                 Ticks = 900,
                 MaxIntent = 1f,
-                AbortAtTick = 600
+                AbortAtTick = 600,
+                LegacyGroundedOverwrite = true
             };
             yield return RunOwnership(c);
 
@@ -345,6 +399,188 @@ namespace PowerliftingSimulator.Deadlift
                 "the exact-HEAD baseline did not end with the grounded writer owning the reference\n" + report);
             Assert.That(c.MaxGroundedH - c.MinGroundedH, Is.EqualTo(275.9f).Within(0.5f),
                 "the exact-HEAD pretension integral did not continue to zero after separation\n" + report);
+        }
+
+        /// <summary>
+        /// Gate 4 A/B: the only difference between the two fresh plants is the
+        /// post-separation reference owner. A reproduces the exact-HEAD writer
+        /// competition; B latches the airborne schedule at the measured
+        /// separation and stops the grounded integral. The assertion is the
+        /// isolation itself (identical state and reference up to the handoff,
+        /// divergent owner one tick after the ramp); the sustained physical
+        /// outcome is reported, not assumed.
+        /// </summary>
+        [UnityTest, Timeout(2400000), Explicit("GAM-70 Gate 4 reference-ownership A/B; run on demand")]
+        public IEnumerator GATE4_REFERENCE_OWNERSHIP_AB_ISOLATES_THE_POST_SEPARATION_WRITER()
+        {
+            var a = new OwnershipCase
+            {
+                Name = "A-legacy-overwrite",
+                Ticks = 900,
+                MaxIntent = 1f,
+                AbortAtTick = 600,
+                LegacyGroundedOverwrite = true
+            };
+            yield return RunOwnership(a);
+            var b = new OwnershipCase
+            {
+                Name = "B-explicit-handoff",
+                Ticks = 900,
+                MaxIntent = 1f,
+                AbortAtTick = 600
+            };
+            yield return RunOwnership(b);
+
+            int n = Math.Min(a.AppliedReference.Count, b.AppliedReference.Count);
+            int div = -1;
+            for (int i = 0; i < n && div < 0; i++)
+                for (int k = 0; k < 16; k++)
+                    if (Math.Abs(a.AppliedReference[i][k] - b.AppliedReference[i][k]) > 1e-6) { div = i; break; }
+
+            double maxBarDelta = 0d, maxFootDelta = 0d;
+            int upto = div < 0 ? n : div;
+            for (int i = 0; i < upto; i++)
+            {
+                maxBarDelta = Math.Max(maxBarDelta, Math.Abs(a.BarYPerTick[i] - b.BarYPerTick[i]));
+                maxFootDelta = Math.Max(maxFootDelta, Math.Abs(a.FootSumPerTick[i] - b.FootSumPerTick[i]));
+            }
+
+            var report = new StringBuilder();
+            report.AppendLine("GAM-70 Gate 4 post-separation reference-ownership A/B (fresh plants, identical initial conditions)");
+            report.AppendLine(OwnershipLine(a));
+            report.AppendLine(OwnershipLine(b));
+            if (div >= 0)
+            {
+                report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                    "first divergence at tick {0}: A owner {1} ankle X {2:F1}/{3:F1} Z {4:F1}/{5:F1} | B owner {6} ankle X {7:F1}/{8:F1} Z {9:F1}/{10:F1} | fraction {11:F3}",
+                    div + 1, a.OwnerPerTick[div], a.AppliedReference[div][0], a.AppliedReference[div][2], a.AppliedReference[div][1], a.AppliedReference[div][3],
+                    b.OwnerPerTick[div], b.AppliedReference[div][0], b.AppliedReference[div][2], b.AppliedReference[div][1], b.AppliedReference[div][3],
+                    a.FractionPerTick[div]));
+                int last = Math.Max(0, div - 1);
+                report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                    "last common tick {0}: fraction {1:F3}, owners {2}/{3} | pre-divergence max plant delta bar {4:E2} m foot {5:E2} N",
+                    last + 1, a.FractionPerTick[last], a.OwnerPerTick[last], b.OwnerPerTick[last], maxBarDelta, maxFootDelta));
+            }
+            report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "physical outcome: A min foot {0:F1} N COM dev {1:F1} mm proxZ {2:F3} event {3} | B min foot {4:F1} N COM dev {5:F1} mm proxZ {6:F3} event {7}",
+                a.MinFoot, a.MaxComDev * 1000f, a.MaxProxZ, a.Event, b.MinFoot, b.MaxComDev * 1000f, b.MaxProxZ, b.Event));
+            report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                "B references: claim {0}, grounded writes ramp->end {1}, pretension updates ramp->end {2}, applied ankle X {3:F1} Z {4:F1} N m",
+                b.AirborneClaimedAtEnd, b.GroundedWritesAtEnd - b.GroundedWritesAtRampEnd, b.PretensionUpdatesAtEnd - b.PretensionUpdatesAtRampEnd,
+                b.AnkleLeftXAtEnd, b.AnkleLeftZAtEnd));
+            F.WriteEvidence("gate4-ownership-ab.txt", report.ToString());
+
+            Assert.That(a.SeparationTick, Is.GreaterThan(0ul), "A never separated\n" + report);
+            Assert.That(b.SeparationTick, Is.EqualTo(a.SeparationTick), "the two fresh plants did not separate at the same tick\n" + report);
+            Assert.That(div, Is.GreaterThan(0), "the A/B never diverged in the applied reference\n" + report);
+            Assert.That(maxBarDelta, Is.LessThan(1e-6), "the plants differed before the reference handoff (bar)\n" + report);
+            Assert.That(maxFootDelta, Is.LessThan(1e-3), "the plants differed before the reference handoff (feet)\n" + report);
+            Assert.That(a.OwnerPerTick[div], Is.EqualTo("GroundedPretension"),
+                "A did not return ownership to the grounded writer at the first divergence\n" + report);
+            Assert.That(b.OwnerPerTick[div], Is.EqualTo("AirborneBarBreak"),
+                "B did not keep airborne ownership at the first divergence\n" + report);
+            Assert.That(a.FractionPerTick[div], Is.EqualTo(1f).Within(1e-5f),
+                "the first divergence is not at the end of the airborne ramp\n" + report);
+            Assert.That(a.GroundedWritesAtEnd, Is.GreaterThan(10 * a.AirborneWritesAtEnd),
+                "A no longer reproduces the grounded-writer dominance\n" + report);
+            Assert.That(b.AirborneClaimedAtEnd, Is.True, "B did not latch the airborne owner\n" + report);
+            Assert.That(b.OwnerAtEnd, Is.EqualTo("AirborneBarBreak"), "B did not end with the airborne owner\n" + report);
+            Assert.That(b.GroundedWritesAtEnd, Is.EqualTo(b.GroundedWritesAtRampEnd),
+                "B still executed grounded reference writes after the handoff\n" + report);
+            Assert.That(b.PretensionUpdatesAtEnd, Is.EqualTo(b.PretensionUpdatesAtRampEnd),
+                "B still executed pretension integral updates after the handoff\n" + report);
+        }
+
+        /// <summary>
+        /// Gate 2: independent test of the ankle loop-gain multiplier. All three
+        /// fresh plants run the same fixed airborne ownership, gains, capacities
+        /// and load schedule; only the multiplier's reference point changes.
+        /// Control is the committed mode-span schedule; C normalizes the same
+        /// blend to the qualified H = 0 foot statics; D uses the realized
+        /// per-foot normal over the same H = 0 anchor (continuous across the
+        /// handoff). The physical outcome is reported, not tuned.
+        /// </summary>
+        [UnityTest, Timeout(2400000), Explicit("GAM-70 Gate 2 continuous load normalization test; run on demand")]
+        public IEnumerator GATE2_CONTINUOUS_LOAD_NORMALIZATION_AGAINST_H0_IS_INDEPENDENTLY_TESTED()
+        {
+            var control = new OwnershipCase { Name = "N0-control-schedule", Ticks = 900, MaxIntent = 1f, AbortAtTick = 600 };
+            yield return RunOwnership(control);
+            var continuous = new OwnershipCase
+            {
+                Name = "N1-static-h0",
+                Ticks = 900,
+                MaxIntent = 1f,
+                AbortAtTick = 600,
+                Normalization = NormalizationMode.ContinuousStaticH0
+            };
+            yield return RunOwnership(continuous);
+            var measured = new OwnershipCase
+            {
+                Name = "N2-measured-h0",
+                Ticks = 900,
+                MaxIntent = 1f,
+                AbortAtTick = 600,
+                Normalization = NormalizationMode.MeasuredH0
+            };
+            yield return RunOwnership(measured);
+
+            var report = new StringBuilder();
+            report.AppendLine("GAM-70 Gate 2 ankle load-gain normalization A/B/C (fixed ownership, identical gains and schedule)");
+            foreach (OwnershipCase c in new[] { control, continuous, measured })
+            {
+                report.AppendLine(OwnershipLine(c));
+                report.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                    "{0,-20} gain ramp-end L/R {1:F3}/{2:F3} end L/R {3:F3}/{4:F3} | post-ramp COP error max L/R {5:F1}/{6:F1} mm ({7} samples) | bar rise {8:F1} mm | min foot {9:F1} N | COM {10:F1} mm | demand X {11:F3} Z {12:F3}",
+                    c.Name, c.GainLeftAtRampEnd, c.GainRightAtRampEnd, c.GainLeftAtEnd, c.GainRightAtEnd,
+                    c.MaxCopErrorLPostRamp * 1000f, c.MaxCopErrorRPostRamp * 1000f, c.CopSamplesPostRamp,
+                    (c.BarYMax - c.BarY0) * 1000f, c.MinFoot, c.MaxComDev * 1000f, c.MaxDemandX, c.MaxDemandZ));
+            }
+            F.WriteEvidence("gate2-normalization-ab.txt", report.ToString());
+
+            Assert.That(control.SeparationTick, Is.GreaterThan(0ul), "control never separated\n" + report);
+            Assert.That(continuous.SeparationTick, Is.EqualTo(control.SeparationTick), "the static-H0 plant did not reproduce the transition\n" + report);
+            Assert.That(measured.SeparationTick, Is.EqualTo(control.SeparationTick), "the measured-H0 plant did not reproduce the transition\n" + report);
+            Assert.That(continuous.GainLeftAtEnd, Is.GreaterThan(control.GainLeftAtEnd + 0.1f),
+                "the continuous H = 0 normalization did not change the gain multiplier\n" + report);
+            Assert.That(measured.GainLeftAtEnd, Is.Not.EqualTo(control.GainLeftAtEnd).Within(0.01f),
+                "the measured H = 0 normalization did not change the gain multiplier\n" + report);
+        }
+
+        /// <summary>
+        /// Executable regression: reintroducing the exact-HEAD writer
+        /// competition (a grounded reference write, or a pretension update,
+        /// after the airborne ramp) fails this test.
+        /// </summary>
+        [UnityTest, Timeout(900000)]
+        public IEnumerator GATE4_AIRBORNE_REFERENCE_OWNER_IS_LATCHED_AND_GROUNDED_WRITES_STOP()
+        {
+            var c = new OwnershipCase
+            {
+                Name = "regression-ownership",
+                Ticks = 900,
+                MaxIntent = 1f,
+                AbortAtTick = 600,
+                WindowOnly = true,
+                WindowAfterSeparation = 20
+            };
+            yield return RunOwnership(c);
+
+            var report = new StringBuilder();
+            report.AppendLine("GAM-70 Gate 4 reference-ownership regression (window ends 20 ticks after separation)");
+            report.AppendLine(OwnershipLine(c));
+            F.WriteEvidence("gate4-ownership-regression.txt", report.ToString());
+
+            Assert.That(c.SeparationTick, Is.GreaterThan(0ul), "no measured separation\n" + report);
+            Assert.That(c.AirborneClaimedAtEnd, Is.True, "the airborne reference owner was not claimed\n" + report);
+            Assert.That(c.OwnerAtEnd, Is.EqualTo("AirborneBarBreak"), "the airborne schedule does not own the reference\n" + report);
+            Assert.That(c.GroundedWritesAtEnd, Is.EqualTo(c.GroundedWritesAtRampEnd),
+                "a grounded reference write happened after the airborne ramp\n" + report);
+            Assert.That(c.PretensionUpdatesAtEnd, Is.EqualTo(c.PretensionUpdatesAtRampEnd),
+                "the grounded pretension integral kept running after the handoff\n" + report);
+            Assert.That(c.AnkleLeftXAtEnd, Is.EqualTo(77.5f).Within(3f),
+                "the applied airborne ankle X reference is not the boundary solution\n" + report);
+            Assert.That(c.AnkleLeftZAtEnd, Is.EqualTo(0f).Within(0.5f),
+                "the applied airborne ankle Z reference is not the boundary solution\n" + report);
         }
     }
 }

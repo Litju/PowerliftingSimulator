@@ -109,6 +109,22 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public float BarBreakFraction { get; private set; }
         private float _appliedBarBreakFraction = float.NaN;
 
+        /// <summary>
+        /// GAM-70 Gate 4 A/B control only: reproduces the exact-HEAD behavior
+        /// in which the grounded pretension integral and the grounded reference
+        /// writer keep running after the measured separation and can overwrite
+        /// the airborne schedule. Default false is the judged path: one
+        /// explicit, physically triggered ownership handoff.
+        /// </summary>
+        public bool ContinueGroundedReferenceAfterSeparation { get; set; }
+
+        /// <summary>
+        /// True once the measured, confirmed separation handed the static
+        /// reference to the airborne load schedule. Latched; never cleared.
+        /// </summary>
+        public bool AirborneClaimed => _airborneClaimed;
+        private bool _airborneClaimed;
+
         private readonly Dictionary<string, Vector3> _appliedReferenceAxes = new Dictionary<string, Vector3>(StringComparer.Ordinal);
 
         /// <summary>
@@ -133,18 +149,47 @@ namespace PowerliftingSimulator.Deadlift.Unity
             if (Regulator != null)
             {
                 Regulator.FootCopTarget = id =>
-                    Pull != null && Pull.LoadScheduleFraction > 0.0005f
+                    AirborneOwnsReference
                         ? reference.FootCop(id, BarBreakFraction)
                         : (GroundedReference != null ? GroundedReference.FootCop(id) : reference.FootCop(id, 0f));
                 Regulator.FootLoadRatio = id =>
                 {
-                    if (Pull != null && Pull.LoadScheduleFraction > 0.0005f)
+                    if (AirborneOwnsReference)
                         return reference.FootNormalN(id, BarBreakFraction) / Mathf.Max(reference.FootNormalN(id, 0f), 1f);
                     return GroundedReference != null
                         ? GroundedReference.FootNormalN(id) / Mathf.Max(GroundedReference.FootNormalAtZeroN(id), 1f)
                         : 1f;
                 };
             }
+        }
+
+        /// <summary>
+        /// The airborne schedule owns the COP target and the load-gain
+        /// multiplier from the measured handoff on. The legacy f-test branch is
+        /// the exact-HEAD A/B control only; it is unreachable in the judged
+        /// path because the owner is latched before the fraction ramps.
+        /// </summary>
+        private bool AirborneOwnsReference =>
+            (_airborneClaimed && !ContinueGroundedReferenceAfterSeparation) ||
+            (ContinueGroundedReferenceAfterSeparation && Pull != null && Pull.LoadScheduleFraction > 0.0005f);
+
+        /// <summary>
+        /// GAM-70 Gate 4: explicit reference-ownership handoff. Called only
+        /// after <see cref="DeadliftPullController"/> has measured and confirmed
+        /// the bilateral plate separation. Once claimed, the grounded
+        /// pretension integral is dropped (it is undefined with the plates
+        /// unloaded) and the grounded reference can never be applied again;
+        /// the airborne load schedule owns the static reference for the rest of
+        /// the attempt. No force, body or bar is written here.
+        /// </summary>
+        public void ClaimAirborneReference()
+        {
+            if (_airborneClaimed)
+                return;
+            _airborneClaimed = true;
+            Pretension = null;
+            _appliedHandPullN = float.NaN;
+            _appliedBarBreakFraction = float.NaN;
         }
 
         /// <summary>The A3 pretension reference, when installed with <see cref="UseGroundedReference"/>.</summary>
@@ -347,7 +392,6 @@ namespace PowerliftingSimulator.Deadlift.Unity
             PlayerIntentFrame intent,
             IPhysicalAthleteJointCommandSink sink)
         {
-            Pretension?.Update();
             if (Pull != null)
             {
                 Pull.Update(intent);
@@ -359,7 +403,19 @@ namespace PowerliftingSimulator.Deadlift.Unity
             {
                 PullHipExtensionDeg = PullKneeExtensionDeg = PullTrunkExtensionDeg = 0f;
             }
-            ApplyGroundedReference();
+
+            // Explicit, physically triggered handoff: the pull controller sets
+            // Separated only from a measured, confirmed plate separation.
+            if (Pull != null && Pull.Phase == DeadliftPullPhase.Separated &&
+                !ContinueGroundedReferenceAfterSeparation)
+                ClaimAirborneReference();
+
+            if (!_airborneClaimed || ContinueGroundedReferenceAfterSeparation)
+            {
+                Pretension?.Update();
+                ApplyGroundedReference();
+            }
+
             if (BarBreakReference != null && Pull != null)
             {
                 // Command-driven load schedule: the player's applied pull, not
@@ -367,7 +423,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 // measured plate force is still the transition evidence; using
                 // it as the schedule input would close a positive feedback loop.
                 BarBreakFraction = Pull.LoadScheduleFraction;
-                if (BarBreakFraction <= 0.0005f)
+                bool airborne = AirborneOwnsReference;
+                bool scheduleWritesEveryTick = _airborneClaimed && !ContinueGroundedReferenceAfterSeparation;
+                if (BarBreakFraction <= 0.0005f && !airborne)
                 {
                     if (!float.IsNaN(_appliedBarBreakFraction))
                     {
@@ -377,7 +435,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                         GroundedReferenceWrites++;
                     }
                 }
-                else if (float.IsNaN(_appliedBarBreakFraction) || Mathf.Abs(BarBreakFraction - _appliedBarBreakFraction) > 0.001f)
+                else if (scheduleWritesEveryTick || float.IsNaN(_appliedBarBreakFraction) || Mathf.Abs(BarBreakFraction - _appliedBarBreakFraction) > 0.001f)
                 {
                     SetStaticReference(_referenceRig, BarBreakReference.Torques(BarBreakFraction));
                     _appliedBarBreakFraction = BarBreakFraction;
