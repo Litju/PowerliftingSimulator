@@ -81,8 +81,11 @@ trajectory, load schedule or solver value was changed in this gate.
    is not the boundary solution (ankle X 77.5 +/- 3 N m, Z 0 +/- 0.5 N m).
 
 Receipts:
-  Logs/g4ab-results.xml (baseline / A-B / regression 3/3 passed)
-  Logs/g4controls-results.xml (Gate 3 controls; A2/A3 in Logs/g4gate2-results.xml)
+  Logs/g4final-results.xml (baseline / A-B / regression / Gate 2 / A2 / A3, 6/6 passed)
+  Logs/g4sustained-results.xml (sustained acceptance FAIL preserved; separation diagnostic FAIL preserved)
+  Logs/g4controls-results.xml (Gate 3 no-pull / insufficient / abort / single-grip controls)
+  Logs/g4preserve-results.xml (C4 + ankle-roll topology + accepted A2/A3, 6/6 passed)
+  Logs/g4a1-results.xml (A1, 8/8 passed)
   Logs/GAM70/gate4-ownership-baseline-head.csv
   Logs/GAM70/gate4-ownership-A-legacy-overwrite.csv
   Logs/GAM70/gate4-ownership-B-explicit-handoff.csv

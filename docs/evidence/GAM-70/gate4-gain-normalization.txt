@@ -130,6 +130,8 @@ parameter, pull trajectory, load schedule or solver value was changed.
 
 Receipts:
   Logs/g4final-results.xml (A2, A3, Gate 2, Gate 4 A/B, baseline, regression 6/6)
+  Logs/g4preserve-results.xml (C4, ankle-roll topology, accepted A2/A3 6/6)
+  Logs/g4a1-results.xml (A1 8/8)
   Logs/g4sustained-results.xml (sustained acceptance FAIL preserved; separation diagnostic FAIL preserved)
   Logs/g4controls-results.xml (Gate 3 controls)
   Logs/GAM70/gate2-normalization-ab.txt
