@@ -1,0 +1,81 @@
+GAM-70 Gate 5 - command-history confound, first dynamic cause, measured hand-load reference
+2026-11-16, Unity 6000.3.22f1, fresh B2 plants, 100 kg athlete, real 75 kg bar, both rigid grips,
+16-body topology with the deadlift ankle-roll DOF. No gain, strength, stiffness, solver, friction,
+contact or joint-limit value was changed in this gate.
+
+1. Command-history A/B (Explicit GATE5_DRIVE_RELEASE_AB_ISOLATES_THE_COMMAND_HISTORY)
+   A: fixed-ownership N0, Drive released at tick 600 (the Gate 4 history).
+   B: identical, Drive held at full intent for 900 ticks.
+   First requested-Drive divergence: tick 600. First applied-command divergence: NONE.
+   First plant divergence: NONE (900/900 ticks identical to 1e-6).
+   Reason, measured: the COM governor (fixed 50 mm displacement from the initial COM) had already
+   released the extension. Governor closed@418 (applied 0.960), open@463 (0.090), closed@481
+   (0.240); applied Drive = 0 from tick 493. The tick-600 release acted on a zero command.
+   Governor-only diagnostic C (B with the governor disabled; diagnostic, never a fix): first
+   applied and plant divergence tick 418; support is still lost (true zero normal L 712 R 708,
+   bar 0.498 m, COM 988.9 mm). The governor is therefore not the first cause either.
+   Contact loss: A/B first TRUE zero-normal contact (no loaded point) L 695 R 691; the legacy
+   20 N analyzer warning fires at 690. The 20 N value is kept only as a labeled diagnostic.
+
+2. First physical departure and its mechanism (B-held trace, per tick)
+   Hip/knee/trunk angles stay within ~3 deg of the setup (hip -129, knee 119) through the whole
+   collapse: the 500 mm backward COM travel is a rotation of the athlete+bar system about the
+   foot edges, not a joint-space motion.
+   The first non-flat foot patch occurs BEFORE separation: left foot tick 383, right foot 390
+   (active patch collapses from the full sole -0.219..0.084 m to a single mid-sole line);
+   separation is at 396. The ankle regulator reaches its +/-4 deg clamp at tick 380 (left)/386.
+   Cause: during Pulling the A3 pretension servo, whose setpoint is 275.9 N per hand, treats the
+   player's pull as a disturbance. Measured hand load rises 270 -> 320-457 N, so the servo drives
+   the reference hand load DOWN: H_ref 275.9 (t300) -> 210.6 (t340) -> 117.8 (t380) -> 69.7 (t396).
+   The contact-consistent ankle feedforward follows H_ref (61.3 -> 20.9 N m) while the same C4
+   statics at the MEASURED hand load require 65.8 -> 96.8 N m. The 40-76 N m deficit is absorbed by
+   the ankle regulator until it saturates, the sole COP runs to an edge and the feet rock.
+   The airborne schedule then starts from the H = 275.9 N grounded endpoint, not from the applied
+   60-70 N reference: the +44 N m ankle-reference step lands on an already rocking foot (toe edge
+   ticks 410-470, heel edge from ~484, backward fall over the heels).
+   Momentum reconstruction (Tools/Experiments/Analyze-GAM70MomentumBalance.py): vertical
+   linear-momentum residual of athlete+bar <= 2.5 N through tick 679 (instrumentation closes);
+   sagittal angular momentum about the system COM reaches 27.85 kg m^2/s; inferred sole friction
+   1373 N at the collapse. Largest segment angular accelerations at tick 399: thighs 14-25 rad/s^2.
+   Static B2 moments were not used as a dynamic solution: the deficit is evaluated against the
+   statics at the realized hand load, and the failure is attributed to the reference, not to
+   joint capacity (ankle X demand at first patch loss 0.95 x 450 N m is a regulator response).
+
+3. Moving-reference A/B (Explicit GATE5_MOVING_REFERENCE_AB, Drive held, production governor on)
+   P0 control (pretension servo through the pull, airborne schedule): zero normal L 695 R 691.
+   P1 pretension integral stopped at pull start, schedule kept: separation 337, zero normal
+      L 692 R 686 - stopping the servo alone is NOT sufficient (reference still at 275.9 N while
+      the hands carry ~368 N, then a schedule ramp).
+   P2 measured hand-load reference (C4 athlete statics at the 50 ms low-pass measured per-hand
+      vertical load, posture fixed, one family across separation, no schedule): separation 316;
+      no contact loss in 900 ticks; min foot 487.8 N; COM 3.8 mm; regulator never saturated.
+   P3 as P2, statics re-solved at the current posture every tick, regulator without the
+      quiet-standing COM position anchor: separation 317; same outcome (COM 4.1 mm).
+   P3 after separation: both feet flat (no zero-point tick), 860/860 N, ankle X demand
+   0.16-0.18, Z 0.01-0.02, hand load 367 N per hand (= W_b / 2), linear residual 0.4 N,
+   max |L_c,x| 0.74 kg m^2/s, max inferred sole friction 13 N, reference max joint demand 0.87
+   (abdomen). The bar hangs 5.6 mm above the plates for 5.8 s: the existing Separated cap
+   (extension frozen at the break command, applied 0.18-0.19) stops further progress.
+
+4. Implemented (smallest physically complete correction)
+   DeadliftHandLoadReference: athlete-side C4 statics as a function of the measured hand load,
+   posture-fixed or re-solved at the current posture; clamped to the static hang W_b / 2.
+   DeadliftSetupHold: explicit hand-load ownership handoff when the pull leaves Grounded
+   (pretension servo dropped, filter starts at the applied H, regulator COP targets follow the
+   same statics); PoweredJointController stays the only joint writer.
+   DeadliftBalanceRegulator.ComPositionAnchor (default true = accepted A2/A3 law).
+   The legacy paths remain as explicit A/B controls.
+
+5. Executable regression (normal PlayMode)
+   GATE5_HANDLOAD_REFERENCE_SUSTAINS_A_BILATERAL_BAR_BREAK: separation 317; after it min foot
+   832.5 N, plates 0.0 N, regulator saturated 0 ticks, zero-point foot ticks 0, ankle demand
+   X 0.184 Z 0.188, reference demand 0.872, pretension updates after the claim 0. PASS.
+   Deadlift PlayMode namespace run: 62 cases, 57 pass; the 5 failures are pre-existing Explicit
+   tests with recorded failing dispositions (legacy A2/A3 candidates, Gate 3 legacy-path
+   sustained acceptance and separation diagnostic).
+
+Not claimed: sustained bar progress, knee passage, lockout. Those need the moving phase (Gate 6).
+
+Receipts (outside history): Logs/g5ab-results.xml, Logs/g5p-results.xml, Logs/g5deadlift-results.xml,
+Logs/GAM70/gate5-command-history-ab.txt, gate5-moving-reference-ab.txt, gate5-dynamics-*.csv,
+gate5-handload-regression.txt.

@@ -69,6 +69,16 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public bool ComFeedback { get; set; } = true;
         public float Kx { get; set; } = 0.4f;
         public float KvSeconds { get; set; } = 0.25f;
+
+        /// <summary>
+        /// Quiet-standing position anchor of the outer COM term, (1 + Kx)(z - z0),
+        /// with z0 latched at the first tick. True (default) is the accepted A2/A3
+        /// hold. A moving-phase reference that re-solves the statics at the current
+        /// posture already places each foot COP under the moved system, so the
+        /// anchor to the initial COM is not a physical objective there and is
+        /// switched off; the velocity (capture) term Kv vz is kept.
+        /// </summary>
+        public bool ComPositionAnchor { get; set; } = true;
         public float KpDegPerM { get; set; } = IdentifiedCopGrowthPerTick / IdentifiedFootCopGainMPerDeg;
         public float KiDegPerMPerTick { get; set; } = 3f;
         public float MaxOffsetDeg { get; set; } = 4f;
@@ -217,7 +227,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 _z0 = c.z;
                 _comEngaged = true;
             }
-            float d = ComFeedback ? (1f + Kx) * (c.z - _z0) + KvSeconds * p.z : 0f;
+            float d = ComFeedback ? (ComPositionAnchor ? (1f + Kx) * (c.z - _z0) : 0f) + KvSeconds * p.z : 0f;
 
             if (Frozen)
             {

@@ -45,6 +45,15 @@ namespace PowerliftingSimulator.Deadlift
             public bool WindowOnly;
             public int WindowAfterSeparation = 100;
             public bool AttachLeft = true, AttachRight = true;
+            /// <summary>Diagnostic A/B only: the production default keeps the COM governor on.</summary>
+            public bool GovernorEnabled = true;
+            /// <summary>Gate 5 reference variants (P1/P2/P3); all false is the Gate 4 N0 path.</summary>
+            public bool StopPretensionOnPull;
+            public int HandLoad;            // 0 none, 1 posture-fixed, 2 re-solved at the current posture
+            public bool MovingRegulator;    // drop the quiet-standing COM position anchor
+            /// <summary>Optional read-only observers (Gate 5 dynamics trace); never write the plant.</summary>
+            public Action<OwnershipCase> OnPrepared;
+            public Action<OwnershipCase, int> PerTick;
 
             public ulong SeparationTick;
             public string PhaseAtEnd = string.Empty;
@@ -135,9 +144,15 @@ namespace PowerliftingSimulator.Deadlift
                 TrunkExtensionLimitDeg = -1.5f,
                 MaxComShiftM = 0.05f,
                 GovernorReleaseM = 0.03f,
-                IntentOverride01 = 0f
+                IntentOverride01 = 0f,
+                ComGovernorEnabled = c.GovernorEnabled
             };
             _world.Hold.Pull = _pull;
+            _world.Hold.StopPretensionOnPull = c.StopPretensionOnPull;
+            if (c.HandLoad > 0)
+                _world.Hold.UseHandLoadReference(new DeadliftHandLoadReference(SolveStatics, wbHalf, c.HandLoad == 2), MeasuredPerHandUpN);
+            if (c.MovingRegulator)
+                _regulator.ComPositionAnchor = false;
             if (c.Normalization != NormalizationMode.LegacySchedule)
             {
                 // Gate 2: only the loop-gain multiplier's reference point is
@@ -166,6 +181,7 @@ namespace PowerliftingSimulator.Deadlift
             }
             _world.Rig.PrimeCommandSource();
             DeadliftAnkleRoll.ValidateAppliedAuthority(_world.Rig);
+            c.OnPrepared?.Invoke(c);
 
             Vector3 com0 = _world.WholeBodyCom();
             Vector3 bar0 = _world.Bar.Body.position;
@@ -303,6 +319,7 @@ namespace PowerliftingSimulator.Deadlift
                     Own(_regulator.GainScaleFor("left_foot")), Own(_regulator.GainScaleFor("right_foot")),
                     Own(t.GripRawL.y), Own(t.GripRawR.y), Own(t.SepL), Own(t.SepR), evt
                 }));
+                c.PerTick?.Invoke(c, i);
 
                 if (c.WindowOnly && c.SeparationTick != 0 && (int)i >= (int)c.SeparationTick + c.WindowAfterSeparation)
                     break;

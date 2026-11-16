@@ -17,7 +17,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
     {
         None,
         GroundedPretension,
-        AirborneBarBreak
+        AirborneBarBreak,
+        /// <summary>GAM-70 Gate 5: the measured hand-load reference owns the static reference from the player's pull on.</summary>
+        PullHandLoad
     }
 
     /// <summary>
@@ -191,6 +193,70 @@ namespace PowerliftingSimulator.Deadlift.Unity
             _appliedHandPullN = float.NaN;
             _appliedBarBreakFraction = float.NaN;
         }
+
+        /// <summary>
+        /// GAM-70 Gate 5 A/B control P1: stop the A3 pretension integral when the
+        /// player's pull begins, without any other change (legacy airborne schedule kept).
+        /// </summary>
+        public bool StopPretensionOnPull { get; set; }
+
+        /// <summary>
+        /// GAM-70 Gate 5: the measured hand-load reference. When installed, the
+        /// player's pull (phase leaves Grounded) hands the static reference and
+        /// the regulator's COP targets from the A3 pretension servo to this
+        /// reference, fed by the low-pass filtered measured per-hand vertical
+        /// load. The airborne load schedule is not used on this path: the same
+        /// statics family is valid on both sides of separation.
+        /// </summary>
+        public DeadliftHandLoadReference HandLoadReference { get; private set; }
+        public bool HandLoadClaimed { get; private set; }
+        public float HandLoadFilteredN { get; private set; } = float.NaN;
+        private Func<float> _measuredPerHandN;
+        private float _handLoadFilterSeconds = 0.05f;
+
+        public void UseHandLoadReference(DeadliftHandLoadReference reference, Func<float> measuredPerHandUpN, float filterSeconds = 0.05f)
+        {
+            HandLoadReference = reference ?? throw new ArgumentNullException(nameof(reference));
+            _measuredPerHandN = measuredPerHandUpN ?? throw new ArgumentNullException(nameof(measuredPerHandUpN));
+            if (!(filterSeconds > 0f))
+                throw new ArgumentOutOfRangeException(nameof(filterSeconds));
+            _handLoadFilterSeconds = filterSeconds;
+        }
+
+        /// <summary>
+        /// Explicit hand-load ownership handoff, at the first tick the pull
+        /// controller leaves Grounded. The pretension servo is dropped (its
+        /// setpoint contradicts the player's intent), and the filter starts at
+        /// the hand load the applied reference already assumes, so the handoff
+        /// itself is continuous.
+        /// </summary>
+        private void ClaimHandLoadReference()
+        {
+            HandLoadClaimed = true;
+            Pretension = null;
+            HandLoadFilteredN = GroundedReference != null ? GroundedReference.HandPullN : _measuredPerHandN();
+            if (Regulator != null)
+            {
+                DeadliftHandLoadReference r = HandLoadReference;
+                Regulator.FootCopTarget = r.FootCop;
+                Regulator.FootLoadRatio = id => r.FootNormalN(id) / Mathf.Max(r.FootNormalAtZeroN(id), 1f);
+            }
+        }
+
+        private void ApplyHandLoadReference()
+        {
+            float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
+            float alpha = Mathf.Clamp01(dt / _handLoadFilterSeconds);
+            float measured = _measuredPerHandN();
+            if (!float.IsNaN(measured))
+                HandLoadFilteredN += alpha * (measured - HandLoadFilteredN);
+            HandLoadReference.Observe(HandLoadFilteredN);
+            SetStaticReference(_referenceRig, HandLoadReference.DriveTorquesAxes());
+            ReferenceOwner = DeadliftReferenceOwner.PullHandLoad;
+            HandLoadReferenceWrites++;
+        }
+
+        public int HandLoadReferenceWrites { get; private set; }
 
         /// <summary>The A3 pretension reference, when installed with <see cref="UseGroundedReference"/>.</summary>
         public DeadliftGroundedReference GroundedReference { get; private set; }
@@ -404,6 +470,15 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 PullHipExtensionDeg = PullKneeExtensionDeg = PullTrunkExtensionDeg = 0f;
             }
 
+            if (HandLoadReference != null && Pull != null && !HandLoadClaimed && Pull.Phase != DeadliftPullPhase.Grounded)
+                ClaimHandLoadReference();
+
+            if (HandLoadClaimed)
+            {
+                ApplyHandLoadReference();
+            }
+            else
+            {
             // Explicit, physically triggered handoff: the pull controller sets
             // Separated only from a measured, confirmed plate separation.
             if (Pull != null && Pull.Phase == DeadliftPullPhase.Separated &&
@@ -412,7 +487,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
 
             if (!_airborneClaimed || ContinueGroundedReferenceAfterSeparation)
             {
-                Pretension?.Update();
+                bool pulling = Pull != null && Pull.Phase != DeadliftPullPhase.Grounded;
+                if (!(StopPretensionOnPull && pulling))
+                    Pretension?.Update();
                 ApplyGroundedReference();
             }
 
@@ -442,6 +519,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     ReferenceOwner = DeadliftReferenceOwner.AirborneBarBreak;
                     AirborneReferenceWrites++;
                 }
+            }
             }
             Regulator?.Update();
             foreach (KeyValuePair<string, Quaternion> target in _targets)
