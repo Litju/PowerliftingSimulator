@@ -79,6 +79,26 @@ namespace PowerliftingSimulator.Deadlift.Unity
         /// switched off; the velocity (capture) term Kv vz is kept.
         /// </summary>
         public bool ComPositionAnchor { get; set; } = true;
+
+        /// <summary>
+        /// Integral leak time constant (s); 0 (default, the accepted A2/A3 law)
+        /// is a pure integrator. A pure integrator removes a constant bias of the
+        /// quiet stance; in the moving phase the quasi-static COP target carries
+        /// a bias that drifts with the posture, and the pure integral was
+        /// measured to wind to its clamp in ~2 s of ascent and then throw the
+        /// COP to the toe edge (Gate 6 run 4). Kp, Ki and the clamps are unchanged.
+        /// </summary>
+        public float IntegralLeakSeconds { get; set; }
+
+        /// <summary>
+        /// The bar once it is airborne and welded to both hands: the outer COM
+        /// term then observes the athlete+bar system COM. Null (default, the
+        /// grounded A2/A3 hold) observes the athlete alone, whose support the
+        /// plates share. With the bar carried, the athlete-only velocity was
+        /// measured to bias the COP target 20-30 mm toward the heels while the
+        /// system COM stood still (Gate 6 run 11).
+        /// </summary>
+        public Rigidbody CarriedBar { get; set; }
         public float KpDegPerM { get; set; } = IdentifiedCopGrowthPerTick / IdentifiedFootCopGainMPerDeg;
         public float KiDegPerMPerTick { get; set; } = 3f;
         public float MaxOffsetDeg { get; set; } = 4f;
@@ -218,6 +238,12 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 c += seg.Body.mass * seg.Body.worldCenterOfMass;
                 p += seg.Body.mass * seg.Body.linearVelocity;
             }
+            if (CarriedBar != null)
+            {
+                mass += CarriedBar.mass;
+                c += CarriedBar.mass * CarriedBar.worldCenterOfMass;
+                p += CarriedBar.mass * CarriedBar.linearVelocity;
+            }
             c /= mass;
             p /= mass;
             LastComZ = c.z;
@@ -270,7 +296,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 float e = target - s;
                 float g = FootLoadRatio != null ? FootLoadRatio(foot.Id) : 1f;
                 foot.GainScale = g;
-                foot.Integral = Mathf.Clamp(foot.Integral + g * KiDegPerMPerTick * e, -MaxOffsetDeg, MaxOffsetDeg);
+                float leak = IntegralLeakSeconds > 0f ? Mathf.Clamp01((float)SimulationConstants.FixedDeltaTimeSeconds / IntegralLeakSeconds) : 0f;
+                foot.Integral = Mathf.Clamp((1f - leak) * foot.Integral + g * KiDegPerMPerTick * e, -MaxOffsetDeg, MaxOffsetDeg);
                 float next;
                 if (Predictive)
                 {
@@ -304,7 +331,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     else if (float.IsNaN(foot.LastAcross))
                         foot.T0 = a;
                     float ea = foot.T0 - a;
-                    foot.RollIntegral = Mathf.Clamp(foot.RollIntegral + g * RollKiDegPerMPerTick * ea, -MaxRollOffsetDeg, MaxRollOffsetDeg);
+                    foot.RollIntegral = Mathf.Clamp((1f - leak) * foot.RollIntegral + g * RollKiDegPerMPerTick * ea, -MaxRollOffsetDeg, MaxRollOffsetDeg);
                     float r = g * RollKpDegPerM * ea + foot.RollIntegral;
                     saturated |= Mathf.Abs(r) > MaxRollOffsetDeg;
                     foot.RollOffset = Mathf.Clamp(r, -MaxRollOffsetDeg, MaxRollOffsetDeg);

@@ -51,6 +51,15 @@ namespace PowerliftingSimulator.Deadlift
             public bool StopPretensionOnPull;
             public int HandLoad;            // 0 none, 1 posture-fixed, 2 re-solved at the current posture
             public bool MovingRegulator;    // drop the quiet-standing COM position anchor
+            /// <summary>Gate 6: replace the Separated cap by the solved ascent path.</summary>
+            public bool Lift;
+            public float LiftRate = 0.30f;
+            public DeadliftLiftPath Path;
+            public string PathReport = string.Empty;
+            public float LeakSeconds;
+            public bool SystemCom;
+            public DeadliftSupportMonitor Monitor;
+            public bool BreakOnBarLimb = true;
             /// <summary>Optional read-only observers (Gate 5 dynamics trace); never write the plant.</summary>
             public Action<OwnershipCase> OnPrepared;
             public Action<OwnershipCase, int> PerTick;
@@ -153,6 +162,24 @@ namespace PowerliftingSimulator.Deadlift
                 _world.Hold.UseHandLoadReference(new DeadliftHandLoadReference(SolveStatics, wbHalf, c.HandLoad == 2), MeasuredPerHandUpN);
             if (c.MovingRegulator)
                 _regulator.ComPositionAnchor = false;
+            if (c.Lift)
+            {
+                if (c.Path == null)
+                {
+                    c.Path = new DeadliftLiftPath(_world.Rig, _setupMeasurements, _world.Model, _world.Bar.Body.mass);
+                    c.Path.Solve();
+                    c.PathReport = c.Path.Describe();
+                }
+                c.Monitor = new DeadliftSupportMonitor(_world.Rig, _world.Bar.Body, _world.Rig.PlatformCollider);
+                _world.Hold.LiftPath = c.Path;
+                _world.Hold.MovingPhaseIntegralLeakSeconds = c.LeakSeconds;
+                _world.Hold.MovingPhaseSystemCom = c.SystemCom;
+                _pull.LiftEnabled = true;
+                _pull.LiftRatePerSecond = c.LiftRate;
+                DeadliftSupportMonitor monitor = c.Monitor;
+                _pull.SupportMarginM = () => monitor.Update();
+                _pull.ReferenceDemand = () => _world.Hold.HandLoadReference != null ? _world.Hold.HandLoadReference.MaxDemandFraction : 0f;
+            }
             if (c.Normalization != NormalizationMode.LegacySchedule)
             {
                 // Gate 2: only the loop-gain multiplier's reference point is

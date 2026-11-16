@@ -97,6 +97,20 @@ namespace PowerliftingSimulator.Deadlift.Unity
         /// </summary>
         public DeadliftPullController Pull { get; set; }
 
+        /// <summary>
+        /// GAM-70 Gate 6: the ascent reference path. While the pull controller
+        /// reports lift progress s &gt; 0, each joint's solved target is taken
+        /// from the path at s instead of the setup pose; every other reference
+        /// term composes on top exactly as at the setup.
+        /// </summary>
+        public DeadliftLiftPath LiftPath { get; set; }
+
+        /// <summary>Regulator integral leak applied from the Lifting phase on (0 = pure integrator, the accepted hold law).</summary>
+        public float MovingPhaseIntegralLeakSeconds { get; set; }
+
+        /// <summary>From the Lifting phase on, the regulator observes the athlete+bar COM (the bar is airborne and gripped).</summary>
+        public bool MovingPhaseSystemCom { get; set; }
+
         public float PullHipExtensionDeg { get; private set; }
         public float PullKneeExtensionDeg { get; private set; }
         public float PullTrunkExtensionDeg { get; private set; }
@@ -250,13 +264,32 @@ namespace PowerliftingSimulator.Deadlift.Unity
             float measured = _measuredPerHandN();
             if (!float.IsNaN(measured))
                 HandLoadFilteredN += alpha * (measured - HandLoadFilteredN);
-            HandLoadReference.Observe(HandLoadFilteredN);
+            // Returning the bar: once the lowered path is back at the floor posture,
+            // the admitted hand load ramps to zero so the plates take the bar (the
+            // lifter lets go of the pull). Until then it is the measured load.
+            // Only once the plates are measured to carry load again: relaxing while
+            // the bar still hangs from the hands removed its feedforward and was
+            // measured to topple the athlete forward (Gate 7 run 2).
+            float plateN = Pull != null && !float.IsNaN(Pull.PlateLeftN) && !float.IsNaN(Pull.PlateRightN) ? Pull.PlateLeftN + Pull.PlateRightN : 0f;
+            bool returning = Pull != null && (Pull.Phase == DeadliftPullPhase.Returned ||
+                                              (Pull.Phase == DeadliftPullPhase.Lowering && Pull.LiftProgress01 <= 0f && plateN > ReturnContactPlateN));
+            _returnCeilingN = returning
+                ? Mathf.MoveTowards(_returnCeilingN, 0f, ReturnRelaxNPerSecond * dt)
+                : float.PositiveInfinity;
+            if (returning && float.IsInfinity(_returnCeilingN))
+                _returnCeilingN = HandLoadFilteredN;
+            HandLoadReference.Observe(Mathf.Min(HandLoadFilteredN, _returnCeilingN));
             SetStaticReference(_referenceRig, HandLoadReference.DriveTorquesAxes());
             ReferenceOwner = DeadliftReferenceOwner.PullHandLoad;
             HandLoadReferenceWrites++;
         }
 
         public int HandLoadReferenceWrites { get; private set; }
+        /// <summary>Rate at which the admitted hand load relaxes when the bar is being set down (N per hand per second).</summary>
+        public float ReturnRelaxNPerSecond { get; set; } = 400f;
+        /// <summary>Plate load that marks the lowered bar as resting on the platform again (both plates, N).</summary>
+        public float ReturnContactPlateN { get; set; } = 50f;
+        private float _returnCeilingN = float.PositiveInfinity;
 
         /// <summary>The A3 pretension reference, when installed with <see cref="UseGroundedReference"/>.</summary>
         public DeadliftGroundedReference GroundedReference { get; private set; }
@@ -521,13 +554,21 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 }
             }
             }
+            if (Regulator != null && Pull != null && Pull.Phase >= DeadliftPullPhase.Lifting)
+            {
+                Regulator.IntegralLeakSeconds = MovingPhaseIntegralLeakSeconds;
+                if (MovingPhaseSystemCom)
+                    Regulator.CarriedBar = Pull.BarBody;
+            }
             Regulator?.Update();
+            float progress = LiftPath != null && Pull != null ? Pull.LiftProgress01 : 0f;
             foreach (KeyValuePair<string, Quaternion> target in _targets)
             {
                 float scale = _scale.TryGetValue(target.Key, out float s) ? s : 1f;
+                Quaternion baseTarget = progress > 0f && LiftPath.Has(target.Key) ? LiftPath.Target(target.Key, progress) : target.Value;
                 Quaternion q = _bias.TryGetValue(target.Key, out Quaternion b)
-                    ? (ComposeReferenceOnLeft ? b * target.Value : target.Value * b)
-                    : target.Value;
+                    ? (ComposeReferenceOnLeft ? b * baseTarget : baseTarget * b)
+                    : baseTarget;
                 if (Regulator != null && (target.Key == "left_foot" || target.Key == "right_foot"))
                     q *= Quaternion.AngleAxis(Regulator.OffsetDegFor(target.Key), Vector3.right) *
                          Quaternion.AngleAxis(Regulator.RollOffsetDegFor(target.Key), Vector3.forward);

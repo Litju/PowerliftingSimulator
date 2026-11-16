@@ -11,7 +11,15 @@ namespace PowerliftingSimulator.Deadlift.Unity
         Grounded,
         Pulling,
         Separated,
-        Aborted
+        Aborted,
+        /// <summary>GAM-70 Gate 6: the bar is airborne and the player's Drive advances the lift path.</summary>
+        Lifting,
+        /// <summary>Path end reached; the referee judges the finished position.</summary>
+        Lockout,
+        /// <summary>After the referee's Down signal: controlled lowering along the same path.</summary>
+        Lowering,
+        /// <summary>The bar rests on the platform again.</summary>
+        Returned
     }
 
     /// <summary>
@@ -102,6 +110,97 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public float LoadScheduleFraction { get; private set; }
         public float ScheduleRampPerSecond { get; set; } = 10f;
 
+        /// <summary>
+        /// GAM-70 Gate 6: moving phase. When enabled, the Separated cap is
+        /// replaced by lift-path progress s in [0, 1], advanced at
+        /// LiftRatePerSecond x Drive and held (never reversed) while the
+        /// support observation reports a capture-point margin below
+        /// MinSupportMarginM or the applied reference demands more than
+        /// MaxReferenceDemand of a joint ceiling. Off by default: the Gate 3/4
+        /// controls keep the qualified break behaviour.
+        /// </summary>
+        public bool LiftEnabled { get; set; }
+        public float LiftRatePerSecond { get; set; } = 0.30f;
+        public float LowerRatePerSecond { get; set; } = 0.30f;
+        public Func<float> SupportMarginM { get; set; }
+        public float MinSupportMarginM { get; set; } = 0.04f;
+        /// <summary>Bound on the change of the progress rate (1/s^2): 0.6 reaches the full 0.3/s rate in 0.5 s.</summary>
+        public float LiftAccelPerSecond2 { get; set; } = 0.6f;
+        public float LiftRate01PerSecond { get; private set; }
+        public Func<float> ReferenceDemand { get; set; }
+        public float MaxReferenceDemand { get; set; } = 0.95f;
+        public float LiftProgress01 { get; private set; }
+        public Rigidbody BarBody => _bar.Body;
+        public bool LiftHeld { get; private set; }
+        public string LiftHoldReason { get; private set; } = string.Empty;
+        public int LiftHeldTicks { get; private set; }
+        public bool DownReceived { get; private set; }
+        public ulong DownTick { get; private set; }
+        /// <summary>Plate load (both plates) at which the lowered bar counts as resting on the platform.</summary>
+        public float ReturnedPlateN { get; set; } = 600f;
+
+        /// <summary>The chief referee's "Down" signal (IPF 4.3(2)); only accepted at lockout.</summary>
+        public void CommandDown(ulong tick)
+        {
+            if (Phase != DeadliftPullPhase.Lockout || DownReceived)
+                return;
+            DownReceived = true;
+            DownTick = tick;
+            Phase = DeadliftPullPhase.Lowering;
+        }
+
+        private void UpdateMovingPhase(float dt)
+        {
+            if (Phase == DeadliftPullPhase.Separated)
+            {
+                Phase = DeadliftPullPhase.Lifting;
+                _breakApplied = Applied01;
+            }
+            if (Phase == DeadliftPullPhase.Lifting)
+            {
+                float margin = SupportMarginM != null ? SupportMarginM() : float.PositiveInfinity;
+                float demand = ReferenceDemand != null ? ReferenceDemand() : 0f;
+                LiftHeld = false;
+                LiftHoldReason = string.Empty;
+                if (!(margin >= MinSupportMarginM)) { LiftHeld = true; LiftHoldReason = "support margin"; }
+                else if (demand > MaxReferenceDemand) { LiftHeld = true; LiftHoldReason = "joint demand"; }
+                if (LiftHeld)
+                    LiftHeldTicks++;
+                // Progress rate with bounded acceleration: Drive, a governor hold and
+                // the arrival at lockout all change the joint-reference velocity at
+                // most LiftAccelPerSecond2 (an instant stop of a moving reference
+                // was measured to unload a foot within 0.4 s, Gate 6 run 6). The
+                // arrival is a stopping-distance law, so s reaches 1 at zero rate.
+                float wanted = LiftHeld ? 0f : LiftRatePerSecond * Intent01;
+                wanted = Mathf.Min(wanted, Mathf.Sqrt(2f * LiftAccelPerSecond2 * Mathf.Max(0f, 1f - LiftProgress01)) + 0.01f);
+                LiftRate01PerSecond = Mathf.MoveTowards(LiftRate01PerSecond, wanted, LiftAccelPerSecond2 * dt);
+                LiftProgress01 = Mathf.Min(1f, LiftProgress01 + LiftRate01PerSecond * dt);
+                if (LiftProgress01 >= 1f)
+                {
+                    LiftRate01PerSecond = 0f;
+                    Phase = DeadliftPullPhase.Lockout;
+                }
+            }
+            else if (Phase == DeadliftPullPhase.Lowering)
+            {
+                float wanted = -Mathf.Min(LowerRatePerSecond, Mathf.Sqrt(2f * LiftAccelPerSecond2 * Mathf.Max(0f, LiftProgress01)) + 0.02f);
+                LiftRate01PerSecond = Mathf.MoveTowards(LiftRate01PerSecond, wanted, LiftAccelPerSecond2 * dt);
+                LiftProgress01 = Mathf.Max(0f, LiftProgress01 + LiftRate01PerSecond * dt);
+                // At the floor posture, unwind the bar-break extension too so the
+                // plates take the bar back (the break extension is what lifted it).
+                if (LiftProgress01 <= 0f)
+                    _breakApplied = Mathf.MoveTowards(_breakApplied, 0f, ReleasePerSecond * 0.25f * dt);
+                float plates = float.IsNaN(PlateLeftN) || float.IsNaN(PlateRightN) ? 0f : PlateLeftN + PlateRightN;
+                if (LiftProgress01 <= 0f && plates >= ReturnedPlateN)
+                    Phase = DeadliftPullPhase.Returned;
+            }
+            // The break extension fades out along the path: the path itself carries the posture.
+            Applied01 = _breakApplied * (1f - LiftProgress01);
+            BarVerticalDisplacement = _bar.Body.position.y - _barYAtSeparation;
+        }
+
+        private float _breakApplied;
+
         public void Update(PlayerIntentFrame intent)
         {
             float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
@@ -136,6 +235,13 @@ namespace PowerliftingSimulator.Deadlift.Unity
             }
             GovernorActive = ComGovernorEnabled && !_governorOpen;
             float governedTarget = Intent01 * (_governorOpen ? 1f : 0f);
+
+            if (Phase >= DeadliftPullPhase.Lifting)
+            {
+                UpdateMovingPhase(dt);
+                LoadScheduleFraction = 1f;
+                return;
+            }
 
             if (intent.AbortHeld && Phase != DeadliftPullPhase.Separated)
             {
@@ -184,6 +290,14 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 Phase = DeadliftPullPhase.Separated;
                 SeparationTick = intent.Tick;
                 _separatedApplied = Applied01;
+            }
+            else if (Phase == DeadliftPullPhase.Separated && LiftEnabled)
+            {
+                if (_barYAtSeparation == 0f)
+                    _barYAtSeparation = _bar.Body.position.y;
+                UpdateMovingPhase(dt);
+                LoadScheduleFraction = 1f;
+                return;
             }
             else if (Phase == DeadliftPullPhase.Separated)
             {

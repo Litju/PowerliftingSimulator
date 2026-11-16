@@ -31,7 +31,7 @@ namespace PowerliftingSimulator.Deadlift
     public sealed partial class DeadliftSetupDynamicTests
     {
         private static readonly string[] DynJoints =
-            { "left_thigh", "right_thigh", "left_shank", "right_shank", "abdomen", "thorax", "left_foot", "right_foot" };
+            { "left_thigh", "right_thigh", "left_shank", "right_shank", "abdomen", "thorax", "left_foot", "right_foot", "left_upper_arm", "left_forearm", "left_hand", "head_neck" };
 
         private sealed class DynamicsTrace
         {
@@ -59,7 +59,7 @@ namespace PowerliftingSimulator.Deadlift
             h.Append("patchL0x,patchL1x,patchL0z,patchL1z,patchR0x,patchR1x,patchR0z,patchR1z,");
             foreach (PhysicalSegmentRecipe r in PhysicalAthleteDefinition.Segments)
                 h.Append("w_").Append(r.Id).Append(',');
-            h.Append("end\n");
+            h.Append("hRef,hFilt,hMeas,refDem,owner,s,held,margin,cpx,cpz,sysCz,barLeg,tgtL,measL,tgtR,measR,regVz,demJoint,end\n");
             return h.ToString();
         }
 
@@ -178,6 +178,19 @@ namespace PowerliftingSimulator.Deadlift
             row.Add(Own(MeasuredPerHandUpN()));
             row.Add(hl != null ? Own(hl.MaxDemandFraction) : "nan");
             row.Add(_world.Hold.ReferenceOwner.ToString());
+            row.Add(Own(_pull.LiftProgress01));
+            row.Add(_pull.LiftHeld ? _pull.LiftHoldReason.Replace(' ', '-') : "-");
+            row.Add(c.Monitor != null ? Own(c.Monitor.MarginM) : "nan");
+            row.Add(c.Monitor != null ? Own(c.Monitor.CapturePoint.x) : "nan");
+            row.Add(c.Monitor != null ? Own(c.Monitor.CapturePoint.y) : "nan");
+            row.Add(c.Monitor != null ? Own(c.Monitor.SystemCom.z) : "nan");
+            row.Add(Own(_ticks.Count > 0 ? _ticks[_ticks.Count - 1].BarLegN : 0d));
+            row.Add(Own(_regulator.TargetAlongFor("left_foot")));
+            row.Add(Own(_regulator.MeasuredAlongFor("left_foot")));
+            row.Add(Own(_regulator.TargetAlongFor("right_foot")));
+            row.Add(Own(_regulator.MeasuredAlongFor("right_foot")));
+            row.Add(Own(_regulator.LastComVz));
+            row.Add(hl != null ? hl.MaxDemandJoint : "-");
             row.Add("0");
             trace.Rows.AppendLine(string.Join(",", row));
 

@@ -58,6 +58,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
         /// <summary>Largest joint drive demand fraction of the reference last applied.</summary>
         public float MaxDemandFraction { get; private set; }
         public int Solves { get; private set; }
+        public string MaxDemandJoint { get; private set; } = string.Empty;
 
         /// <summary>Selects the reference for an observed per-hand load (already filtered by the caller).</summary>
         public void Observe(float perHandUpN)
@@ -74,7 +75,11 @@ namespace PowerliftingSimulator.Deadlift.Unity
             }
             MaxDemandFraction = 0f;
             foreach (DeadliftContactStatics.JointLoad load in Current().Joints)
-                MaxDemandFraction = Mathf.Max(MaxDemandFraction, load.DemandFraction);
+                if (load.DemandFraction > MaxDemandFraction)
+                {
+                    MaxDemandFraction = load.DemandFraction;
+                    MaxDemandJoint = load.Id;
+                }
         }
 
         private float Fraction => HandPullN / MaximumHandPullN;

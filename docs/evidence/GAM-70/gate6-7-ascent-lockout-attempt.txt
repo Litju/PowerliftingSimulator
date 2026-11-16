@@ -1,0 +1,78 @@
+GAM-70 Gates 6-7 - moving phase: ascent, knee passage, lockout, Down, lowering, decision
+2026-11-16, Unity 6000.3.22f1, fresh B2 plants, 100 kg athlete, real 75 kg bar, both rigid grips,
+deadlift ankle-roll DOF. No gain, strength, stiffness, solver, friction, contact or joint-limit
+value was changed. The Gate 5 measured hand-load reference (re-solved at the current posture)
+is the static reference throughout; PoweredJointController is the only joint writer.
+
+1. Reference path (DeadliftLiftPath, kinematic, written before tick 0)
+   Keys over the athlete's real joints/anchors/limits (setup-solver parameterization):
+   hard - feet at their setup poses, both palm anchors on the level bar with the setup hand
+   orientations (welded grips), joint ranges with 3 deg margin, bar-shin/thigh clearance,
+   arm/leg non-overlap, athlete+bar COM inside the sole hull with 60 mm margin, knees >= 4 deg
+   short of their stop, shoulder static moment (hand load W_b/2 + arm weight) <= 0.85 of the
+   130 N m capacity, and (free-rise keys) no bar descent (IPF 4.3.1(1));
+   preference - bar rising vertically, torso held at the setup angle until the bar clears the
+   knee (knee passage rise 0.457 m, from the rig geometry) then extended to 86 deg, shins to
+   vertical before passage, thighs to vertical after, hands under shoulders, neutral spine.
+   Bar-rise sweep at 1 cm, then a 12-step homotopy into the lockout (every key closed).
+   Result: 91 keys, lockout rise 0.792 m, sweep hard cost <= 2e-2 (mm-level foot/hand
+   residuals), lockout key 0.32 (shoulders-back/feet terms, few mm). Solve 12-17 s.
+   Progress s is the joint-space arc length (largest single-joint rotation), so a constant
+   rate is a bounded joint speed.
+
+2. Measured failures that shaped the moving phase (each a fresh-plant A/B, Drive held)
+   a. First path (torso schedule linear in bar rise): the solution family jumped between
+      0.15-0.30 m (hard cost 1.26, bar into the shins); ascent tracked to +151 mm then the
+      abdomen saturated (2.97). -> knee-passage-first coordination.
+   b. Bar-rise parameterization: knee reference snapped 16 -> 0.7 deg in ~9 ticks
+      (~170 deg/s), hit the -5 deg stop, both feet left the platform (ticks 629-635).
+      -> joint arc-length parameterization and a soft knee floor.
+   c. Slerp between the last swept key and a separately solved lockout is not closed: a
+      planted foot was asked to rotate (COP 0.08 m toe edge, ankle 38 vs 13 deg).
+      -> closed homotopy keys with monotone bar rise.
+   d. Instant progress stop (Drive release): one foot unloaded (0/2472 N) within 0.4 s.
+      -> progress rate with bounded acceleration (0.6 /s^2) and a stopping-distance arrival.
+      Control L3 (Drive released at s 0.60): bar +640 mm held motionless 4 s, feet 861/855 N,
+      margin >= 115 mm: the standing-height balance loop is statically sound.
+   e. Regulator integral: measured COP 10-18 mm ahead of the quasi-static target from s 0.33;
+      the pure integral wound to its -4 deg clamp (~2 s) and threw the COP to the toe edge.
+      -> moving phase integral leak 0.1 s (Kp, Ki, clamps unchanged; hold law unchanged).
+   f. Regulator outer term used the athlete-only COM velocity (-0.06..-0.09 m/s) while the
+      athlete+bar COM stood still; target biased 20-30 mm. A/B L1 (athlete) loses both feet at
+      685-688; L2 (athlete+bar, the only difference) reaches lockout, no contact loss.
+   g. Lockout key needed ~100 % shoulder capacity (hands ahead of the shoulders): shoulder
+      saturated (1.06-1.25) and the bar limit-cycled 35 mm. -> shoulder static-moment bound.
+   h. Lockout planned 49 mm inside the heel edge tipped backward on arrival. -> 60 mm margin,
+      torso 86 deg (referee minimum 80), shoulders-back kept hard.
+   The legacy COM-displacement governor never acts in the moving phase; progress is held,
+   never forced, by the capture-point margin (DeadliftSupportMonitor, >= 40 mm) or a joint
+   reference demand above 0.95.
+
+3. Complete attempt (Explicit GATE7_COMPLETE_ATTEMPT..., and normal-PlayMode regression
+   GATE7_PLAYER_DEADLIFT_ATTEMPT_IS_A_GOOD_LIFT; identical numbers):
+   separation 317 | path end 690 | referee Down 835 (measured: knees 8.4 deg geometric
+   flexion, torso 89.1 deg, shoulders 7 mm ahead of the hips, bar motionless) | controlled
+   lowering along the path at 0.30 /s | bar resting on the plates 1441 (landing 0.000 m/s,
+   plates 741 N = bar weight) | grips released 1448 | GOOD LIFT, no fault.
+   Bar peak rise 803.2 mm (0.223 -> 1.026 m). Min foot load after the break 554.4 N, zero
+   ticks without a foot contact point, feet travel 0.000 m, no bar-limb contact, min
+   capture-point margin during the ascent 92.3 mm, zero governor holds.
+   Finite-actuator saturation is measured, not hidden: abdomen 1.39 for 16 ticks mid-ascent
+   (518-533), shoulder 1.08 for 11 ticks and abdomen 1.40 for 20 ticks while lowering;
+   57 ticks in all with some joint above its ceiling (regression bound 60).
+   Lowering at 0.20 /s was measured to fail (shoulder saturated from 873, forward topple at
+   1253) and is not used; slower lowering is not monotonically safer on this plant.
+   The bar is set down by relaxing the admitted hand load only after the plates measure
+   > 50 N; relaxing at the floor posture before contact was measured to topple the athlete.
+
+4. Referee (DeadliftReferee, IPF Technical Rulebook 2026 v3 s4.3/4.3.1): observes only the
+   bodies (DeadliftAttemptObserver); single Down signal; faults downward movement before the
+   final position, not erect / shoulders not back, knees not locked, thigh support, stepping,
+   lowering before Down, uncontrolled return, not completed. Numeric thresholds are named game
+   approximations. EditMode DeadliftRefereeTests (6) pin the rules.
+
+Not yet demonstrated here: owner-visible gameplay (station, UI, input) and the Windows build.
+
+Receipts (outside history): Logs/g6a-results.xml, g6p-results.xml, g7-results.xml,
+g7reg-results.xml, g7edit-results.xml, Logs/GAM70/gate6-path.txt, gate6-ascent.txt,
+gate7-attempt.txt, gate7-attempt-regression.txt, gate5-dynamics-L*.csv, -A1-full-attempt.csv.

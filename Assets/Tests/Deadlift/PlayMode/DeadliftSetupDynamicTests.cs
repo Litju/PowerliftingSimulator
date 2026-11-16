@@ -63,6 +63,8 @@ namespace PowerliftingSimulator.Deadlift
         private DeadliftFootCopSensor _copL, _copR;
         private DeadliftBarContactSensor _plates;
         private DeadliftSetupAcceptance _accepted;
+        /// <summary>The setup solver built before placement (its standing pelvis frame is the solve frame).</summary>
+        private DeadliftSetupSolver _setupMeasurements;
         private bool _gravityReference;
         private bool _ankleRoll;
 
@@ -75,6 +77,7 @@ namespace PowerliftingSimulator.Deadlift
             DeadliftSetupSpec spec = DeadliftSetupFeasibilityTests.SumoPronated();
             spec.RequiredJointMarginDeg = 3f;
             DeadliftPlantModel model = feasibility.Measurements.BuildModel(QualifiedB2, spec);
+            _setupMeasurements = feasibility.Measurements;
             _accepted = DeadliftSetupAcceptance.Check(_world.Rig, _world.Bar, feasibility.Measurements, model);
             Assert.That(_accepted.Passed, Is.True, "the recorded initial condition no longer passes the independent A2 table\n" + _accepted.Table());
             _world.UseModel(model);
