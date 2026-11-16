@@ -15,7 +15,7 @@ import sys
 
 WA = 100.0 * 9.81      # athlete weight, N (GAM-6 profile)
 WB = 75.0 * 9.81       # bar weight, N
-LOSS_N = 20.0          # "support lost" observation threshold, N
+LOSS_N = 20.0          # DIAGNOSTIC warning threshold only (arbitrary); true contact loss is zero normal, see Analyze-GAM70MomentumBalance.py
 DEFAULT = [
     "Logs/GAM70/gate4-ownership-A-legacy-overwrite.csv",
     "Logs/GAM70/gate4-ownership-B-explicit-handoff.csv",
@@ -57,8 +57,8 @@ def analyze(path: str) -> str:
     if sep is not None:
         loss = next((i for i, r in enumerate(rows[sep:], sep)
                      if min(f(r, "footL"), f(r, "footR")) < LOSS_N), None)
-    out = [f"=== {name} ({path})", f"ticks {len(rows)}  separation entry {sep}  ramp end {ramp}  first support loss {loss}"]
-    for label, idx in (("ramp end", ramp), ("first loss", loss), ("last", len(rows) - 1)):
+    out = [f"=== {name} ({path})", f"ticks {len(rows)}  separation entry {sep}  ramp end {ramp}  first <{LOSS_N:.0f} N warning (diagnostic, not contact loss) {loss}"]
+    for label, idx in (("ramp end", ramp), ("<20N warn", loss), ("last", len(rows) - 1)):
         if idx is None:
             continue
         r = rows[idx]
