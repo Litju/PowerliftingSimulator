@@ -1,0 +1,36 @@
+GAM-70 Gate 8 - playable station, Windows build, known limitation
+2026-11-16, Unity 6000.3.22f1 (tests), 6000.3.22f1-gam65-il2cpp editor (player build)
+
+1. Shipped composition: DeadliftAttemptRuntime (production) composes exactly the Gate 5-7
+   qualified attempt. Regressions (normal PlayMode, all PASS on the final tree):
+   RUNTIME_PLAYER_DEADLIFT_IS_A_GOOD_LIFT  onset 301: GOOD LIFT, Down 834, bar rise 803.3 mm,
+                                            min foot while airborne 557.7 N; onset 305: GOOD LIFT, Down 839
+   STATION_SCENE_RUNS_A_GOOD_LIFT_ON_THE_FOUNDATION_CLOCK  DeadliftPrototype scene, foundation's own
+                                            clock: GOOD LIFT, Down 834, bar returned, grips released 1458
+   GATE7_PLAYER_DEADLIFT_ATTEMPT_IS_A_GOOD_LIFT and GATE5_HANDLOAD_REFERENCE_... PASS.
+   The scene and plant traces are identical through tick 300 (same physics); the station is
+   not physically different from the qualified plant.
+
+2. Known limitation (measured, not hidden). Explicit RUNTIME_DRIVE_ONSET_ROBUSTNESS_AB, fresh
+   plants, Drive onsets 301/302/305/320/350: 4/5 good lifts with the shipped settings. Onset 302
+   loses a foot near lockout (FootMoved @665, bar dropped @691). Cause: the ankle regulator
+   identified at the crouched setup chatters near standing (0.08 deg/tick grounded -> 1.1-1.6
+   deg/tick near lockout) and saturates. One-parameter alternatives, each A/B over the same five
+   onsets and reverted: regulator output rate limit 0.3 deg/tick 0/5; slower ascent 0.20 /s 3/5;
+   COM-height-scaled regulator gain 0/5; gentler arrival (0.3 /s^2) 0/5 (bar on thighs early).
+   The proper fix (re-identify the ankle plant near standing) is open. A real player's attempt
+   can therefore fail near lockout; the referee then calls the measured fault.
+
+3. Station: Assets/Scenes/Prototype/DeadliftPrototype.unity, derived from the accepted squat
+   scene by GAM70DeadliftSceneBuilder (squat/bench scenes and builders untouched). Controls:
+   hold SPACE (brace) + LEFT SHIFT (grip), hold W to pull and drive; ESC abort before the bar
+   leaves the floor; R resets. HUD: phase, bar height, knees/torso, DOWN signal, three lights
+   and the faults with their IPF rule. Startup solves the ascent path (12-17 s, "Preparing").
+
+4. Windows player: GAM70DeadliftSceneBuilder.BuildWindowsPlayerFromCommittedScenes at commit
+   47c478a, scenes [DeadliftPrototype, SquatPhysicalPrototype, BenchPressPrototype]:
+   Builds/GAM70/Windows/PowerliftingSimulator.exe, Build Finished: Success (105.2 s).
+   Smoke launch: player log "GAM-70 deadlift station ready. Tick-0 penetration 0.02 mm" and the
+   same 91-key lift path as the tests.
+
+Not claimed: an owner gameplay rehearsal. The build is handed to the owner for it.
