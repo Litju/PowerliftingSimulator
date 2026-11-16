@@ -127,6 +127,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 RampPerSecond = 1f, ReleasePerSecond = 2f,
                 HipExtensionLimitDeg = 2.5f, KneeExtensionLimitDeg = 2f, TrunkExtensionLimitDeg = -1.5f,
                 MaxComShiftM = 0.05f, GovernorReleaseM = 0.03f,
+                RequireBraceAndGrip = false,   // game control: Drive alone pulls
+                RearmAfterAbort = true,
                 LiftEnabled = true, LiftRatePerSecond = LiftRatePerSecond, LiftAccelPerSecond2 = LiftAccelPerSecond2
             };
             Hold.Pull = Pull;

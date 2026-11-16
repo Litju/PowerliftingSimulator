@@ -33,6 +33,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
         private string _failure = string.Empty;
         private GUIStyle _big, _body, _lightOn, _lightOff;
         private ulong _downShownTick;
+        private DeadliftPullPhase _loggedPhase = DeadliftPullPhase.Grounded;
 
         public DeadliftAttemptRuntime Runtime { get; private set; }
         public bool IsInitialized { get; private set; }
@@ -109,7 +110,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 case DeadliftPullPhase.Grounded:
                     _status = Runtime.Tick < (ulong)(DeadliftAttemptRuntime.PretensionStartTick + DeadliftAttemptRuntime.PretensionRampTicks)
                         ? "Setting the grip and taking the slack out of the bar..."
-                        : "Hold SPACE (brace) + LEFT SHIFT (grip), then hold W to pull.";
+                        : "Ready. Hold W (or Up arrow) to pull.";
                     break;
                 case DeadliftPullPhase.Pulling: _status = "Pulling - the plates are unloading."; break;
                 case DeadliftPullPhase.Aborted: _status = "Pull released before the bar left the floor. R to reset."; break;
@@ -121,6 +122,12 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 case DeadliftPullPhase.Lockout: _status = "Locked out - stand still for the referee."; break;
                 case DeadliftPullPhase.Lowering: _status = "DOWN - lowering under control."; break;
                 case DeadliftPullPhase.Returned: _status = referee.Completed ? "Attempt complete. R for another attempt." : "Bar on the platform."; break;
+            }
+            if (pull.Phase != _loggedPhase)
+            {
+                Debug.Log(string.Format(CultureInfo.InvariantCulture, "GAM-70 station: tick {0} phase {1} -> {2} | drive {3:F2} | bar {4:F3} m | {5}",
+                    Runtime.Tick, _loggedPhase, pull.Phase, pull.LastRawDrive01, Runtime.LastObservation.BarY, referee.Summary()));
+                _loggedPhase = pull.Phase;
             }
             if (referee.DownGiven && _downShownTick == 0)
                 _downShownTick = Runtime.Tick;
@@ -163,7 +170,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 o.BarY, Runtime.Referee.MaxBarRiseM * 1000.0, pull.Intent01 * 100f), _body);
             GUI.Label(new Rect(30, 118, 540, 30), string.Format(CultureInfo.InvariantCulture, "Knees {0:F0}/{1:F0} deg   torso {2:F0} deg   phase {3}",
                 o.KneeFlexionLDeg, o.KneeFlexionRDeg, o.TorsoDeg, pull.Phase), _body);
-            GUI.Label(new Rect(30, 148, 540, 70), "SPACE brace  |  LEFT SHIFT grip  |  W pull  |  ESC abort  |  R reset", _body);
+            GUI.Label(new Rect(30, 148, 540, 30), "W / Up: pull and drive  |  ESC abort  |  R reset", _body);
+            GUI.Label(new Rect(30, 178, 540, 30), string.Format(CultureInfo.InvariantCulture, "input  drive {0:F2}  brace {1:F2}  grip {2:F2}",
+                pull.LastRawDrive01, pull.LastBrace01, pull.LastGrip01), _body);
 
             DeadliftReferee referee = Runtime.Referee;
             if (referee.DownGiven && !referee.Completed)

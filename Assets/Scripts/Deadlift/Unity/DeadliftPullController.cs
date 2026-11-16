@@ -70,6 +70,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
         /// <summary>Full-intent ramp rate (1/s). A full pull takes one second, not one tick.</summary>
         public float RampPerSecond { get; set; } = 1f;
         public bool RequireBraceAndGrip { get; set; } = true;
+        /// <summary>Game control: a pull released before separation returns to Grounded once relaxed (default off: Gate 3 controls).</summary>
+        public bool RearmAfterAbort { get; set; }
 
         /// <summary>Bounded extension per unit of applied intent (deg). Defaults are the declared game limits.</summary>
         public float HipExtensionLimitDeg { get; set; } = MaxHipExtensionDeg;
@@ -94,6 +96,10 @@ namespace PowerliftingSimulator.Deadlift.Unity
 
         public DeadliftPullPhase Phase { get; private set; } = DeadliftPullPhase.Grounded;
         public float Intent01 { get; private set; }
+        /// <summary>The player's raw intent channels of the last tick (HUD and diagnostics).</summary>
+        public float LastBrace01 { get; private set; }
+        public float LastGrip01 { get; private set; }
+        public float LastRawDrive01 { get; private set; }
         public float Applied01 { get; private set; }
         public float HipExtensionDeg => HipExtensionLimitDeg * Applied01;
         public float KneeExtensionDeg => KneeExtensionLimitDeg * Applied01;
@@ -205,6 +211,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
         {
             float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
             Intent01 = Mathf.Clamp01(IntentOverride01 ?? intent.Drive01);
+            LastBrace01 = intent.Brace01;
+            LastGrip01 = intent.Grip01;
+            LastRawDrive01 = intent.Drive01;
             bool gate = !RequireBraceAndGrip || (intent.Grip01 >= 0.5f && intent.Brace01 >= 0.5f);
             if (RequireBraceAndGrip && IntentOverride01.HasValue)
                 gate = true;   // deterministic test seam still exercises the pull mapping
@@ -282,6 +291,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
             if (Phase == DeadliftPullPhase.Aborted)
             {
                 Applied01 = Mathf.MoveTowards(Applied01, 0f, RampPerSecond * dt);
+                // Re-arm once the released pull has fully relaxed (the bar never left the floor).
+                if (RearmAfterAbort && Applied01 <= 0f && !intent.AbortHeld && Intent01 <= 0.05f)
+                    Phase = DeadliftPullPhase.Grounded;
                 return;
             }
 
