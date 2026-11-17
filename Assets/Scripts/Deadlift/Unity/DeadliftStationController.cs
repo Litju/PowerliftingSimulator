@@ -33,6 +33,16 @@ namespace PowerliftingSimulator.Deadlift.Unity
         private string _failure = string.Empty;
         private GUIStyle _big, _body, _lightOn, _lightOff;
         private ulong _downShownTick;
+        private bool _sideView;
+        private bool _experimentalPath;
+
+        /// <summary>
+        /// Owner comparison only: "-deadliftBarProximity" on the player command line runs the
+        /// experimental bar-proximity ascent path (DeadliftLiftPath.BarProximity), which is
+        /// measured NOT to complete the lift reliably; "-deadliftSideView" starts in the side view.
+        /// The default is the qualified path.
+        /// </summary>
+        public const string ExperimentalPathArgument = "-deadliftBarProximity", SideViewArgument = "-deadliftSideView";
         private DeadliftPullPhase _loggedPhase = DeadliftPullPhase.Grounded;
 
         public DeadliftAttemptRuntime Runtime { get; private set; }
@@ -67,12 +77,17 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 if (!barbell.IsBuilt)
                     barbell.Build();
                 barbell.SetGameplayPerformanceProfile(true);
+                string[] args = Environment.GetCommandLineArgs();
+                _experimentalPath = Array.IndexOf(args, ExperimentalPathArgument) >= 0;
+                _sideView = Array.IndexOf(args, SideViewArgument) >= 0;
+                DeadliftAttemptRuntime.BarProximityPath = _experimentalPath;
                 Runtime = new DeadliftAttemptRuntime(foundation, athleteRig, barbell);
-                Runtime.Initialize();
+                try { Runtime.Initialize(); }
+                finally { DeadliftAttemptRuntime.BarProximityPath = DeadliftAttemptRuntime.BarProximityPathDefault; }
                 SquatPresentationGrip grip = athleteRig.GetComponent<SquatPresentationGrip>() ?? athleteRig.gameObject.AddComponent<SquatPresentationGrip>();
                 grip.Configure(athleteRig, barbell);
                 grip.ThumbAroundShaft = true;   // IPF 4.3(1): the grip is optional; thumbs around the bar
-                PlaceCamera();
+                PlaceCamera(_sideView);
                 IsInitialized = true;
                 foundation.enabled = true;
                 Debug.Log("GAM-70 deadlift station ready. Tick-0 penetration " +
@@ -85,14 +100,24 @@ namespace PowerliftingSimulator.Deadlift.Unity
             }
         }
 
-        private static void PlaceCamera()
+        private static void PlaceCamera(bool side)
         {
             Camera cam = Camera.main ?? FindFirstObjectByType<Camera>();
             if (cam == null)
                 return;
-            // Three-quarter side view, as a side judge sees the lift.
-            cam.transform.position = new Vector3(2.6f, 1.25f, 1.6f);
-            cam.transform.LookAt(new Vector3(0f, 0.75f, -0.05f));
+            if (side)
+            {
+                // Low side-quarter view, ~50 deg off the bar axis (athlete faces +Z): a true side
+                // view looks straight through the near 450 mm plate, which hides the bar-to-leg gap.
+                cam.transform.position = new Vector3(2.0f, 0.95f, 1.9f);
+                cam.transform.LookAt(new Vector3(0.15f, 0.75f, -0.1f));
+            }
+            else
+            {
+                // Three-quarter side view, as a side judge sees the lift.
+                cam.transform.position = new Vector3(2.6f, 1.25f, 1.6f);
+                cam.transform.LookAt(new Vector3(0f, 0.75f, -0.05f));
+            }
             cam.fieldOfView = 45f;
         }
 
@@ -101,6 +126,11 @@ namespace PowerliftingSimulator.Deadlift.Unity
             Keyboard keyboard = Keyboard.current;
             if (keyboard != null && keyboard.rKey.wasPressedThisFrame)
                 SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            if (keyboard != null && keyboard.vKey.wasPressedThisFrame && IsInitialized)
+            {
+                _sideView = !_sideView;
+                PlaceCamera(_sideView);
+            }
             if (Runtime == null)
                 return;
             DeadliftPullController pull = Runtime.Pull;
@@ -151,7 +181,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
             float s = Mathf.Max(1f, Screen.height / 1080f);
             GUI.matrix = Matrix4x4.Scale(new Vector3(s, s, 1f));
             float w = Screen.width / s;
-            GUI.Box(new Rect(16, 16, 560, 210), GUIContent.none);
+            GUI.Box(new Rect(16, 16, 560, _experimentalPath ? 240 : 210), GUIContent.none);
+            if (_experimentalPath)
+                GUI.Label(new Rect(30, 210, 540, 30), "EXPERIMENTAL bar-proximity path (not qualified)", _body);
             GUI.Label(new Rect(30, 24, 540, 30), "DEADLIFT  -  " + DeadliftQualifiedSetup.BarKg.ToString("F0", CultureInfo.InvariantCulture) + " kg  (sumo, pronated)", _body);
             if (!string.IsNullOrEmpty(_failure))
             {
@@ -170,7 +202,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 o.BarY, Runtime.Referee.MaxBarRiseM * 1000.0, pull.Intent01 * 100f), _body);
             GUI.Label(new Rect(30, 118, 540, 30), string.Format(CultureInfo.InvariantCulture, "Knees {0:F0}/{1:F0} deg   torso {2:F0} deg   phase {3}",
                 o.KneeFlexionLDeg, o.KneeFlexionRDeg, o.TorsoDeg, pull.Phase), _body);
-            GUI.Label(new Rect(30, 148, 540, 30), "W / Up: pull and drive  |  ESC abort  |  R reset", _body);
+            GUI.Label(new Rect(30, 148, 540, 30), "W / Up: pull and drive  |  ESC abort  |  R reset  |  V side view", _body);
             GUI.Label(new Rect(30, 178, 540, 30), string.Format(CultureInfo.InvariantCulture, "input  drive {0:F2}  brace {1:F2}  grip {2:F2}",
                 pull.LastRawDrive01, pull.LastBrace01, pull.LastGrip01), _body);
 
