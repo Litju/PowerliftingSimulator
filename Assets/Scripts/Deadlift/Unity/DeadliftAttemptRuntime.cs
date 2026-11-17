@@ -34,6 +34,14 @@ namespace PowerliftingSimulator.Deadlift.Unity
         /// <summary>Bound on the change of the lift-progress rate (1/s^2). Static so the robustness sweep can vary it.</summary>
         public static float LiftAccelPerSecond2 = 0.6f;
 
+        /// <summary>Shipped value of <see cref="BarProximityPath"/>.</summary>
+        public const bool BarProximityPathDefault = false;
+        /// <summary>
+        /// Solve the ascent path with the phase-dependent bar-proximity objective
+        /// (<see cref="DeadliftLiftPath.BarProximity"/>). Static so the A/B can run the control path on a matched plant.
+        /// </summary>
+        public static bool BarProximityPath = BarProximityPathDefault;
+
         private readonly FoundationBootstrap _foundation;
         private readonly PhysicalAthleteRig _rig;
         private readonly PhysicalBarbell _barbell;
@@ -133,8 +141,17 @@ namespace PowerliftingSimulator.Deadlift.Unity
             };
             Hold.Pull = Pull;
 
-            Path = new DeadliftLiftPath(_rig, Measurements, Model, _barbell.Body.mass);
+            Path = new DeadliftLiftPath(_rig, Measurements, Model, _barbell.Body.mass) { BarProximity = BarProximityPath };
+            Path.RollPlanLimitDeg = Mathf.Min(Path.RollPlanLimitDeg, DeadliftAnkleRoll.LimitDegrees - Path.JointMarginDeg - Regulator.MaxRollOffsetDeg);
             Path.Solve();
+            if (Path.BarProximity)
+            {
+                // Same joint speed and acceleration as the qualified Gate 6 path (deg/s), whatever this path's length.
+                float k = DeadliftLiftPath.QualifiedJointSpeedDegPerS / (LiftRatePerSecond * Path.JointPathLengthDeg);
+                Pull.LiftRatePerSecond = LiftRatePerSecond * k;
+                Pull.LowerRatePerSecond *= k;
+                Pull.LiftAccelPerSecond2 = LiftAccelPerSecond2 * k;
+            }
             PathReport = Path.Describe();
             Hold.LiftPath = Path;
             Hold.MovingPhaseIntegralLeakSeconds = 0.10f;
