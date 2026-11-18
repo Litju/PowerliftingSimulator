@@ -51,6 +51,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
         private float _pretensionTargetN;
         private Collider _leftPlate, _rightPlate;
         private ulong _tick;
+        private DeadliftPreparedRejoin _preparedRejoin;
         private readonly Dictionary<PoweredJointController.PoweredJointRuntime, (Quaternion Initial, Vector3 Axis)> _shoulderStarts =
             new Dictionary<PoweredJointController.PoweredJointRuntime, (Quaternion Initial, Vector3 Axis)>();
 
@@ -62,6 +63,10 @@ namespace PowerliftingSimulator.Deadlift.Unity
         }
 
         public bool UpperChainPreparation { get; set; }
+
+        /// <summary>Experimental prepared reference with stock late-ascent rejoin. Configure before Initialize.</summary>
+        public bool PreparedClearanceRejoin { get; set; }
+        public DeadliftPreparedAscentPlan PreparedAscentPlan => _preparedRejoin?.Plan;
 
         public DeadliftPlantModel Model { get; private set; }
         public DeadliftSetupSolver Measurements { get; private set; }
@@ -145,7 +150,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
             };
             Hold.Pull = Pull;
 
-            Path = new DeadliftLiftPath(_rig, Measurements, Model, _barbell.Body.mass) { BarProximity = BarProximityPath };
+            Path = new DeadliftLiftPath(_rig, Measurements, Model, _barbell.Body.mass) { BarProximity = BarProximityPath && !PreparedClearanceRejoin };
             Path.RollPlanLimitDeg = Mathf.Min(Path.RollPlanLimitDeg, DeadliftAnkleRoll.LimitDegrees - Path.JointMarginDeg - Regulator.MaxRollOffsetDeg);
             Path.Solve();
             if (Path.BarProximity)
@@ -163,7 +168,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
             Monitor = new DeadliftSupportMonitor(_rig, _barbell.Body, _rig.PlatformCollider);
             Pull.SupportMarginM = () => Monitor.Update();
             Pull.ReferenceDemand = () => Hold.HandLoadReference.MaxDemandFraction;
-            if (UpperChainPreparation)
+            if (UpperChainPreparation || PreparedClearanceRejoin)
                 Pull.GroundedReady = PrepareForPull;
 
             Referee = new DeadliftReferee(_barbell.Body.worldCenterOfMass.y, _barbell.Body.mass * -Physics.gravity.y, dt);
@@ -277,11 +282,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 {
                     if (shoulder.Recipe.Family != "shoulder")
                         continue;
-                    var joint = shoulder.Joint;
-                    string side = shoulder.Id.StartsWith("left", StringComparison.Ordinal) ? "left" : "right";
-                    Vector3 arm = _rig.Segments[side + "_forearm"].Body.worldCenterOfMass - joint.transform.TransformPoint(joint.anchor);
-                    Vector3 extension = Vector3.Cross(arm, Vector3.back).normalized;
-                    Vector3 axis = Quaternion.Inverse(joint.transform.rotation * shoulder.JointSpace) * extension;
+                    Vector3 axis = DeadliftPreparedRejoin.ShoulderExtensionAxis(_rig, shoulder);
                     _shoulderStarts.Add(shoulder, (shoulder.PostPhysicsDiagnostic.ActualRelative, axis));
                     Hold.PreparationOffsets.Add(shoulder.Id, Quaternion.AngleAxis(2f, axis));
                 }
@@ -336,7 +337,15 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 Pull.Phase == DeadliftPullPhase.Aborted || Pull.Intent01 <= 0.05f))
             {
                 _shoulderStarts.Clear();
-                Hold.PreparationOffsets.Clear();
+                try
+                {
+                    if (PreparedClearanceRejoin && Pull.Phase == DeadliftPullPhase.Separated)
+                        _preparedRejoin = new DeadliftPreparedRejoin(this, _rig);
+                }
+                finally
+                {
+                    Hold.PreparationOffsets.Clear();
+                }
             }
 
             // Grounded setup: build upward hand load while the plates still support the bar.
@@ -355,6 +364,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 RightGrip.Release();
                 GripsReleased = true;
             }
+            _preparedRejoin?.Update();
             TickCompleted?.Invoke(this);
         }
     }

@@ -1,15 +1,14 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using NUnit.Framework;
 using PowerliftingSimulator.Athlete;
 using PowerliftingSimulator.Bench.Unity;
-using PowerliftingSimulator.Deadlift.Unity;
 using UnityEngine;
 
-namespace PowerliftingSimulator.Deadlift
+namespace PowerliftingSimulator.Deadlift.Unity
 {
-    /// <summary>Gate 3 probe. Close the existing chains around the feet and welded bar observed at separation.</summary>
-    internal sealed class DeadliftPreparedClearancePath
+    /// <summary>Closes the existing chains around the feet and welded bar observed at separation.</summary>
+    public sealed class DeadliftPreparedAscentPlan
     {
         public const float QualifiedRiseM = 0.12f;
         private const float FirstPlanRiseM = 0.15f;
@@ -35,14 +34,14 @@ namespace PowerliftingSimulator.Deadlift
         private readonly (string Id, Vector3 Center, float Mass)[] _bodyMasses;
         private readonly bool _centered;
 
-        internal sealed class Sample
+        public sealed class Sample
         {
             public Pose Root, Bar;
             public Dictionary<string, Quaternion> Logical;
             public Dictionary<string, Pose> Poses;
         }
 
-        public DeadliftPreparedClearancePath(DeadliftAttemptRuntime runtime, PhysicalAthleteRig rig, bool throughKnee, bool complete = false, bool centered = false)
+        public DeadliftPreparedAscentPlan(DeadliftAttemptRuntime runtime, PhysicalAthleteRig rig, bool throughKnee, bool complete = false, bool centered = false, float endProgress = 1f)
         {
             _runtime = runtime;
             _complete = complete;
@@ -65,7 +64,9 @@ namespace PowerliftingSimulator.Deadlift
             _progressStep = ProgressAtRise(FirstPlanRiseM) / FirstIntervals;
             int kneeIntervals = Mathf.CeilToInt(ProgressAtRise(runtime.Path.KneePassageRiseM + 0.035f) / _progressStep);
             _lateStart = _progressStep * kneeIntervals;
-            int intervals = complete ? Mathf.CeilToInt(1f / _progressStep) : throughKnee ? kneeIntervals : FirstIntervals;
+            if (complete && !(endProgress > _lateStart && endProgress <= 1f))
+                throw new ArgumentOutOfRangeException(nameof(endProgress));
+            int intervals = complete ? Mathf.CeilToInt(endProgress / _progressStep) : throughKnee ? kneeIntervals : FirstIntervals;
             _keys = new Sample[intervals + 1];
 
             var x = new double[6 + _channels.Sum(j => j.Count)];
@@ -206,7 +207,7 @@ namespace PowerliftingSimulator.Deadlift
             };
         }
 
-        public void CheckInterpolation()
+        public (float MinGap, float SweptGap, float PositionError, float RotationError) MeasureInterpolation()
         {
             const int subdivisions = 16;
             float minGap = float.PositiveInfinity, minBound = float.PositiveInfinity, maxClosure = 0f, maxRotation = 0f;
@@ -234,11 +235,7 @@ namespace PowerliftingSimulator.Deadlift
                         Mathf.Rad2Deg * Radians(sample.Bar.rotation * _gripRotations[i], hand.rotation));
                 }
             }
-            Debug.Log($"Prepared closed plan: min gap {minGap * 1000f:F2} mm, swept bound {minBound * 1000f:F2} mm, max closure {maxClosure * 1000f:F3} mm / {maxRotation:F3} deg");
-            Assert.That(minGap, Is.GreaterThan(0.020f));
-            Assert.That(minBound, Is.GreaterThan(0f));
-            Assert.That(maxClosure, Is.LessThan(0.001f));
-            Assert.That(maxRotation, Is.LessThan(0.3f));
+            return (minGap, minBound, maxClosure, maxRotation);
         }
 
         // Relative slerp adds at most its angular travel to the parent's. Sum each
@@ -265,74 +262,20 @@ namespace PowerliftingSimulator.Deadlift
             });
         }
 
-        internal sealed class RealizedSweep
-        {
-            private readonly CapsuleCollider[] _colliders;
-            private CapsulePose[] _previous;
-            public int Samples { get; private set; }
-            public float MinGap { get; private set; } = float.PositiveInfinity;
-            public float MinBound { get; private set; } = float.PositiveInfinity;
-
-            public RealizedSweep(Rigidbody bar, PhysicalAthleteRig rig)
-            {
-                _colliders = new[] { DeadliftBarLegGeometry.Shaft(bar) }
-                    .Concat(Legs.Select(id => (CapsuleCollider)rig.Segments[id].Collider)).ToArray();
-                foreach (CapsuleCollider collider in _colliders)
-                {
-                    Assert.That(collider.transform, Is.EqualTo(collider.attachedRigidbody.transform));
-                    Assert.That(Vector3.Distance(collider.transform.lossyScale, Vector3.one), Is.LessThan(1e-5f));
-                }
-                Read();
-                Samples = 0;
-            }
-
-            public void Read()
-            {
-                CapsulePose[] current = _colliders.Select(c => new CapsulePose(c)).ToArray();
-                for (int i = 1; i < current.Length; i++)
-                {
-                    float gap = current[0].Gap(current[i]);
-                    MinGap = Mathf.Min(MinGap, gap);
-                    if (_previous == null)
-                        continue;
-                    float bound = Mathf.Min(gap, _previous[0].Gap(_previous[i]))
-                        - 0.5f * (current[0].TravelFrom(_previous[0]) + current[i].TravelFrom(_previous[i]));
-                    MinBound = Mathf.Min(MinBound, bound);
-                }
-                _previous = current;
-                Samples++;
-            }
-
-            private readonly struct CapsulePose
-            {
-                private readonly Pose _body;
-                private readonly Vector3 _a, _b;
-                private readonly float _radius, _lever;
-
-                public CapsulePose(CapsuleCollider collider)
-                {
-                    Rigidbody body = collider.attachedRigidbody;
-                    _body = BodyPose(body);
-                    _radius = collider.radius;
-                    Vector3 axis = collider.direction == 0 ? Vector3.right : collider.direction == 1 ? Vector3.up : Vector3.forward;
-                    Vector3 half = axis * Mathf.Max(0f, 0.5f * collider.height - _radius);
-                    _a = Point(_body, collider.center - half);
-                    _b = Point(_body, collider.center + half);
-                    _lever = Mathf.Max((collider.center - half).magnitude, (collider.center + half).magnitude);
-                }
-
-                public float Gap(CapsulePose other) =>
-                    DeadliftSetupSolver.DistanceSegmentSegment(_a, _b, other._a, other._b) - _radius - other._radius;
-
-                public float TravelFrom(CapsulePose other) =>
-                    Vector3.Distance(_body.position, other._body.position) + Radians(_body.rotation, other._body.rotation) * _lever;
-            }
-        }
-
         private static float Radians(Quaternion a, Quaternion b)
         {
             Vector3 half = RotationError(a, b) * 0.5f;
             return 2f * Mathf.Asin(Mathf.Min(1f, half.magnitude));
+        }
+
+        public Quaternion RejoinTarget(string joint, float progress, float end)
+        {
+            if (progress <= LateStart)
+                return Target(joint, progress);
+            if (progress >= end)
+                return _runtime.Path.Target(joint, progress);
+            float blend = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(LateStart, end, progress));
+            return Quaternion.Slerp(Target(joint, progress), _runtime.Path.Target(joint, progress), blend);
         }
 
         private void Span(float progress, out int i, out float t)

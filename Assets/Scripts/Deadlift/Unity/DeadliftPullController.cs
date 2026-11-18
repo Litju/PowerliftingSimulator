@@ -71,6 +71,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public float RampPerSecond { get; set; } = 1f;
         public bool RequireBraceAndGrip { get; set; } = true;
         internal Func<bool> GroundedReady { get; set; }
+        /// <summary>A qualification fixture can hold a ready pull until a matched authoritative tick.</summary>
+        public ulong EarliestPullTick { get; set; }
         /// <summary>Game control: a pull released before separation returns to Grounded once relaxed (default off: Gate 3 controls).</summary>
         public bool RearmAfterAbort { get; set; }
 
@@ -261,7 +263,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
 
             if (Phase == DeadliftPullPhase.Grounded)
             {
-                if (gate && Intent01 > 0.05f && (GroundedReady == null || GroundedReady()))
+                if (gate && Intent01 > 0.05f && (GroundedReady == null || GroundedReady()) && intent.Tick >= EarliestPullTick)
                 {
                     Phase = DeadliftPullPhase.Pulling;
                     PullTicks = 0;
