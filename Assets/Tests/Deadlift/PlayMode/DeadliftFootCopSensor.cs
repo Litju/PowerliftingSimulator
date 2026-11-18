@@ -23,6 +23,7 @@ namespace PowerliftingSimulator.Deadlift
         public readonly List<Vector2> ActivePatch = new List<Vector2>();
 
         public Collider Ground { get; set; }
+        public System.Action PlatformContactObserved { get; set; }
         public double NormalImpulse { get; private set; }
         public Vector3 Impulse { get; private set; }
         public Vector3 Cop { get; private set; }
@@ -55,6 +56,7 @@ namespace PowerliftingSimulator.Deadlift
         {
             if (Ground == null || collision.collider != Ground)
                 return;
+            PlatformContactObserved?.Invoke();
             int count = collision.GetContacts(s_buffer);
             for (int i = 0; i < count; i++)
             {

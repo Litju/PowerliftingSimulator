@@ -111,6 +111,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
         /// </summary>
         public DeadliftLiftPath LiftPath { get; set; }
 
+        /// <summary>Optional geometric reference for the bounded prepared-ascent experiment.</summary>
+        public Func<string, float, Quaternion> AscentReferenceOverride { get; set; }
+
         /// <summary>Regulator integral leak applied from the Lifting phase on (0 = pure integrator, the accepted hold law).</summary>
         public float MovingPhaseIntegralLeakSeconds { get; set; }
 
@@ -571,7 +574,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
             foreach (KeyValuePair<string, Quaternion> target in _targets)
             {
                 float scale = _scale.TryGetValue(target.Key, out float s) ? s : 1f;
-                Quaternion baseTarget = progress > 0f && LiftPath.Has(target.Key) ? LiftPath.Target(target.Key, progress) : target.Value;
+                Quaternion baseTarget = progress > 0f && LiftPath.Has(target.Key)
+                    ? AscentReferenceOverride?.Invoke(target.Key, progress) ?? LiftPath.Target(target.Key, progress)
+                    : target.Value;
                 Quaternion q = _bias.TryGetValue(target.Key, out Quaternion b)
                     ? (ComposeReferenceOnLeft ? b * baseTarget : baseTarget * b)
                     : baseTarget;
