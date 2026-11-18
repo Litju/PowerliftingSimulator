@@ -83,6 +83,10 @@ namespace PowerliftingSimulator.Deadlift.Unity
 
         internal readonly Dictionary<string, Quaternion> PreparationOffsets = new Dictionary<string, Quaternion>(StringComparer.Ordinal);
 
+        /// <summary>Current bounded preparation factor in the child's joint frame.</summary>
+        public Quaternion PreparationOffsetFor(string jointId) =>
+            PreparationOffsets.TryGetValue(jointId, out Quaternion offset) ? offset : Quaternion.identity;
+
         /// <summary>Plant-identification hook: extra target offsets (child joint axes) per joint. Empty in judged attempts.</summary>
         public readonly Dictionary<string, Quaternion> IdentificationOffsets = new Dictionary<string, Quaternion>(StringComparer.Ordinal);
 

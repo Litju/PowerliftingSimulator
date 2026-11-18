@@ -26,6 +26,8 @@ namespace PowerliftingSimulator.Deadlift
         {
             public ulong Pull, PhysicalSeparation, ConfirmedSeparation, FirstPenetration, Stop;
             public string StopReason;
+            public string SeparationState, SeparationChannels;
+            public Quaternion LeftRequestAfterSeparation, RightRequestAfterSeparation;
         }
 
         [UnityTearDown]
@@ -52,7 +54,26 @@ namespace PowerliftingSimulator.Deadlift
             Assert.That(prepared.StopReason, Is.EqualTo("bar-leg impulse"));
         }
 
-        private IEnumerator Trace(string arm, int driveTick, Run result)
+        [UnityTest, Timeout(1800000), Explicit("GAM-70 prepared offset-only A/B through first failure")]
+        public IEnumerator GAM70_PREPARED_SHOULDER_RELEASE_AB()
+        {
+            var release = new Run();
+            yield return Trace("ab-release", 284, release);
+            Assert.That(release.Pull, Is.EqualTo(301ul));
+            Assert.That(release.StopReason, Is.EqualTo("bar-leg impulse"));
+
+            var continuous = new Run();
+            yield return Trace("ab-continuous", 284, continuous, retainPreparation: true, lastTick: (int)release.Stop);
+            Assert.That(continuous.Pull, Is.EqualTo(release.Pull));
+            Assert.That(continuous.ConfirmedSeparation, Is.EqualTo(release.ConfirmedSeparation));
+            Assert.That(continuous.SeparationState == release.SeparationState, Is.True, "Plant matches through confirmed separation.");
+            Assert.That(continuous.SeparationChannels == release.SeparationChannels, Is.True, "Commands match through confirmed separation.");
+            Assert.That(Quaternion.Angle(continuous.LeftRequestAfterSeparation, release.LeftRequestAfterSeparation), Is.EqualTo(2f).Within(0.005f));
+            Assert.That(Quaternion.Angle(continuous.RightRequestAfterSeparation, release.RightRequestAfterSeparation), Is.EqualTo(2f).Within(0.005f));
+            Assert.That(continuous.Stop, Is.InRange(release.ConfirmedSeparation + 1, release.Stop));
+        }
+
+        private IEnumerator Trace(string arm, int driveTick, Run result, bool retainPreparation = false, int lastTick = 800)
         {
             yield return DeadliftPlantWorld.Load();
             _world = DeadliftPlantWorld.Current;
@@ -76,11 +97,21 @@ namespace PowerliftingSimulator.Deadlift
             }
             rows.AppendLine();
             var channels = new StringBuilder("tick,joint,planQ,requestedQ,appliedQ,actualQ,error,targetW,actualW,xDemandNm,xMaxNm,xFraction,xSpring,xDamper,yzDemandNm,yzMaxNm,yzFraction,yzSpring,yzDamper,zDemandNm,zMaxNm,zFraction,zSpring,zDamper,zRequestedDeg,zAppliedDeg,zActualDeg,zActualW,zRateLimited,limitProximity,zLimitProximity,solverTorque,staticReferenceNm\n");
-            for (int tick = 1; tick <= 800; tick++)
+            var leftShoulder = _world.Rig.PoweredController.GetJoint("left_upper_arm");
+            var rightShoulder = _world.Rig.PoweredController.GetJoint("right_upper_arm");
+            for (int tick = 1; tick <= lastTick; tick++)
             {
                 if (tick == driveTick)
                     rt.Pull.IntentOverride01 = 1f;
+                Quaternion leftOffset = rt.Hold.PreparationOffsetFor(leftShoulder.Id);
+                Quaternion rightOffset = rt.Hold.PreparationOffsetFor(rightShoulder.Id);
                 _world.Step(1);
+                if (retainPreparation && rt.Tick == rt.Pull.SeparationTick)
+                {
+                    // Continue the exact two factors the production handoff just dropped.
+                    rt.Hold.IdentificationOffsets.Add(leftShoulder.Id, leftOffset);
+                    rt.Hold.IdentificationOffsets.Add(rightShoulder.Id, rightOffset);
+                }
                 if (tick < 280)
                     continue;
 
@@ -169,12 +200,23 @@ namespace PowerliftingSimulator.Deadlift
                     channels.AppendLine();
                 }
 
+                if (rt.Tick == result.ConfirmedSeparation)
+                {
+                    result.SeparationState = rows.ToString();
+                    result.SeparationChannels = channels.ToString();
+                }
+                if (result.ConfirmedSeparation != 0 && rt.Tick == result.ConfirmedSeparation + 1)
+                {
+                    result.LeftRequestAfterSeparation = leftShoulder.PostPhysicsDiagnostic.RequestedTarget;
+                    result.RightRequestAfterSeparation = rightShoulder.PostPhysicsDiagnostic.RequestedTarget;
+                }
+
                 if (result.Pull == 0)
                     continue;
                 result.StopReason = rt.BarOnLegN > 0f ? "bar-leg impulse"
                     : load.Min() <= rt.Monitor.LoadedFootN || margin < 0f ? "support loss"
                     : rt.Bar.position.y - bar0.y >= rt.Path.KneePassageRiseM ? "knee-region end"
-                    : null;
+                    : tick == lastTick ? "comparison bound" : null;
                 if (result.StopReason != null)
                 {
                     result.Stop = rt.Tick;

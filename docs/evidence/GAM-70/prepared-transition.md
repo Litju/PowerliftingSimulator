@@ -22,3 +22,23 @@ At PULL the prepared bar was already 2.09 mm posterior to quiet and the smaller 
 The runtime cleared the 2° preparation factors after tick 316. Across 316→317 the requested shoulder rotation changed 1.976° bilaterally, the applied rotation moved 1.433°/1.432°, and the realized rotation moved 0.014° on each side. The applied targets moved another 0.525° on the following tick. Quiet demand changed continuously across its own boundary with 0.058° requests on the first moving tick. Net prepared hand Z crossed from −21.61 N to +17.52 N across the release, while the bar still moved posteriorly. This identifies a real command and force discontinuity, with the offset-specific contribution to the force still to be isolated.
 
 By tick 328 both longitudinal loaded extents had collapsed from about 290 mm to less than 0.1 mm near the forward edge. The abdomen X demand first exceeded its ceiling at 328 and peaked at 1.616 at 331. Prepared ankle-roll demand peaked at 0.654 by contact. At tick 382 the prepared knee centres were at +20.85/+25.16 mm world Z, versus a mean of −16.39 mm for quiet. The prepared path still planned 6.42/6.41 mm clearance, while its realized bar was 23.89 mm below its plan. Thus the first leg contact is associated with substantial realized whole-chain deviation, including forward knee travel and bar-rise lag. The capture margin crossed the 40 mm progress-governor threshold at 379 while both feet still carried load. This reconstruction establishes the order of events. The offset-only A/B is needed to isolate causation.
+
+
+## Bounded shoulder-release A/B
+
+Run `DeadliftTransitionTests.GAM70_PREPARED_SHOULDER_RELEASE_AB` explicitly. Both fresh prepared plants used Drive 284, PULL 301 and physical/confirmed separation 314/316. Their recorded states and joint commands matched through 316. From tick 317, the continuous arm reuses the exact two 2° preparation factors through the existing identification seam on the sole shoulder command source. The comparison ends at tick 374, the first contact in either arm. The released arm's independent reference trace continues to its own contact at 382.
+
+| Measurement | Existing release | Continuous 2° factor |
+| --- | ---: | ---: |
+| Tick 317 requested change, per shoulder | 1.976° | 0.061° |
+| Tick 317 net hand Z | +17.52 N | −19.17 N |
+| Tick 328 left / right loaded long-axis width | 0.073 / 0.001 mm | 290 / 290 mm |
+| Peak abdomen X demand through tick 374 | 1.616× ceiling | 0.905× ceiling |
+| Peak ankle Z demand through tick 374 | 0.654× ceiling | 0.186× ceiling |
+| Tick 374 bar Z, realized / plan | 13.03 / 19.76 mm | 1.74 / 19.76 mm |
+| Tick 374 shin 3D gaps L/R | 14.55 / 12.15 mm | −0.20 / +0.001 mm |
+| Tick 374 bar-leg normal force | 0 N | 230.86 N |
+| Tick 374 foot loads L/R | 881 / 968 N | 797 / 886 N |
+| Tick 374 capture margin | 79.3 mm | 148.7 mm |
+
+The offset-only intervention eliminated the release transient and its early edge loading. The continuous arm retained full fore–aft contact extent through its first leg impulse, with both support and all modeled drive ceilings intact. Its shaft had migrated 18.0 mm behind the geometric reference, which still predicted 13.1 mm of clearance per shin. Holding the offset therefore failed the clearance hypothesis independently of the release-induced rocking. The nominal B2 path and the prepared plant's initial state and subsequent shoulder loading do not reproduce the same knee/shaft relationship. Both Gate 1 and Gate 2 PlayMode methods passed as diagnostic checks. A continued constant offset earns no clearance or gameplay qualification.
