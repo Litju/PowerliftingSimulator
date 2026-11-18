@@ -132,3 +132,17 @@ The opt-in correction is qualified at the matched 301 timing. The sweep records 
 Unity 6000.3.22f1 built the standalone Windows rehearsal into `Builds/GAM70/PreparedRehearsal`. Its visible side-view window ran the scripted Drive preset `-deadliftPreparedRehearsal -deadliftSideView`. The player reported PULL 301, confirmed separation 316, Lockout 711, DOWN 856, bar returned 1433, and grips released with GOOD LIFT at 1440. It measured 803 mm peak rise, 10.89 mm minimum shaft gap, 562.3 N minimum airborne foot load from the regulator's completed contact sample, and 174.53 mm mean realized lockout thigh gap. The live reference solve took 19.52 seconds at separation. The window resumed and stayed open after the result. The desktop capture helper's native pipe was unavailable, so the rehearsal receipt comes from the visible player's own referee and physics log.
 
 The manual experimental flag is `-deadliftPreparedRejoin`. Both prepared modes require an explicit flag. The original Windows build folder and default station behavior retain their original paths.
+
+
+### Natural Drive-start cross-check
+
+`GAM70_PREPARED_REJOIN_DRIVE_LEAD_SWEEP` varied the Drive start while letting the mechanical readiness gate alone accept PULL. The qualified Drive 284 case is the runtime regression and Windows rehearsal above. The four additional starts reproduced the requested PULL ticks and none completed GOOD LIFT:
+
+| Drive | Accepted PULL | Confirmed separation | First failure |
+| ---: | ---: | ---: | --- |
+| 285 | 302 | 317 | Bar-leg impulse at 450, 279 mm peak rise |
+| 288 | 305 | 320 | Capture margin crossed zero at 396, 168 mm peak rise |
+| 303 | 320 | 335 | Bar-leg impulse at 506, −1.11 mm realized shaft gap |
+| 333 | 350 | 365 | Foot unloaded at 502, −195.6 mm capture margin |
+
+The natural gate and the common-start sweep both qualify one of the five tested timing cases. Changing the preparation dwell changed the failure modes at the same PULL tick. The current result is a complete reproducible lift and a modest closer-bar improvement at matched 301, with broader prepared timing still open and the game default preserving the original controls.

@@ -187,6 +187,19 @@ namespace PowerliftingSimulator.Deadlift
             }
         }
 
+        [UnityTest, Timeout(1800000), Explicit("GAM-70 vary Drive onset with the natural preparation readiness gate")]
+        public IEnumerator GAM70_PREPARED_REJOIN_DRIVE_LEAD_SWEEP()
+        {
+            foreach (int target in new[] { 302, 305, 320, 350 })
+            {
+                int drive = target - 17;
+                var candidate = new Run();
+                yield return Trace($"rejoin-drive-{drive}", drive, candidate, complete: true, runtimeRejoin: true, lastTick: 2100);
+                Assert.That(candidate.Pull, Is.GreaterThan((ulong)drive));
+                Assert.That(candidate.Stop, Is.GreaterThan(candidate.ConfirmedSeparation));
+            }
+        }
+
         private static void AssertClearance(Run prepared, string endpoint)
         {
             Assert.That(prepared.Pull, Is.EqualTo(301ul));
