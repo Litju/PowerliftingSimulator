@@ -4,6 +4,7 @@ using NUnit.Framework;
 using PowerliftingSimulator.Deadlift.Unity;
 using PowerliftingSimulator.Foundation.Unity;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using F = PowerliftingSimulator.Deadlift.IsolatedBarWorld;
@@ -21,21 +22,8 @@ namespace PowerliftingSimulator.Deadlift
         [UnityTest, Timeout(900000)]
         public IEnumerator STATION_SCENE_RUNS_A_GOOD_LIFT_ON_THE_FOUNDATION_CLOCK()
         {
-            AsyncOperation load = SceneManager.LoadSceneAsync(DeadliftStationController.SceneName, LoadSceneMode.Single);
-            while (!load.isDone)
-                yield return null;
-            DeadliftStationController station = null;
-            float t0 = Time.realtimeSinceStartup;
-            while (Time.realtimeSinceStartup - t0 < 120f)
-            {
-                station = Object.FindFirstObjectByType<DeadliftStationController>();
-                if (station != null && (station.IsInitialized || !string.IsNullOrEmpty(station.StartupFailure)))
-                    break;
-                yield return null;
-            }
-            Assert.That(station, Is.Not.Null, "no deadlift station in the scene");
-            Assert.That(station.StartupFailure, Is.Empty, station.StartupFailure);
-            Assert.That(station.IsInitialized, Is.True, "the station did not initialize");
+            yield return LoadStation();
+            DeadliftStationController station = Object.FindFirstObjectByType<DeadliftStationController>();
             DeadliftAttemptRuntime runtime = station.Runtime;
             var trace = new DeadliftRuntimeTrace();
             trace.Attach(runtime);
@@ -58,6 +46,82 @@ namespace PowerliftingSimulator.Deadlift
             Assert.That(runtime.Referee.GoodLift, Is.True, report);
             Assert.That(runtime.GripsReleased, Is.True, report);
 
+            yield return ShutdownStation();
+        }
+
+        [UnityTest, Timeout(900000), Explicit("Run Unity with -deadliftPreparedRehearsal")]
+        public IEnumerator PREPARED_REHEARSAL_SOLVES_ACROSS_FRAMES_AND_KEEPS_ITS_JUDGED_LIFT()
+        {
+            Assert.That(System.Environment.GetCommandLineArgs(), Does.Contain(DeadliftStationController.PreparedRehearsalArgument));
+
+            var input = new InputTestFixture();
+            input.Setup();
+            try
+            {
+                var keyboard = InputSystem.AddDevice<Keyboard>();
+                yield return LoadStation();
+                var station = Object.FindFirstObjectByType<DeadliftStationController>();
+                var foundation = Object.FindFirstObjectByType<FoundationBootstrap>();
+                DeadliftAttemptRuntime runtime = station.Runtime;
+                Assert.That(foundation.Runtime.TicksSuspended, Is.True);
+                yield return null;
+                Assert.That(runtime.Tick, Is.Zero, "The rehearsal must wait at tick zero for W.");
+
+                input.currentTime = Time.realtimeSinceStartupAsDouble;
+                input.Press(keyboard.wKey);
+                float deadline = Time.realtimeSinceStartup + 5f;
+                while (runtime.Tick == 0 && Time.realtimeSinceStartup < deadline)
+                    yield return null;
+                Assert.That(runtime.Tick, Is.GreaterThan(0ul), "W must start the rehearsal.");
+                input.currentTime = Time.realtimeSinceStartupAsDouble;
+                input.Release(keyboard.wKey);
+
+                deadline = Time.realtimeSinceStartup + 180f;
+                while (!foundation.Runtime.TicksSuspended && Time.realtimeSinceStartup < deadline)
+                    yield return null;
+                Assert.That(foundation.Runtime.TicksSuspended, Is.True);
+                Assert.That(runtime.Tick, Is.EqualTo(316ul));
+                for (int frame = 0; frame < 3; frame++)
+                {
+                    yield return null;
+                    Assert.That(runtime.Tick, Is.EqualTo(316ul));
+                }
+
+                while (!runtime.GripsReleased && Time.realtimeSinceStartup < deadline && string.IsNullOrEmpty(station.StartupFailure))
+                    yield return null;
+                Assert.That(station.StartupFailure, Is.Empty);
+                Assert.That(runtime.Referee.GoodLift, Is.True, runtime.Referee.Summary());
+                Assert.That(runtime.GripsReleased, Is.True);
+                Assert.That(runtime.Referee.DownTick, Is.EqualTo(856ul));
+                yield return ShutdownStation();
+            }
+            finally
+            {
+                input.TearDown();
+            }
+        }
+
+        private static IEnumerator LoadStation()
+        {
+            AsyncOperation load = SceneManager.LoadSceneAsync(DeadliftStationController.SceneName, LoadSceneMode.Single);
+            while (!load.isDone)
+                yield return null;
+            DeadliftStationController station = null;
+            float t0 = Time.realtimeSinceStartup;
+            while (Time.realtimeSinceStartup - t0 < 120f)
+            {
+                station = Object.FindFirstObjectByType<DeadliftStationController>();
+                if (station != null && (station.IsInitialized || !string.IsNullOrEmpty(station.StartupFailure)))
+                    break;
+                yield return null;
+            }
+            Assert.That(station, Is.Not.Null, "no deadlift station in the scene");
+            Assert.That(station.StartupFailure, Is.Empty, station.StartupFailure);
+            Assert.That(station.IsInitialized, Is.True, "the station did not initialize");
+        }
+
+        private static IEnumerator ShutdownStation()
+        {
             FoundationBootstrap foundation = Object.FindFirstObjectByType<FoundationBootstrap>();
             if (foundation != null && foundation.Runtime != null && foundation.Runtime.IsInitialized)
             {

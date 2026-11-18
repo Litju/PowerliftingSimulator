@@ -66,7 +66,20 @@ namespace PowerliftingSimulator.Deadlift.Unity
 
         /// <summary>Experimental prepared reference with stock late-ascent rejoin. Configure before Initialize.</summary>
         public bool PreparedClearanceRejoin { get; set; }
-        public DeadliftPreparedAscentPlan PreparedAscentPlan => _preparedRejoin?.Plan;
+        public DeadliftPreparedAscentPlan PreparedAscentPlan =>
+            _preparedRejoin?.IsReady == true ? _preparedRejoin.Plan : null;
+        internal bool SolvePreparedPlanAcrossFrames { get; set; }
+        internal DeadliftPreparedAscentPlan PendingPreparedPlan =>
+            _preparedRejoin?.IsReady == false ? _preparedRejoin.Plan : null;
+
+        internal void AdvancePreparedSolve()
+        {
+            if (!_preparedRejoin.AdvanceSolve())
+                return;
+
+            _preparedRejoin.Update();
+            _foundation.Runtime.TicksSuspended = false;
+        }
 
         public DeadliftPlantModel Model { get; private set; }
         public DeadliftSetupSolver Measurements { get; private set; }
@@ -340,7 +353,10 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 try
                 {
                     if (PreparedClearanceRejoin && Pull.Phase == DeadliftPullPhase.Separated)
-                        _preparedRejoin = new DeadliftPreparedRejoin(this, _rig);
+                    {
+                        _preparedRejoin = new DeadliftPreparedRejoin(this, _rig, SolvePreparedPlanAcrossFrames);
+                        _foundation.Runtime.TicksSuspended = !_preparedRejoin.IsReady;
+                    }
                 }
                 finally
                 {
@@ -364,7 +380,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 RightGrip.Release();
                 GripsReleased = true;
             }
-            _preparedRejoin?.Update();
+            if (_preparedRejoin?.IsReady == true)
+                _preparedRejoin.Update();
             TickCompleted?.Invoke(this);
         }
     }

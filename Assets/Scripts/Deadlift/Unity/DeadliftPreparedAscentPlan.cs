@@ -33,6 +33,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
         private readonly bool _complete;
         private readonly (string Id, Vector3 Center, float Mass)[] _bodyMasses;
         private readonly bool _centered;
+        private double[] _parameters;
+        internal int SolvedKeys { get; private set; }
+        internal int KeyCount => _keys.Length;
 
         public sealed class Sample
         {
@@ -42,6 +45,11 @@ namespace PowerliftingSimulator.Deadlift.Unity
         }
 
         public DeadliftPreparedAscentPlan(DeadliftAttemptRuntime runtime, PhysicalAthleteRig rig, bool throughKnee, bool complete = false, bool centered = false, float endProgress = 1f)
+            : this(runtime, rig, throughKnee, complete, centered, endProgress, incremental: false)
+        {
+        }
+
+        internal DeadliftPreparedAscentPlan(DeadliftAttemptRuntime runtime, PhysicalAthleteRig rig, bool throughKnee, bool complete, bool centered, float endProgress, bool incremental)
         {
             _runtime = runtime;
             _complete = complete;
@@ -69,16 +77,26 @@ namespace PowerliftingSimulator.Deadlift.Unity
             int intervals = complete ? Mathf.CeilToInt(endProgress / _progressStep) : throughKnee ? kneeIntervals : FirstIntervals;
             _keys = new Sample[intervals + 1];
 
-            var x = new double[6 + _channels.Sum(j => j.Count)];
-            for (int i = 0; i < _keys.Length; i++)
+            _parameters = new double[6 + _channels.Sum(j => j.Count)];
+            if (!incremental)
+                while (!SolveNextKey()) { }
+        }
+
+        internal bool SolveNextKey()
+        {
+            if (SolvedKeys == _keys.Length)
+                return true;
+
+            float progress = Mathf.Min(1f, _progressStep * SolvedKeys);
+            if (SolvedKeys > 0)
             {
-                float progress = Mathf.Min(1f, _progressStep * i);
                 var nominal = _measured.ToDictionary(q => q.Key,
-                    q => q.Value * Quaternion.Inverse(runtime.Model.SetupLogical[q.Key]) * runtime.Path.Target(q.Key, progress));
-                if (i > 0)
-                    x = BenchKinematics.LevenbergMarquardt(x, v => Residuals(PoseAt(v, progress), nominal, progress), 130, out _);
-                _keys[i] = PoseAt(x, progress);
+                    q => q.Value * Quaternion.Inverse(_runtime.Model.SetupLogical[q.Key]) * _runtime.Path.Target(q.Key, progress));
+                _parameters = BenchKinematics.LevenbergMarquardt(_parameters,
+                    v => Residuals(PoseAt(v, progress), nominal, progress), 130, out _);
             }
+            _keys[SolvedKeys++] = PoseAt(_parameters, progress);
+            return SolvedKeys == _keys.Length;
         }
 
         public float LateStart => _lateStart;

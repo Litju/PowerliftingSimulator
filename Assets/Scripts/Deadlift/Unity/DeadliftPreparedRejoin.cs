@@ -19,6 +19,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
         private readonly Shoulder[] _shoulders;
         private float _maxProgress;
         private ulong _trimStart;
+        private readonly double _solveStart;
 
         private sealed class Shoulder
         {
@@ -28,20 +29,33 @@ namespace PowerliftingSimulator.Deadlift.Unity
         }
 
         public DeadliftPreparedAscentPlan Plan { get; }
+        public bool IsReady { get; private set; }
 
-        public DeadliftPreparedRejoin(DeadliftAttemptRuntime runtime, PhysicalAthleteRig rig)
+        public DeadliftPreparedRejoin(DeadliftAttemptRuntime runtime, PhysicalAthleteRig rig, bool incremental)
         {
             _runtime = runtime;
             _rig = rig;
             _shoulders = rig.PoweredController.Joints.Where(j => j.Recipe.Family == "shoulder")
                 .Select(j => new Shoulder { Joint = j, InitialOffset = runtime.Hold.PreparationOffsetFor(j.Id) }).ToArray();
-            double start = Time.realtimeSinceStartupAsDouble;
-            Plan = new DeadliftPreparedAscentPlan(runtime, rig, throughKnee: true, complete: true, endProgress: EndProgress);
+            _solveStart = Time.realtimeSinceStartupAsDouble;
+            Plan = new DeadliftPreparedAscentPlan(runtime, rig, throughKnee: true, complete: true,
+                centered: false, endProgress: EndProgress, incremental: incremental);
+            if (!incremental)
+                AdvanceSolve();
+        }
+
+        public bool AdvanceSolve()
+        {
+            if (!Plan.SolveNextKey())
+                return false;
+
             var plan = Plan.MeasureInterpolation();
             if (!(plan.MinGap > 0.020f && plan.SweptGap > 0f && plan.PositionError < 0.001f && plan.RotationError < 0.3f))
                 throw new InvalidOperationException("The measured prepared configuration did not produce a closed, clear ascent reference.");
-            runtime.Hold.AscentReferenceOverride = (id, progress) => Plan.RejoinTarget(id, progress, EndProgress);
-            Debug.Log($"GAM-70 prepared reference at tick {runtime.Tick}. Solve {Time.realtimeSinceStartupAsDouble - start:F2} s, swept clearance {plan.SweptGap * 1000f:F2} mm.");
+            _runtime.Hold.AscentReferenceOverride = (id, progress) => Plan.RejoinTarget(id, progress, EndProgress);
+            IsReady = true;
+            Debug.Log($"GAM-70 prepared reference at tick {_runtime.Tick}. Solve {Time.realtimeSinceStartupAsDouble - _solveStart:F2} s, swept clearance {plan.SweptGap * 1000f:F2} mm.");
+            return true;
         }
 
         public void Update()

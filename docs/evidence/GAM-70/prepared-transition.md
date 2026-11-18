@@ -146,3 +146,10 @@ The manual experimental flag is `-deadliftPreparedRejoin`. Both prepared modes r
 | 333 | 350 | 365 | Foot unloaded at 502, −195.6 mm capture margin |
 
 The natural gate and the common-start sweep both qualify one of the five tested timing cases. Changing the preparation dwell changed the failure modes at the same PULL tick. The current result is a complete reproducible lift and a modest closer-bar improvement at matched 301, with broader prepared timing still open and the game default preserving the original controls.
+
+
+### Keyboard start and responsive rehearsal
+
+The original Windows rehearsal overrode Drive and ran automatically, although the station also displayed its ordinary W instructions. The rehearsal now waits at tick zero for W or Up, then runs the measured sequence. R resets to the input prompt. The station solves one reference key per rendered frame at separation while the authoritative clock stays at tick 316. The pending input horizon and the previously accepted catch-up time survive that pause.
+
+Unity 6000.3.22f1 passed 17 focused PlayMode checks. The actual station fixture pressed W, saw physics start from tick zero, verified the tick-316 hold across frames, and completed GOOD LIFT with DOWN at 856 and grip release at 1440. The stock station and the original 301/305 controls passed their separate regression. The responsive Windows build answered all 33 window checks sampled during the solve and completed GOOD LIFT on the earlier auto-start pass. The final rebuilt Windows player waited for a hardware key, picked up the keyboard start, and reached DOWN at 856 after a responsive 14.52-second separation solve. That window was closed during lowering. The complete W-triggered return was verified in the station PlayMode fixture.
