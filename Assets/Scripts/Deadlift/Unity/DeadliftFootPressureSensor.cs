@@ -31,6 +31,11 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public float LoadedZMin { get; private set; } = float.NaN;
         public float LoadedZMax { get; private set; } = float.NaN;
 
+        /// <summary>Read-only contact sample after simulation, before the regulator consumes it on the next tick.</summary>
+        public (double NormalImpulse, Vector3 Cop, float LoadedAxisMin, float LoadedAxisMax) PendingContact =>
+            (_n, _n > 1e-9 ? _m / (float)_n : new Vector3(float.NaN, float.NaN, float.NaN),
+                _n > 1e-9 ? _aMin : float.NaN, _n > 1e-9 ? _aMax : float.NaN);
+
         public void CompleteTick()
         {
             NormalImpulse = _n;
