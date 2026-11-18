@@ -35,6 +35,11 @@ namespace PowerliftingSimulator.Deadlift.Unity
         private ulong _downShownTick;
         private bool _sideView;
         private bool _experimentalPath;
+        private bool _preparedRejoin, _preparedRehearsal;
+        private DeadliftPullPhase _rehearsalPhase;
+        private float _rehearsalMinGap = float.PositiveInfinity, _rehearsalMinFoot = float.PositiveInfinity;
+        private double _rehearsalThighGapSum;
+        private int _rehearsalLockoutTicks;
 
         /// <summary>
         /// Owner comparison only: "-deadliftBarProximity" on the player command line runs the
@@ -43,6 +48,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
         /// The default is the qualified path.
         /// </summary>
         public const string ExperimentalPathArgument = "-deadliftBarProximity", SideViewArgument = "-deadliftSideView";
+        public const string PreparedRejoinArgument = "-deadliftPreparedRejoin";
+        public const string PreparedRehearsalArgument = "-deadliftPreparedRehearsal";
         private DeadliftPullPhase _loggedPhase = DeadliftPullPhase.Grounded;
 
         public DeadliftAttemptRuntime Runtime { get; private set; }
@@ -78,16 +85,23 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     barbell.Build();
                 barbell.SetGameplayPerformanceProfile(true);
                 string[] args = Environment.GetCommandLineArgs();
-                _experimentalPath = Array.IndexOf(args, ExperimentalPathArgument) >= 0;
+                _preparedRehearsal = Array.IndexOf(args, PreparedRehearsalArgument) >= 0;
+                _preparedRejoin = _preparedRehearsal || Array.IndexOf(args, PreparedRejoinArgument) >= 0;
+                _experimentalPath = !_preparedRejoin && Array.IndexOf(args, ExperimentalPathArgument) >= 0;
                 _sideView = Array.IndexOf(args, SideViewArgument) >= 0;
                 DeadliftAttemptRuntime.BarProximityPath = _experimentalPath;
-                Runtime = new DeadliftAttemptRuntime(foundation, athleteRig, barbell);
+                Runtime = new DeadliftAttemptRuntime(foundation, athleteRig, barbell) { PreparedClearanceRejoin = _preparedRejoin };
                 try { Runtime.Initialize(); }
                 finally { DeadliftAttemptRuntime.BarProximityPath = DeadliftAttemptRuntime.BarProximityPathDefault; }
                 SquatPresentationGrip grip = athleteRig.GetComponent<SquatPresentationGrip>() ?? athleteRig.gameObject.AddComponent<SquatPresentationGrip>();
                 grip.Configure(athleteRig, barbell);
                 grip.ThumbAroundShaft = true;   // IPF 4.3(1): the grip is optional; thumbs around the bar
                 PlaceCamera(_sideView);
+                if (_preparedRehearsal)
+                {
+                    Runtime.Pull.IntentOverride01 = 0f;
+                    Runtime.TickCompleted += RehearsePreparedPull;
+                }
                 IsInitialized = true;
                 foundation.enabled = true;
                 Debug.Log("GAM-70 deadlift station ready. Tick-0 penetration " +
@@ -97,6 +111,37 @@ namespace PowerliftingSimulator.Deadlift.Unity
             {
                 _failure = e.Message;
                 Debug.LogError("GAM-70 deadlift station startup failed: " + e);
+            }
+        }
+
+        private void RehearsePreparedPull(DeadliftAttemptRuntime runtime)
+        {
+            if (runtime.Tick == 283)
+                runtime.Pull.IntentOverride01 = 1f;
+            if (runtime.Pull.Phase != _rehearsalPhase)
+            {
+                _rehearsalPhase = runtime.Pull.Phase;
+                Debug.Log($"GAM-70 prepared rehearsal tick {runtime.Tick}: {_rehearsalPhase} | {runtime.Referee.Summary()}");
+            }
+            if (runtime.Pull.SeparationTick != 0)
+            {
+                DeadliftBarLegGeometry.Realized(athleteRig, runtime.Bar, out var gaps);
+                _rehearsalMinGap = Mathf.Min(_rehearsalMinGap, gaps.Leg);
+                if (runtime.PlateLeftN + runtime.PlateRightN < 600f)
+                    _rehearsalMinFoot = Mathf.Min(_rehearsalMinFoot, runtime.FootLoadMinN);
+                if (runtime.Pull.Phase == DeadliftPullPhase.Lockout)
+                {
+                    _rehearsalThighGapSum += gaps.Thigh;
+                    _rehearsalLockoutTicks++;
+                }
+            }
+            if (runtime.GripsReleased)
+            {
+                Debug.Log(string.Format(CultureInfo.InvariantCulture,
+                    "GAM-70 prepared rehearsal returned and released at {0}: {1} | min shaft gap {2:F2} mm | min airborne foot {3:F1} N | mean lockout thigh gap {4:F2} mm",
+                    runtime.Tick, runtime.Referee.Summary(), _rehearsalMinGap * 1000f, _rehearsalMinFoot,
+                    _rehearsalLockoutTicks == 0 ? double.NaN : _rehearsalThighGapSum * 1000d / _rehearsalLockoutTicks));
+                runtime.TickCompleted -= RehearsePreparedPull;
             }
         }
 
@@ -181,7 +226,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
             float s = Mathf.Max(1f, Screen.height / 1080f);
             GUI.matrix = Matrix4x4.Scale(new Vector3(s, s, 1f));
             float w = Screen.width / s;
-            GUI.Box(new Rect(16, 16, 560, _experimentalPath ? 240 : 210), GUIContent.none);
+            GUI.Box(new Rect(16, 16, 560, _experimentalPath || _preparedRejoin ? 240 : 210), GUIContent.none);
+            if (_preparedRejoin)
+                GUI.Label(new Rect(30, 210, 540, 30), _preparedRehearsal ? "PREPARED REHEARSAL  |  scripted Drive" : "EXPERIMENTAL prepared ascent", _body);
             if (_experimentalPath)
                 GUI.Label(new Rect(30, 210, 540, 30), "EXPERIMENTAL bar-proximity path (not qualified)", _body);
             GUI.Label(new Rect(30, 24, 540, 30), "DEADLIFT  -  " + DeadliftQualifiedSetup.BarKg.ToString("F0", CultureInfo.InvariantCulture) + " kg  (sumo, pronated)", _body);

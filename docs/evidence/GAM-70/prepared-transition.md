@@ -108,3 +108,27 @@ Both fresh tick-301 prepared runs earned GOOD LIFT with 803 mm peak rise and zer
 The early signed shoulder probe ramped a ±0.5° extension reference during the stock rejoin's late ascent. Positive extension lost support at tick 686. Negative extension completed GOOD LIFT at DOWN 858 and return 1545, but increased mean realized lockout thigh gap from 176.99 to 181.41 mm. Timing the same intervention during moving ascent therefore failed qualification.
 
 The settled variant waits for the controller's Lockout phase and measured bar speed below 45 mm/s. It measures both shoulder extension axes in that posture and ramps the bounded targets over 35 ticks, then tapers them out on lowering. The 0.25° and 0.50° fixtures both earned DOWN at 856 and completed GOOD LIFT. The 0.50° variant delivered the larger reduction and released the grips at 1440. Its mean whole-lockout thigh gap was 174.53 mm versus the original 176.96 mm. Over the last 30 lockout ticks it averaged 172.60 versus 176.92 mm, and the final pre-DOWN gap was 173.54 versus 177.58 mm. Minimum bilateral airborne foot loads were 562/558 N, minimum shaft gap 10.89 mm, and minimum capture margin 57.1 mm. The bar remained dynamic and both grip and floor constraints kept their original authority.
+
+
+### Opt-in runtime and matched onset sweep
+
+`GAM70_PREPARED_REJOIN_RUNTIME_QUALIFICATION` reproduced the settled 0.50° result through the production runtime. Its fresh stock comparison earned DOWN at 834 and completed GOOD LIFT with 176.96 mm mean thigh gap. The opt-in run earned DOWN at 856 and released at 1440, with 174.53 mm mean gap, 558.4 N minimum airborne foot load, positive swept shaft clearance and zero bar-leg impulse. The stock 301 and 305 regression still passed. In profiling this host, the new opt-in solve at separation took about 12–19 seconds before physics resumed. The unmodified default uses the original reference and avoids that solve.
+
+`GAM70_PREPARED_REJOIN_ONSET_SWEEP` held Drive from 284 and allowed the normal mechanical readiness gate to accept at each specified tick or later. It reached all five requested ticks exactly. The first failure for each fresh plant was:
+
+| PULL tick | Confirmed separation | Result |
+| ---: | ---: | --- |
+| 301 | 316 | GOOD LIFT, DOWN 856, controlled return and release 1440 |
+| 302 | 317 | DownwardMovement at 724, bar 11 mm below peak at −90 mm/s |
+| 305 | 320 | Bar-leg impulse at 452 with −0.10 mm realized shaft gap |
+| 320 | 336 | Bar-leg impulse at 465, referee ThighSupport at 68.5 N |
+| 350 | 368 | Capture margin below zero at 445, before bar-leg contact |
+
+The opt-in correction is qualified at the matched 301 timing. The sweep records limited robustness even when the pose solve itself has positive planned shaft clearance. The stock 301 and 305 controls continue to qualify separately.
+
+
+### Owner-visible Windows rehearsal
+
+Unity 6000.3.22f1 built the standalone Windows rehearsal into `Builds/GAM70/PreparedRehearsal`. Its visible side-view window ran the scripted Drive preset `-deadliftPreparedRehearsal -deadliftSideView`. The player reported PULL 301, confirmed separation 316, Lockout 711, DOWN 856, bar returned 1433, and grips released with GOOD LIFT at 1440. It measured 803 mm peak rise, 10.89 mm minimum shaft gap, 562.3 N minimum airborne foot load from the regulator's completed contact sample, and 174.53 mm mean realized lockout thigh gap. The live reference solve took 19.52 seconds at separation. The window resumed and stayed open after the result. The desktop capture helper's native pipe was unavailable, so the rehearsal receipt comes from the visible player's own referee and physics log.
+
+The manual experimental flag is `-deadliftPreparedRejoin`. Both prepared modes require an explicit flag. The original Windows build folder and default station behavior retain their original paths.

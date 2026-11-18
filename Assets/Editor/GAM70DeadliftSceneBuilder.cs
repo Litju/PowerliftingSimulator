@@ -92,12 +92,17 @@ public static class GAM70DeadliftSceneBuilder
 
     /// <summary>Builds the Windows player from the committed scenes (deadlift first; squat and bench kept).</summary>
     [MenuItem("Powerlifting Simulator/GAM-70/2. Build Windows Player From Committed Scenes")]
-    public static void BuildWindowsPlayerFromCommittedScenes()
+    public static void BuildWindowsPlayerFromCommittedScenes() => BuildWindowsPlayer(WindowsExecutablePath);
+
+    public static void BuildWindowsPreparedRehearsal() =>
+        BuildWindowsPlayer("Builds/GAM70/PreparedRehearsal/PowerliftingSimulator.exe");
+
+    private static void BuildWindowsPlayer(string output)
     {
         foreach (string scene in PlayerScenes)
             if (!File.Exists(scene))
                 throw new InvalidOperationException("Missing committed scene " + scene);
-        string exe = Path.GetFullPath(WindowsExecutablePath);
+        string exe = Path.GetFullPath(output);
         Directory.CreateDirectory(Path.GetDirectoryName(exe));
         BuildReport report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
         {
