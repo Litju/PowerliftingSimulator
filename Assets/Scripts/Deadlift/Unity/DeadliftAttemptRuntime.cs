@@ -51,6 +51,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
         private float _pretensionTargetN;
         private Collider _leftPlate, _rightPlate;
         private ulong _tick;
+        private readonly Dictionary<PoweredJointController.PoweredJointRuntime, (Quaternion Initial, Vector3 Axis)> _shoulderStarts =
+            new Dictionary<PoweredJointController.PoweredJointRuntime, (Quaternion Initial, Vector3 Axis)>();
 
         public DeadliftAttemptRuntime(FoundationBootstrap foundation, PhysicalAthleteRig rig, PhysicalBarbell barbell)
         {
@@ -58,6 +60,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
             _rig = rig ?? throw new ArgumentNullException(nameof(rig));
             _barbell = barbell ?? throw new ArgumentNullException(nameof(barbell));
         }
+
+        public bool UpperChainPreparation { get; set; }
 
         public DeadliftPlantModel Model { get; private set; }
         public DeadliftSetupSolver Measurements { get; private set; }
@@ -159,6 +163,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
             Monitor = new DeadliftSupportMonitor(_rig, _barbell.Body, _rig.PlatformCollider);
             Pull.SupportMarginM = () => Monitor.Update();
             Pull.ReferenceDemand = () => Hold.HandLoadReference.MaxDemandFraction;
+            if (UpperChainPreparation)
+                Pull.GroundedReady = PrepareForPull;
 
             Referee = new DeadliftReferee(_barbell.Body.worldCenterOfMass.y, _barbell.Body.mass * -Physics.gravity.y, dt);
             Observer = new DeadliftAttemptObserver(_rig, _barbell.Body, () => PlateLeftN + PlateRightN, () => BarOnLegN,
@@ -254,6 +260,68 @@ namespace PowerliftingSimulator.Deadlift.Unity
             return 0.5f * sum;
         }
 
+        private bool PrepareForPull()
+        {
+            // Rearmed pulls keep the measured hand-load owner established on the first pull.
+            if (Hold.HandLoadClaimed)
+                return true;
+
+            if (PlateLeftN <= DeadliftPullController.SeparationPlateN || PlateRightN <= DeadliftPullController.SeparationPlateN ||
+                !LoadedCop("left_foot") || !LoadedCop("right_foot") || Monitor.Update() < Pull.MinSupportMarginM)
+                return false;
+
+            // Use the grounded B2 transfer probe's bounded extension reference.
+            if (_shoulderStarts.Count == 0)
+            {
+                foreach (var shoulder in _rig.PoweredController.Joints)
+                {
+                    if (shoulder.Recipe.Family != "shoulder")
+                        continue;
+                    var joint = shoulder.Joint;
+                    string side = shoulder.Id.StartsWith("left", StringComparison.Ordinal) ? "left" : "right";
+                    Vector3 arm = _rig.Segments[side + "_forearm"].Body.worldCenterOfMass - joint.transform.TransformPoint(joint.anchor);
+                    Vector3 extension = Vector3.Cross(arm, Vector3.back).normalized;
+                    Vector3 axis = Quaternion.Inverse(joint.transform.rotation * shoulder.JointSpace) * extension;
+                    _shoulderStarts.Add(shoulder, (shoulder.PostPhysicsDiagnostic.ActualRelative, axis));
+                    Hold.PreparationOffsets.Add(shoulder.Id, Quaternion.AngleAxis(2f, axis));
+                }
+                return false;
+            }
+
+            // Gate 5 measured ~270 N per hand at the grounded endpoint. The transfer
+            // experiment retained ~265 N with both plates supported.
+            Vector3 left = LeftGrip.ForceOnBarWorld, right = RightGrip.ForceOnBarWorld;
+            if (Mathf.Min(left.y, right.y) < 0.95f * _pretensionTargetN || left.z + right.z >= -10f)
+                return false;
+
+            foreach (var shoulder in _shoulderStarts)
+            {
+                var d = shoulder.Key.PostPhysicsDiagnostic;
+                var start = shoulder.Value;
+                float realized = PoweredJointController.SignedTwistRadians(Quaternion.Inverse(start.Initial) * d.ActualRelative, start.Axis) * Mathf.Rad2Deg;
+                if (realized < 0.5f || d.ModeledDemand >= 1f)
+                    return false;
+            }
+
+            foreach (var trunk in _rig.PoweredController.Joints)
+            {
+                if (trunk.Id != "abdomen" && trunk.Id != "thorax")
+                    continue;
+                var d = trunk.PostPhysicsDiagnostic;
+                if (d.ModeledDemand >= 1f || Quaternion.Angle(Model.SetupLogical[trunk.Id], d.ActualRelative) > 3f)
+                    return false;
+            }
+            return true;
+        }
+
+        private bool LoadedCop(string id)
+        {
+            var sensor = _rig.Segments[id].Body.GetComponent<DeadliftFootPressureSensor>();
+            float cop = Vector3.Dot(sensor.Cop, sensor.Axis);
+            return sensor.NormalImpulse / SimulationConstants.FixedDeltaTimeSeconds > Monitor.LoadedFootN &&
+                cop > sensor.LoadedAxisMin && cop < sensor.LoadedAxisMax;
+        }
+
         private void OnPostPhysicsStep(SimulationTime time, PhysicalObservation observation, PlayerIntentFrame intent)
         {
             double dt = SimulationConstants.FixedDeltaTimeSeconds;
@@ -264,7 +332,14 @@ namespace PowerliftingSimulator.Deadlift.Unity
             BarOnLegN = (float)(_barSensor.LegNormalImpulse / dt);
             _rig.PoweredController.CapturePostPhysicsDiagnostics();
 
-            // Grounded setup: the pretension servo takes up the slack (A3), as qualified.
+            if (_shoulderStarts.Count != 0 && (Pull.Phase >= DeadliftPullPhase.Separated ||
+                Pull.Phase == DeadliftPullPhase.Aborted || Pull.Intent01 <= 0.05f))
+            {
+                _shoulderStarts.Clear();
+                Hold.PreparationOffsets.Clear();
+            }
+
+            // Grounded setup: build upward hand load while the plates still support the bar.
             long t = (long)time.Tick;
             float target = t <= PretensionStartTick ? 0f : t <= PretensionStartTick + PretensionRampTicks
                 ? _pretensionTargetN * (t - PretensionStartTick) / PretensionRampTicks : _pretensionTargetN;

@@ -70,6 +70,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
         /// <summary>Full-intent ramp rate (1/s). A full pull takes one second, not one tick.</summary>
         public float RampPerSecond { get; set; } = 1f;
         public bool RequireBraceAndGrip { get; set; } = true;
+        internal Func<bool> GroundedReady { get; set; }
         /// <summary>Game control: a pull released before separation returns to Grounded once relaxed (default off: Gate 3 controls).</summary>
         public bool RearmAfterAbort { get; set; }
 
@@ -260,7 +261,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
 
             if (Phase == DeadliftPullPhase.Grounded)
             {
-                if (gate && Intent01 > 0.05f)
+                if (gate && Intent01 > 0.05f && (GroundedReady == null || GroundedReady()))
                 {
                     Phase = DeadliftPullPhase.Pulling;
                     PullTicks = 0;

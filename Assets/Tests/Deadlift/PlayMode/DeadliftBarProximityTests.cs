@@ -66,13 +66,14 @@ namespace PowerliftingSimulator.Deadlift
             public int Onset;
             public bool Good, Released, Down;
             public float Peak, MinFoot = float.MaxValue, FootTravel, MaxBarLegN, MinMargin = float.MaxValue;
-            public ulong Separation, LockoutTick, DownTick, ReturnedTick;
+            public ulong PullTick, Separation, LockoutTick, DownTick, ReturnedTick;
+            public string FirstPull = string.Empty;
             public int Saturated, ZeroFootTicks;
             public string Summary = string.Empty, PathGeometry = string.Empty, PathReport = string.Empty;
             public float LockoutRise;
             internal readonly Dictionary<Window, WindowStats> Windows = new Dictionary<Window, WindowStats>();
             public readonly StringBuilder Csv = new StringBuilder(
-                "tick,phase,s,barY,barZ,kneeY,kneeZ,hipZ,shoulderZ,anchorZ,shinGap,thighGap,shin3D,thigh3D,planShin,planThigh,planBarZ,visShin,visThigh,barLegN,footMin,shoulderDemand,abdomenDemand,thoraxDemand,hipDemand,kneeDemand,ankleDemand,rollDemand,rollReqL,rollActL,rollReqR,rollActR,regRollL,regRollR,acrossL,acrossTgtL,acrossR,acrossTgtR,footTravel,window\n");
+                "tick,phase,s,barY,barZ,kneeY,kneeZ,hipZ,shoulderZ,anchorZ,shinGap,thighGap,shin3D,thigh3D,planShin,planThigh,planBarZ,visShin,visThigh,barLegN,footMin,shoulderDemand,abdomenDemand,thoraxDemand,hipDemand,kneeDemand,ankleDemand,rollDemand,rollReqL,rollActL,rollReqR,rollActR,regRollL,regRollR,acrossL,acrossTgtL,acrossR,acrossTgtR,footTravel,window,plateLN,plateRN,gripUpLN,gripUpRN,gripZLN,gripZRN,captureX,captureZ,captureMargin\n");
 
             public string Line() => string.Format(CultureInfo.InvariantCulture,
                 "{0,-8} onset {1,4} | {2} | released {3} | separation {4} lockout {5} Down {6} returned {7} | bar peak rise {8:F1} mm (planned lockout rise {9:F1}) | min foot after break {10:F1} N, zero-point foot ticks {11}, feet travel {12:F4} m | min capture margin lifting {13:F1} mm | max bar-leg force {14:F1} N | ticks with a joint above its ceiling {15}",
@@ -167,12 +168,12 @@ namespace PowerliftingSimulator.Deadlift
             throw new ArgumentException(id);
         }
 
-        internal IEnumerator RunMeasured(int onsetTick, Record rec, bool proximity, bool measureVisual = true)
+        internal IEnumerator RunMeasured(int onsetTick, Record rec, bool proximity, bool measureVisual = true, bool preparation = false)
         {
             DeadliftAttemptRuntime.BarProximityPath = proximity;
             yield return DeadliftPlantWorld.Load();
             _world = DeadliftPlantWorld.Current;
-            var runtime = new DeadliftAttemptRuntime(_world.Foundation, _world.Rig, _world.Bar);
+            var runtime = new DeadliftAttemptRuntime(_world.Foundation, _world.Rig, _world.Bar) { UpperChainPreparation = preparation };
             runtime.Initialize();
             DeadliftLiftPath path = runtime.Path;
             rec.Onset = onsetTick;
@@ -250,6 +251,13 @@ namespace PowerliftingSimulator.Deadlift
                 if (phase == DeadliftPullPhase.Lockout && rec.LockoutTick == 0) rec.LockoutTick = rt.Tick;
                 if (rt.Referee.DownGiven && rec.DownTick == 0) rec.DownTick = rt.Referee.DownTick;
                 if (phase == DeadliftPullPhase.Returned && lowered && rec.ReturnedTick == 0) rec.ReturnedTick = rt.Tick;
+                Vector3 gripL = rt.LeftGrip.ForceOnBarWorld, gripR = rt.RightGrip.ForceOnBarWorld;
+                if (phase == DeadliftPullPhase.Pulling && rec.PullTick == 0)
+                {
+                    rec.PullTick = rt.Tick;
+                    rec.FirstPull = FormattableString.Invariant(
+                        $"pull {rt.Tick}, hands up {gripL.y:F1}/{gripR.y:F1} N, net Z {gripL.z + gripR.z:F1} N, plates {rt.PlateLeftN:F1}/{rt.PlateRightN:F1} N, shin gap {g.Shin * 1000f:F1} mm");
+                }
                 rec.Csv.AppendLine(string.Join(",", new[]
                 {
                     rt.Tick.ToString(CultureInfo.InvariantCulture), phase.ToString(), Fm(s), Fm(bar.y), Fm(bar.z), Fm(knee.y), Fm(knee.z), Fm(hip.z), Fm(sh.z), Fm(anchorZ),
@@ -257,7 +265,9 @@ namespace PowerliftingSimulator.Deadlift
                     Fm(rt.BarOnLegN), Fm(rt.FootLoadMinN), Fm(dSh), Fm(dAb), Fm(dTh), Fm(dHip), Fm(dKn), Fm(dAn), Fm(rollDemand), Fm(rollReqL), Fm(rollActL), Fm(rollReqR), Fm(rollActR),
                     Fm(rt.Regulator.RollOffsetDegFor("left_foot")), Fm(rt.Regulator.RollOffsetDegFor("right_foot")),
                     Fm(rt.Regulator.MeasuredAcrossFor("left_foot")), Fm(rt.Regulator.TargetAcrossFor("left_foot")),
-                    Fm(rt.Regulator.MeasuredAcrossFor("right_foot")), Fm(rt.Regulator.TargetAcrossFor("right_foot")), Fm(travel), w.ToString()
+                    Fm(rt.Regulator.MeasuredAcrossFor("right_foot")), Fm(rt.Regulator.TargetAcrossFor("right_foot")), Fm(travel), w.ToString(),
+                    Fm(rt.PlateLeftN), Fm(rt.PlateRightN), Fm(gripL.y), Fm(gripR.y), Fm(gripL.z), Fm(gripR.z),
+                    Fm(rt.Monitor.CapturePoint.x), Fm(rt.Monitor.CapturePoint.y), Fm(rt.Monitor.MarginM)
                 }));
             };
 
@@ -280,6 +290,48 @@ namespace PowerliftingSimulator.Deadlift
             yield return _world.Teardown();
             _world = null;
             DeadliftAttemptRuntime.BarProximityPath = DeadliftAttemptRuntime.BarProximityPathDefault;
+        }
+
+        [UnityTest, Timeout(3600000), Explicit("GAM-70 matched complete attempts with upper-chain preparation")]
+        public IEnumerator GAM70_UPPER_CHAIN_PREPARATION_AB()
+        {
+            var report = new StringBuilder();
+            var results = new List<Record>();
+            foreach (bool proximity in new[] { false, true })
+            {
+                foreach (bool preparation in new[] { false, true })
+                {
+                    var r = new Record { Arm = (proximity ? "proximity" : "original") + (preparation ? "-prepared" : "-control") };
+                    yield return RunMeasured(301, r, proximity, measureVisual: false, preparation: preparation);
+                    results.Add(r);
+                    report.AppendLine(r.Line()).AppendLine(r.FirstPull).AppendLine(WindowTable(r));
+                    System.IO.File.WriteAllText(System.IO.Path.Combine(F.EvidenceDirectory, "upper-chain-" + r.Arm + ".csv"), r.Csv.ToString());
+                    System.IO.File.WriteAllText(System.IO.Path.Combine(F.EvidenceDirectory, "upper-chain-attempts.txt"), report.ToString());
+                }
+            }
+            Debug.Log(report.ToString());
+            Assert.That(results[0].Good && results[0].Released, Is.True, results[0].Line());
+            Assert.That(results[2].Good, Is.False, results[2].Line());
+            foreach (Record prepared in new[] { results[1], results[3] })
+            {
+                Assert.That(prepared.PullTick, Is.GreaterThan(301ul), prepared.Line());
+                Assert.That(prepared.Separation, Is.GreaterThan(prepared.PullTick), prepared.Line());
+            }
+        }
+
+        [UnityTest, Timeout(1800000), Explicit("GAM-70 control matched to the prepared pull handoff")]
+        public IEnumerator GAM70_UPPER_CHAIN_HANDOFF_TICK_CONTROL()
+        {
+            foreach (bool proximity in new[] { false, true })
+            {
+                var r = new Record { Arm = proximity ? "proximity-handoff-control" : "original-handoff-control" };
+                // The prepared plants both first accepted Drive at tick 318.
+                yield return RunMeasured(318, r, proximity, measureVisual: false);
+                Debug.Log(r.Line() + Environment.NewLine + r.FirstPull + Environment.NewLine + WindowTable(r));
+                System.IO.File.WriteAllText(System.IO.Path.Combine(F.EvidenceDirectory, "upper-chain-" + r.Arm + ".csv"), r.Csv.ToString());
+                Assert.That(r.PullTick, Is.EqualTo(318ul));
+                Assert.That(r.Separation, Is.GreaterThan(r.PullTick), r.Line());
+            }
         }
 
         private static string Fm(float v) => float.IsNaN(v) ? "" : v.ToString("G6", CultureInfo.InvariantCulture);

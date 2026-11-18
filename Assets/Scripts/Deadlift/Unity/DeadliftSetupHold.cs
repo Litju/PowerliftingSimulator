@@ -81,6 +81,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
         /// </summary>
         public DeadliftBalanceRegulator Regulator { get; set; }
 
+        internal readonly Dictionary<string, Quaternion> PreparationOffsets = new Dictionary<string, Quaternion>(StringComparer.Ordinal);
+
         /// <summary>Plant-identification hook: extra target offsets (child joint axes) per joint. Empty in judged attempts.</summary>
         public readonly Dictionary<string, Quaternion> IdentificationOffsets = new Dictionary<string, Quaternion>(StringComparer.Ordinal);
 
@@ -580,6 +582,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     q *= Quaternion.AngleAxis(-PullKneeExtensionDeg, Vector3.right);
                 if (Pull != null && (target.Key == "abdomen" || target.Key == "thorax"))
                     q *= Quaternion.AngleAxis(PullTrunkExtensionDeg, Vector3.right);
+                if (PreparationOffsets.TryGetValue(target.Key, out Quaternion preparation))
+                    q *= preparation;
                 if (IdentificationOffsets.TryGetValue(target.Key, out Quaternion idq))
                     q *= idq;
                 sink.ApplyCommand(target.Key, new JointCommand(q, Vector3.zero, Enabled ? 1f : 0f, scale), time.Tick);
