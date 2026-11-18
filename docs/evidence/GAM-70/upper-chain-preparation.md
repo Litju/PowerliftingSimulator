@@ -24,4 +24,54 @@ The projected extension axis in J was (+0.977, +0.211, +0.007) on the left and (
 
 The +2° requested and applied offsets realized +0.690° left and +0.693° right. Reverse polarity realized −0.700° and −0.690°. Across all trials, shoulder X/YZ demand peaked at 0.144/0.182 of the respective ceilings, X limit occupancy at 0.181, and realized swing at 102.31° against the authored 165° swing limits. The drive provided measurable authority with headroom. The force and geometry responses reversed with the command.
 
-The upward load stayed close to the quiet control, within 6.7 N per hand across the perturbations. Load matching is approximate because the same bounded servo responds to the new closed-chain equilibrium. In the positive trial both hands pulled posteriorly (left −18.3 N, right −9.6 N). Their average grip moments about world X changed from −2.46/+1.55 Nm to −0.77/+4.46 Nm. Left/right COP changes relative to tick 300 were (−4.54, +0.80) and (+4.30, +0.73) mm in world X/Z, versus (−2.77, −2.06) and (+2.59, −2.03) mm in the quiet trial. Both feet and both plates stayed loaded. The test demonstrates grounded shoulder-to-bar coupling with a modest setup gap change. It does not qualify adduction actuation or improved ascent support.
+The upward load stayed close to the quiet control, within 6.7 N per hand across the perturbations. Load matching is approximate because the same bounded servo responds to the new closed-chain equilibrium. In the positive trial both hands pulled posteriorly (left −18.3 N, right −9.6 N). The first component of the raw grip torque changed from +2.46/−1.55 Nm to +0.77/−4.46 Nm. Gate A2 found that the torque frame and point could not be validated, so only the force has a qualified world-frame interpretation. Left/right COP changes relative to tick 300 were (−4.54, +0.80) and (+4.30, +0.73) mm in world X/Z, versus (−2.77, −2.06) and (+2.59, −2.03) mm in the quiet trial. Both feet and both plates stayed loaded. The test demonstrates grounded shoulder-to-bar coupling with a modest setup gap change. It does not qualify adduction actuation or improved ascent support.
+
+## Gate C — opt-in coordinated preparation
+
+`DeadliftAttemptRuntime.UpperChainPreparation` enables the candidate before initialization. The existing Drive intent requests preparation on the grounded plant. Both trunk joints keep their existing setup posture regulation and C4 load bias. The grounded servo keeps its qualified setpoint schedule. The shoulder contribution is the bilateral +2° reference from Gate B in each measured child joint frame. `PoweredJointController` applies the rate limit and remains the physical joint writer.
+
+The handoff checks both plate normals against the existing separation threshold, both feet above the loaded-foot threshold, longitudinal COP inside each loaded contact extent, and the existing 40 mm capture margin. Each hand must carry at least 95% of the grounded target and together pull at least 10 N posteriorly. Both shoulders must realize at least 0.5° in the tested direction, both trunk joints must stay within 3° of setup, and their modeled drive demands must be below the ceilings. These are B2 experiment thresholds. They do not encode muscle strength.
+
+The existing measured hand-load reference takes ownership when the pull leaves Grounded. The shoulder offset remains through Pulling and clears at measured separation, release, or abort. A rearmed pull uses the already-established measured hand-load owner. Ankle gains, geometry, solver settings, drive calibration, grip constraints, and both paths were retained.
+
+## Gate D — complete attempts
+
+Unity 6000.3.22f1, `GAM70_UPPER_CHAIN_PREPARATION_AB`, passed. Drive was held from tick 301 in all four fresh runtime plants. The PlayMode assertion verifies the baseline dispositions, readiness delay, and measured bar separation. It does not treat the candidate's failed lifts as passing gameplay outcomes.
+
+| Path | Preparation | Pull / separation | Referee and return |
+| --- | --- | --- | --- |
+| Original | Control | 301 / 319 | Good lift, Down 834, controlled return 1451, grips released |
+| Original | Candidate | 318 / 333 | FootMoved 684, lockout phase 704, no Down or controlled return |
+| Proximity | Control | 301 / 319 | FootMoved 646, no lockout, Down, or controlled return |
+| Proximity | Candidate | 318 / 333 | FootMoved 640, no lockout, Down, or controlled return |
+
+At the first prepared Pulling tick, hands carried 277.8/281.6 N up and −32.5 N combined Z, versus 275.5/274.6 N and +0.5 N for the controls. Both plate loads exceeded 85 N. The shin gap was 42.7 mm against 45.2 mm. Peak shoulder/lumbar demand from Pulling through Separated was 0.23/0.86 of the ceilings versus 0.23/0.93 for controls. Prepared bar break retained at least 884.8 N on the lighter foot on the separation tick. This is a successful grounded transfer and bar break.
+
+| Path and arm | Setup shin / thigh | Below knee | Knee passage | Upper thigh | Lockout |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Original control | 45 / 241 | 22 / 174 | 48 / 104 | 314 / 173 | 444 / 177 |
+| Original prepared | 45 / 241 | 20 / 174 | 47 / 104 | 311 / 172 | 403 / 131* |
+| Proximity control | 45 / 241 | 30 / 174 | 109 / 115 | 331 / 131* | — |
+| Proximity prepared | 45 / 241 | 20 / 174 | 59 / 102 | 291 / 89* | — |
+
+Mean sagittal capsule surface gaps in mm. *The window includes failed support and the ensuing fall. Its lower gap cannot qualify the lift. All four arms recorded 0 N bar-on-leg contact. The original control held at least 557.7 N on the lighter foot after separation and at least 90.9 mm capture margin during lifting.
+
+On the original prepared path, ankle-roll demand first crossed its ceiling at tick 676, progress 0.954. A foot unloaded at tick 683 with shoulder demand at 0.77 and lumbar demand at 0.64. Capture margin turned negative on the next evaluation. On the proximity path, preparation moved the first roll saturation from progress 0.790 to 0.737 and the first zero foot load from 0.801 to 0.750. The shoulder still had headroom at foot loss (0.39 of ceiling), with no bar-on-leg contact. The proximate failure was lower-chain support loss late in ascent. The experiment does not show that shoulder preparation removes the Gate 9 reachability or balance constraint.
+
+### Pull-onset control
+
+The prepared arms both accepted pulling at tick 318. Fresh controls first given Drive at tick 318 also failed on both paths. The original delayed control broke at 336, first lost foot load at 684, and received FootMoved at 685. The prepared original broke three ticks earlier, lost foot load at 683, and received FootMoved at 684. The delayed control reproduced the near-lockout support failure with zero shoulder perturbation. This demonstrates that the readiness delay alone can move the original path into a failing onset. It does not establish that the shoulder reference caused the late failure.
+
+On proximity, the delayed control broke at 336, first lost foot load at progress 0.926, and received FootMoved at 710. The prepared arm lost load at progress 0.750. Matching effective pull onset therefore does not explain the earlier proximity support loss in the prepared arm. The identically scheduled path and the same ankle regulator saw different physical initial states and bar-break histories. The trace isolates the observed failure to foot roll and load shedding with shoulder headroom. It does not assign that upstream sensitivity to a single joint.
+
+### Readiness lead at the qualified pull tick
+
+The final pair used a test-only Drive onset of 284, 17 ticks ahead of the qualified original onset. Both prepared plants accepted Drive at tick 301 and broke the bar at 316. Each had about 283 N up per hand and −31.7 N net Z at handoff. Both first contacted a leg at tick 382, before loss of foot support or ankle-roll saturation. Measured shin gap was −1.5/−1.9 mm (original/proximity) and bar-on-leg force was 126/361 N. The referee registered ThighSupport using its bar-on-leg channel. The capture margin was still positive at first contact and turned negative by tick 394. Both lifts stopped around 205 mm of rise and returned uncontrolled.
+
+Matching the pull tick removed the readiness-delay explanation for this pair. The prepared liftoff started 3 ticks earlier and with about 3.7 mm less shin clearance than the original tick-301 control at break. This pair first failed during below-knee bar-on-leg contact. The first pair lost support much later as ankle roll saturated. The data do not isolate retention versus removal of the shoulder offset or the effects of the different closed-chain state at break.
+
+### Disposition and verification
+
+Keep the candidate disabled for gameplay. Grounded transfer is real, with a roughly 2–3 mm shin-gap gain in these trials, but the complete attempts did not improve dynamic support or produce a good lift. The original station default and independent proximity flag retain their Gate 9 conditions. No candidate Windows build or owner gameplay verification was performed.
+
+Five focused PlayMode methods passed on Unity 6000.3.22f1. The three complete-attempt experiments covered the prepared paths, onset-matched controls, and the readiness lead. The grounded shoulder probe passed, and the default runtime's normal regression reproduced good lifts at 301 and 305 with Down at 834 and 839. Raw traces remain in the ignored Logs/GAM70 directory.

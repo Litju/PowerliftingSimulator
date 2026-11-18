@@ -94,8 +94,8 @@ namespace PowerliftingSimulator.Deadlift
 
                     leftForce += runtime.LeftGrip.ForceOnBarWorld;
                     rightForce += runtime.RightGrip.ForceOnBarWorld;
-                    leftTorque -= runtime.LeftGrip.SolverTorqueRaw;
-                    rightTorque -= runtime.RightGrip.SolverTorqueRaw;
+                    leftTorque += runtime.LeftGrip.SolverTorqueRaw;
+                    rightTorque += runtime.RightGrip.SolverTorqueRaw;
                     leftCop += leftFoot.Cop - leftCop0;
                     rightCop += rightFoot.Cop - rightCop0;
                     shin += DeadliftBarLegGeometry.Realized(rig, runtime.Bar, out _).Shin;
@@ -105,7 +105,7 @@ namespace PowerliftingSimulator.Deadlift
                 results[trial] = (leftForce.z + rightForce.z) / samples;
                 handLoads[trial++] = (leftForce.y + rightForce.y) / (2 * samples);
                 Debug.Log(
-                    $"shoulder offset {degrees:F1}° | hand-on-bar N L {leftForce / samples:F3} R {rightForce / samples:F3} | grip Nm L {leftTorque / samples:F3} R {rightTorque / samples:F3} | " +
+                    $"shoulder offset {degrees:F1}° | hand-on-bar N L {leftForce / samples:F3} R {rightForce / samples:F3} | raw grip torque L {leftTorque / samples:F3} R {rightTorque / samples:F3} | " +
                     $"COP change mm L {leftCop * (1000f / samples):F2} R {rightCop * (1000f / samples):F2} | shin {shin * 1000f / samples:F2} mm | bar ahead of shoulders {shoulderToBar * 1000f / samples:F2} mm | " +
                     $"min foot {minFoot:F1} N plate {minPlate:F1} N capture {minMargin * 1000f:F1} mm | rise {maxRise * 1000f:F3} mm");
                 for (int i = 0; i < shoulders.Length; i++)

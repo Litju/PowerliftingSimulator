@@ -334,6 +334,21 @@ namespace PowerliftingSimulator.Deadlift
             }
         }
 
+        [UnityTest, Timeout(1800000), Explicit("GAM-70 preparation given its observed 17-tick readiness lead")]
+        public IEnumerator GAM70_UPPER_CHAIN_READINESS_LEAD_AB()
+        {
+            const int driveTick = 301 - 17;
+            foreach (bool proximity in new[] { false, true })
+            {
+                var r = new Record { Arm = proximity ? "proximity-prepared-lead" : "original-prepared-lead" };
+                yield return RunMeasured(driveTick, r, proximity, measureVisual: false, preparation: true);
+                Debug.Log(r.Line() + Environment.NewLine + r.FirstPull + Environment.NewLine + WindowTable(r));
+                System.IO.File.WriteAllText(System.IO.Path.Combine(F.EvidenceDirectory, "upper-chain-" + r.Arm + ".csv"), r.Csv.ToString());
+                Assert.That(r.PullTick, Is.GreaterThan((ulong)driveTick), r.Line());
+                Assert.That(r.Separation, Is.GreaterThan(r.PullTick), r.Line());
+            }
+        }
+
         private static string Fm(float v) => float.IsNaN(v) ? "" : v.ToString("G6", CultureInfo.InvariantCulture);
         private static string Mm(Stat s) => s.N == 0 ? "     -      " : string.Format(CultureInfo.InvariantCulture, "{0,5:F0}/{1,5:F0}", s.Min * 1000f, s.Mean * 1000f);
         private static string Z(Stat s) => s.N == 0 ? "   -   " : s.Mean.ToString("+0.000;-0.000", CultureInfo.InvariantCulture);
