@@ -80,6 +80,8 @@ namespace PowerliftingSimulator.Deadlift
             }
         }
 
+        public float LateStart => _lateStart;
+
         private float ProgressAtRise(float rise)
         {
             float lo = 0f, hi = 1f;

@@ -117,6 +117,20 @@ namespace PowerliftingSimulator.Deadlift
             Assert.That(prepared.StopReason, Is.Not.EqualTo("comparison bound"));
         }
 
+        [UnityTest, Timeout(1800000), Explicit("GAM-70 rejoin the stock lockout reference after measured knee passage")]
+        public IEnumerator GAM70_PREPARED_STOCK_REJOIN()
+        {
+            foreach (float join in new[] { 0.80f, 0.94f })
+            {
+                var prepared = new Run();
+                yield return Trace($"stock-rejoin-{join:F2}", 284, prepared, retainPreparation: true, closedPrefix: true,
+                    throughKnee: true, complete: true, rejoinEnd: join, lastTick: 2100);
+                Assert.That(prepared.Good && prepared.Released, Is.True, prepared.RefereeSummary);
+                Assert.That(prepared.MinGap, Is.GreaterThan(0f));
+                Assert.That(prepared.MinSupport, Is.GreaterThan(0.04f));
+            }
+        }
+
         private static void AssertClearance(Run prepared, string endpoint)
         {
             Assert.That(prepared.Pull, Is.EqualTo(301ul));
@@ -129,7 +143,7 @@ namespace PowerliftingSimulator.Deadlift
             Debug.Log($"Prepared realized substeps: {prepared.Sweep.Samples}, min gap {prepared.Sweep.MinGap * 1000f:F2} mm, swept bound {prepared.Sweep.MinBound * 1000f:F2} mm");
         }
 
-        private IEnumerator Trace(string arm, int driveTick, Run result, bool retainPreparation = false, bool closedPrefix = false, bool throughKnee = false, bool complete = false, bool centered = false, int lastTick = 800)
+        private IEnumerator Trace(string arm, int driveTick, Run result, bool retainPreparation = false, bool closedPrefix = false, bool throughKnee = false, bool complete = false, bool centered = false, float rejoinEnd = 0f, int lastTick = 800)
         {
             yield return DeadliftPlantWorld.Load();
             _world = DeadliftPlantWorld.Current;
@@ -176,7 +190,15 @@ namespace PowerliftingSimulator.Deadlift
                     {
                         closed = new DeadliftPreparedClearancePath(rt, _world.Rig, throughKnee, complete, centered);
                         closed.CheckInterpolation();
-                        rt.Hold.AscentReferenceOverride = closed.Target;
+                        rt.Hold.AscentReferenceOverride = (joint, s) =>
+                        {
+                            if (rejoinEnd <= 0f || s <= closed.LateStart)
+                                return closed.Target(joint, s);
+                            if (s >= rejoinEnd)
+                                return rt.Path.Target(joint, s);
+                            float blend = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(closed.LateStart, rejoinEnd, s));
+                            return Quaternion.Slerp(closed.Target(joint, s), rt.Path.Target(joint, s), blend);
+                        };
                         result.Sweep = new DeadliftPreparedClearancePath.RealizedSweep(rt.Bar, _world.Rig);
                         substepContact = feet[0].gameObject.AddComponent<DeadliftFootCopSensor>();
                         substepContact.Ground = _world.Rig.PlatformCollider;
