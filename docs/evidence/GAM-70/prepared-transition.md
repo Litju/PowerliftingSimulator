@@ -58,3 +58,25 @@ Actual rise from confirmed separation was 122.61 mm by tick 385. All 138 solver 
 `GAM70_PREPARED_CLOSED_KNEE_PASSAGE` retains the same first 15 keys and appends keys at the same progress spacing. The two focused tests passed on Unity 6000.3.22f1. The extended plan's minimum sampled gap was 23.80 mm, its minimum swept bound was 22.21 mm, and its largest foot/grip closure residual was 0.304 mm / 0.002°.
 
 The fresh prepared plant reached the knee-region endpoint at tick 538 with 456.55 mm of realized rise from separation. The bar axis was 81.2/81.3 mm above the left/right knee centres. All 444 PhysX substeps had positive shaft/leg clearance with a minimum of 10.89 mm and a 10.04 mm conservative interpolation bound. Bar-leg normal impulse remained zero, left/right minimum foot loads were 809/806 N, and the minimum capture margin was 126.7 mm. This qualifies clearance through the knee region for the tested prepared onset. The probe ends before composing the closer-thigh ascent or lockout.
+
+
+## Ankle roll after knee clearance
+
+`GAM70_ANKLE_ROLL_POSTURE_RESPONSE` used fresh plants in each arm, with the existing 0.25° joint-Z excitation and three-tick hold. A left-ankle pulse tested both signs, with an unexcited arm and a fresh positive repeat per posture. The full bilateral trace matched between the two positive runs in each posture. The crouched baseline was quiet B2 at tick 301, with a 42.7° torso and 125.4° knees. The closer-bar baseline was the existing proximity arm at progress 0.761, tick 629, with a 75.4° torso, 18.2° knees, ankle roll +5.07°/−5.07° and approximately 75 mm of thigh clearance. This is a closed-loop test with different loads and posture, so the early signed response characterizes the assembled plant locally.
+
+| Posture and input | Applied Z difference at second tick | Realized Z difference | Across-sole COP difference |
+| --- | ---: | ---: | ---: |
+| Crouched +0.25° | +0.251° | +0.0159° | −1.84 mm |
+| Crouched −0.25° | −0.019° | −0.0014° | +0.15 mm |
+| Closer-bar +0.25° | +0.248° | +0.0079° | −1.73 mm |
+| Closer-bar −0.25° | −0.245° | −0.0077° | +1.70 mm |
+
+Differences are left-ankle samples against the matching unexcited arm. Across uses the world up × sole-longitudinal axis. The target-rate limit clipped the first tick in both postures and most of the negative crouched pulse at the second tick. At that second tick the realized angle per applied degree was roughly 0.06–0.07 in the crouch and 0.03 in the closer-bar posture. The normalized COP response was similar while both soles carried a broad patch. All crouched arms kept at least 758 N on each foot and the full 290 × 130 mm loaded spans. Peak ankle Z demand stayed below 0.056 of the existing ceiling.
+
+| Closer-bar arm | First left fore–aft edge | First Z ceiling crossing | First foot below loaded threshold |
+| --- | ---: | ---: | ---: |
+| Quiet | 637 | 640 | 643, right 0 N |
+| +0.25° and exact repeat | 637 | 642 | 647, right 0 N |
+| −0.25° | 637 | 641 | 643, right 20 N |
+
+At tick 637 in all three arms the left foot's loaded long-axis width fell from 290 mm to below 1 mm while the transverse span still measured about 130 mm. The quiet arm later collapsed to transverse edge contact by 642. At 640 its left ankle Z request, applied target and actual angle were −6.02°, +3.46° and +11.67°, with measured Z velocity +1.06 rad/s and modeled demand 1.004 of the 60 N·m ceiling. Foot loads were 2176/519 N. At the same tick the positive pulse arm retained 1565/660 N and its hip centres differed from quiet by 4.77/2.96 mm, versus near-zero hip differences during the initial signed response. Both signs ultimately lost support. This establishes an edge/contact change before saturation, then strongly coupled roll and hip motion. The measurements do not identify a signed gain change that preserves the crouched behavior. No gain, schedule or capacity was changed.
