@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
@@ -13,9 +12,9 @@ namespace PowerliftingSimulator.Deadlift
     internal sealed class DeadliftPreparedClearancePath
     {
         public const float QualifiedRiseM = 0.12f;
-        private const float PlanRiseM = 0.15f;
+        private const float FirstPlanRiseM = 0.15f;
         private const float PlanClearanceM = 0.024f;
-        private const int Intervals = 15;
+        private const int FirstIntervals = 15;
         private static readonly string[] Legs = { "left_shank", "right_shank", "left_thigh", "right_thigh" };
 
         private readonly DeadliftAttemptRuntime _runtime;
@@ -29,8 +28,8 @@ namespace PowerliftingSimulator.Deadlift
         private readonly CapsuleCollider _shaft;
         private readonly Dictionary<string, Quaternion> _measured;
         private readonly (string Id, int Count)[] _channels;
-        private readonly Sample[] _keys = new Sample[Intervals + 1];
-        private readonly float _endProgress;
+        private readonly Sample[] _keys;
+        private readonly float _progressStep;
 
         internal sealed class Sample
         {
@@ -39,7 +38,7 @@ namespace PowerliftingSimulator.Deadlift
             public Dictionary<string, Pose> Poses;
         }
 
-        public DeadliftPreparedClearancePath(DeadliftAttemptRuntime runtime, PhysicalAthleteRig rig)
+        public DeadliftPreparedClearancePath(DeadliftAttemptRuntime runtime, PhysicalAthleteRig rig, bool throughKnee)
         {
             _runtime = runtime;
             _measurements = runtime.Measurements;
@@ -56,21 +55,16 @@ namespace PowerliftingSimulator.Deadlift
                 .Select(j => (j.Id, j.Recipe.Family == "ankle" ? 2 : BenchKinematics.ParameterCount(_kinematics.Joint(j.Id))))
                 .ToArray();
 
-            float lo = 0f, hi = 1f;
-            for (int i = 0; i < 24; i++)
-            {
-                float m = (lo + hi) * 0.5f;
-                if (runtime.Path.BarRiseAt(m) < PlanRiseM)
-                    lo = m;
-                else
-                    hi = m;
-            }
-            _endProgress = hi;
+            _progressStep = ProgressAtRise(FirstPlanRiseM) / FirstIntervals;
+            int intervals = throughKnee
+                ? Mathf.CeilToInt(ProgressAtRise(runtime.Path.KneePassageRiseM + 0.035f) / _progressStep)
+                : FirstIntervals;
+            _keys = new Sample[intervals + 1];
 
             var x = new double[6 + _channels.Sum(j => j.Count)];
-            for (int i = 0; i <= Intervals; i++)
+            for (int i = 0; i < _keys.Length; i++)
             {
-                float progress = Progress(i);
+                float progress = _progressStep * i;
                 var nominal = _measured.ToDictionary(q => q.Key,
                     q => q.Value * Quaternion.Inverse(runtime.Model.SetupLogical[q.Key]) * runtime.Path.Target(q.Key, progress));
                 if (i > 0)
@@ -79,7 +73,19 @@ namespace PowerliftingSimulator.Deadlift
             }
         }
 
-        private float Progress(int key) => _endProgress * key / Intervals;
+        private float ProgressAtRise(float rise)
+        {
+            float lo = 0f, hi = 1f;
+            for (int i = 0; i < 24; i++)
+            {
+                float m = (lo + hi) * 0.5f;
+                if (_runtime.Path.BarRiseAt(m) < rise)
+                    lo = m;
+                else
+                    hi = m;
+            }
+            return hi;
+        }
 
         private Sample PoseAt(double[] x, float progress)
         {
@@ -168,13 +174,14 @@ namespace PowerliftingSimulator.Deadlift
         {
             const int subdivisions = 16;
             float minGap = float.PositiveInfinity, minBound = float.PositiveInfinity, maxClosure = 0f, maxRotation = 0f;
-            var perInterval = Enumerable.Range(0, Intervals).Select(i => KeyTravelBound(_keys[i], _keys[i + 1])).ToArray();
-            for (int n = 0; n <= Intervals * subdivisions; n++)
+            int intervals = _keys.Length - 1;
+            var perInterval = Enumerable.Range(0, intervals).Select(i => KeyTravelBound(_keys[i], _keys[i + 1])).ToArray();
+            for (int n = 0; n <= intervals * subdivisions; n++)
             {
-                Sample sample = At(_endProgress * n / (Intervals * subdivisions));
+                Sample sample = At(_progressStep * n / subdivisions);
                 float gap = Gaps(sample).Leg;
                 minGap = Mathf.Min(minGap, gap);
-                minBound = Mathf.Min(minBound, gap - perInterval[Mathf.Min(n / subdivisions, Intervals - 1)] / (2f * subdivisions));
+                minBound = Mathf.Min(minBound, gap - perInterval[Mathf.Min(n / subdivisions, intervals - 1)] / (2f * subdivisions));
                 if (n > 0 && n % subdivisions == 0)
                     minBound = Mathf.Min(minBound, gap - perInterval[n / subdivisions - 1] / (2f * subdivisions));
                 for (int i = 0; i < 2; i++)
@@ -291,8 +298,8 @@ namespace PowerliftingSimulator.Deadlift
 
         private void Span(float progress, out int i, out float t)
         {
-            float key = Mathf.Clamp01(progress / _endProgress) * Intervals;
-            i = Mathf.Min(Mathf.FloorToInt(key), Intervals - 1);
+            float key = Mathf.Clamp(progress / _progressStep, 0f, _keys.Length - 1);
+            i = Mathf.Min(Mathf.FloorToInt(key), _keys.Length - 2);
             t = key - i;
         }
 

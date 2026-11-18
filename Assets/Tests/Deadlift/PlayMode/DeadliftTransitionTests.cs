@@ -81,8 +81,21 @@ namespace PowerliftingSimulator.Deadlift
         {
             var prepared = new Run();
             yield return Trace("closed-prefix", 284, prepared, retainPreparation: true, closedPrefix: true, lastTick: 470);
+            AssertClearance(prepared, "first segment end");
+        }
+
+        [UnityTest, Timeout(1800000), Explicit("GAM-70 extend the prepared reference through the knee region")]
+        public IEnumerator GAM70_PREPARED_CLOSED_KNEE_PASSAGE()
+        {
+            var prepared = new Run();
+            yield return Trace("closed-knee", 284, prepared, retainPreparation: true, closedPrefix: true, throughKnee: true);
+            AssertClearance(prepared, "knee-region end");
+        }
+
+        private static void AssertClearance(Run prepared, string endpoint)
+        {
             Assert.That(prepared.Pull, Is.EqualTo(301ul));
-            Assert.That(prepared.StopReason, Is.EqualTo("first segment end"));
+            Assert.That(prepared.StopReason, Is.EqualTo(endpoint));
             Assert.That(prepared.FirstPenetration, Is.Zero);
             Assert.That(prepared.MinGap, Is.GreaterThan(0f));
             Assert.That(prepared.MinSupport, Is.GreaterThan(0.04f));
@@ -91,7 +104,7 @@ namespace PowerliftingSimulator.Deadlift
             Debug.Log($"Prepared realized substeps: {prepared.Sweep.Samples}, min gap {prepared.Sweep.MinGap * 1000f:F2} mm, swept bound {prepared.Sweep.MinBound * 1000f:F2} mm");
         }
 
-        private IEnumerator Trace(string arm, int driveTick, Run result, bool retainPreparation = false, bool closedPrefix = false, int lastTick = 800)
+        private IEnumerator Trace(string arm, int driveTick, Run result, bool retainPreparation = false, bool closedPrefix = false, bool throughKnee = false, int lastTick = 800)
         {
             yield return DeadliftPlantWorld.Load();
             _world = DeadliftPlantWorld.Current;
@@ -136,7 +149,7 @@ namespace PowerliftingSimulator.Deadlift
                     rt.Hold.IdentificationOffsets.Add(rightShoulder.Id, rightOffset);
                     if (closedPrefix)
                     {
-                        closed = new DeadliftPreparedClearancePath(rt, _world.Rig);
+                        closed = new DeadliftPreparedClearancePath(rt, _world.Rig, throughKnee);
                         closed.CheckInterpolation();
                         rt.Hold.AscentReferenceOverride = closed.Target;
                         result.Sweep = new DeadliftPreparedClearancePath.RealizedSweep(rt.Bar, _world.Rig);
@@ -270,7 +283,7 @@ namespace PowerliftingSimulator.Deadlift
                 result.StopReason = rt.BarOnLegN > 0f ? "bar-leg impulse"
                     : closed != null && gap.Leg <= 0f ? "shaft penetration"
                     : load.Min() <= rt.Monitor.LoadedFootN || margin < 0f ? "support loss"
-                    : closed != null && rt.Bar.position.y - startBarY >= DeadliftPreparedClearancePath.QualifiedRiseM ? "first segment end"
+                    : closed != null && !throughKnee && rt.Bar.position.y - startBarY >= DeadliftPreparedClearancePath.QualifiedRiseM ? "first segment end"
                     : rt.Bar.position.y - bar0.y >= rt.Path.KneePassageRiseM ? "knee-region end"
                     : tick == lastTick ? "comparison bound" : null;
                 if (result.StopReason != null)
