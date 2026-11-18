@@ -30,6 +30,10 @@ namespace PowerliftingSimulator.Deadlift
         private readonly (string Id, int Count)[] _channels;
         private readonly Sample[] _keys;
         private readonly float _progressStep;
+        private readonly float _lateStart;
+        private readonly bool _complete;
+        private readonly (string Id, Vector3 Center, float Mass)[] _bodyMasses;
+        private readonly bool _centered;
 
         internal sealed class Sample
         {
@@ -38,9 +42,12 @@ namespace PowerliftingSimulator.Deadlift
             public Dictionary<string, Pose> Poses;
         }
 
-        public DeadliftPreparedClearancePath(DeadliftAttemptRuntime runtime, PhysicalAthleteRig rig, bool throughKnee)
+        public DeadliftPreparedClearancePath(DeadliftAttemptRuntime runtime, PhysicalAthleteRig rig, bool throughKnee, bool complete = false, bool centered = false)
         {
             _runtime = runtime;
+            _complete = complete;
+            _centered = centered;
+            _bodyMasses = rig.Segments.Select(s => (s.Key, s.Value.Body.centerOfMass, s.Value.Body.mass)).ToArray();
             _measurements = runtime.Measurements;
             _kinematics = _measurements.Kinematics;
             _root0 = BodyPose(runtime.Pelvis);
@@ -56,19 +63,19 @@ namespace PowerliftingSimulator.Deadlift
                 .ToArray();
 
             _progressStep = ProgressAtRise(FirstPlanRiseM) / FirstIntervals;
-            int intervals = throughKnee
-                ? Mathf.CeilToInt(ProgressAtRise(runtime.Path.KneePassageRiseM + 0.035f) / _progressStep)
-                : FirstIntervals;
+            int kneeIntervals = Mathf.CeilToInt(ProgressAtRise(runtime.Path.KneePassageRiseM + 0.035f) / _progressStep);
+            _lateStart = _progressStep * kneeIntervals;
+            int intervals = complete ? Mathf.CeilToInt(1f / _progressStep) : throughKnee ? kneeIntervals : FirstIntervals;
             _keys = new Sample[intervals + 1];
 
             var x = new double[6 + _channels.Sum(j => j.Count)];
             for (int i = 0; i < _keys.Length; i++)
             {
-                float progress = _progressStep * i;
+                float progress = Mathf.Min(1f, _progressStep * i);
                 var nominal = _measured.ToDictionary(q => q.Key,
                     q => q.Value * Quaternion.Inverse(runtime.Model.SetupLogical[q.Key]) * runtime.Path.Target(q.Key, progress));
                 if (i > 0)
-                    x = BenchKinematics.LevenbergMarquardt(x, v => Residuals(PoseAt(v, progress), nominal), 130, out _);
+                    x = BenchKinematics.LevenbergMarquardt(x, v => Residuals(PoseAt(v, progress), nominal, progress), 130, out _);
                 _keys[i] = PoseAt(x, progress);
             }
         }
@@ -90,7 +97,15 @@ namespace PowerliftingSimulator.Deadlift
         private Sample PoseAt(double[] x, float progress)
         {
             var root = new Pose(_root0.position + Vector(x, 0), _root0.rotation * Quaternion.Euler(Vector(x, 3) * Mathf.Rad2Deg));
-            var bar = new Pose(_bar0.position + Vector3.up * _runtime.Path.BarRiseAt(progress), _bar0.rotation);
+            Vector3 barPosition = _bar0.position + Vector3.up * _runtime.Path.BarRiseAt(progress);
+            if (_complete && progress > _lateStart)
+            {
+                _runtime.Path.KeySpan(progress, out int a, out int b, out float t);
+                float nominalZ = Mathf.Lerp(_runtime.Path.Keys[a].BarZ, _runtime.Path.Keys[b].BarZ, t);
+                float late = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(_lateStart, 1f, progress));
+                barPosition.z = Mathf.Lerp(barPosition.z, nominalZ - 0.010f * late, late);
+            }
+            var bar = new Pose(barPosition, _bar0.rotation);
             var logical = new Dictionary<string, Quaternion>(_measured);
             int k = 6;
             foreach ((string id, int count) in _channels)
@@ -102,7 +117,7 @@ namespace PowerliftingSimulator.Deadlift
             return new Sample { Root = root, Bar = bar, Logical = logical, Poses = _kinematics.Solve(root, logical) };
         }
 
-        private List<double> Residuals(Sample sample, Dictionary<string, Quaternion> nominal)
+        private List<double> Residuals(Sample sample, Dictionary<string, Quaternion> nominal, float progress)
         {
             var residuals = new List<double>(100);
             for (int i = 0; i < 2; i++)
@@ -131,6 +146,25 @@ namespace PowerliftingSimulator.Deadlift
                     residuals.Add(80d * Mathf.Deg2Rad * Mathf.Max(0f, Mathf.Abs(roll) - (DeadliftAnkleRoll.LimitDegrees - 3f)));
                 }
                 Add(residuals, RotationError(nominal[id], q), count == 2 ? 4d : 2d);
+            }
+            if (_centered && progress > _lateStart)
+            {
+                float late = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(_lateStart, 1f, progress));
+                _runtime.Path.KeySpan(progress, out int a, out int b, out float t);
+                float nominalZ = Mathf.Lerp(_runtime.Path.Keys[a].SystemComZ, _runtime.Path.Keys[b].SystemComZ, t);
+                float mass = _runtime.Bar.mass;
+                float moment = mass * sample.Bar.position.z;
+                foreach (var body in _bodyMasses)
+                {
+                    mass += body.Mass;
+                    moment += Point(sample.Poses[body.Id], body.Center).z * body.Mass;
+                }
+                residuals.Add(60d * late * (moment / mass - (nominalZ + late * 0.025f)));
+
+                float lead = Legs.Where(id => id.EndsWith("_thigh")).Average(id =>
+                    _kinematics.JointAnchorWorld(sample.Poses, id.Replace("_thigh", "_upper_arm")).z -
+                    _kinematics.JointAnchorWorld(sample.Poses, id).z);
+                residuals.Add(65d * late * Mathf.Max(0f, lead - 0.010f));
             }
             return residuals;
         }
@@ -178,7 +212,10 @@ namespace PowerliftingSimulator.Deadlift
             var perInterval = Enumerable.Range(0, intervals).Select(i => KeyTravelBound(_keys[i], _keys[i + 1])).ToArray();
             for (int n = 0; n <= intervals * subdivisions; n++)
             {
-                Sample sample = At(_progressStep * n / subdivisions);
+                int interval = Mathf.Min(n / subdivisions, intervals - 1);
+                float start = interval * _progressStep;
+                float end = Mathf.Min(start + _progressStep, 1f);
+                Sample sample = At(Mathf.Lerp(start, end, (n - interval * subdivisions) / (float)subdivisions));
                 float gap = Gaps(sample).Leg;
                 minGap = Mathf.Min(minGap, gap);
                 minBound = Mathf.Min(minBound, gap - perInterval[Mathf.Min(n / subdivisions, intervals - 1)] / (2f * subdivisions));
@@ -300,7 +337,9 @@ namespace PowerliftingSimulator.Deadlift
         {
             float key = Mathf.Clamp(progress / _progressStep, 0f, _keys.Length - 1);
             i = Mathf.Min(Mathf.FloorToInt(key), _keys.Length - 2);
-            t = key - i;
+            // Keep the qualified prefix interpolation exactly when adding late keys.
+            t = (i + 1) * _progressStep > 1f
+                ? Mathf.InverseLerp(i * _progressStep, 1f, progress) : key - i;
         }
 
         private static Vector3 RotationError(Quaternion target, Quaternion actual)

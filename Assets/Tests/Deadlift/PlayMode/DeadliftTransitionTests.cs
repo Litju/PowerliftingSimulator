@@ -26,6 +26,9 @@ namespace PowerliftingSimulator.Deadlift
         {
             public ulong Pull, PhysicalSeparation, ConfirmedSeparation, FirstPenetration, Stop;
             public string StopReason;
+            public bool Good, Released;
+            public ulong Down;
+            public string RefereeSummary;
             public float MinGap = float.PositiveInfinity;
             public float MinSupport = float.PositiveInfinity;
             public DeadliftPreparedClearancePath.RealizedSweep Sweep;
@@ -92,6 +95,28 @@ namespace PowerliftingSimulator.Deadlift
             AssertClearance(prepared, "knee-region end");
         }
 
+        [UnityTest, Timeout(1800000), Explicit("GAM-70 composed prepared-ascent qualification probe")]
+        public IEnumerator GAM70_PREPARED_COMPOSED_ATTEMPT()
+        {
+            var prepared = new Run();
+            yield return Trace("closed-composed", 284, prepared, retainPreparation: true, closedPrefix: true,
+                throughKnee: true, complete: true, lastTick: 2100);
+            Assert.That(prepared.Pull, Is.EqualTo(301ul));
+            Assert.That(prepared.Stop, Is.GreaterThan(538ul));
+            Assert.That(prepared.StopReason, Is.Not.EqualTo("comparison bound"));
+        }
+
+        [UnityTest, Timeout(1800000), Explicit("GAM-70 closed-reference COM placement probe at lockout")]
+        public IEnumerator GAM70_PREPARED_CENTERED_LOCKOUT_PROBE()
+        {
+            var prepared = new Run();
+            yield return Trace("closed-centered", 284, prepared, retainPreparation: true, closedPrefix: true,
+                throughKnee: true, complete: true, centered: true, lastTick: 2100);
+            Assert.That(prepared.Pull, Is.EqualTo(301ul));
+            Assert.That(prepared.Stop, Is.GreaterThan(538ul));
+            Assert.That(prepared.StopReason, Is.Not.EqualTo("comparison bound"));
+        }
+
         private static void AssertClearance(Run prepared, string endpoint)
         {
             Assert.That(prepared.Pull, Is.EqualTo(301ul));
@@ -104,7 +129,7 @@ namespace PowerliftingSimulator.Deadlift
             Debug.Log($"Prepared realized substeps: {prepared.Sweep.Samples}, min gap {prepared.Sweep.MinGap * 1000f:F2} mm, swept bound {prepared.Sweep.MinBound * 1000f:F2} mm");
         }
 
-        private IEnumerator Trace(string arm, int driveTick, Run result, bool retainPreparation = false, bool closedPrefix = false, bool throughKnee = false, int lastTick = 800)
+        private IEnumerator Trace(string arm, int driveTick, Run result, bool retainPreparation = false, bool closedPrefix = false, bool throughKnee = false, bool complete = false, bool centered = false, int lastTick = 800)
         {
             yield return DeadliftPlantWorld.Load();
             _world = DeadliftPlantWorld.Current;
@@ -132,7 +157,7 @@ namespace PowerliftingSimulator.Deadlift
             var rightShoulder = _world.Rig.PoweredController.GetJoint("right_upper_arm");
             DeadliftPreparedClearancePath closed = null;
             DeadliftFootCopSensor substepContact = null;
-            float startBarY = 0f;
+            float startBarY = 0f, maxProgress = 0f;
             Quaternion leftStart = Quaternion.identity, rightStart = Quaternion.identity;
             for (int tick = 1; tick <= lastTick; tick++)
             {
@@ -149,7 +174,7 @@ namespace PowerliftingSimulator.Deadlift
                     rt.Hold.IdentificationOffsets.Add(rightShoulder.Id, rightOffset);
                     if (closedPrefix)
                     {
-                        closed = new DeadliftPreparedClearancePath(rt, _world.Rig, throughKnee);
+                        closed = new DeadliftPreparedClearancePath(rt, _world.Rig, throughKnee, complete, centered);
                         closed.CheckInterpolation();
                         rt.Hold.AscentReferenceOverride = closed.Target;
                         result.Sweep = new DeadliftPreparedClearancePath.RealizedSweep(rt.Bar, _world.Rig);
@@ -163,7 +188,8 @@ namespace PowerliftingSimulator.Deadlift
                 }
                 if (closed != null)
                 {
-                    float blend = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(rt.Pull.LiftProgress01 / 0.07f));
+                    maxProgress = Mathf.Max(maxProgress, rt.Pull.LiftProgress01);
+                    float blend = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(maxProgress / 0.07f));
                     rt.Hold.IdentificationOffsets[leftShoulder.Id] = Quaternion.Slerp(leftStart, Quaternion.identity, blend);
                     rt.Hold.IdentificationOffsets[rightShoulder.Id] = Quaternion.Slerp(rightStart, Quaternion.identity, blend);
                 }
@@ -284,7 +310,9 @@ namespace PowerliftingSimulator.Deadlift
                     : closed != null && gap.Leg <= 0f ? "shaft penetration"
                     : load.Min() <= rt.Monitor.LoadedFootN || margin < 0f ? "support loss"
                     : closed != null && !throughKnee && rt.Bar.position.y - startBarY >= DeadliftPreparedClearancePath.QualifiedRiseM ? "first segment end"
-                    : rt.Bar.position.y - bar0.y >= rt.Path.KneePassageRiseM ? "knee-region end"
+                    : complete && rt.Referee.Completed && rt.GripsReleased ? "judged return"
+                    : complete && rt.Referee.Faults.Count > 0 ? "referee fault"
+                    : !complete && rt.Bar.position.y - bar0.y >= rt.Path.KneePassageRiseM ? "knee-region end"
                     : tick == lastTick ? "comparison bound" : null;
                 if (result.StopReason != null)
                 {
@@ -293,6 +321,12 @@ namespace PowerliftingSimulator.Deadlift
                 }
             }
 
+            result.Good = rt.Referee.GoodLift;
+            result.Released = rt.GripsReleased;
+            result.Down = rt.Pull.DownTick;
+            result.RefereeSummary = rt.Referee.Summary();
+            if (complete)
+                Debug.Log($"Composed prepared attempt: {result.RefereeSummary}; DOWN {result.Down}; released {result.Released}; good {result.Good}");
             File.WriteAllText(Path.Combine(F.EvidenceDirectory, $"transition-{arm}.csv"), rows.ToString());
             File.WriteAllText(Path.Combine(F.EvidenceDirectory, $"transition-{arm}-channels.csv"), channels.ToString());
             Debug.Log($"{arm}: PULL {result.Pull}, physical separation {result.PhysicalSeparation}, confirmed {result.ConfirmedSeparation}, first penetration {result.FirstPenetration}, stop {result.Stop} ({result.StopReason}), min gap {result.MinGap * 1000f:F2} mm, min margin {result.MinSupport * 1000f:F1} mm");
