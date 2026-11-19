@@ -569,7 +569,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 if (MovingPhaseSystemCom)
                     Regulator.CarriedBar = Pull.BarBody;
             }
-            Regulator?.Update();
+            Regulator?.Update(time.Tick > 0 ? time.Tick - 1 : 0);
             float progress = LiftPath != null && Pull != null ? Pull.LiftProgress01 : 0f;
             foreach (KeyValuePair<string, Quaternion> target in _targets)
             {

@@ -1,0 +1,18 @@
+# GAM-70 loaded floor contacts during the historical proximity trial
+
+Unity 6000.3.22f1, Windows PlayMode. GAM70_CONTACT_SAMPLE_AUDIT uses the existing B2 proximity path, a 75 kg dynamic bar, both welded grips and Drive from tick 301. The trace identifies the command tick, the sample used by the governor, and the newer sample used by the regulator. Normal load and COP integrate the positive platform normal impulses across both PhysX substeps. The nominal sole hull, impulse-bearing hull, per-foot patch, pose, COP targets, integrals and modeled roll demands are recorded in ignored CSVs.
+
+The stock progress governor used contact tick n-2 for command n. The regulator used n-1 after publishing those pending impulses later in command preparation. Both paired with pre-step body state at n-1. The authoritative tick stamps these samples. The rig's PreviousObservation property is a separate render interpolation buffer read.
+
+| Event | Tick | Measurement |
+| --- | ---: | --- |
+| Left physical contact collapses to the forward edge | 637 | The previous sample spanned 290.00 mm. The loaded longitudinal extent dropped below 0.001 mm. |
+| Along-sole command uses an unreachable COP | 638 | The left target was 163.72 mm along the world-projected sole axis and the loaded edge was at 328.91 mm. The integral moved from -0.56 degrees to -1.36 degrees. |
+| Governor reads the first edge sample | 639 | Nominal margin 131.90 mm, active margin 51.14 mm. |
+| First left ankle Z modeled demand above ceiling | 640 | 60.22 N m against 60 N m. The physical support mode changed first. |
+| Nominal and active margins disagree at the stock 40 mm threshold | 642 | 120.36 mm nominal, 17.81 mm active. The across-sole target was outside the loaded extent and progression continued. |
+| A foot falls below the 50 N loaded threshold | 643 | Actual post-step pressure sample. Shaft-to-leg normal reaction remained zero through this event. |
+
+The loaded hull bounds the normal COP of the sampled contact set. The possible sole footprint includes locations that could bear load after a contact-mode change. Recoverable motion also depends on unilateral forces, available friction, contact moments, dynamics and powered authority. The capture-point estimate provides a diagnostic for this posture.
+
+The existing RUNTIME_PLAYER_DEADLIFT_IS_A_GOOD_LIFT passed in the instrumented editor run. Stock onsets 301 and 305 earned GOOD LIFT, with DOWN at ticks 834 and 839 and both grips released after return.

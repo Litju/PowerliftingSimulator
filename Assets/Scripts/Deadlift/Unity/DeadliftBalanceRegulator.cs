@@ -228,7 +228,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
         }
 
         /// <summary>Called once per tick before commands are prepared; consumes the last completed tick's contacts.</summary>
-        public void Update()
+        public void Update(ulong sampleTick)
         {
             float mass = 0f;
             Vector3 c = Vector3.zero, p = Vector3.zero;
@@ -261,7 +261,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 for (int i = 0; i < 2; i++)
                 {
                     Foot f = _feet[i];
-                    f.Sensor.CompleteTick();
+                    f.Sensor.CompleteTick(sampleTick);
                     f.LastS = f.Sensor.NormalImpulse > 1e-6 ? Vector3.Dot(f.Sensor.Cop, f.Axis) : float.NaN;
                     f.Offset = _frozenAt[i] + (i == 0 ? IdentificationStepDegLeft : IdentificationStepDegRight);
                 }
@@ -272,7 +272,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
             bool saturated = false;
             foreach (Foot foot in _feet)
             {
-                foot.Sensor.CompleteTick();
+                foot.Sensor.CompleteTick(sampleTick);
                 if (foot.Sensor.NormalImpulse <= 1e-6)
                 {
                     foot.LastS = float.NaN; // no measured support: hold, never invent a COP

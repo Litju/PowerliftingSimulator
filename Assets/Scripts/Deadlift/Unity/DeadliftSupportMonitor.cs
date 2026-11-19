@@ -12,10 +12,10 @@ namespace PowerliftingSimulator.Deadlift.Unity
     /// athlete+bar capture point
     ///   xi = c + v / omega0,  omega0 = sqrt(g / h)
     /// (c, v the combined COM position and velocity, h its height above the
-    /// soles; Hof 2005) to the realized support polygon, the convex hull of
-    /// the sole rectangles of the feet that carried a normal load on the last
-    /// completed tick. Positive inside. A foot that carries nothing contributes
-    /// nothing. It reads bodies and the foot pressure sensors only.
+    /// soles; Hof 2005) to the nominal sole hull and the impulse-bearing hull.
+    /// The nominal hull remains the stock progress governor's observation.
+    /// The impulse-bearing hull describes the sampled contacts and can change
+    /// as the feet roll. Neither margin certifies a recoverable contact wrench.
     /// </summary>
     public sealed class DeadliftSupportMonitor
     {
@@ -49,6 +49,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public Vector3 SystemVelocity { get; private set; }
         public Vector2 CapturePoint { get; private set; }
         public float MarginM { get; private set; } = float.NaN;
+        public float ActiveMarginM { get; private set; } = float.NaN;
+        public ulong ContactSampleTick { get; private set; }
         public int LoadedFeet { get; private set; }
 
         /// <summary>Recomputes from the current bodies and the last completed contact tick. Returns the margin (m).</summary>
@@ -74,6 +76,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
             SystemVelocity = v;
 
             var points = new List<Vector2>(8);
+            var activePoints = new List<Vector2>(16);
+            ContactSampleTick = Math.Min(_left.SampleTick, _right.SampleTick);
             float soleY = float.MaxValue;
             LoadedFeet = 0;
             double dt = PowerliftingSimulator.Foundation.SimulationConstants.FixedDeltaTimeSeconds;
@@ -88,11 +92,15 @@ namespace PowerliftingSimulator.Deadlift.Unity
                         points.Add(new Vector2(w.x, w.z));
                 }
                 if (sensor.NormalImpulse / dt > LoadedFootN)
+                {
                     LoadedFeet++;
+                    activePoints.AddRange(sensor.ActivePoints);
+                }
             }
             float h = Mathf.Max(0.05f, c.y - soleY);
             float omega = Mathf.Sqrt(-Physics.gravity.y / h);
             CapturePoint = new Vector2(c.x + v.x / omega, c.z + v.z / omega);
+            ActiveMarginM = DeadliftSupportGeometry.SignedDistance(DeadliftSupportGeometry.Hull(activePoints), CapturePoint);
             if (points.Count < 3)
             {
                 MarginM = float.NegativeInfinity;

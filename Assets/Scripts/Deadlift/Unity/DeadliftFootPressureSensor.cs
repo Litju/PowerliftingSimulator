@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace PowerliftingSimulator.Deadlift.Unity
@@ -15,6 +16,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
     public sealed class DeadliftFootPressureSensor : MonoBehaviour
     {
         private static readonly ContactPoint[] s_buffer = new ContactPoint[64];
+        private List<Vector2> _pendingPoints = new List<Vector2>(8);
+        private List<Vector2> _activePoints = new List<Vector2>(8);
         private double _n;
         private Vector3 _m;
         private float _zMin = float.MaxValue, _zMax = float.MinValue;
@@ -26,6 +29,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public float LoadedAxisMax { get; private set; } = float.NaN;
 
         public Collider Ground { get; set; }
+        public ulong SampleTick { get; private set; }
+        public IReadOnlyList<Vector2> ActivePoints => _activePoints;
+        public IReadOnlyList<Vector2> PendingPoints => _pendingPoints;
         public double NormalImpulse { get; private set; }
         public Vector3 Cop { get; private set; }
         public float LoadedZMin { get; private set; } = float.NaN;
@@ -36,8 +42,11 @@ namespace PowerliftingSimulator.Deadlift.Unity
             (_n, _n > 1e-9 ? _m / (float)_n : new Vector3(float.NaN, float.NaN, float.NaN),
                 _n > 1e-9 ? _aMin : float.NaN, _n > 1e-9 ? _aMax : float.NaN);
 
-        public void CompleteTick()
+        public void CompleteTick(ulong sampleTick)
         {
+            SampleTick = sampleTick;
+            (_activePoints, _pendingPoints) = (_pendingPoints, _activePoints);
+            _pendingPoints.Clear();
             NormalImpulse = _n;
             Cop = _n > 1e-9 ? _m / (float)_n : new Vector3(float.NaN, float.NaN, float.NaN);
             LoadedZMin = _n > 1e-9 ? _zMin : float.NaN;
@@ -68,6 +77,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 float n = Vector3.Dot(impulse, normal);
                 if (n <= 0f)
                     continue;
+                _pendingPoints.Add(new Vector2(c.point.x, c.point.z));
                 _n += n;
                 _m += n * c.point;
                 _zMin = Mathf.Min(_zMin, c.point.z);

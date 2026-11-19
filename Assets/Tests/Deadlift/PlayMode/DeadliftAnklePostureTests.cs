@@ -60,6 +60,80 @@ namespace PowerliftingSimulator.Deadlift
             }
         }
 
+        [UnityTest, Timeout(300000)]
+        public IEnumerator GAM70_CONTACT_SAMPLE_AUDIT()
+        {
+            yield return AuditContactSample();
+        }
+
+        private IEnumerator AuditContactSample()
+        {
+            DeadliftAttemptRuntime.BarProximityPath = true;
+            yield return DeadliftPlantWorld.Load();
+            _world = DeadliftPlantWorld.Current;
+            var rt = new DeadliftAttemptRuntime(_world.Foundation, _world.Rig, _world.Bar);
+            rt.Initialize();
+            var feet = Sides.Select(side => _world.Rig.Segments[side + "_foot"].Body).ToArray();
+            var sensors = feet.Select(foot => foot.GetComponent<DeadliftFootPressureSensor>()).ToArray();
+            float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
+            var rows = new StringBuilder("commandTick,governorSample,regulatorSample,foot,potentialMargin,activeMargin,normalN,cop,alongMin,alongMax,acrossMin,acrossMax,targetAlong,targetAcross,integralAlong,integralAcross,position,rotation,systemCom,systemVelocity,progress,held,appliedRoll,actualRoll,rollDemandNm,rollMaximumNm,barLegN,points\n");
+            ulong firstEdge = 0, firstGap = 0, firstInvalidAlong = 0, firstInvalidAcross = 0, firstLost = 0;
+            for (int tick = 1; tick <= 900; tick++)
+            {
+                rt.Pull.IntentOverride01 = tick >= 301 ? 1f : 0f;
+                _world.Step(1);
+                if (rt.Pull.Phase != DeadliftPullPhase.Lifting)
+                    continue;
+                ulong governorTick = rt.Monitor.ContactSampleTick;
+                float potential = rt.Monitor.MarginM, active = rt.Monitor.ActiveMarginM;
+                float progress = rt.Pull.LiftProgress01;
+                Assert.That(governorTick, Is.EqualTo((ulong)tick - 2));
+                foreach (var sensor in sensors)
+                    Assert.That(sensor.SampleTick, Is.EqualTo((ulong)tick - 1));
+                if (firstGap == 0 && potential >= rt.Pull.MinSupportMarginM && active < rt.Pull.MinSupportMarginM)
+                    firstGap = (ulong)tick;
+                for (int i = 0; i < feet.Length; i++)
+                {
+                    var sensor = sensors[i];
+                    Vector3 across = Vector3.Cross(Vector3.up, sensor.Axis);
+                    var projected = sensor.ActivePoints.Select(p => p.x * across.x + p.y * across.z).ToArray();
+                    float min = projected.Length > 0 ? projected.Min() : float.NaN;
+                    float max = projected.Length > 0 ? projected.Max() : float.NaN;
+                    string id = Sides[i] + "_foot";
+                    float targetAlong = rt.Regulator.TargetAlongFor(id), targetAcross = rt.Regulator.TargetAcrossFor(id);
+                    var roll = _world.Rig.PoweredController.GetJoint(id).PostPhysicsDiagnostic;
+                    if (firstEdge == 0 && sensor.LoadedAxisMax - sensor.LoadedAxisMin <= rt.Regulator.SupportMarginM * 2)
+                        firstEdge = (ulong)tick;
+                    if (firstInvalidAlong == 0 && (targetAlong < sensor.LoadedAxisMin || targetAlong > sensor.LoadedAxisMax))
+                        firstInvalidAlong = (ulong)tick;
+                    if (firstInvalidAcross == 0 && (targetAcross < min || targetAcross > max))
+                        firstInvalidAcross = (ulong)tick;
+                    if (firstLost == 0 && sensor.PendingContact.NormalImpulse / dt <= rt.Monitor.LoadedFootN)
+                        firstLost = (ulong)tick;
+                    Row(rows, tick, governorTick, sensor.SampleTick, id, potential, active, (float)sensor.NormalImpulse / dt,
+                        V(sensor.Cop), sensor.LoadedAxisMin, sensor.LoadedAxisMax, min, max, targetAlong, targetAcross,
+                        rt.Regulator.IntegralDegFor(id), rt.Regulator.RollIntegralDegFor(id), V(feet[i].position), Q(feet[i].rotation),
+                        V(rt.Monitor.SystemCom), V(rt.Monitor.SystemVelocity), progress, rt.Pull.LiftHeld,
+                        roll.SecondaryAppliedAngleDeg, roll.SecondaryActualAngleDeg, roll.SecondaryDriveDemandNm,
+                        roll.SecondaryMaximumForceNm, rt.BarOnLegN,
+                        string.Join(";", sensor.ActivePoints.Select(p => $"{N(p.x)}|{N(p.y)}")));
+                    rows.AppendLine();
+                }
+                if (firstLost != 0)
+                    break;
+            }
+            File.WriteAllText(Path.Combine(F.EvidenceDirectory, "contact-sample-legacy.csv"), rows.ToString());
+            string summary = $"first support-margin disagreement {firstGap}, margin-eroded interval empty {firstEdge}, " +
+                $"along target outside measured extent {firstInvalidAlong}, across target outside measured extent {firstInvalidAcross}, first unloaded foot {firstLost}";
+            F.WriteEvidence("contact-sample-legacy.txt", summary);
+            Debug.Log(summary);
+            Assert.That(firstGap, Is.GreaterThan(0ul), summary);
+            Assert.That(firstEdge, Is.GreaterThan(0ul), summary);
+            Assert.That(firstInvalidAlong, Is.GreaterThan(0ul), summary);
+            Assert.That(firstInvalidAcross, Is.GreaterThan(0ul), summary);
+            Assert.That(firstLost, Is.GreaterThan(0ul), summary);
+        }
+
         private IEnumerator Run(bool nearStanding, float pulse, string arm, Result result)
         {
             DeadliftAttemptRuntime.BarProximityPath = nearStanding;
