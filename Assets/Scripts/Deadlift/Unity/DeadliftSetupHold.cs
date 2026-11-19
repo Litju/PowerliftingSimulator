@@ -500,6 +500,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
             PlayerIntentFrame intent,
             IPhysicalAthleteJointCommandSink sink)
         {
+            bool contactConsistent = Regulator?.ContactConsistentControl == true;
+            if (contactConsistent)
+                Regulator.PublishContacts(time.Tick > 0 ? time.Tick - 1 : 0);
             if (Pull != null)
             {
                 Pull.Update(intent);
@@ -569,7 +572,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 if (MovingPhaseSystemCom)
                     Regulator.CarriedBar = Pull.BarBody;
             }
-            Regulator?.Update(time.Tick > 0 ? time.Tick - 1 : 0);
+            if (!contactConsistent)
+                Regulator?.PublishContacts(time.Tick > 0 ? time.Tick - 1 : 0);
+            Regulator?.Update();
             float progress = LiftPath != null && Pull != null ? Pull.LiftProgress01 : 0f;
             foreach (KeyValuePair<string, Quaternion> target in _targets)
             {

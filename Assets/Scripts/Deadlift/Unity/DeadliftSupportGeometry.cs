@@ -72,6 +72,30 @@ namespace PowerliftingSimulator.Deadlift.Unity
             return inside ? nearest : -nearest;
         }
 
+        /// <summary>Closest admissible COP in a nonempty convex hull, including edge and point contact.</summary>
+        public static Vector2 ProjectCop(List<Vector2> hull, Vector2 target)
+        {
+            if (hull.Count == 1)
+                return hull[0];
+            if (SignedDistance(hull, target) >= 0f)
+                return target;
+            Vector2 closest = hull[0];
+            float error = float.PositiveInfinity;
+            for (int i = 0; i < hull.Count; i++)
+            {
+                Vector2 a = hull[i], edge = hull[(i + 1) % hull.Count] - a;
+                float along = Mathf.Clamp01(Vector2.Dot(target - a, edge) / Mathf.Max(1e-12f, edge.sqrMagnitude));
+                Vector2 candidate = a + along * edge;
+                float distance = (target - candidate).sqrMagnitude;
+                if (distance < error)
+                {
+                    closest = candidate;
+                    error = distance;
+                }
+            }
+            return closest;
+        }
+
         /// <summary>Foot COP (XZ) when the bar pulls down on the hands with <paramref name="handPullN"/>.</summary>
         public static Vector2 CopUnderHandPull(Vector3 athleteCom, float athleteWeightN, Vector3 barPoint, float handPullN)
         {

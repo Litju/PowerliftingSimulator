@@ -63,10 +63,22 @@ namespace PowerliftingSimulator.Deadlift
         [UnityTest, Timeout(300000)]
         public IEnumerator GAM70_CONTACT_SAMPLE_AUDIT()
         {
-            yield return AuditContactSample();
+            var baseline = new ContactAudit();
+            var corrected = new ContactAudit();
+            yield return AuditContactSample(false, baseline);
+            yield return AuditContactSample(true, corrected);
+            Assert.That(corrected.BeforeSwitch, Is.EqualTo(baseline.BeforeSwitch));
+            Assert.That(corrected.CheckedFreshSamples, Is.GreaterThan(0));
+            Assert.That(corrected.CheckedProjectedTargets, Is.GreaterThan(0));
         }
 
-        private IEnumerator AuditContactSample()
+        private sealed class ContactAudit
+        {
+            public string BeforeSwitch;
+            public int CheckedFreshSamples, CheckedProjectedTargets;
+        }
+
+        private IEnumerator AuditContactSample(bool useCorrection, ContactAudit audit)
         {
             DeadliftAttemptRuntime.BarProximityPath = true;
             yield return DeadliftPlantWorld.Load();
@@ -81,13 +93,22 @@ namespace PowerliftingSimulator.Deadlift
             for (int tick = 1; tick <= 900; tick++)
             {
                 rt.Pull.IntentOverride01 = tick >= 301 ? 1f : 0f;
+                if (audit.BeforeSwitch == null && rt.Pull.LiftProgress01 >= 0.76f)
+                {
+                    audit.BeforeSwitch = $"{rt.Tick}:{V(rt.Bar.position)}:{V(rt.Bar.linearVelocity)}:" +
+                        string.Join(":", feet.Select(foot => $"{V(foot.position)}:{Q(foot.rotation)}"));
+                    rt.Regulator.ContactConsistentControl = useCorrection;
+                }
                 _world.Step(1);
                 if (rt.Pull.Phase != DeadliftPullPhase.Lifting)
                     continue;
                 ulong governorTick = rt.Monitor.ContactSampleTick;
                 float potential = rt.Monitor.MarginM, active = rt.Monitor.ActiveMarginM;
                 float progress = rt.Pull.LiftProgress01;
-                Assert.That(governorTick, Is.EqualTo((ulong)tick - 2));
+                bool corrected = rt.Regulator.ContactConsistentControl;
+                Assert.That(governorTick, Is.EqualTo((ulong)tick - (corrected ? 1ul : 2ul)));
+                if (corrected)
+                    audit.CheckedFreshSamples++;
                 foreach (var sensor in sensors)
                     Assert.That(sensor.SampleTick, Is.EqualTo((ulong)tick - 1));
                 if (firstGap == 0 && potential >= rt.Pull.MinSupportMarginM && active < rt.Pull.MinSupportMarginM)
@@ -101,6 +122,14 @@ namespace PowerliftingSimulator.Deadlift
                     float max = projected.Length > 0 ? projected.Max() : float.NaN;
                     string id = Sides[i] + "_foot";
                     float targetAlong = rt.Regulator.TargetAlongFor(id), targetAcross = rt.Regulator.TargetAcrossFor(id);
+                    if (corrected && sensor.NormalImpulse > 1e-6)
+                    {
+                        Vector3 target = targetAlong * sensor.Axis + targetAcross * across;
+                        Vector2 targetXZ = new Vector2(target.x, target.z);
+                        var hull = DeadliftSupportGeometry.Hull(sensor.ActivePoints);
+                        Assert.That(Vector2.Distance(targetXZ, DeadliftSupportGeometry.ProjectCop(hull, targetXZ)), Is.LessThan(1e-6f));
+                        audit.CheckedProjectedTargets++;
+                    }
                     var roll = _world.Rig.PoweredController.GetJoint(id).PostPhysicsDiagnostic;
                     if (firstEdge == 0 && sensor.LoadedAxisMax - sensor.LoadedAxisMin <= rt.Regulator.SupportMarginM * 2)
                         firstEdge = (ulong)tick;
@@ -122,16 +151,24 @@ namespace PowerliftingSimulator.Deadlift
                 if (firstLost != 0)
                     break;
             }
-            File.WriteAllText(Path.Combine(F.EvidenceDirectory, "contact-sample-legacy.csv"), rows.ToString());
+            string arm = useCorrection ? "corrected" : "legacy";
+            File.WriteAllText(Path.Combine(F.EvidenceDirectory, $"contact-sample-{arm}.csv"), rows.ToString());
             string summary = $"first support-margin disagreement {firstGap}, margin-eroded interval empty {firstEdge}, " +
                 $"along target outside measured extent {firstInvalidAlong}, across target outside measured extent {firstInvalidAcross}, first unloaded foot {firstLost}";
-            F.WriteEvidence("contact-sample-legacy.txt", summary);
-            Debug.Log(summary);
+            F.WriteEvidence($"contact-sample-{arm}.txt", summary);
+            if (useCorrection)
+            {
+                yield return _world.Teardown();
+                _world = null;
+                yield break;
+            }
             Assert.That(firstGap, Is.GreaterThan(0ul), summary);
             Assert.That(firstEdge, Is.GreaterThan(0ul), summary);
             Assert.That(firstInvalidAlong, Is.GreaterThan(0ul), summary);
             Assert.That(firstInvalidAcross, Is.GreaterThan(0ul), summary);
             Assert.That(firstLost, Is.GreaterThan(0ul), summary);
+            yield return _world.Teardown();
+            _world = null;
         }
 
         private IEnumerator Run(bool nearStanding, float pulse, string arm, Result result)

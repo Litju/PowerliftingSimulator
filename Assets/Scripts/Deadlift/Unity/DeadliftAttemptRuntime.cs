@@ -179,7 +179,13 @@ namespace PowerliftingSimulator.Deadlift.Unity
             Hold.MovingPhaseIntegralLeakSeconds = 0.10f;
             Hold.MovingPhaseSystemCom = true;
             Monitor = new DeadliftSupportMonitor(_rig, _barbell.Body, _rig.PlatformCollider);
-            Pull.SupportMarginM = () => Monitor.Update();
+            Pull.SupportMarginM = () =>
+            {
+                float potential = Monitor.Update();
+                if (Regulator.ContactConsistentControl && (Monitor.LoadedFeet < 2 || Monitor.ActiveMarginM < 0f))
+                    return float.NegativeInfinity;
+                return potential;
+            };
             Pull.ReferenceDemand = () => Hold.HandLoadReference.MaxDemandFraction;
             if (UpperChainPreparation || PreparedClearanceRejoin)
                 Pull.GroundedReady = PrepareForPull;

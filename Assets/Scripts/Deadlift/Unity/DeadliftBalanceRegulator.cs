@@ -52,7 +52,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
             public DeadliftFootPressureSensor Sensor;
             public Vector3 Axis;
             public bool Engaged;
-            public float T0, AcrossIntegral, HipOffset, RollOffset, RollIntegral, LastAcross = float.NaN;
+            public float T0, LastAcrossTarget = float.NaN, AcrossIntegral, HipOffset, RollOffset, RollIntegral, LastAcross = float.NaN;
             public float S0, Integral, Offset, LastDeviationCommand, LastS = float.NaN, LastTarget = float.NaN;
             public float GainScale = 1f;
         }
@@ -66,6 +66,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
         }
 
         /// <summary>Enables the outer COM term d; when false each foot COP is servoed to its statics target only.</summary>
+        /// <summary>Experimental loaded-contact COP validity. Stock controls use the qualified law.</summary>
+        public bool ContactConsistentControl { get; set; }
+
         public bool ComFeedback { get; set; } = true;
         public float Kx { get; set; } = 0.4f;
         public float KvSeconds { get; set; } = 0.25f;
@@ -186,7 +189,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
         /// <summary>Measured along-sole COP (m, world projection) on the last completed tick.</summary>
         public float MeasuredAlongFor(string footId) => footId == "left_foot" ? _feet[0].LastS : footId == "right_foot" ? _feet[1].LastS : 0f;
         /// <summary>Across-sole target (m, world projection); set when the roll loop is active.</summary>
-        public float TargetAcrossFor(string footId) => footId == "left_foot" ? _feet[0].T0 : footId == "right_foot" ? _feet[1].T0 : 0f;
+        public float TargetAcrossFor(string footId) => footId == "left_foot" ? _feet[0].LastAcrossTarget : footId == "right_foot" ? _feet[1].LastAcrossTarget : 0f;
         /// <summary>Measured across-sole COP (m, world projection) on the last completed tick.</summary>
         public float MeasuredAcrossFor(string footId) => footId == "left_foot" ? _feet[0].LastAcross : footId == "right_foot" ? _feet[1].LastAcross : 0f;
         public float LastTargetCopZ => _feet[0].LastTarget;
@@ -227,8 +230,14 @@ namespace PowerliftingSimulator.Deadlift.Unity
             return new Foot { Id = id, Sensor = s, Axis = f };
         }
 
-        /// <summary>Called once per tick before commands are prepared; consumes the last completed tick's contacts.</summary>
-        public void Update(ulong sampleTick)
+        internal void PublishContacts(ulong sampleTick)
+        {
+            foreach (Foot foot in _feet)
+                foot.Sensor.CompleteTick(sampleTick);
+        }
+
+        /// <summary>Shapes joint references from the published foot contacts.</summary>
+        public void Update()
         {
             float mass = 0f;
             Vector3 c = Vector3.zero, p = Vector3.zero;
@@ -261,7 +270,6 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 for (int i = 0; i < 2; i++)
                 {
                     Foot f = _feet[i];
-                    f.Sensor.CompleteTick(sampleTick);
                     f.LastS = f.Sensor.NormalImpulse > 1e-6 ? Vector3.Dot(f.Sensor.Cop, f.Axis) : float.NaN;
                     f.Offset = _frozenAt[i] + (i == 0 ? IdentificationStepDegLeft : IdentificationStepDegRight);
                 }
@@ -272,10 +280,14 @@ namespace PowerliftingSimulator.Deadlift.Unity
             bool saturated = false;
             foreach (Foot foot in _feet)
             {
-                foot.Sensor.CompleteTick(sampleTick);
                 if (foot.Sensor.NormalImpulse <= 1e-6)
                 {
-                    foot.LastS = float.NaN; // no measured support: hold, never invent a COP
+                    foot.LastS = float.NaN;
+                    if (ContactConsistentControl)
+                    {
+                        foot.LastTarget = foot.LastAcrossTarget = float.NaN;
+                        foot.LastDeviationCommand = 0f;
+                    }
                     continue;
                 }
                 float s = Vector3.Dot(foot.Sensor.Cop, foot.Axis);
@@ -291,13 +303,39 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 }
                 float target = foot.S0 + (Mathf.Abs(foot.Axis.z) > 0.2f ? d / foot.Axis.z : 0f);
                 float lo = foot.Sensor.LoadedAxisMin + SupportMarginM, hi = foot.Sensor.LoadedAxisMax - SupportMarginM;
-                if (hi > lo)
+                Vector3 across = Vector3.Cross(Vector3.up, foot.Axis);
+                float a = Vector3.Dot(foot.Sensor.Cop, across);
+                float acrossTarget = foot.T0;
+                bool integrateAlong = true, integrateAcross = true;
+                if (ContactConsistentControl)
+                {
+                    if (RollLoop || AcrossLoop)
+                        acrossTarget = FootCopTarget != null ? Vector3.Dot(FootCopTarget(foot.Id), across)
+                            : float.IsNaN(foot.LastAcross) ? a : foot.T0;
+                    else
+                        acrossTarget = a;
+                    foot.T0 = acrossTarget;
+
+                    float alongWithMargin = hi > lo ? Mathf.Clamp(target, lo, hi) : target;
+                    Vector3 reference = alongWithMargin * foot.Axis + acrossTarget * across;
+                    Vector2 projected = DeadliftSupportGeometry.ProjectCop(DeadliftSupportGeometry.Hull(foot.Sensor.ActivePoints),
+                        new Vector2(reference.x, reference.z));
+                    Vector3 cop = new Vector3(projected.x, 0f, projected.y);
+                    float appliedAlong = Vector3.Dot(cop, foot.Axis);
+                    float appliedAcross = Vector3.Dot(cop, across);
+                    // Preserve existing bias/leak while suppressing integration of unreachable COP error.
+                    integrateAlong = hi > lo && Mathf.Abs(appliedAlong - target) <= 1e-6f;
+                    integrateAcross = Mathf.Abs(appliedAcross - acrossTarget) <= 1e-6f;
+                    target = appliedAlong;
+                    acrossTarget = appliedAcross;
+                }
+                else if (hi > lo)
                     target = Mathf.Clamp(target, lo, hi);
                 float e = target - s;
                 float g = FootLoadRatio != null ? FootLoadRatio(foot.Id) : 1f;
                 foot.GainScale = g;
                 float leak = IntegralLeakSeconds > 0f ? Mathf.Clamp01((float)SimulationConstants.FixedDeltaTimeSeconds / IntegralLeakSeconds) : 0f;
-                foot.Integral = Mathf.Clamp((1f - leak) * foot.Integral + g * KiDegPerMPerTick * e, -MaxOffsetDeg, MaxOffsetDeg);
+                foot.Integral = Mathf.Clamp((1f - leak) * foot.Integral + (integrateAlong ? g * KiDegPerMPerTick * e : 0f), -MaxOffsetDeg, MaxOffsetDeg);
                 float next;
                 if (Predictive)
                 {
@@ -324,14 +362,17 @@ namespace PowerliftingSimulator.Deadlift.Unity
 
                 if (RollLoop)
                 {
-                    Vector3 across = Vector3.Cross(Vector3.up, foot.Axis);
-                    float a = Vector3.Dot(foot.Sensor.Cop, across);
-                    if (FootCopTarget != null)
-                        foot.T0 = Vector3.Dot(FootCopTarget(foot.Id), across);
-                    else if (float.IsNaN(foot.LastAcross))
-                        foot.T0 = a;
-                    float ea = foot.T0 - a;
-                    foot.RollIntegral = Mathf.Clamp((1f - leak) * foot.RollIntegral + g * RollKiDegPerMPerTick * ea, -MaxRollOffsetDeg, MaxRollOffsetDeg);
+                    if (!ContactConsistentControl)
+                    {
+                        if (FootCopTarget != null)
+                            foot.T0 = Vector3.Dot(FootCopTarget(foot.Id), across);
+                        else if (float.IsNaN(foot.LastAcross))
+                            foot.T0 = a;
+                        acrossTarget = foot.T0;
+                    }
+                    float ea = acrossTarget - a;
+                    foot.LastAcrossTarget = acrossTarget;
+                    foot.RollIntegral = Mathf.Clamp((1f - leak) * foot.RollIntegral + (integrateAcross ? g * RollKiDegPerMPerTick * ea : 0f), -MaxRollOffsetDeg, MaxRollOffsetDeg);
                     float r = g * RollKpDegPerM * ea + foot.RollIntegral;
                     saturated |= Mathf.Abs(r) > MaxRollOffsetDeg;
                     foot.RollOffset = Mathf.Clamp(r, -MaxRollOffsetDeg, MaxRollOffsetDeg);
@@ -339,14 +380,17 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 }
                 if (AcrossLoop)
                 {
-                    Vector3 across = Vector3.Cross(Vector3.up, foot.Axis);
-                    float a = Vector3.Dot(foot.Sensor.Cop, across);
-                    if (FootCopTarget != null)
-                        foot.T0 = Vector3.Dot(FootCopTarget(foot.Id), across);
-                    else if (float.IsNaN(foot.LastAcross))
-                        foot.T0 = a;
-                    float ea = foot.T0 - a;
-                    foot.AcrossIntegral = Mathf.Clamp(foot.AcrossIntegral + AcrossKiDegPerMPerTick * ea, -MaxHipOffsetDeg, MaxHipOffsetDeg);
+                    if (!ContactConsistentControl)
+                    {
+                        if (FootCopTarget != null)
+                            foot.T0 = Vector3.Dot(FootCopTarget(foot.Id), across);
+                        else if (float.IsNaN(foot.LastAcross))
+                            foot.T0 = a;
+                        acrossTarget = foot.T0;
+                    }
+                    float ea = acrossTarget - a;
+                    foot.LastAcrossTarget = acrossTarget;
+                    foot.AcrossIntegral = Mathf.Clamp(foot.AcrossIntegral + (integrateAcross ? AcrossKiDegPerMPerTick * ea : 0f), -MaxHipOffsetDeg, MaxHipOffsetDeg);
                     float h = AcrossKpDegPerM * ea + foot.AcrossIntegral;
                     saturated |= Mathf.Abs(h) > MaxHipOffsetDeg;
                     foot.HipOffset = Mathf.Clamp(h, -MaxHipOffsetDeg, MaxHipOffsetDeg);
