@@ -59,12 +59,22 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public Vector3 CopL, CopR;
         public float CopLMarginM, CopRMarginM;
         public float BarSagittalMomentResidualNm;
+        public Vector3 HandCoupleOnEachHandNm { get; private set; }
         public readonly List<JointLoad> Joints = new List<JointLoad>();
         public readonly List<string> Violations = new List<string>();
         public bool Feasible => Violations.Count == 0;
 
         public static DeadliftContactStatics Solve(PhysicalAthleteRig rig, Rigidbody bar, Collider leftPlate, Collider rightPlate,
-            Vector3 leftGripWorld, Vector3 rightGripWorld, float handPullN, float ceilingScale = 1f)
+            Vector3 leftGripWorld, Vector3 rightGripWorld, float handPullN, float ceilingScale = 1f) =>
+            Solve(rig, bar, leftPlate, rightPlate, leftGripWorld, rightGripWorld, handPullN, ceilingScale, false);
+
+        /// <summary>One suspended-bar equilibrium member with vertical grip forces and a balancing grip couple.</summary>
+        public static DeadliftContactStatics SolveSuspended(PhysicalAthleteRig rig, Rigidbody bar,
+            Vector3 leftGripWorld, Vector3 rightGripWorld) =>
+            Solve(rig, bar, null, null, leftGripWorld, rightGripWorld, bar.mass * -Physics.gravity.y * 0.5f, 1f, true);
+
+        private static DeadliftContactStatics Solve(PhysicalAthleteRig rig, Rigidbody bar, Collider leftPlate, Collider rightPlate,
+            Vector3 leftGripWorld, Vector3 rightGripWorld, float handPullN, float ceilingScale, bool suspended)
         {
             if (rig == null) throw new ArgumentNullException(nameof(rig));
             if (bar == null) throw new ArgumentNullException(nameof(bar));
@@ -74,18 +84,27 @@ namespace PowerliftingSimulator.Deadlift.Unity
             Vector3 cb = bar.worldCenterOfMass;
 
             // ---- bar: vertical force and lateral (about world Z) moment ----
-            float xl = leftPlate.bounds.center.x, xr = rightPlate.bounds.center.x;
-            // P_L + P_R = W_b - 2H ; P_L xl + P_R xr = W_b xb - H (xgl + xgr)
-            float sumP = wb - 2f * handPullN;
-            float momP = wb * cb.x - handPullN * (leftGripWorld.x + rightGripWorld.x);
-            s.PlateRN = (momP - sumP * xl) / (xr - xl);
-            s.PlateLN = sumP - s.PlateRN;
-            // sagittal (about world X) moment of the vertical set about the bar COM; plates touch directly under the plate centres
-            float zl = leftPlate.bounds.center.z, zr = rightPlate.bounds.center.z;
-            s.BarSagittalMomentResidualNm = s.PlateLN * (zl - cb.z) + s.PlateRN * (zr - cb.z) +
-                                            handPullN * (leftGripWorld.z - cb.z + rightGripWorld.z - cb.z);
-            if (s.PlateLN < 0f || s.PlateRN < 0f)
-                s.Violations.Add(string.Format(CultureInfo.InvariantCulture, "plate normal negative: L {0:F1} R {1:F1} N (bar would lift)", s.PlateLN, s.PlateRN));
+            if (suspended)
+            {
+                Vector3 onBar = Vector3.up * handPullN;
+                Vector3 momentOnBar = Vector3.Cross(leftGripWorld - cb, onBar) + Vector3.Cross(rightGripWorld - cb, onBar);
+                s.HandCoupleOnEachHandNm = 0.5f * momentOnBar;
+            }
+            else
+            {
+                float xl = leftPlate.bounds.center.x, xr = rightPlate.bounds.center.x;
+                // P_L + P_R = W_b - 2H ; P_L xl + P_R xr = W_b xb - H (xgl + xgr)
+                float sumP = wb - 2f * handPullN;
+                float momP = wb * cb.x - handPullN * (leftGripWorld.x + rightGripWorld.x);
+                s.PlateRN = (momP - sumP * xl) / (xr - xl);
+                s.PlateLN = sumP - s.PlateRN;
+                // sagittal (about world X) moment of the vertical set about the bar COM; plates touch directly under the plate centres
+                float zl = leftPlate.bounds.center.z, zr = rightPlate.bounds.center.z;
+                s.BarSagittalMomentResidualNm = s.PlateLN * (zl - cb.z) + s.PlateRN * (zr - cb.z) +
+                                                handPullN * (leftGripWorld.z - cb.z + rightGripWorld.z - cb.z);
+                if (s.PlateLN < 0f || s.PlateRN < 0f)
+                    s.Violations.Add(string.Format(CultureInfo.InvariantCulture, "plate normal negative: L {0:F1} R {1:F1} N (bar would lift)", s.PlateLN, s.PlateRN));
+            }
 
             // ---- athlete: feet ----
             float ma = 0f; Vector3 mc = Vector3.zero;
@@ -95,6 +114,11 @@ namespace PowerliftingSimulator.Deadlift.Unity
             float n = wa + 2f * handPullN;
             float zCop = (wa * ca.z + handPullN * (leftGripWorld.z + rightGripWorld.z)) / n;
             float xMoment = wa * ca.x + handPullN * (leftGripWorld.x + rightGripWorld.x);
+            if (suspended)
+            {
+                zCop = (wa * ca.z + wb * cb.z) / n;
+                xMoment = wa * ca.x + wb * cb.x;
+            }
             var soles = new Dictionary<string, Vector3[]>();
             Vector3 Centerline(string side)
             {
@@ -141,6 +165,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     if (!InSubtree(recipe.Id, joint.Id)) continue;
                     Rigidbody b = rig.Segments[recipe.Id].Body;
                     m += Vector3.Cross(b.worldCenterOfMass - p, b.mass * Physics.gravity);
+                    if (suspended && (recipe.Id == "left_hand" || recipe.Id == "right_hand"))
+                        m += s.HandCoupleOnEachHandNm;
                     foreach (var f in forces)
                         if (f.body == recipe.Id)
                             m += Vector3.Cross(f.at - p, f.f);

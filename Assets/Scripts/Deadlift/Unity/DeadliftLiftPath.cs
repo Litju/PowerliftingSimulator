@@ -282,12 +282,13 @@ namespace PowerliftingSimulator.Deadlift.Unity
             return q;
         }
 
-        private List<double> Residuals(double[] x, double[] previous, float rise, bool lockout, out double hardCost)
+        private List<double> Residuals(double[] x, double[] previous, float rise, bool lockout, out double hardCost, bool endpoint = false)
         {
             Pose pelvis = _legacy.PelvisPoseOf(x);
             Dictionary<string, Quaternion> logical = LogicalOf(x);
             Dictionary<string, Pose> poses = _kin.Solve(pelvis, logical);
             var r = new List<double>(160);
+            double closureWeight = endpoint ? 8d : 1d;
 
             foreach (bool left in new[] { true, false })
             {
@@ -295,8 +296,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 Pose foot = poses[left ? "left_foot" : "right_foot"];
                 Vector3 dp = foot.position - target.position;
                 Vector3 dr = RotationError(target.rotation, foot.rotation);
-                r.Add(200d * dp.x); r.Add(200d * dp.y); r.Add(200d * dp.z);
-                r.Add(60d * dr.x); r.Add(60d * dr.y); r.Add(60d * dr.z);
+                r.Add(closureWeight * 200d * dp.x); r.Add(closureWeight * 200d * dp.y); r.Add(closureWeight * 200d * dp.z);
+                r.Add(closureWeight * 60d * dr.x); r.Add(closureWeight * 60d * dr.y); r.Add(closureWeight * 60d * dr.z);
                 Mark(r, (left ? "L" : "R") + " foot pose");
             }
 
@@ -315,8 +316,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 Vector3 a0 = left ? _leftAnchor0 : _rightAnchor0;
                 Vector3 da = anchor - (a0 + new Vector3(0f, barRise, shiftZ));
                 Vector3 dr = RotationError(left ? _leftHand : _rightHand, hand.rotation);
-                r.Add(200d * da.x); r.Add(200d * da.y); r.Add(200d * da.z);
-                r.Add(40d * dr.x); r.Add(40d * dr.y); r.Add(40d * dr.z);
+                r.Add(closureWeight * 200d * da.x); r.Add(closureWeight * 200d * da.y); r.Add(closureWeight * 200d * da.z);
+                r.Add(closureWeight * 40d * dr.x); r.Add(closureWeight * 40d * dr.y); r.Add(closureWeight * 40d * dr.z);
                 Mark(r, (left ? "L" : "R") + " hand on bar");
             }
 
@@ -389,6 +390,21 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 r.Add(60d * Mathf.Max(0f, Mathf.Abs(moment) - ShoulderDemandMax * _shoulderCapacityNm) / _shoulderCapacityNm);
             }
             Mark(r, "shoulder static moment");
+
+            if (endpoint)
+            {
+                Collider abdomen = _rig.Segments["abdomen"].Collider;
+                Pose trunk = poses["abdomen"];
+                foreach (string id in new[] { "left_forearm", "right_forearm" })
+                {
+                    Collider arm = _rig.Segments[id].Collider;
+                    Pose forearm = poses[id];
+                    bool overlaps = Physics.ComputePenetration(abdomen, trunk.position, trunk.rotation,
+                        arm, forearm.position, forearm.rotation, out _, out float depth);
+                    r.Add(overlaps ? 2000d * depth : 0d);
+                }
+                Mark(r, "forearm/abdomen clearance");
+            }
 
             if (lockout)
             {
@@ -535,6 +551,35 @@ namespace PowerliftingSimulator.Deadlift.Unity
             };
         }
 
+        /// <summary>Solves the standing endpoint alone, without building an ascent trajectory.</summary>
+        public Key SolveEndpoint(int iterations = 600)
+        {
+            double[] setup = (double[])_setup.Solution.Clone();
+            if (BarProximity)
+                Array.Resize(ref setup, _baseCount + 2);
+            return SolveEndpoint(StandingSeed(setup), iterations, endpoint: true);
+        }
+
+        private Key SolveEndpoint(double[] stand, int iterations, bool endpoint = false)
+        {
+            double[] solution = BenchKinematics.LevenbergMarquardt(stand, v => Residuals(v, null, 0f, true, out _, endpoint), iterations, out double cost);
+            Residuals(solution, null, 0f, true, out double hard, endpoint);
+            return Evaluate(solution, 0f, true, cost, hard);
+        }
+
+        private static double[] StandingSeed(double[] x0)
+        {
+            // Lockout: seeded from a standing configuration of the same vector.
+            double[] stand = (double[])x0.Clone();
+            stand[PelvisY] = x0[PelvisY] + 0.35; stand[PelvisPitch] = 0.05;
+            foreach (int o in new[] { LeftLeg, RightLeg })
+            {
+                stand[o] = 0.15 * x0[o]; stand[o + 1] = x0[o + 1]; stand[o + 2] = x0[o + 2];
+                stand[o + 3] = 0.05 * Math.Sign(x0[o + 3]); stand[o + 4] = 0.2 * x0[o + 4];
+            }
+            return stand;
+        }
+
         /// <summary>
         /// Solves the lockout key first (its bar height is an output), then a
         /// warm-started sweep of keys at <paramref name="stepM"/> bar rise.
@@ -547,14 +592,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
             if (BarProximity)
                 Array.Resize(ref x0, _baseCount + 2);   // ankle roll starts at the setup's zero
 
-            // Lockout: seeded from a standing configuration of the same vector.
-            double[] stand = (double[])x0.Clone();
-            stand[PelvisY] = x0[PelvisY] + 0.35; stand[PelvisPitch] = 0.05;
-            foreach (int o in new[] { LeftLeg, RightLeg })
-            {
-                stand[o] = 0.15 * x0[o]; stand[o + 1] = x0[o + 1]; stand[o + 2] = x0[o + 2];
-                stand[o + 3] = 0.05 * Math.Sign(x0[o + 3]); stand[o + 4] = 0.2 * x0[o + 4];
-            }
+            double[] stand = StandingSeed(x0);
             if (BarProximity)
             {
                 // The hip-extension schedule is normalized by the Gate 6 lockout (no proximity,
@@ -569,9 +607,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 _scheduleLockoutRise = Evaluate(lock0, 0f, true, c0, 0d).BarRiseM;
                 BarProximity = true;
             }
-            double[] lock1 = BenchKinematics.LevenbergMarquardt(stand, v => Residuals(v, null, 0f, true, out _), iterations * 2, out double lockCost);
-            Residuals(lock1, null, 0f, true, out double lockHard);
-            Key lockKey = Evaluate(lock1, 0f, true, lockCost, lockHard);
+            Key lockKey = SolveEndpoint(stand, iterations * 2);
             _plannedLockoutRise = lockKey.BarRiseM;
             if (!BarProximity)
                 _scheduleLockoutRise = _plannedLockoutRise;
