@@ -29,6 +29,8 @@ namespace PowerliftingSimulator.Deadlift
             public bool Good, Released;
             public ulong Down;
             public string RefereeSummary;
+            public ulong ContinuationTick;
+            public float PrefixSweptGap;
             public float MinGap = float.PositiveInfinity;
             public float MinSupport = float.PositiveInfinity;
             public float MinAirborneFootN = float.PositiveInfinity;
@@ -200,6 +202,34 @@ namespace PowerliftingSimulator.Deadlift
             }
         }
 
+        [UnityTest, Timeout(600000), Explicit("GAM-70 measured post-knee approach into the suspended endpoint")]
+        public IEnumerator GAM70_POST_KNEE_TO_CLOSE_LOCKOUT()
+        {
+            var candidate = new Run();
+            yield return Trace("post-knee-to-close", 284, candidate, retainPreparation: true, closedPrefix: true,
+                throughKnee: true, postKneeProbe: true, lastTick: 1150);
+            Assert.That(candidate.ContinuationTick, Is.EqualTo(538ul));
+            Assert.That(candidate.PrefixSweptGap, Is.GreaterThan(0f));
+            Assert.That(candidate.Stop, Is.GreaterThan(candidate.ContinuationTick));
+        }
+
+        [UnityTest, Timeout(600000), Explicit("GAM-70 post-knee approach using the planned suspended preload")]
+        public IEnumerator GAM70_POST_KNEE_SUSPENDED_PRELOAD()
+        {
+            var candidate = new Run();
+            yield return Trace("post-knee-suspended-preload", 284, candidate, retainPreparation: true, closedPrefix: true,
+                throughKnee: true, postKneeProbe: true, suspendedPreload: true, lastTick: 1150);
+            Assert.That(candidate.ContinuationTick, Is.EqualTo(538ul));
+            Assert.That(candidate.PrefixSweptGap, Is.GreaterThan(0f));
+            Assert.That(candidate.StopReason, Is.EqualTo("motionless lockout"), candidate.RefereeSummary);
+            Assert.That(candidate.Down, Is.EqualTo(candidate.Stop));
+            Assert.That(candidate.FirstPenetration, Is.Zero);
+            Assert.That(candidate.Sweep.MinBound, Is.GreaterThan(0f));
+            Assert.That(candidate.MinAirborneFootN, Is.GreaterThan(300f));
+            Assert.That(candidate.MinSupport, Is.GreaterThan(0.04f));
+            Assert.That(candidate.MeanLockoutGap, Is.InRange(0d, 0.12d));
+        }
+
         private static void AssertClearance(Run prepared, string endpoint)
         {
             Assert.That(prepared.Pull, Is.EqualTo(301ul));
@@ -212,7 +242,7 @@ namespace PowerliftingSimulator.Deadlift
             Debug.Log($"Prepared realized substeps: {prepared.Sweep.Samples}, min gap {prepared.Sweep.MinGap * 1000f:F2} mm, swept bound {prepared.Sweep.MinBound * 1000f:F2} mm");
         }
 
-        private IEnumerator Trace(string arm, int driveTick, Run result, bool retainPreparation = false, bool closedPrefix = false, bool throughKnee = false, bool complete = false, bool centered = false, float rejoinEnd = 0f, float lateShoulderDeg = 0f, bool settledShoulder = false, bool runtimeRejoin = false, int earliestPull = 0, int lastTick = 800)
+        private IEnumerator Trace(string arm, int driveTick, Run result, bool retainPreparation = false, bool closedPrefix = false, bool throughKnee = false, bool complete = false, bool centered = false, float rejoinEnd = 0f, float lateShoulderDeg = 0f, bool settledShoulder = false, bool runtimeRejoin = false, int earliestPull = 0, int lastTick = 800, bool postKneeProbe = false, bool suspendedPreload = false)
         {
             yield return DeadliftPlantWorld.Load();
             _world = DeadliftPlantWorld.Current;
@@ -240,7 +270,7 @@ namespace PowerliftingSimulator.Deadlift
             var channels = new StringBuilder("tick,joint,planQ,requestedQ,appliedQ,actualQ,error,targetW,actualW,xDemandNm,xMaxNm,xFraction,xSpring,xDamper,yzDemandNm,yzMaxNm,yzFraction,yzSpring,yzDamper,zDemandNm,zMaxNm,zFraction,zSpring,zDamper,zRequestedDeg,zAppliedDeg,zActualDeg,zActualW,zRateLimited,limitProximity,zLimitProximity,solverTorque,staticReferenceNm\n");
             var leftShoulder = _world.Rig.PoweredController.GetJoint("left_upper_arm");
             var rightShoulder = _world.Rig.PoweredController.GetJoint("right_upper_arm");
-            DeadliftPreparedAscentPlan closed = null;
+            DeadliftPreparedAscentPlan closed = null, continuation = null;
             DeadliftFootCopSensor substepContact = null;
             float startBarY = 0f, maxProgress = 0f;
             Quaternion leftStart = Quaternion.identity, rightStart = Quaternion.identity;
@@ -321,6 +351,68 @@ namespace PowerliftingSimulator.Deadlift
                         }
                     }
                 }
+                if (postKneeProbe && closed != null && continuation == null &&
+                    rt.Bar.position.y - bar0.y >= rt.Path.KneePassageRiseM)
+                {
+                    result.ContinuationTick = rt.Tick;
+                    result.PrefixSweptGap = result.Sweep.MinBound;
+                    var endPath = new DeadliftLiftPath(_world.Rig, rt.Measurements, rt.Model, rt.Bar.mass) { BarProximity = true };
+                    var endpoint = endPath.SolveEndpoint();
+                    Quaternion barOrientation = Quaternion.AngleAxis(180f / PhysicalBarbell.DefaultPlateColliderSides, Vector3.right);
+                    continuation = DeadliftPreparedAscentPlan.ContinueToLockout(rt, _world.Rig, endpoint, barOrientation);
+                    var constraints = continuation.MeasureInterpolation();
+                    Debug.Log($"Post-knee plan from tick {rt.Tick}: minimum {constraints.MinGap * 1000f:F2} mm, swept {constraints.SweptGap * 1000f:F2} mm, closure {constraints.PositionError * 1000f:F3} mm / {constraints.RotationError:F3} deg");
+                    Assert.That(constraints.SweptGap, Is.GreaterThan(0f));
+                    Assert.That(constraints.PositionError, Is.LessThan(0.001f));
+                    Assert.That(constraints.RotationError, Is.LessThan(0.3f));
+                    rt.Hold.AscentReferenceOverride = continuation.Target;
+                    rt.Regulator.ContactConsistentControl = true;
+                    rt.Regulator.ComPositionAnchor = true;
+                    var centers = feet.Select(box => box.transform.TransformPoint(box.center - 0.5f * box.size.y * Vector3.up)).ToArray();
+                    float entryZ = continuation.SystemComZ(rt.Pull.LiftProgress01);
+                    float entryProgress = rt.Pull.LiftProgress01;
+                    (float Z, float Vz) ComReference()
+                    {
+                        float s0 = rt.Pull.LiftProgress01;
+                        float s1 = Mathf.Min(1f, s0 + 0.001f);
+                        float z0 = continuation.SystemComZ(s0);
+                        float blend = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((s0 - entryProgress) / 0.035f));
+                        float velocity = s1 > s0 ? (continuation.SystemComZ(s1) - z0) / (s1 - s0) * rt.Pull.LiftRate01PerSecond : 0f;
+                        return (Mathf.Lerp(entryZ, z0, blend), velocity);
+                    }
+                    rt.Regulator.PlannedCom = ComReference;
+                    var previousTarget = rt.Regulator.FootCopTarget;
+                    rt.Regulator.FootCopTarget = id =>
+                    {
+                        int i = id == "left_foot" ? 0 : 1;
+                        float s0 = rt.Pull.LiftProgress01;
+                        float z = continuation.SystemComZ(s0);
+                        Vector3 axis = sensors[i].Axis;
+                        Vector3 target = centers[i] + axis * ((z - centers[i].z) / axis.z);
+                        float blend = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((s0 - entryProgress) / 0.035f));
+                        return Vector3.Lerp(previousTarget(id), target, blend);
+                    };
+                    if (suspendedPreload)
+                    {
+                        rt.Hold.SuspendedPlanReference = progress =>
+                        {
+                            var sample = continuation.At(progress);
+                            Vector3 Anchor(string id, BenchGrip grip)
+                            {
+                                Pose pose = sample.Poses[id];
+                                return pose.position + pose.rotation * grip.HandAnchorLocal;
+                            }
+                            var statics = DeadliftContactStatics.SolveSuspended(_world.Rig, rt.Bar, sample.Bar, sample.Poses,
+                                Anchor("left_hand", rt.LeftGrip), Anchor("right_hand", rt.RightGrip));
+                            Assert.That(statics.Feasible, Is.True, statics.Describe());
+                            float blend = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((progress - entryProgress) / 0.035f));
+                            return (statics, blend);
+                        };
+                    }
+                    var ankles = joints.Where(j => j.Recipe.Family == "ankle").ToArray();
+                    rt.Pull.ReferenceDemand = () => Mathf.Max(rt.Hold.HandLoadReference.MaxDemandFraction,
+                        ankles.Max(j => Mathf.Max(j.PostPhysicsDiagnostic.TwistDriveDemandFraction, j.PostPhysicsDiagnostic.SecondaryDriveDemandFraction)));
+                }
                 if (tick < 280)
                     continue;
 
@@ -357,13 +449,14 @@ namespace PowerliftingSimulator.Deadlift
                 var planGap = DeadliftBarLegGeometry.Planned(rt.Measurements, poses, planBar);
                 if (closed != null && (!runtimeRejoin || s <= closed.LateStart))
                 {
-                    DeadliftPreparedAscentPlan.Sample sample = closed.At(s);
+                    DeadliftPreparedAscentPlan activePlan = continuation ?? closed;
+                    DeadliftPreparedAscentPlan.Sample sample = activePlan.At(s);
                     root = sample.Root;
                     logical = sample.Logical;
                     poses = sample.Poses;
                     planBar = sample.Bar.position;
                     planBarRotation = sample.Bar.rotation;
-                    planGap = closed.Gaps(sample);
+                    planGap = activePlan.Gaps(sample);
                 }
                 DeadliftBarLegGeometry.Realized(_world.Rig, rt.Bar, out var gap);
                 if (result.Pull == 0 && rt.Pull.Phase == DeadliftPullPhase.Pulling)
@@ -445,9 +538,11 @@ namespace PowerliftingSimulator.Deadlift
                     : closed != null && gap.Leg <= 0f ? "shaft penetration"
                     : load.Min() <= rt.Monitor.LoadedFootN || margin < 0f ? "support loss"
                     : closed != null && !throughKnee && !complete && rt.Bar.position.y - startBarY >= DeadliftPreparedAscentPlan.QualifiedRiseM ? "first segment end"
+                    : postKneeProbe && rt.Referee.DownGiven ? "motionless lockout"
+                    : postKneeProbe && rt.Referee.Faults.Count > 0 ? "referee fault"
                     : complete && rt.Referee.Completed && rt.GripsReleased ? "judged return"
                     : complete && rt.Referee.Faults.Count > 0 ? "referee fault"
-                    : !complete && rt.Bar.position.y - bar0.y >= rt.Path.KneePassageRiseM ? "knee-region end"
+                    : !complete && !postKneeProbe && rt.Bar.position.y - bar0.y >= rt.Path.KneePassageRiseM ? "knee-region end"
                     : tick == lastTick ? "comparison bound" : null;
                 if (result.StopReason != null)
                 {

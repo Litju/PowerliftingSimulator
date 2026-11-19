@@ -233,6 +233,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
         /// </summary>
         public DeadliftHandLoadReference HandLoadReference { get; private set; }
         public bool HandLoadClaimed { get; private set; }
+        public Func<float, (DeadliftContactStatics Reference, float Blend)> SuspendedPlanReference { get; set; }
         public float HandLoadFilteredN { get; private set; } = float.NaN;
         private Func<float> _measuredPerHandN;
         private float _handLoadFilterSeconds = 0.05f;
@@ -288,7 +289,15 @@ namespace PowerliftingSimulator.Deadlift.Unity
             if (returning && float.IsInfinity(_returnCeilingN))
                 _returnCeilingN = HandLoadFilteredN;
             HandLoadReference.Observe(Mathf.Min(HandLoadFilteredN, _returnCeilingN));
-            SetStaticReference(_referenceRig, HandLoadReference.DriveTorquesAxes());
+            var torques = HandLoadReference.DriveTorquesAxes();
+            if (SuspendedPlanReference != null)
+            {
+                var requested = SuspendedPlanReference(Pull.LiftProgress01);
+                var planned = requested.Reference.DriveTorquesAxes();
+                foreach (var pair in planned)
+                    torques[pair.Key] = Vector3.Lerp(torques[pair.Key], pair.Value, requested.Blend);
+            }
+            SetStaticReference(_referenceRig, torques);
             ReferenceOwner = DeadliftReferenceOwner.PullHandLoad;
             HandLoadReferenceWrites++;
         }

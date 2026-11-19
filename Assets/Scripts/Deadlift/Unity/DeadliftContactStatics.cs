@@ -73,15 +73,23 @@ namespace PowerliftingSimulator.Deadlift.Unity
             Vector3 leftGripWorld, Vector3 rightGripWorld) =>
             Solve(rig, bar, null, null, leftGripWorld, rightGripWorld, bar.mass * -Physics.gravity.y * 0.5f, 1f, true);
 
+        public static DeadliftContactStatics SolveSuspended(PhysicalAthleteRig rig, Rigidbody bar, Pose barPose,
+            IReadOnlyDictionary<string, Pose> poses, Vector3 leftGripWorld, Vector3 rightGripWorld) =>
+            Solve(rig, bar, null, null, leftGripWorld, rightGripWorld, bar.mass * -Physics.gravity.y * 0.5f, 1f, true,
+                poses, barPose.position + barPose.rotation * bar.centerOfMass);
+
         private static DeadliftContactStatics Solve(PhysicalAthleteRig rig, Rigidbody bar, Collider leftPlate, Collider rightPlate,
-            Vector3 leftGripWorld, Vector3 rightGripWorld, float handPullN, float ceilingScale, bool suspended)
+            Vector3 leftGripWorld, Vector3 rightGripWorld, float handPullN, float ceilingScale, bool suspended,
+            IReadOnlyDictionary<string, Pose> poses = null, Vector3 plannedBarCom = default)
         {
             if (rig == null) throw new ArgumentNullException(nameof(rig));
             if (bar == null) throw new ArgumentNullException(nameof(bar));
             var s = new DeadliftContactStatics { HandPullN = handPullN };
             float g = -Physics.gravity.y;
             float wb = bar.mass * g;
-            Vector3 cb = bar.worldCenterOfMass;
+            Vector3 cb = poses == null ? bar.worldCenterOfMass : plannedBarCom;
+            Vector3 WorldCom(string id, Rigidbody body) => poses == null ? body.worldCenterOfMass
+                : poses[id].position + poses[id].rotation * body.centerOfMass;
 
             // ---- bar: vertical force and lateral (about world Z) moment ----
             if (suspended)
@@ -108,7 +116,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
 
             // ---- athlete: feet ----
             float ma = 0f; Vector3 mc = Vector3.zero;
-            foreach (var seg in rig.Segments.Values) { ma += seg.Body.mass; mc += seg.Body.mass * seg.Body.worldCenterOfMass; }
+            foreach (var seg in rig.Segments) { ma += seg.Value.Body.mass; mc += seg.Value.Body.mass * WorldCom(seg.Key, seg.Value.Body); }
             Vector3 ca = mc / ma;
             float wa = ma * g;
             float n = wa + 2f * handPullN;
@@ -124,12 +132,14 @@ namespace PowerliftingSimulator.Deadlift.Unity
             {
                 BoxCollider box = (BoxCollider)rig.Segments[side + "_foot"].Collider;
                 Transform t = box.transform;
+                Pose pose = poses != null ? poses[side + "_foot"] : default;
+                Vector3 Point(Vector3 local) => poses == null ? t.TransformPoint(local) : pose.position + pose.rotation * local;
                 var c = new Vector3[4];
                 for (int i = 0; i < 4; i++)
-                    c[i] = t.TransformPoint(box.center + new Vector3(((i & 1) == 0 ? -1f : 1f) * box.size.x * 0.5f, -box.size.y * 0.5f, ((i & 2) == 0 ? -1f : 1f) * box.size.z * 0.5f));
+                    c[i] = Point(box.center + new Vector3(((i & 1) == 0 ? -1f : 1f) * box.size.x * 0.5f, -box.size.y * 0.5f, ((i & 2) == 0 ? -1f : 1f) * box.size.z * 0.5f));
                 soles[side] = c;
-                Vector3 centre = t.TransformPoint(box.center - new Vector3(0f, box.size.y * 0.5f, 0f));
-                Vector3 fwd = t.TransformDirection(Vector3.forward);
+                Vector3 centre = Point(box.center - new Vector3(0f, box.size.y * 0.5f, 0f));
+                Vector3 fwd = poses == null ? t.TransformDirection(Vector3.forward) : pose.rotation * Vector3.forward;
                 float k = Mathf.Abs(fwd.z) < 1e-4f ? 0f : (zCop - centre.z) / fwd.z;
                 return centre + k * fwd;
             }
@@ -158,13 +168,14 @@ namespace PowerliftingSimulator.Deadlift.Unity
             {
                 if (!joint.Profile.HasValue) continue;
                 ConfigurableJoint cj = joint.Joint;
-                Vector3 p = cj.transform.TransformPoint(cj.anchor);
+                Pose pose = poses != null ? poses[joint.Id] : default;
+                Vector3 p = poses == null ? cj.transform.TransformPoint(cj.anchor) : pose.position + pose.rotation * cj.anchor;
                 Vector3 m = Vector3.zero;
                 foreach (PhysicalSegmentRecipe recipe in PhysicalAthleteDefinition.Segments)
                 {
                     if (!InSubtree(recipe.Id, joint.Id)) continue;
                     Rigidbody b = rig.Segments[recipe.Id].Body;
-                    m += Vector3.Cross(b.worldCenterOfMass - p, b.mass * Physics.gravity);
+                    m += Vector3.Cross(WorldCom(recipe.Id, b) - p, b.mass * Physics.gravity);
                     if (suspended && (recipe.Id == "left_hand" || recipe.Id == "right_hand"))
                         m += s.HandCoupleOnEachHandNm;
                     foreach (var f in forces)
@@ -172,8 +183,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
                             m += Vector3.Cross(f.at - p, f.f);
                 }
                 Vector3 tau = -m;
-                Vector3 x = cj.transform.TransformDirection(cj.axis).normalized;
-                Vector3 y = Vector3.ProjectOnPlane(cj.transform.TransformDirection(cj.secondaryAxis), x).normalized;
+                Vector3 x = (poses == null ? cj.transform.TransformDirection(cj.axis) : pose.rotation * cj.axis).normalized;
+                Vector3 y = Vector3.ProjectOnPlane(poses == null ? cj.transform.TransformDirection(cj.secondaryAxis)
+                    : pose.rotation * cj.secondaryAxis, x).normalized;
                 Vector3 z = Vector3.Cross(x, y);
                 var load = new JointLoad
                 {

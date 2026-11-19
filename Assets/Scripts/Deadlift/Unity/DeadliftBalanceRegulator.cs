@@ -70,6 +70,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public bool ContactConsistentControl { get; set; }
 
         public bool ComFeedback { get; set; } = true;
+        /// <summary>Optional moving COM reference paired with its planned static COP.</summary>
+        public Func<(float Z, float Vz)> PlannedCom { get; set; }
         public float Kx { get; set; } = 0.4f;
         public float KvSeconds { get; set; } = 0.25f;
 
@@ -262,7 +264,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 _z0 = c.z;
                 _comEngaged = true;
             }
-            float d = ComFeedback ? (ComPositionAnchor ? (1f + Kx) * (c.z - _z0) : 0f) + KvSeconds * p.z : 0f;
+            var comReference = PlannedCom != null ? PlannedCom() : (_z0, 0f);
+            float d = ComFeedback ? (ComPositionAnchor ? (1f + Kx) * (c.z - comReference.Item1) : 0f) + KvSeconds * (p.z - comReference.Item2) : 0f;
 
             if (Frozen)
             {
