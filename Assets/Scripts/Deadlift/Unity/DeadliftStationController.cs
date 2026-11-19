@@ -36,6 +36,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
         private bool _sideView;
         private bool _experimentalPath;
         private bool _preparedRejoin, _preparedRehearsal, _rehearsalStarted;
+        private bool _closeLockout, _waitingForDrive;
         private DeadliftPullPhase _rehearsalPhase;
         private float _rehearsalMinGap = float.PositiveInfinity, _rehearsalMinFoot = float.PositiveInfinity;
         private double _rehearsalThighGapSum;
@@ -49,6 +50,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
         /// </summary>
         public const string ExperimentalPathArgument = "-deadliftBarProximity", SideViewArgument = "-deadliftSideView";
         public const string PreparedRejoinArgument = "-deadliftPreparedRejoin";
+        public const string PreparedCloseLockoutArgument = "-deadliftCloseLockout";
         public const string PreparedRehearsalArgument = "-deadliftPreparedRehearsal";
         private DeadliftPullPhase _loggedPhase = DeadliftPullPhase.Grounded;
 
@@ -85,14 +87,16 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     barbell.Build();
                 barbell.SetGameplayPerformanceProfile(true);
                 string[] args = Environment.GetCommandLineArgs();
-                _preparedRehearsal = Array.IndexOf(args, PreparedRehearsalArgument) >= 0;
-                _preparedRejoin = _preparedRehearsal || Array.IndexOf(args, PreparedRejoinArgument) >= 0;
+                _closeLockout = Array.IndexOf(args, PreparedCloseLockoutArgument) >= 0;
+                _preparedRehearsal = !_closeLockout && Array.IndexOf(args, PreparedRehearsalArgument) >= 0;
+                _preparedRejoin = _closeLockout || _preparedRehearsal || Array.IndexOf(args, PreparedRejoinArgument) >= 0;
                 _experimentalPath = !_preparedRejoin && Array.IndexOf(args, ExperimentalPathArgument) >= 0;
                 _sideView = Array.IndexOf(args, SideViewArgument) >= 0;
                 DeadliftAttemptRuntime.BarProximityPath = _experimentalPath;
                 Runtime = new DeadliftAttemptRuntime(foundation, athleteRig, barbell)
                 {
-                    PreparedClearanceRejoin = _preparedRejoin,
+                    PreparedClearanceRejoin = _preparedRejoin && !_closeLockout,
+                    PreparedCloseLockout = _closeLockout,
                     SolvePreparedPlanAcrossFrames = _preparedRejoin
                 };
                 try { Runtime.Initialize(); }
@@ -107,6 +111,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     Runtime.TickCompleted += RehearsePreparedPull;
                     foundation.Runtime.TicksSuspended = true;
                 }
+                if (_closeLockout)
+                    Runtime.TickCompleted += WaitForPreparedDrive;
                 IsInitialized = true;
                 foundation.enabled = true;
                 Debug.Log("GAM-70 deadlift station ready. Tick-0 penetration " +
@@ -117,6 +123,18 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 _failure = e.Message;
                 Debug.LogError("GAM-70 deadlift station startup failed: " + e);
             }
+        }
+
+        private void WaitForPreparedDrive(DeadliftAttemptRuntime runtime)
+        {
+            if (runtime.Tick != DeadliftAttemptRuntime.PreparedDriveReadyTick)
+                return;
+            runtime.TickCompleted -= WaitForPreparedDrive;
+            if (runtime.Pull.LastRawDrive01 > 0.05f)
+                return;
+
+            _waitingForDrive = true;
+            foundation.Runtime.TicksSuspended = true;
         }
 
         private void RehearsePreparedPull(DeadliftAttemptRuntime runtime)
@@ -186,6 +204,16 @@ namespace PowerliftingSimulator.Deadlift.Unity
             }
             if (Runtime == null || !string.IsNullOrEmpty(_failure))
                 return;
+            if (_waitingForDrive)
+            {
+                _status = "Hold W or Up to pull.";
+                if (keyboard != null && (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed))
+                {
+                    _waitingForDrive = false;
+                    foundation.Runtime.TicksSuspended = false;
+                }
+                return;
+            }
             if (_preparedRehearsal && !_rehearsalStarted)
             {
                 _status = "Press W or Up to start the rehearsal.";
@@ -263,7 +291,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
             float w = Screen.width / s;
             GUI.Box(new Rect(16, 16, 560, _experimentalPath || _preparedRejoin ? 240 : 210), GUIContent.none);
             if (_preparedRejoin)
-                GUI.Label(new Rect(30, 210, 540, 30), _preparedRehearsal ? "PREPARED REHEARSAL  |  scripted Drive" : "EXPERIMENTAL prepared ascent", _body);
+                GUI.Label(new Rect(30, 210, 540, 30), _preparedRehearsal ? "PREPARED REHEARSAL  |  scripted Drive"
+                    : _closeLockout ? "EXPERIMENTAL close-bar deadlift" : "EXPERIMENTAL prepared ascent", _body);
             if (_experimentalPath)
                 GUI.Label(new Rect(30, 210, 540, 30), "EXPERIMENTAL bar-proximity path (not qualified)", _body);
             GUI.Label(new Rect(30, 24, 540, 30), "DEADLIFT  -  " + DeadliftQualifiedSetup.BarKg.ToString("F0", CultureInfo.InvariantCulture) + " kg  (sumo, pronated)", _body);

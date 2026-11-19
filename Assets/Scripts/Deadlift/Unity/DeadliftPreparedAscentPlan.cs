@@ -54,8 +54,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
         }
 
         public static DeadliftPreparedAscentPlan ContinueToLockout(DeadliftAttemptRuntime runtime, PhysicalAthleteRig rig,
-            DeadliftLiftPath.Key endpoint, Quaternion barRotation) =>
-            new DeadliftPreparedAscentPlan(runtime, rig, true, false, false, 1f, false, endpoint, barRotation);
+            DeadliftLiftPath.Key endpoint, Quaternion barRotation, bool incremental = false) =>
+            new DeadliftPreparedAscentPlan(runtime, rig, true, false, false, 1f, incremental, endpoint, barRotation);
 
         internal DeadliftPreparedAscentPlan(DeadliftAttemptRuntime runtime, PhysicalAthleteRig rig, bool throughKnee, bool complete,
             bool centered, float endProgress, bool incremental, DeadliftLiftPath.Key endpoint = null, Quaternion barRotation = default)

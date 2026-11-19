@@ -101,6 +101,61 @@ namespace PowerliftingSimulator.Deadlift
             }
         }
 
+        [UnityTest, Timeout(900000), Explicit("Run Unity with -deadliftCloseLockout")]
+        public IEnumerator CLOSE_BAR_STATION_USES_HELD_KEYBOARD_DRIVE()
+        {
+            Assert.That(System.Environment.GetCommandLineArgs(), Does.Contain(DeadliftStationController.PreparedCloseLockoutArgument));
+            var input = new InputTestFixture();
+            input.Setup();
+            try
+            {
+                var keyboard = InputSystem.AddDevice<Keyboard>();
+                yield return LoadStation();
+                var station = Object.FindFirstObjectByType<DeadliftStationController>();
+                var foundation = Object.FindFirstObjectByType<FoundationBootstrap>();
+                DeadliftAttemptRuntime rt = station.Runtime;
+                float deadline = Time.realtimeSinceStartup + 180f;
+                while (!foundation.Runtime.TicksSuspended && Time.realtimeSinceStartup < deadline)
+                    yield return null;
+                Assert.That(rt.Tick, Is.EqualTo(DeadliftAttemptRuntime.PreparedDriveReadyTick));
+                Assert.That(rt.Pull.Phase, Is.EqualTo(DeadliftPullPhase.Grounded));
+                yield return null;
+                Assert.That(rt.Tick, Is.EqualTo(DeadliftAttemptRuntime.PreparedDriveReadyTick));
+
+                input.currentTime = Time.realtimeSinceStartupAsDouble;
+                input.Press(keyboard.wKey);
+                bool capturedDrive = false;
+                ulong lastSuspended = 0;
+                int measuredSolvePauses = 0;
+                while (!rt.Referee.DownGiven && Time.realtimeSinceStartup < deadline && string.IsNullOrEmpty(station.StartupFailure))
+                {
+                    capturedDrive |= rt.Pull.Phase == DeadliftPullPhase.Lifting && rt.Pull.LastRawDrive01 > 0.99f;
+                    if (foundation.Runtime.TicksSuspended && rt.Tick > DeadliftAttemptRuntime.PreparedDriveReadyTick && rt.Tick != lastSuspended)
+                    {
+                        lastSuspended = rt.Tick;
+                        measuredSolvePauses++;
+                    }
+                    yield return null;
+                }
+                Assert.That(rt.Pull.IntentOverride01, Is.Null);
+                Assert.That(capturedDrive, Is.True);
+                Assert.That(measuredSolvePauses, Is.EqualTo(2));
+                Assert.That(rt.Referee.DownTick, Is.EqualTo(762ul), rt.Referee.Summary());
+                input.currentTime = Time.realtimeSinceStartupAsDouble;
+                input.Release(keyboard.wKey);
+
+                while (!rt.GripsReleased && Time.realtimeSinceStartup < deadline && string.IsNullOrEmpty(station.StartupFailure))
+                    yield return null;
+                Assert.That(station.StartupFailure, Is.Empty);
+                Assert.That(rt.Referee.GoodLift && rt.GripsReleased, Is.True, rt.Referee.Summary());
+                yield return ShutdownStation();
+            }
+            finally
+            {
+                input.TearDown();
+            }
+        }
+
         private static IEnumerator LoadStation()
         {
             AsyncOperation load = SceneManager.LoadSceneAsync(DeadliftStationController.SceneName, LoadSceneMode.Single);

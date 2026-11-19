@@ -20,6 +20,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
         private float _maxProgress;
         private ulong _trimStart;
         private readonly double _solveStart;
+        private readonly bool _closeLockout, _incremental;
+        private DeadliftPreparedCloseLockout _close;
 
         private sealed class Shoulder
         {
@@ -30,15 +32,19 @@ namespace PowerliftingSimulator.Deadlift.Unity
 
         public DeadliftPreparedAscentPlan Plan { get; }
         public bool IsReady { get; private set; }
+        public DeadliftPreparedAscentPlan PostKneePlan => _close?.IsReady == true ? _close.Plan : null;
+        public DeadliftPreparedAscentPlan PendingPlan => !IsReady ? Plan : _close?.IsReady == false ? _close.Plan : null;
 
         public DeadliftPreparedRejoin(DeadliftAttemptRuntime runtime, PhysicalAthleteRig rig, bool incremental)
         {
             _runtime = runtime;
             _rig = rig;
+            _closeLockout = runtime.PreparedCloseLockout;
+            _incremental = incremental;
             _shoulders = rig.PoweredController.Joints.Where(j => j.Recipe.Family == "shoulder")
                 .Select(j => new Shoulder { Joint = j, InitialOffset = runtime.Hold.PreparationOffsetFor(j.Id) }).ToArray();
             _solveStart = Time.realtimeSinceStartupAsDouble;
-            Plan = new DeadliftPreparedAscentPlan(runtime, rig, throughKnee: true, complete: true,
+            Plan = new DeadliftPreparedAscentPlan(runtime, rig, throughKnee: true, complete: !_closeLockout,
                 centered: false, endProgress: EndProgress, incremental: incremental);
             if (!incremental)
                 AdvanceSolve();
@@ -46,13 +52,16 @@ namespace PowerliftingSimulator.Deadlift.Unity
 
         public bool AdvanceSolve()
         {
+            if (IsReady)
+                return _close.AdvanceSolve();
             if (!Plan.SolveNextKey())
                 return false;
 
             var plan = Plan.MeasureInterpolation();
             if (!(plan.MinGap > 0.020f && plan.SweptGap > 0f && plan.PositionError < 0.001f && plan.RotationError < 0.3f))
                 throw new InvalidOperationException("The measured prepared configuration did not produce a closed, clear ascent reference.");
-            _runtime.Hold.AscentReferenceOverride = (id, progress) => Plan.RejoinTarget(id, progress, EndProgress);
+            _runtime.Hold.AscentReferenceOverride = _closeLockout ? Plan.Target
+                : (id, progress) => Plan.RejoinTarget(id, progress, EndProgress);
             IsReady = true;
             Debug.Log($"GAM-70 prepared reference at tick {_runtime.Tick}. Solve {Time.realtimeSinceStartupAsDouble - _solveStart:F2} s, swept clearance {plan.SweptGap * 1000f:F2} mm.");
             return true;
@@ -63,7 +72,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
             float progress = _runtime.Pull.LiftProgress01;
             _maxProgress = Mathf.Max(_maxProgress, progress);
             float release = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(_maxProgress / 0.07f));
-            if (_trimStart == 0 && _runtime.Pull.Phase == DeadliftPullPhase.Lockout &&
+            if (!_closeLockout && _trimStart == 0 && _runtime.Pull.Phase == DeadliftPullPhase.Lockout &&
                 _runtime.Bar.linearVelocity.sqrMagnitude < SettlingSpeedMps * SettlingSpeedMps)
             {
                 _trimStart = _runtime.Tick;
@@ -83,6 +92,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     offset *= Quaternion.AngleAxis(trim, shoulder.TrimAxis);
                 _runtime.Hold.PreparationOffsets[shoulder.Joint.Id] = offset;
             }
+            if (_closeLockout && _close == null && _runtime.Bar.position.y - _runtime.Model.BarCenterWorld.y >= _runtime.Path.KneePassageRiseM)
+                _close = new DeadliftPreparedCloseLockout(_runtime, _rig, Plan, _incremental);
+            _close?.Update();
         }
 
         internal static Vector3 ShoulderExtensionAxis(PhysicalAthleteRig rig, PoweredJointController.PoweredJointRuntime shoulder)

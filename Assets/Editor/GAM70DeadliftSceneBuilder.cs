@@ -97,6 +97,9 @@ public static class GAM70DeadliftSceneBuilder
     public static void BuildWindowsPreparedRehearsal() =>
         BuildWindowsPlayer("Builds/GAM70/PreparedRehearsal/PowerliftingSimulator.exe");
 
+    public static void BuildWindowsCloseLockout() =>
+        BuildWindowsPlayer("Builds/GAM70/CloseLockout/PowerliftingSimulator.exe");
+
     private static void BuildWindowsPlayer(string output)
     {
         foreach (string scene in PlayerScenes)

@@ -131,6 +131,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public bool LiftEnabled { get; set; }
         public float LiftRatePerSecond { get; set; } = 0.30f;
         public float LowerRatePerSecond { get; set; } = 0.30f;
+
+        public float LowerHandoffProgress { get; set; }
+        public Func<bool> LowerHandoffReady { get; set; }
         public Func<float> SupportMarginM { get; set; }
         public float MinSupportMarginM { get; set; } = 0.04f;
         /// <summary>Bound on the change of the progress rate (1/s^2): 0.6 reaches the full 0.3/s rate in 0.5 s.</summary>
@@ -192,9 +195,16 @@ namespace PowerliftingSimulator.Deadlift.Unity
             }
             else if (Phase == DeadliftPullPhase.Lowering)
             {
-                float wanted = -Mathf.Min(LowerRatePerSecond, Mathf.Sqrt(2f * LiftAccelPerSecond2 * Mathf.Max(0f, LiftProgress01)) + 0.02f);
+                float stop = LowerHandoffProgress;
+                float wanted = -Mathf.Min(LowerRatePerSecond, Mathf.Sqrt(2f * LiftAccelPerSecond2 * Mathf.Max(0f, LiftProgress01 - stop)) + 0.02f);
                 LiftRate01PerSecond = Mathf.MoveTowards(LiftRate01PerSecond, wanted, LiftAccelPerSecond2 * dt);
-                LiftProgress01 = Mathf.Max(0f, LiftProgress01 + LiftRate01PerSecond * dt);
+                LiftProgress01 = Mathf.Max(stop, LiftProgress01 + LiftRate01PerSecond * dt);
+                if (stop > 0f && LiftProgress01 <= stop)
+                {
+                    LiftRate01PerSecond = 0f;
+                    if (LowerHandoffReady())
+                        LowerHandoffProgress = 0f;
+                }
                 // At the floor posture, unwind the bar-break extension too so the
                 // plates take the bar back (the break extension is what lifted it).
                 if (LiftProgress01 <= 0f)

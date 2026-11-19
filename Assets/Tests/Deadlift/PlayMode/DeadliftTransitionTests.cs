@@ -230,6 +230,36 @@ namespace PowerliftingSimulator.Deadlift
             Assert.That(candidate.MeanLockoutGap, Is.InRange(0d, 0.12d));
         }
 
+        [UnityTest, Timeout(600000), Explicit("GAM-70 close-bar attempt through controlled return")]
+        public IEnumerator GAM70_RUNTIME_CLOSE_BAR_ATTEMPT()
+        {
+            var candidate = new Run();
+            yield return Trace("runtime-close-bar", 284, candidate, throughKnee: true, complete: true, runtimeClose: true, lastTick: 2100);
+            Assert.That(candidate.Pull, Is.EqualTo(301ul));
+            Assert.That(candidate.ContinuationTick, Is.EqualTo(538ul));
+            Assert.That(candidate.Down, Is.EqualTo(762ul));
+            Assert.That(candidate.Good && candidate.Released, Is.True, candidate.RefereeSummary);
+            Assert.That(candidate.FirstPenetration, Is.Zero);
+            Assert.That(candidate.Sweep.MinBound, Is.GreaterThan(0f));
+            Assert.That(candidate.MeanLockoutGap, Is.InRange(0d, 0.12d));
+        }
+
+        [UnityTest, Timeout(1800000), Explicit("GAM-70 close-bar runtime onset sensitivity")]
+        public IEnumerator GAM70_RUNTIME_CLOSE_BAR_ONSETS()
+        {
+            var summary = new StringBuilder();
+            foreach (int onset in new[] { 302, 305, 320, 350 })
+            {
+                var candidate = new Run();
+                yield return Trace($"runtime-close-onset-{onset}", 284, candidate, throughKnee: true, complete: true,
+                    earliestPull: onset, runtimeClose: true, lastTick: 2100);
+                summary.AppendLine($"{onset}: pull {candidate.Pull}, DOWN {candidate.Down}, stop {candidate.Stop} ({candidate.StopReason}), " +
+                    $"release {candidate.Released}, nearer thigh {candidate.MeanLockoutGap * 1000d:F2} mm. {candidate.RefereeSummary}");
+                F.WriteEvidence("runtime-close-onsets.txt", summary.ToString());
+                Assert.That(candidate.Pull, Is.EqualTo((ulong)onset));
+            }
+        }
+
         private static void AssertClearance(Run prepared, string endpoint)
         {
             Assert.That(prepared.Pull, Is.EqualTo(301ul));
@@ -242,7 +272,7 @@ namespace PowerliftingSimulator.Deadlift
             Debug.Log($"Prepared realized substeps: {prepared.Sweep.Samples}, min gap {prepared.Sweep.MinGap * 1000f:F2} mm, swept bound {prepared.Sweep.MinBound * 1000f:F2} mm");
         }
 
-        private IEnumerator Trace(string arm, int driveTick, Run result, bool retainPreparation = false, bool closedPrefix = false, bool throughKnee = false, bool complete = false, bool centered = false, float rejoinEnd = 0f, float lateShoulderDeg = 0f, bool settledShoulder = false, bool runtimeRejoin = false, int earliestPull = 0, int lastTick = 800, bool postKneeProbe = false, bool suspendedPreload = false)
+        private IEnumerator Trace(string arm, int driveTick, Run result, bool retainPreparation = false, bool closedPrefix = false, bool throughKnee = false, bool complete = false, bool centered = false, float rejoinEnd = 0f, float lateShoulderDeg = 0f, bool settledShoulder = false, bool runtimeRejoin = false, int earliestPull = 0, int lastTick = 800, bool postKneeProbe = false, bool suspendedPreload = false, bool runtimeClose = false)
         {
             yield return DeadliftPlantWorld.Load();
             _world = DeadliftPlantWorld.Current;
@@ -250,7 +280,7 @@ namespace PowerliftingSimulator.Deadlift
             var rt = new DeadliftAttemptRuntime(_world.Foundation, _world.Rig, _world.Bar)
             {
                 UpperChainPreparation = driveTick < 301,
-                PreparedClearanceRejoin = runtimeRejoin
+                PreparedClearanceRejoin = runtimeRejoin, PreparedCloseLockout = runtimeClose
             };
             rt.Initialize();
             rt.Pull.EarliestPullTick = (ulong)earliestPull;
@@ -299,7 +329,7 @@ namespace PowerliftingSimulator.Deadlift
                 Quaternion rightOffset = rt.Hold.PreparationOffsetFor(rightShoulder.Id);
                 _world.Step(1);
                 substepContact?.CompleteTick();
-                if (runtimeRejoin && closed == null && rt.PreparedAscentPlan != null)
+                if ((runtimeRejoin || runtimeClose) && closed == null && rt.PreparedAscentPlan != null)
                 {
                     closed = rt.PreparedAscentPlan;
                     StartSweep();
@@ -324,7 +354,7 @@ namespace PowerliftingSimulator.Deadlift
                         rightStart = rightOffset;
                     }
                 }
-                if (closed != null && !runtimeRejoin)
+                if (closed != null && !runtimeRejoin && !runtimeClose)
                 {
                     maxProgress = Mathf.Max(maxProgress, rt.Pull.LiftProgress01);
                     float blend = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(maxProgress / 0.07f));
@@ -413,6 +443,12 @@ namespace PowerliftingSimulator.Deadlift
                     rt.Pull.ReferenceDemand = () => Mathf.Max(rt.Hold.HandLoadReference.MaxDemandFraction,
                         ankles.Max(j => Mathf.Max(j.PostPhysicsDiagnostic.TwistDriveDemandFraction, j.PostPhysicsDiagnostic.SecondaryDriveDemandFraction)));
                 }
+                if (runtimeClose && continuation == null && rt.PostKneeAscentPlan != null)
+                {
+                    continuation = rt.PostKneeAscentPlan;
+                    result.ContinuationTick = rt.Tick;
+                    result.PrefixSweptGap = result.Sweep.MinBound;
+                }
                 if (tick < 280)
                     continue;
 
@@ -449,7 +485,7 @@ namespace PowerliftingSimulator.Deadlift
                 var planGap = DeadliftBarLegGeometry.Planned(rt.Measurements, poses, planBar);
                 if (closed != null && (!runtimeRejoin || s <= closed.LateStart))
                 {
-                    DeadliftPreparedAscentPlan activePlan = continuation ?? closed;
+                    DeadliftPreparedAscentPlan activePlan = continuation != null && (s >= closed.LateStart || !runtimeClose) ? continuation : closed;
                     DeadliftPreparedAscentPlan.Sample sample = activePlan.At(s);
                     root = sample.Root;
                     logical = sample.Logical;

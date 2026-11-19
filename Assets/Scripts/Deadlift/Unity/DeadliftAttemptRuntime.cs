@@ -66,11 +66,14 @@ namespace PowerliftingSimulator.Deadlift.Unity
 
         /// <summary>Experimental prepared reference with stock late-ascent rejoin. Configure before Initialize.</summary>
         public bool PreparedClearanceRejoin { get; set; }
+        /// <summary>Opt-in prepared ascent into the suspended close-bar endpoint.</summary>
+        public bool PreparedCloseLockout { get; set; }
+        public const ulong PreparedDriveReadyTick = 283;
         public DeadliftPreparedAscentPlan PreparedAscentPlan =>
             _preparedRejoin?.IsReady == true ? _preparedRejoin.Plan : null;
         internal bool SolvePreparedPlanAcrossFrames { get; set; }
-        internal DeadliftPreparedAscentPlan PendingPreparedPlan =>
-            _preparedRejoin?.IsReady == false ? _preparedRejoin.Plan : null;
+        public DeadliftPreparedAscentPlan PostKneeAscentPlan => _preparedRejoin?.PostKneePlan;
+        internal DeadliftPreparedAscentPlan PendingPreparedPlan => _preparedRejoin?.PendingPlan;
 
         internal void AdvancePreparedSolve()
         {
@@ -78,7 +81,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 return;
 
             _preparedRejoin.Update();
-            _foundation.Runtime.TicksSuspended = false;
+            _foundation.Runtime.TicksSuspended = PendingPreparedPlan != null;
         }
 
         public DeadliftPlantModel Model { get; private set; }
@@ -163,7 +166,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
             };
             Hold.Pull = Pull;
 
-            Path = new DeadliftLiftPath(_rig, Measurements, Model, _barbell.Body.mass) { BarProximity = BarProximityPath && !PreparedClearanceRejoin };
+            Path = new DeadliftLiftPath(_rig, Measurements, Model, _barbell.Body.mass) { BarProximity = BarProximityPath && !PreparedClearanceRejoin && !PreparedCloseLockout };
             Path.RollPlanLimitDeg = Mathf.Min(Path.RollPlanLimitDeg, DeadliftAnkleRoll.LimitDegrees - Path.JointMarginDeg - Regulator.MaxRollOffsetDeg);
             Path.Solve();
             if (Path.BarProximity)
@@ -187,7 +190,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 return potential;
             };
             Pull.ReferenceDemand = () => Hold.HandLoadReference.MaxDemandFraction;
-            if (UpperChainPreparation || PreparedClearanceRejoin)
+            if (UpperChainPreparation || PreparedClearanceRejoin || PreparedCloseLockout)
                 Pull.GroundedReady = PrepareForPull;
 
             Referee = new DeadliftReferee(_barbell.Body.worldCenterOfMass.y, _barbell.Body.mass * -Physics.gravity.y, dt);
@@ -289,6 +292,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
             // Rearmed pulls keep the measured hand-load owner established on the first pull.
             if (Hold.HandLoadClaimed)
                 return true;
+            if (PreparedCloseLockout && _tick < PreparedDriveReadyTick)
+                return false;
 
             if (PlateLeftN <= DeadliftPullController.SeparationPlateN || PlateRightN <= DeadliftPullController.SeparationPlateN ||
                 !LoadedCop("left_foot") || !LoadedCop("right_foot") || Monitor.Update() < Pull.MinSupportMarginM)
@@ -358,7 +363,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 _shoulderStarts.Clear();
                 try
                 {
-                    if (PreparedClearanceRejoin && Pull.Phase == DeadliftPullPhase.Separated)
+                    if ((PreparedClearanceRejoin || PreparedCloseLockout) && Pull.Phase == DeadliftPullPhase.Separated)
                     {
                         _preparedRejoin = new DeadliftPreparedRejoin(this, _rig, SolvePreparedPlanAcrossFrames);
                         _foundation.Runtime.TicksSuspended = !_preparedRejoin.IsReady;
@@ -387,7 +392,10 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 GripsReleased = true;
             }
             if (_preparedRejoin?.IsReady == true)
+            {
                 _preparedRejoin.Update();
+                _foundation.Runtime.TicksSuspended = PendingPreparedPlan != null;
+            }
             TickCompleted?.Invoke(this);
         }
     }
