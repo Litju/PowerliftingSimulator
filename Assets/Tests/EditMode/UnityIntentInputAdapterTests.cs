@@ -56,5 +56,25 @@ namespace PowerliftingSimulator.Tests
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That((int)pendingEdgeCount.GetValue(adapter), Is.EqualTo(0));
         }
+
+        [Test]
+        public void A_LATE_DELIVERED_EVENT_TAKES_EFFECT_AT_THE_START_OF_ITS_RENDER_INTERVAL()
+        {
+            Type adapterType = AppDomain.CurrentDomain.GetAssemblies()
+                .Select(assembly => assembly.GetType(
+                    "PowerliftingSimulator.Foundation.Unity.UnityIntentInputAdapter"))
+                .First(type => type != null);
+            MethodInfo delivery = adapterType.GetMethod("DeliveryTimestamp", BindingFlags.Static | BindingFlags.NonPublic);
+            var domain = new InputTimeDomain();
+            domain.AdvanceRenderInterval(10.0);
+            domain.AdvanceRenderInterval(10.5);
+
+            // The domain's own contract is unchanged: an event stamped before the interval is rejected.
+            Assert.Throws<InvalidOperationException>(() => domain.Map(9.9));
+            double late = (double)delivery.Invoke(null, new object[] { 9.9, domain.RenderIntervalRealStartSeconds, 10.5 });
+            Assert.That(late, Is.EqualTo(10.0));
+            Assert.That(domain.Map(late), Is.EqualTo(domain.Map(10.0)));
+            Assert.That((double)delivery.Invoke(null, new object[] { 10.2, 10.0, 10.5 }), Is.EqualTo(10.2));
+        }
     }
 }

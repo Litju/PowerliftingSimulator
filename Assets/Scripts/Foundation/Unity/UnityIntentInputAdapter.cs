@@ -99,7 +99,8 @@ namespace PowerliftingSimulator.Foundation.Unity
                     input = _pendingContinuous[continuousIndex++];
                 }
 
-                double simulationTimestampSeconds = _inputTimeDomain.Map(input.RealTimestampSeconds);
+                double simulationTimestampSeconds = _inputTimeDomain.Map(DeliveryTimestamp(
+                    input.RealTimestampSeconds, _inputTimeDomain.RenderIntervalRealStartSeconds, timestampSeconds));
                 _mappedInputs[mappedInputCount++] = input.IsEdge
                     ? IntentInputSample.Edge(input.Action, input.EdgeKind, simulationTimestampSeconds)
                     : IntentInputSample.Continuous(input.Action, input.Value, simulationTimestampSeconds);
@@ -121,6 +122,17 @@ namespace PowerliftingSimulator.Foundation.Unity
             _intentBuffer.ApplyBatch(_mappedInputs, mappedInputCount);
             ClearPendingInputs();
         }
+
+        /// <summary>
+        /// Real time at which a callback received during this render interval takes effect.
+        /// The Input System stamps an event when the device reported it, which can precede the
+        /// previous frame's capture (an event raised while that frame ran, or a key still held
+        /// across a scene reload) although it is delivered only now. Such an event is applied at
+        /// the start of the interval it was delivered in: it cannot act on simulation time that
+        /// was already consumed, and rejecting it would block the whole input batch every frame.
+        /// </summary>
+        internal static double DeliveryTimestamp(double eventSeconds, double intervalStartSeconds, double intervalEndSeconds) =>
+            eventSeconds < intervalStartSeconds ? intervalStartSeconds : eventSeconds > intervalEndSeconds ? intervalEndSeconds : eventSeconds;
 
         public void Disable()
         {

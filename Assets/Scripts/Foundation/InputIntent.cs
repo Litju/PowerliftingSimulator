@@ -94,6 +94,9 @@ namespace PowerliftingSimulator.Foundation
 
         public double LastMappedTimestampSeconds => _mappedSimulationTimeSeconds;
 
+        /// <summary>Real-time start of the open render interval.</summary>
+        public double RenderIntervalRealStartSeconds => _renderIntervalRealStartSeconds;
+
         public Checkpoint CaptureCheckpoint() => new Checkpoint(
             _hasRealTimestamp,
             _lastRealTimestampSeconds,
