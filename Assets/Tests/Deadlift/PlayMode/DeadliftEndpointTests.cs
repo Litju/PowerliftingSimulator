@@ -35,10 +35,11 @@ namespace PowerliftingSimulator.Deadlift
             yield return Probe("close-static", true, false, report);
             yield return Probe("close-velocity-only", true, true, report, positionAnchor: false);
             yield return Probe("close-cop", true, true, report);
+            yield return Probe("lat-cop", true, true, report, lat: true);
             F.WriteEvidence("lockout-endpoint.txt", report.ToString());
         }
 
-        private IEnumerator Probe(string name, bool close, bool copControl, StringBuilder report, bool positionAnchor = true)
+        private IEnumerator Probe(string name, bool close, bool copControl, StringBuilder report, bool positionAnchor = true, bool lat = false)
         {
             yield return DeadliftPlantWorld.Load();
             _world = DeadliftPlantWorld.Current;
@@ -46,7 +47,7 @@ namespace PowerliftingSimulator.Deadlift
             var solver = new DeadliftSetupSolver(rig);
             var setup = solver.BuildModel(DeadliftQualifiedSetup.B2, DeadliftQualifiedSetup.SumoPronated());
             DeadliftAnkleRoll.Enable(rig);
-            var path = new DeadliftLiftPath(rig, solver, setup, DeadliftQualifiedSetup.BarKg) { BarProximity = close };
+            var path = new DeadliftLiftPath(rig, solver, setup, DeadliftQualifiedSetup.BarKg) { BarProximity = close, LatEngagement = lat };
             var key = path.SolveEndpoint();
             Pose root = solver.PelvisPoseOf(key.X);
             var g = path.GeometryOf(key);

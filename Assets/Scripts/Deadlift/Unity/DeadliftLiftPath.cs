@@ -107,6 +107,15 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public float ShinProximityWeight { get; set; } = 0f;
         /// <summary>Proximity weight on the bar-thigh gap above the knee (per metre above the target).</summary>
         public float ThighProximityWeight { get; set; } = 20f;
+
+        /// <summary>
+        /// Lat engagement at lockout: the bar's fore-aft place is no longer preferred over the
+        /// midfoot; shoulder extension draws the welded bar back to the thighs (thigh proximity
+        /// target), within the shoulder's static capacity bound and the COM-in-support bound.
+        /// </summary>
+        public bool LatEngagement { get; set; }
+        /// <summary>Weight on the bar's fore-aft shift from the midfoot at an engaged lockout (BarVerticalWeight without engagement).</summary>
+        public static float LatBarShiftWeight = 0f;
         /// <summary>
         /// Measured tracking allowance of the thigh gap: on the qualified plant the realized
         /// bar-thigh gap came up to 18.9 mm closer than planned in the upper-thigh ascent and
@@ -402,6 +411,18 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     bool overlaps = Physics.ComputePenetration(abdomen, trunk.position, trunk.rotation,
                         arm, forearm.position, forearm.rotation, out _, out float depth);
                     r.Add(overlaps ? 2000d * depth : 0d);
+                    if (LatEngagement)
+                    {
+                        // Arms drawn back against the trunk keep the same 4 mm margin as arm/leg pairs.
+                        _legacy.CapsuleSegment(poses, id, out Vector3 f0, out Vector3 f1, out float fr);
+                        float gap = float.PositiveInfinity;
+                        for (int k = 0; k <= 6; k++)
+                        {
+                            Vector3 p = Vector3.Lerp(f0, f1, k / 6f);
+                            gap = Mathf.Min(gap, Vector3.Distance(p, Physics.ClosestPoint(p, abdomen, trunk.position, trunk.rotation)) - fr);
+                        }
+                        r.Add(2000d * Mathf.Max(0f, 0.004f - gap));
+                    }
                 }
                 Mark(r, "forearm/abdomen clearance");
             }
@@ -445,7 +466,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 float lean = Mathf.Atan2(shin.z, shin.y) * Mathf.Rad2Deg;
                 r.Add(0.8d * (lean - Mathf.Lerp(_setupShinLeanDeg, 0f, kneePhase)) * Mathf.Deg2Rad);
             }
-            r.Add(Mathf.Lerp(6f, BarVerticalWeight, thighRamp) * shiftZ);
+            r.Add((LatEngagement && lockout ? LatBarShiftWeight : Mathf.Lerp(6f, BarVerticalWeight, thighRamp)) * shiftZ);
             // System COM over the midfoot; weighted up through hip extension: a lockout
             // planned 49 mm inside the heel edge was measured to tip backward on
             // arrival (Gate 6 run 9). Hips through, not a backward lean.

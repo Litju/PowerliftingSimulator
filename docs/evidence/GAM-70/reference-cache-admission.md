@@ -73,3 +73,21 @@ Six of eight player onsets complete judged lifts. None of the eight runs was sus
 Also negative: bounding the lift rate by the measured inverted-pendulum COP capacity at each key boundary of the piecewise-linear reference turned onset 301 into a support loss (tick 589). It left 302 and 305 unchanged, and that variant was removed.
 
 The real-keyboard station test (`CLOSE_BAR_STATION_USES_HELD_KEYBOARD_DRIVE`) presses W at the Ready cue (tick 227). Drive reaches the simulation at 228 and preparation starts on that tick. Then PULL 244, DOWN 711, GOOD LIFT and supported release follow, with `IntentOverride01` null throughout. Load takes 520 ms. The largest render frame after separation is 18.8 ms. No gen-0 collection occurred during the lift, while the managed heap grew 38 MB. `R_RESTARTS_THE_STATION_ONCE_WITH_A_FRESH_CLOCK_AND_INPUT` reloads exactly once and delivers held W to the new clock.
+
+## Lat engagement at lockout (opt-in, not shipped)
+
+The owner observed that the shipped close-bar lockout still holds the bar well in front of the thighs. The lockout itself is planned that way (92.5 mm). In the endpoint solve a 30-weight preference keeps the bar's fore-aft position over the midfoot, the hips are held behind it, and no term pulls the straight arms back.
+
+`DeadliftLiftPath.LatEngagement` lets shoulder extension draw the welded bar back to the thighs at lockout. `LatBarShiftWeight` replaces that preference, and the forearms keep a 4 mm margin to the abdomen. The shoulder static-capacity and COM-in-support bounds are unchanged.
+
+- **Isolated hold** (`GAM70_SUSPENDED_LOCKOUT_ENDPOINT`, probe `lat-cop`, weight 0): planned gap 41.8 mm, bar 59 mm further back. It holds 300 of 300 ticks, with realized thigh gaps of 42.3/41.8 mm, bar speed 0.13 mm/s, no foot below 50 N, no drive ceiling crossed and zero bar-on-leg force.
+- **Complete lifts** at onset 301 with the post-knee continuation aimed at the engaged lockout:
+
+| Lockout bar-shift weight | Lockout thigh gap | Outcome |
+| ---: | ---: | --- |
+| 0 | about 40 mm | capture point 1.1 mm past the heel edge at tick 721 (progress 0.996), both feet about 850 N |
+| 10 | 43.8 mm | same at tick 730, after reaching lockout |
+| 18 | 63.0 mm | foot unloaded at tick 823, before Down |
+| 30 (shipped) | 95.66 mm | GOOD LIFT |
+
+On arrival the bar keeps travelling back past the plan (z −0.131 vs −0.102 m), and the capture point drifts backward about 1 mm per tick. Pulling the bar in moves the athlete+bar COM behind the midfoot unless the hips come forward. The station therefore keeps the qualified v1 reference. Shipping the engaged lockout needs a COM-preserving hips-through endpoint and arrival, then re-qualification.
