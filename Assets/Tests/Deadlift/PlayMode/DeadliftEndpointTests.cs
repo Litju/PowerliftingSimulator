@@ -66,8 +66,6 @@ namespace PowerliftingSimulator.Deadlift
                 Vector3.Distance(g.RightAnchor, setup.RightGripWorld + gripShift));
             float gripAngleResidual = new[] { "left_hand", "right_hand" }.Max(id =>
                 Quaternion.Angle(poses[id].rotation, setup.Poses[id].rotation));
-            report.AppendLine(FormattableString.Invariant(
-                $"{name} planned bar {g.BarCenter:F5} thigh gap {g.Gaps.Thigh * 1000f:F2} mm, feet closure {1000f * footResidual:F3} mm/{footAngleResidual:F3} deg, grip closure {1000f * gripResidual:F3} mm/{gripAngleResidual:F3} deg, hip Z {g.HipZ:F5}, roll {g.RollLeftDeg:F3}/{g.RollRightDeg:F3}"));
             Assert.That(footResidual, Is.LessThan(0.002f), report.ToString());
             Assert.That(gripResidual, Is.LessThan(0.002f));
             Assert.That(gripAngleResidual, Is.LessThan(0.5f));
@@ -78,8 +76,10 @@ namespace PowerliftingSimulator.Deadlift
             Assert.That(_world.TickZeroMaxPenetrationM, Is.LessThan(0.002f));
             Assert.That(_world.TickZeroSelfPenetrations, Is.Empty, report.ToString());
             var bar = _world.Bar.Body;
-            var observer = new DeadliftAttemptObserver(rig, bar, () => 0f, () => 0f,
+            var observer = new DeadliftAttemptObserver(rig, bar, () => 0f, () => 0f, () => 0f,
                 () => _world.LeftGrip.IsAttached, () => _world.RightGrip.IsAttached);
+            report.AppendLine(FormattableString.Invariant(
+                $"{name} planned bar {g.BarCenter:F5} thigh gap {g.Gaps.Thigh * 1000f:F2} mm, deltoid behind bar {observer.DeltoidBehindBarM * 1000f:F1} mm, COM z {key.SystemComZ:F5} midfoot {path.MidfootZ:F5}, torso {key.TorsoDeg:F1} deg, knee {key.KneeDeg:F1} deg, hip Z {g.HipZ:F5}, shoulder Z {g.ShoulderZ:F5}, feet closure {1000f * footResidual:F3} mm/{footAngleResidual:F3} deg, grip closure {1000f * gripResidual:F3} mm/{gripAngleResidual:F3} deg, roll {g.RollLeftDeg:F3}/{g.RollRightDeg:F3}"));
             var statics = DeadliftContactStatics.SolveSuspended(rig, bar, g.LeftAnchor, g.RightAnchor);
             report.AppendLine(statics.Describe());
             Vector3 handUp = Vector3.up * statics.HandPullN;

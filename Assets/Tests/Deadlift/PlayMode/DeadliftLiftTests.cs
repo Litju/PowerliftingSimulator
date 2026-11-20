@@ -94,7 +94,7 @@ namespace PowerliftingSimulator.Deadlift
                 a.BarRestY = _world.Bar.Body.worldCenterOfMass.y;
                 a.Referee = new DeadliftReferee(a.BarRestY, _world.Bar.Body.mass * -Physics.gravity.y, SimulationConstants.FixedDeltaTimeSeconds);
                 a.Observer = new DeadliftAttemptObserver(_world.Rig, _world.Bar.Body, () => PlateLeftN() + PlateRightN(),
-                    () => _ticks.Count > 0 ? (float)_ticks[_ticks.Count - 1].BarLegN : 0f,
+                    () => _ticks.Count > 0 ? (float)_ticks[_ticks.Count - 1].BarLegN : 0f, () => 0f,
                     () => _world.LeftGrip != null && _world.LeftGrip.IsAttached, () => _world.RightGrip != null && _world.RightGrip.IsAttached);
             };
             c.PerTick = (cc, i) =>

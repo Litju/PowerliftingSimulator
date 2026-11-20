@@ -159,6 +159,16 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public float PlateLeftN { get; private set; }
         public float PlateRightN { get; private set; }
         public float BarOnLegN { get; private set; }
+        /// <summary>Shin contact normal force on the bar over the last tick (N; legal contact, telemetry).</summary>
+        public float ShinContactN { get; private set; }
+        /// <summary>
+        /// Exact vertical load assistance the thighs apply to the airborne bar (N), closed from
+        /// the bar's momentum: everything on the bar except the grips and gravity is contact.
+        /// Zero while the plates carry the bar's weight (the channel is defined only for the
+        /// airborne bar the referee judges; IPF 4.3.1(4)).
+        /// </summary>
+        public float ThighAssistN { get; private set; }
+        private float _previousBarVy;
         public bool GripsReleased { get; private set; }
         public ulong Tick => _tick;
         public Rigidbody Bar => _barbell.Body;
@@ -290,7 +300,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
             }
 
             Referee = new DeadliftReferee(_barbell.Body.worldCenterOfMass.y, _barbell.Body.mass * -Physics.gravity.y, dt);
-            Observer = new DeadliftAttemptObserver(_rig, _barbell.Body, () => PlateLeftN + PlateRightN, () => BarOnLegN,
+            Observer = new DeadliftAttemptObserver(_rig, _barbell.Body, () => PlateLeftN + PlateRightN, () => ThighAssistN, () => ShinContactN,
                 () => LeftGrip != null && LeftGrip.IsAttached, () => RightGrip != null && RightGrip.IsAttached);
 
             _rig.PrimeCommandSource();
@@ -334,7 +344,13 @@ namespace PowerliftingSimulator.Deadlift.Unity
             _barSensor.LeftPlate = _leftPlate;
             _barSensor.RightPlate = _rightPlate;
             foreach (string id in new[] { "left_thigh", "right_thigh", "left_shank", "right_shank" })
+            {
                 _barSensor.Legs.Add(_rig.Segments[id].Collider);
+                if (id.EndsWith("_thigh", StringComparison.Ordinal))
+                    _barSensor.Thighs.Add(_rig.Segments[id].Collider);
+                else
+                    _barSensor.Shins.Add(_rig.Segments[id].Collider);
+            }
 
             // Declared approximation (as the bench): the bar does not collide with the limbs that grasp it.
             foreach (Collider c in bar.GetComponentsInChildren<Collider>(true))
@@ -478,6 +494,21 @@ namespace PowerliftingSimulator.Deadlift.Unity
             PlateLeftN = (float)(_barSensor.LeftNormalImpulse / dt);
             PlateRightN = (float)(_barSensor.RightNormalImpulse / dt);
             BarOnLegN = (float)(_barSensor.LegNormalImpulse / dt);
+            ShinContactN = (float)(_barSensor.ShinNormalImpulse / dt);
+            // Vertical momentum closure of the bar (IPF 4.3.1(4) evidence channel): the exact
+            // non-grip, non-gravity vertical force of the completed tick. While the plates carry
+            // the bar's weight it is undefined for judging and reported as zero.
+            {
+                float vy = Bar.linearVelocity.y;
+                float gravityN = -Physics.gravity.y * Bar.mass;
+                float gripUpN = (LeftGrip != null && LeftGrip.IsAttached ? LeftGrip.ForceOnBarWorld.y : 0f) +
+                                (RightGrip != null && RightGrip.IsAttached ? RightGrip.ForceOnBarWorld.y : 0f);
+                float plateLoadN = PlateLeftN + PlateRightN;
+                ThighAssistN = plateLoadN <= (float)(DeadliftRulebook.ThighSupportPlateFraction * gravityN) && LeftGrip != null && RightGrip != null
+                    ? Bar.mass * ((vy - _previousBarVy) / (float)dt + -Physics.gravity.y) - gripUpN
+                    : 0f;
+                _previousBarVy = vy;
+            }
             _rig.PoweredController.CapturePostPhysicsDiagnostics();
 
             if (_shoulderStarts.Count != 0 && (Pull.Phase >= DeadliftPullPhase.Separated ||

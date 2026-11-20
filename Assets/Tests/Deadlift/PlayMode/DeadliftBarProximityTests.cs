@@ -82,7 +82,7 @@ namespace PowerliftingSimulator.Deadlift
         }
 
         /// <summary>Leg vertices of the visible skinned mesh (dominant bone = thigh / shank), for the visual-vs-collider check.</summary>
-        private sealed class VisibleLegs
+        internal sealed class VisibleLegs
         {
             private readonly PhysicalAthleteRig _rig;
             private readonly List<(SkinnedMeshRenderer smr, sbyte[] cls, Mesh baked)> _parts = new List<(SkinnedMeshRenderer, sbyte[], Mesh)>();

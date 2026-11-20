@@ -46,6 +46,12 @@ namespace PowerliftingSimulator.Deadlift
             public bool Suspended;
             public double MaxTickMs;
             public ulong MaxTickMsTick;
+            /// <summary>GAM-70 §4 mechanism comparison: task-space state at the settled arrival (progress ≥ 0.99).</summary>
+            public float ArrivalBarZ, ArrivalBarVz, ArrivalHipZ, ArrivalComZ, ArrivalComVz, ArrivalGap, ArrivalDeltoidM;
+            /// <summary>Peak drive demands (fraction of ceiling) over the continuation window.</summary>
+            public float MaxAnkleX, MaxAnkleZ, MaxAbdomen, MaxThorax, MaxShoulder;
+            /// <summary>Measured vertical thigh assistance and shin contact over the continuation window (N).</summary>
+            public float MaxThighAssistN, MaxShinN;
         }
 
         [UnityTearDown]
@@ -641,6 +647,34 @@ namespace PowerliftingSimulator.Deadlift
                 float margin = DeadliftSupportGeometry.SignedDistance(hull, capture);
 
                 float s = rt.Pull.LiftProgress01;
+                DeadliftBarLegGeometry.Realized(_world.Rig, rt.Bar, out var gap);
+                if (continuation != null)
+                {
+                    // GAM-70 mechanism comparison: peak drive demands and contact channels over the
+                    // continuation window, and the settled arrival's task-space state.
+                    foreach (var j in new[] { "left_foot", "right_foot" })
+                    {
+                        var d = _world.Rig.PoweredController.GetJoint(j).PostPhysicsDiagnostic;
+                        result.MaxAnkleX = Mathf.Max(result.MaxAnkleX, d.TwistDriveDemandFraction);
+                        result.MaxAnkleZ = Mathf.Max(result.MaxAnkleZ, d.SecondaryDriveDemandFraction);
+                    }
+                    result.MaxAbdomen = Mathf.Max(result.MaxAbdomen, _world.Rig.PoweredController.GetJoint("abdomen").PostPhysicsDiagnostic.TwistDriveDemandFraction);
+                    result.MaxThorax = Mathf.Max(result.MaxThorax, _world.Rig.PoweredController.GetJoint("thorax").PostPhysicsDiagnostic.TwistDriveDemandFraction);
+                    foreach (var j in new[] { "left_upper_arm", "right_upper_arm" })
+                        result.MaxShoulder = Mathf.Max(result.MaxShoulder, _world.Rig.PoweredController.GetJoint(j).PostPhysicsDiagnostic.ModeledDemand);
+                    result.MaxThighAssistN = Mathf.Max(result.MaxThighAssistN, rt.ThighAssistN);
+                    result.MaxShinN = Mathf.Max(result.MaxShinN, rt.ShinContactN);
+                    if (s >= 0.99f)
+                    {
+                        result.ArrivalBarZ = rt.Bar.position.z;
+                        result.ArrivalBarVz = rt.Bar.linearVelocity.z;
+                        result.ArrivalHipZ = rt.Pelvis.position.z;
+                        result.ArrivalComZ = rt.Monitor.SystemCom.z;
+                        result.ArrivalComVz = rt.Monitor.SystemVelocity.z;
+                        result.ArrivalGap = gap.Thigh;
+                        result.ArrivalDeltoidM = rt.Observer.DeltoidBehindBarM;
+                    }
+                }
                 rt.Path.KeySpan(s, out int a, out int b, out float t);
                 Pose rootA = rt.Measurements.PelvisPoseOf(rt.Path.Keys[a].X);
                 Pose rootB = rt.Measurements.PelvisPoseOf(rt.Path.Keys[b].X);
@@ -662,7 +696,6 @@ namespace PowerliftingSimulator.Deadlift
                     planBarRotation = sample.Bar.rotation;
                     planGap = activePlan.Gaps(sample);
                 }
-                DeadliftBarLegGeometry.Realized(_world.Rig, rt.Bar, out var gap);
                 if (result.Pull == 0 && rt.Pull.Phase == DeadliftPullPhase.Pulling)
                     result.Pull = rt.Tick;
                 if (result.Pull > 0 && result.PhysicalSeparation == 0 && rt.PlateLeftN == 0f && rt.PlateRightN == 0f && rt.Bar.linearVelocity.y > 0.005f)
