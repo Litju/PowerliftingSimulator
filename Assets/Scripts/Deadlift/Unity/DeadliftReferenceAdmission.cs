@@ -97,8 +97,15 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 return null;
             }
             string fingerprint = runtime.ModelFingerprint ?? DeadliftCloseBarReference.ComputeFingerprint(rig, runtime.Bar);
+            if (Environment.GetEnvironmentVariable("GAM70_FINGERPRINT_DUMP") == "1")
+            {
+                DeadliftCloseBarReference.ComputeFingerprint(rig, runtime.Bar, out string dump);
+                UnityEngine.Debug.Log("GAM-70 fingerprint dump " + fingerprint + ": " + dump);
+            }
             if (!string.Equals(fingerprint, reference.Fingerprint, StringComparison.Ordinal))
             {
+                DeadliftCloseBarReference.ComputeFingerprint(rig, runtime.Bar, out string source);
+                UnityEngine.Debug.LogWarning("GAM-70 live model fingerprint source: " + source);
                 failure = $"model fingerprint {fingerprint.Substring(0, 12)} differs from the artifact's {Short(reference.Fingerprint)}: regenerate the reference";
                 return null;
             }
