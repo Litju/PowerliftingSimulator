@@ -36,10 +36,11 @@ namespace PowerliftingSimulator.Deadlift
             yield return Probe("close-velocity-only", true, true, report, positionAnchor: false);
             yield return Probe("close-cop", true, true, report);
             yield return Probe("lat-cop", true, true, report, lat: true);
+            yield return Probe("hips-cop", true, true, report, hips: true);
             F.WriteEvidence("lockout-endpoint.txt", report.ToString());
         }
 
-        private IEnumerator Probe(string name, bool close, bool copControl, StringBuilder report, bool positionAnchor = true, bool lat = false)
+        private IEnumerator Probe(string name, bool close, bool copControl, StringBuilder report, bool positionAnchor = true, bool lat = false, bool hips = false)
         {
             yield return DeadliftPlantWorld.Load();
             _world = DeadliftPlantWorld.Current;
@@ -47,8 +48,10 @@ namespace PowerliftingSimulator.Deadlift
             var solver = new DeadliftSetupSolver(rig);
             var setup = solver.BuildModel(DeadliftQualifiedSetup.B2, DeadliftQualifiedSetup.SumoPronated());
             DeadliftAnkleRoll.Enable(rig);
-            var path = new DeadliftLiftPath(rig, solver, setup, DeadliftQualifiedSetup.BarKg) { BarProximity = close, LatEngagement = lat };
+            var path = new DeadliftLiftPath(rig, solver, setup, DeadliftQualifiedSetup.BarKg) { BarProximity = close, LatEngagement = lat, HipsThroughEngagement = hips };
             var key = path.SolveEndpoint();
+            if (hips)
+                Debug.Log("GAM-70 hips-through solve: " + path.HipsThroughReport);
             Pose root = solver.PelvisPoseOf(key.X);
             var g = path.GeometryOf(key);
             var poses = solver.Kinematics.Solve(root, key.Logical);
@@ -78,6 +81,17 @@ namespace PowerliftingSimulator.Deadlift
             var bar = _world.Bar.Body;
             var observer = new DeadliftAttemptObserver(rig, bar, () => 0f, () => 0f, () => 0f,
                 () => _world.LeftGrip.IsAttached, () => _world.RightGrip.IsAttached);
+            // Visible-mesh check: the gap the owner sees (skinned thigh surface) against the
+            // physical capsule gap the plan and the referee use, at the placed endpoint.
+            float meshThigh = float.NaN;
+            var visible = new DeadliftBarProximityTests.VisibleLegs(rig);
+            if (visible.Available)
+            {
+                DeadliftBarLegGeometry.LiveCapsule(DeadliftBarLegGeometry.Shaft(bar), out Vector3 s0, out Vector3 s1, out float shaftRadius);
+                visible.Measure(0.5f * (s0 + s1), shaftRadius, 0.5f * (s1 - s0).magnitude + shaftRadius, out float meshShin, out meshThigh);
+                report.AppendLine(FormattableString.Invariant(
+                    $"{name} visible thigh mesh gap {meshThigh * 1000f:F2} mm vs collider {g.Gaps.Thigh * 1000f:F2} mm, mismatch {(g.Gaps.Thigh - meshThigh) * 1000f:F2} mm (mesh nearer the bar)"));
+            }
             report.AppendLine(FormattableString.Invariant(
                 $"{name} planned bar {g.BarCenter:F5} thigh gap {g.Gaps.Thigh * 1000f:F2} mm, deltoid behind bar {observer.DeltoidBehindBarM * 1000f:F1} mm, COM z {key.SystemComZ:F5} midfoot {path.MidfootZ:F5}, torso {key.TorsoDeg:F1} deg, knee {key.KneeDeg:F1} deg, hip Z {g.HipZ:F5}, shoulder Z {g.ShoulderZ:F5}, feet closure {1000f * footResidual:F3} mm/{footAngleResidual:F3} deg, grip closure {1000f * gripResidual:F3} mm/{gripAngleResidual:F3} deg, roll {g.RollLeftDeg:F3}/{g.RollRightDeg:F3}"));
             var statics = DeadliftContactStatics.SolveSuspended(rig, bar, g.LeftAnchor, g.RightAnchor);
@@ -102,8 +116,12 @@ namespace PowerliftingSimulator.Deadlift
             Assert.That(statics.Feasible, Is.True, statics.Describe());
             if (close)
             {
-                Assert.That(Mathf.Abs(g.RollLeftDeg), Is.LessThanOrEqualTo(DeadliftAnkleRoll.LimitDegrees - path.JointMarginDeg - 8f));
-                Assert.That(Mathf.Abs(g.RollRightDeg), Is.LessThanOrEqualTo(DeadliftAnkleRoll.LimitDegrees - path.JointMarginDeg - 8f));
+                // Plan + the regulator's clamp + the joint margin inside the physical limit.
+                float rollPlanEnvelope = DeadliftAnkleRoll.LimitDegrees - path.JointMarginDeg - DeadliftBalanceRegulator.DefaultMaxRollOffsetDeg;
+                Assert.That(Mathf.Abs(g.RollLeftDeg), Is.LessThanOrEqualTo(rollPlanEnvelope),
+                    $"planned roll {g.RollLeftDeg:F3} deg leaves less than the regulator's clamp inside the limit");
+                Assert.That(Mathf.Abs(g.RollRightDeg), Is.LessThanOrEqualTo(rollPlanEnvelope),
+                    $"planned roll {g.RollRightDeg:F3} deg leaves less than the regulator's clamp inside the limit");
             }
 
             _world.Hold.SetStaticReference(rig, statics.DriveTorquesAxes());
@@ -156,6 +174,17 @@ namespace PowerliftingSimulator.Deadlift
             };
 
             var trace = new StringBuilder("tick,barY,gap3dL,gap3dR,speed,torso,kneeL,kneeR,shoulderAhead,legN,substeps,footLN,footRN,leftSpan,rightSpan,gripErrorL,gripErrorR,footLfResidual,footRfResidual,gripLF,gripRF,gripLT,gripRT,barFResidual,barTResidual,leftZReq,leftZApplied,leftZActual,leftZD,leftZCap,rightZReq,rightZApplied,rightZActual,rightZD,rightZCap\n");
+            // Placement settle (not judged): three authoritative ticks let the authored
+            // configuration take up its welded grips and contact loads. The first tick of the
+            // close and hips-through placements was measured to carry a ~20 mm/s settle
+            // velocity that is an artifact of placement, not of the hold.
+            for (int settle = 1; settle <= 3; settle++)
+            {
+                _world.Step(1);
+                shaftSensor.CompleteTick();
+                foreach (var sensor in pressure)
+                    sensor.CompleteTick((ulong)settle);
+            }
             int sustained = 0, peakStable = 0, lost = 0, firstCeiling = 0;
             for (int tick = 1; tick <= 300; tick++)
             {

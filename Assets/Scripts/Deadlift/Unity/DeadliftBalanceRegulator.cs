@@ -170,7 +170,17 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public bool RollLoop { get; set; }
         public float RollKpDegPerM { get; set; } = -IdentifiedCopGrowthPerTick / 0.0107f;
         public float RollKiDegPerMPerTick { get; set; } = -3f * (0.05f / 0.0107f);
-        public float MaxRollOffsetDeg { get; set; } = 8f;
+        /// <summary>
+        /// The across-sole roll loop's clamp (deg). Re-derived for the GAM-70 final close-bar
+        /// lockout: the hips-through fold of the toed-out stance needs a planned roll of about
+        /// 6.2 deg (the world-forward pelvis advance decomposes into each foot's own sagittal
+        /// plane and its roll share is sin(toe-out) of the leg rotation), so plan + clamp +
+        /// the joint margin must fit the 15 deg physical limit. 5.5 leaves the plan 6.5 deg
+        /// and remains more than double the largest roll offset measured in any qualified
+        /// hold or ascent (the realized roll, plan included, peaked at 3.2 deg).
+        /// </summary>
+        public const float DefaultMaxRollOffsetDeg = 5.5f;
+        public float MaxRollOffsetDeg { get; set; } = DefaultMaxRollOffsetDeg;
 
         /// <summary>Ankle roll (joint z) offset (deg) for the given foot.</summary>
         public float RollOffsetDegFor(string footId) => footId == "left_foot" ? _feet[0].RollOffset : footId == "right_foot" ? _feet[1].RollOffset : 0f;

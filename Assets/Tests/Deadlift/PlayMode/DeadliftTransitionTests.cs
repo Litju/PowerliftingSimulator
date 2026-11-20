@@ -242,6 +242,45 @@ namespace PowerliftingSimulator.Deadlift
             Assert.That(candidate.MeanLockoutGap, Is.InRange(0d, 0.12d));
         }
 
+        /// <summary>
+        /// GAM-70 close-bar final: A/B/C comparison of three independently controlled lockout
+        /// mechanisms at the same admitted post-knee state (matched prepared Drive 284,
+        /// measured PULL 301, confirmed knee passage 538), all sharing the qualified prefix,
+        /// the planned suspended preload, the COP controller, capacities and materials:
+        ///   A - the current close-bar trajectory (hips behind the bar, known-good complete lift);
+        ///   B - the lat-only closer endpoint (bar drawn back with the hips held, known to fail arrival);
+        ///   C - the coordinated hips-through and upper-chain endpoint (pelvis advances to the bar).
+        /// Measured per arm, at the settled arrival and over the continuation window: bar Z and
+        /// velocity, hip Z, system COM and velocity, realized thigh gap, thigh support assistance
+        /// and shin contact, deltoid projection, ankle X/Z, trunk and shoulder drive demands.
+        /// </summary>
+        [UnityTest, Timeout(3600000), Explicit("GAM-70 A/B/C lockout mechanism comparison at the measured post-knee state")]
+        public IEnumerator GAM70_POST_KNEE_MECHANISM_ABC()
+        {
+            var summary = new StringBuilder(
+                "mechanism,pull,knee,stop,stopReason,good,down,barZ,barVz,hipZ,comZ,comVz,thighGapMm,thighAssistN,shinN,deltoidMm,ankleX,ankleZ,abdomen,thorax,shoulder,meanLockoutGapMm\n");
+            foreach (var arm in new[] { ("A-close", false, false), ("B-lat", true, false), ("C-hips-through", false, true) })
+            {
+                var run = new Run();
+                yield return Trace($"mechanism-{arm.Item1}", 284, run, retainPreparation: true, closedPrefix: true,
+                    throughKnee: true, postKneeProbe: true, suspendedPreload: true, lastTick: 1150,
+                    postKneeLat: arm.Item2, postKneeHipsThrough: arm.Item3);
+                summary.AppendLine(string.Format(CultureInfo.InvariantCulture,
+                    "{0},{1},{2},{3},{4},{5},{6},{7:F4},{8:F4},{9:F4},{10:F4},{11:F4},{12:F2},{13:F1},{14:F1},{15:F1},{16:F3},{17:F3},{18:F3},{19:F3},{20:F3},{21:F2}",
+                    arm.Item1, run.Pull, run.ContinuationTick, run.Stop, run.StopReason, run.Good, run.Down,
+                    run.ArrivalBarZ, run.ArrivalBarVz, run.ArrivalHipZ, run.ArrivalComZ, run.ArrivalComVz,
+                    run.ArrivalGap * 1000f, run.MaxThighAssistN, run.MaxShinN, run.ArrivalDeltoidM * 1000f,
+                    run.MaxAnkleX, run.MaxAnkleZ, run.MaxAbdomen, run.MaxThorax, run.MaxShoulder, run.MeanLockoutGap * 1000f));
+                F.WriteEvidence("mechanism-abc.csv", summary.ToString());
+                Assert.That(run.Pull, Is.EqualTo(301ul), arm.Item1 + ": matched prepared pull");
+                Assert.That(run.ContinuationTick, Is.EqualTo(538ul), arm.Item1 + ": matched knee passage");
+                Assert.That(run.Suspended, Is.False);
+            }
+            // The causal claim (GAM-70 final): C keeps the bar's fore-aft place (A-level bar Z)
+            // while advancing the pelvis toward it, where B moved the bar back and lost support.
+            Debug.Log("GAM-70 mechanism comparison:\n" + summary);
+        }
+
         [UnityTest, Timeout(600000), Explicit("GAM-70 close-bar attempt through controlled return")]
         public IEnumerator GAM70_RUNTIME_CLOSE_BAR_ATTEMPT()
         {
@@ -438,7 +477,7 @@ namespace PowerliftingSimulator.Deadlift
             Debug.Log($"Prepared realized substeps: {prepared.Sweep.Samples}, min gap {prepared.Sweep.MinGap * 1000f:F2} mm, swept bound {prepared.Sweep.MinBound * 1000f:F2} mm");
         }
 
-        private IEnumerator Trace(string arm, int driveTick, Run result, bool retainPreparation = false, bool closedPrefix = false, bool throughKnee = false, bool complete = false, bool centered = false, float rejoinEnd = 0f, float lateShoulderDeg = 0f, bool settledShoulder = false, bool runtimeRejoin = false, int earliestPull = 0, int lastTick = 800, bool postKneeProbe = false, bool suspendedPreload = false, bool runtimeClose = false, bool useCache = false, DeadliftCloseBarReference artifact = null, System.Action<DeadliftAttemptRuntime> atContinuation = null)
+        private IEnumerator Trace(string arm, int driveTick, Run result, bool retainPreparation = false, bool closedPrefix = false, bool throughKnee = false, bool complete = false, bool centered = false, float rejoinEnd = 0f, float lateShoulderDeg = 0f, bool settledShoulder = false, bool runtimeRejoin = false, int earliestPull = 0, int lastTick = 800, bool postKneeProbe = false, bool suspendedPreload = false, bool runtimeClose = false, bool useCache = false, DeadliftCloseBarReference artifact = null, System.Action<DeadliftAttemptRuntime> atContinuation = null, bool postKneeLat = false, bool postKneeHipsThrough = false)
         {
             yield return DeadliftPlantWorld.Load();
             _world = DeadliftPlantWorld.Current;
@@ -559,7 +598,8 @@ namespace PowerliftingSimulator.Deadlift
                 {
                     result.ContinuationTick = rt.Tick;
                     result.PrefixSweptGap = result.Sweep.MinBound;
-                    var endPath = new DeadliftLiftPath(_world.Rig, rt.Measurements, rt.Model, rt.Bar.mass) { BarProximity = true };
+                    var endPath = new DeadliftLiftPath(_world.Rig, rt.Measurements, rt.Model, rt.Bar.mass)
+                        { BarProximity = true, LatEngagement = postKneeLat, HipsThroughEngagement = postKneeHipsThrough };
                     var endpoint = endPath.SolveEndpoint();
                     Quaternion barOrientation = Quaternion.AngleAxis(180f / PhysicalBarbell.DefaultPlateColliderSides, Vector3.right);
                     continuation = DeadliftPreparedAscentPlan.ContinueToLockout(rt, _world.Rig, endpoint, barOrientation);

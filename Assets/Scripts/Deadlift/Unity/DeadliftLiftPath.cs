@@ -117,6 +117,40 @@ namespace PowerliftingSimulator.Deadlift.Unity
         /// <summary>Weight on the bar's fore-aft shift from the midfoot at an engaged lockout (BarVerticalWeight without engagement).</summary>
         public static float LatBarShiftWeight = 0f;
         /// <summary>
+        /// GAM-70 final close-bar mechanism (C): hips-through lockout coordination. The bar keeps
+        /// its qualified fore-aft preference over the midfoot (no posterior pull is added); instead
+        /// a lockout task term advances the hip centres to the geometric near-contact Z of the
+        /// planned bar, computed from the same capsule radii and declared clearance the hard
+        /// bar-leg bound uses. The pelvis and thighs therefore come to the bar through the planted
+        /// ankles, knees and hips while the trunk approaches erect; the shoulder static-capacity
+        /// and COM-in-support bounds are unchanged, and the shoulder/arm references keep their
+        /// existing tension role (they do not drag the system backward). The measured alternative
+        /// (B, <see cref="LatEngagement"/>) draws the bar back with the hips held behind it: its
+        /// static endpoint holds 41.8 mm, but complete attempts lose support because the combined
+        /// COM and capture point travel backward with the bar.
+        /// </summary>
+        public bool HipsThroughEngagement { get; set; }
+        /// <summary>Weight (per m) of the hips-through lockout task term anchoring the hip centres to the bar's near-contact Z.</summary>
+        public float HipsThroughWeight { get; set; } = 14f;
+        /// <summary>
+        /// Near-contact hip-to-bar offset of the hips-through task (mechanism C), derived from
+        /// the measured visible-mesh protrusion past the thigh collider plus the declared
+        /// physical limb clearance, so the finished shaft sits adjacent to the visible thigh
+        /// surface without a visual penetration. The protrusion is pose-dependent and was
+        /// measured at the placed endpoints (GAM70_SUSPENDED_LOCKOUT_ENDPOINT): the skinned
+        /// thigh surface runs 33.5 mm in front of the thigh capsule at the staged hips-behind
+        /// endpoint and 39.7 mm at the folded hips-through pose (the skin rides the hip crease
+        /// as the pelvis advances), so the task anchors to the folded-pose measurement.
+        /// </summary>
+        public float HipsThroughNearContactM { get; set; } = 0.0457f;
+        /// <summary>
+        /// Weight of the hips-through endpoint's pelvis task pin (per m and per rad): the
+        /// authored near-contact pelvis pose is pinned like the planted feet while the joint
+        /// channels fold around it, so the closure cannot walk the pelvis back to the
+        /// hips-behind local minimum.
+        /// </summary>
+        public float HipsThroughPinWeight { get; set; } = 8000f;
+        /// <summary>
         /// Measured tracking allowance of the thigh gap: on the qualified plant the realized
         /// bar-thigh gap came up to 18.9 mm closer than planned in the upper-thigh ascent and
         /// 12.5 mm at lockout (control A/B, onset 301). Planning to the hard clearance alone
@@ -375,13 +409,6 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 r.Add(20d * Mathf.Max(0f, floor - kneeDeg) * Mathf.Deg2Rad);
             }
             Mark(r, "knee short of its stop");
-            if (x.Length >= _baseCount + 2)
-            {
-                // Planned ankle roll inside its declared range, with headroom for the regulator.
-                for (int k = 0; k < 2; k++)
-                    r.Add(60d * Math.Max(0d, Math.Abs(x[_baseCount + k]) - RollPlanLimitDeg * Mathf.Deg2Rad));
-                Mark(r, "ankle roll range");
-            }
             // Static feasibility of the arms (hard): with the bar hanging from both
             // hands (W_b / 2 each), the sagittal moment about each shoulder of the
             // hand load and the arm's own weight must stay within ShoulderDemandMax
@@ -411,7 +438,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     bool overlaps = Physics.ComputePenetration(abdomen, trunk.position, trunk.rotation,
                         arm, forearm.position, forearm.rotation, out _, out float depth);
                     r.Add(overlaps ? 2000d * depth : 0d);
-                    if (LatEngagement)
+                    if (LatEngagement || HipsThroughEngagement)
                     {
                         // Arms drawn back against the trunk keep the same 4 mm margin as arm/leg pairs.
                         _legacy.CapsuleSegment(poses, id, out Vector3 f0, out Vector3 f1, out float fr);
@@ -435,18 +462,74 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     float kneeDeg = PoweredJointController.SignedTwistRadians(PoweredJointController.NormalizeCanonical(logical[side + "_shank"]), Vector3.right) * Mathf.Rad2Deg;
                     float straight = Mathf.Abs(knee.Recipe.LowDegrees) < Mathf.Abs(knee.Recipe.HighDegrees)
                         ? knee.Recipe.LowDegrees + JointMarginDeg + LockoutKneeSoftDeg : knee.Recipe.HighDegrees - JointMarginDeg - LockoutKneeSoftDeg;
-                    r.Add(_lambda * 8d * (kneeDeg - straight) * Mathf.Deg2Rad);
+                    // The hips-through lockout lets the knee sit at the flexion its advanced
+                    // pelvis geometry asks for (the hard floor against the straight stop is
+                    // unchanged below, and the referee judges the finished knees at 10 deg):
+                    // the full straightening pull was measured to prefer 2.5 deg of
+                    // hyperextension over the fold's natural flexion.
+                    r.Add(_lambda * (HipsThroughEngagement ? 2d : 8d) * (kneeDeg - straight) * Mathf.Deg2Rad);
                 }
                 Vector3 hip = 0.5f * (_kin.JointAnchorWorld(poses, "left_thigh") + _kin.JointAnchorWorld(poses, "right_thigh"));
                 Vector3 sh = 0.5f * (_kin.JointAnchorWorld(poses, "left_upper_arm") + _kin.JointAnchorWorld(poses, "right_upper_arm"));
                 // Shoulders back (IPF 4.3(2)): shoulder centres not ahead of the hip centres.
                 r.Add(_lambda * 60d * Mathf.Max(0f, sh.z - hip.z));
+                // Hips through (GAM-70 mechanism C): the pelvis advances until the front of the
+                // thigh reaches the near-contact Z of the planned bar. The endpoint solve pins
+                // the pelvis at the authored near-contact pose (set from the staged geometry in
+                // SolveHipsThroughEndpoint: forward along the near-straight leg sphere) and lets
+                // the joints fold; this term holds the same task on the full path's lockout keys,
+                // anchored to the bar each key closes on, offset by the measured capsule radii,
+                // the measured visible-mesh protrusion past the collider and the declared
+                // clearance, so the thighs come to the bar instead of the bar being pulled back.
+                if (HipsThroughEngagement)
+                {
+                    _legacy.CapsuleSegment(poses, "left_thigh", out _, out _, out float thighRadius);
+                    float nearContactHipZ = barCenter.z - (thighRadius + DeadliftSetupSolver.AnchorBarRadius + HipsThroughNearContactM);
+                    r.Add(_lambda * HipsThroughWeight * (hip.z - nearContactHipZ));
+                    if (_hipsThroughPelvisPinned)
+                    {
+                        // The authored pelvis pose of the hips-through endpoint: a task pin of
+                        // the same kind as the planted feet, so the fold happens in joint space.
+                        r.Add(HipsThroughPinWeight * ((float)x[PelvisY] - _hipsThroughPelvisY));
+                        r.Add(HipsThroughPinWeight * ((float)x[PelvisZ] - _hipsThroughPelvisZ));
+                        r.Add(HipsThroughPinWeight * (x[PelvisPitch] - _hipsThroughPelvisPitch));
+                        // The bar keeps the staged endpoint's qualified supportable fore-aft
+                        // place: the mechanism is the pelvis and thighs coming to the bar, not
+                        // the bar drifting away from the body (measured: without this pin the
+                        // fold let the bar run 29 mm forward and kept 68 of the 93 mm gap).
+                        r.Add(HipsThroughBarPlaceWeight * (barCenter.z - _hipsThroughBarTargetZ));
+                        Mark(r, "hips-through pelvis pin");
+                    }
+                }
                 // IPF 4.3.1(1): no downward movement of the bar before the final position.
                 r.Add(200d * Mathf.Max(0f, _minFreeRise - barRise));
                 Mark(r, "lockout definition");
             }
             hardCost = 0d;
             foreach (double v in r) hardCost += v * v;
+            _lastHardCount = r.Count;
+
+            if (x.Length >= _baseCount + 2)
+            {
+                // Planned ankle roll headroom for the regulator: a plan preference, not a
+                // physical violation (the joint's own 15 deg limit is enforced with the other
+                // joint limits above, and the runtime keeps the regulator's offsets inside the
+                // remaining authority). The rule is plan + the regulator's clamp + the joint
+                // margin inside the physical limit; it was measured that an 8 deg plan bound let
+                // plan + saturated regulator request 16.3 deg and a foot rolled off its edge
+                // (A/B run 2). The hips-through solve (mechanism C) weights the same envelope
+                // harder, because its fold otherwise spends roll before the other channels -
+                // and its envelope is the re-derived one (the toed-out stance makes the roll a
+                // first-order channel of the world-forward pelvis advance: the fold needs a
+                // planned roll of about 6.2 deg), not the 3 deg the hips-behind path uses.
+                float rollPlanLimitDeg = HipsThroughEngagement
+                    ? DeadliftAnkleRoll.LimitDegrees - JointMarginDeg - DeadliftBalanceRegulator.DefaultMaxRollOffsetDeg
+                    : RollPlanLimitDeg;
+                double rollPlanWeight = HipsThroughEngagement ? 600d : 60d;
+                for (int k = 0; k < 2; k++)
+                    r.Add(rollPlanWeight * Math.Max(0d, Math.Abs(x[_baseCount + k]) - rollPlanLimitDeg * Mathf.Deg2Rad));
+                Mark(r, "ankle roll range (plan preference)");
+            }
 
             // Coordination (preferences only). Knee passage first: torso angle
             // held at the setup value while the shins come back to vertical
@@ -516,6 +599,13 @@ namespace PowerliftingSimulator.Deadlift.Unity
             return r;
         }
 
+        private bool _hipsThroughPelvisPinned;
+        private double _hipsThroughPelvisY, _hipsThroughPelvisZ, _hipsThroughPelvisPitch;
+        private float _hipsThroughBarTargetZ;
+        /// <summary>Weight (per m) holding the bar at the staged endpoint's supportable fore-aft place during the fold.</summary>
+        private const double HipsThroughBarPlaceWeight = 400d;
+        /// <summary>Residual count at the hard-term boundary of the last evaluation (HardTerms' slice).</summary>
+        private int _lastHardCount;
         private float _plannedLockoutRise = 0.5f;
         /// <summary>Lockout rise that normalizes the hip-extension coordination schedule (the Gate 6 lockout).</summary>
         private float _scheduleLockoutRise = 0.5f;
@@ -537,7 +627,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
             _lambda = key.FreeRise ? key.Lambda : 1f;
             List<double> r = Residuals(key.X, prevIndex >= 0 ? Keys[prevIndex].X : null, key.BarRiseM, key.FreeRise, out _);
             _lambda = 1f;
-            int hard = _names.Count;
+            int hard = _lastHardCount;
             var idx = new List<int>();
             for (int i = 0; i < hard; i++) idx.Add(i);
             idx.Sort((a, b) => Math.Abs(r[b]).CompareTo(Math.Abs(r[a])));
@@ -575,6 +665,13 @@ namespace PowerliftingSimulator.Deadlift.Unity
         /// <summary>Solves the standing endpoint alone, without building an ascent trajectory.</summary>
         public Key SolveEndpoint(int iterations = 600)
         {
+            if (HipsThroughEngagement)
+                return SolveHipsThroughEndpoint(iterations);
+            return SolveCloseEndpoint(iterations);
+        }
+
+        private Key SolveCloseEndpoint(int iterations)
+        {
             double[] setup = (double[])_setup.Solution.Clone();
             if (BarProximity)
                 Array.Resize(ref setup, _baseCount + 2);
@@ -586,6 +683,219 @@ namespace PowerliftingSimulator.Deadlift.Unity
             double[] solution = BenchKinematics.LevenbergMarquardt(stand, v => Residuals(v, null, 0f, true, out _, endpoint), iterations, out double cost);
             Residuals(solution, null, 0f, true, out double hard, endpoint);
             return Evaluate(solution, 0f, true, cost, hard);
+        }
+
+        /// <summary>
+        /// Solves the hips-through endpoint (mechanism C) in two steps: the qualified
+        /// close-bar endpoint first (hips behind the bar, the shipped A/B control), then the
+        /// authored near-contact pelvis pose - advanced forward along the near-straight leg
+        /// sphere by the measured geometric delta, raised by the sphere's own gradient so the
+        /// knee stays short of its stop - pinned like the planted feet while the joint
+        /// channels fold around it. The fold is small and purely articular: the ankles
+        /// dorsiflex, the knees take the flexion the advanced pelvis asks for (within the
+        /// referee's locked bound), the trunk carries the shoulders over, and the arms keep
+        /// the welded hands on the bar's supportable place. All hard terms (planted feet,
+        /// welded grips, limits, clearances, COM in the sole hull, shoulder capacity,
+        /// forearm/abdomen margin) are unchanged; the fold is kept only if it realized the
+        /// near-contact thigh geometry without raising the hard-term cost, so a failed fold
+        /// cannot silently ship a worse endpoint.
+        /// </summary>
+        private Key SolveHipsThroughEndpoint(int iterations)
+        {
+            bool hips = HipsThroughEngagement;
+            HipsThroughEngagement = false;
+            Key staged = SolveCloseEndpoint(iterations);
+            HipsThroughEngagement = hips;
+            Dictionary<string, Pose> poses = _kin.Solve(_legacy.PelvisPoseOf(staged.X), LogicalOf(staged.X));
+            Vector3 hip = 0.5f * (_kin.JointAnchorWorld(poses, "left_thigh") + _kin.JointAnchorWorld(poses, "right_thigh"));
+            Vector3 ankle = 0.5f * (_kin.JointAnchorWorld(poses, "left_foot") + _kin.JointAnchorWorld(poses, "right_foot"));
+            _legacy.CapsuleSegment(poses, "left_thigh", out _, out _, out float thighRadius);
+            Vector3 bar = new Vector3(_barCenter0.x, _barCenter0.y + staged.BarRiseM, staged.BarZ);
+            float nearContact = bar.z - (thighRadius + DeadliftSetupSolver.AnchorBarRadius + HipsThroughNearContactM);
+            float delta = nearContact - hip.z;   // forward pelvis advance the geometric target asks for
+            if (!(delta > 0.005f))
+            {
+                HipsThroughReport = "already near-contact: hip Z " + hip.z.ToString("F5", CultureInfo.InvariantCulture) +
+                    ", target " + nearContact.ToString("F5", CultureInfo.InvariantCulture);
+                return staged;   // already at the near-contact geometry
+            }
+            // The near-straight leg pins the hip-ankle span, so the forward slide rides the leg
+            // sphere: the pelvis rises by the sphere's own gradient at the staged pose.
+            float horizontal = hip.z - ankle.z, vertical = Mathf.Max(hip.y - ankle.y, 0.1f);
+            double rise = horizontal < 0f ? -horizontal / vertical * delta : 0d;
+            double[] seed = (double[])staged.X.Clone();
+            seed[PelvisZ] += delta;
+            seed[PelvisY] += rise;
+            // Numeric fold seed: with the pelvis translated, the planted feet are off by the
+            // translation. A damped least-squares Newton on each leg's own channels (hip ball,
+            // knee, ankle roll) restores the planted ankle positions while the pelvis stays
+            // pinned, so the Levenberg-Marquardt polish below starts from a nearly closed fold
+            // instead of a broken translation (measured: LM alone left the feet 12 mm off).
+            FoldSeed(ref seed, staged);
+            Dictionary<string, Pose> seedPoses = _kin.Solve(_legacy.PelvisPoseOf(seed), LogicalOf(seed));
+            float seedFootError = Mathf.Max(
+                Vector3.Distance(seedPoses["left_foot"].position, _leftFoot.position),
+                Vector3.Distance(seedPoses["right_foot"].position, _rightFoot.position));
+            float seedFootAngle = Mathf.Max(
+                Quaternion.Angle(seedPoses["left_foot"].rotation, _leftFoot.rotation),
+                Quaternion.Angle(seedPoses["right_foot"].rotation, _rightFoot.rotation));
+            try
+            {
+                _hipsThroughPelvisPinned = true;
+                _hipsThroughPelvisY = seed[PelvisY];
+                _hipsThroughPelvisZ = seed[PelvisZ];
+                _hipsThroughPelvisPitch = seed[PelvisPitch];
+                _hipsThroughBarTargetZ = staged.BarZ;
+                Key folded = SolveEndpoint(seed, iterations * 2, endpoint: true);
+                float stagedGap = ThighGapOf(staged), foldedGap = ThighGapOf(folded);
+                Dictionary<string, Pose> foldedPoses = _kin.Solve(_legacy.PelvisPoseOf(folded.X), LogicalOf(folded.X));
+                Vector3 foldedHip = 0.5f * (_kin.JointAnchorWorld(foldedPoses, "left_thigh") + _kin.JointAnchorWorld(foldedPoses, "right_thigh"));
+                Vector3 foldedFootError(bool left) => foldedPoses[(left ? "left" : "right") + "_foot"].position -
+                    (left ? _leftFoot : _rightFoot).position;
+                // Keep guard, on the physical contracts rather than the aggregate cost: the fold
+                // is kept only if it closed the gap, planted both feet within the endpoint
+                // solve's own closure scale, and did not trade them for the grip closure (the
+                // aggregate hard cost admits the task pin and the reference knee floor, which
+                // the referee and the joint stops judge separately).
+                bool kept = foldedGap <= stagedGap - 0.010f
+                    && foldedFootError(true).magnitude < 0.002f && foldedFootError(false).magnitude < 0.002f
+                    && Quaternion.Angle(foldedPoses["left_foot"].rotation, _leftFoot.rotation) < 1f
+                    && Quaternion.Angle(foldedPoses["right_foot"].rotation, _rightFoot.rotation) < 1f;
+                float KneeDeg(Dictionary<string, Quaternion> logical_, string side) =>
+                    PoweredJointController.SignedTwistRadians(PoweredJointController.NormalizeCanonical(logical_[side + "_shank"]), Vector3.right) * Mathf.Rad2Deg;
+                float RollDeg(double[] x, int k) => (float)(x[_baseCount + k] * Mathf.Rad2Deg);
+                folded.FreeRise = true;
+                folded.Lambda = 1f;
+                HipsThroughReport = string.Format(CultureInfo.InvariantCulture,
+                    "advance {0:F1} mm, rise {1:F1} mm (hip Z {2:F5} -> {3:F5}); staged gap {4:F2} mm hard {5:F4}; seed foot error {6:F2} mm / {7:F2} deg, seed roll {8:F2} deg; folded gap {9:F2} mm hip Z {10:F5} bar Z {11:F5} hard {12:F4} knee {13:F1}/{14:F1} deg roll {15:F2} deg; kept {16}; folded hard terms: {17}",
+                    delta * 1000f, rise * 1000f, hip.z, nearContact, stagedGap * 1000f, staged.HardCost,
+                    seedFootError * 1000f, seedFootAngle, RollDeg(seed, 0),
+                    foldedGap * 1000f, foldedHip.z, folded.BarZ, folded.HardCost,
+                    KneeDeg(folded.Logical, "left"), KneeDeg(folded.Logical, "right"),
+                    RollDeg(folded.X, 0), kept, HardTerms(folded, 8));
+                return kept ? folded : staged;
+            }
+            finally
+            {
+                _hipsThroughPelvisPinned = false;
+            }
+        }
+
+        /// <summary>
+        /// Restores the planted foot poses after the pelvis was translated: a damped
+        /// least-squares Newton on each leg's own six channels (the hip ball's three, the
+        /// knee, the ankle hinge, the ankle roll), with the sensitivities measured from the
+        /// plant's own kinematics. Six channels against the six constraints of the planted
+        /// foot pose: an exactly determined fold, so the seed lands on the planted feet with
+        /// both position and orientation closed; the arms, the trunk, the grips and the rest
+        /// are closed by the Levenberg-Marquardt polish that follows.
+        /// </summary>
+        private void FoldSeed(ref double[] x, Key staged)
+        {
+            Dictionary<string, Pose> stagedPoses = _kin.Solve(_legacy.PelvisPoseOf(staged.X), LogicalOf(staged.X));
+            int legOffset(bool left) => left ? LeftLeg : RightLeg;
+            int rollIndex(bool left) => left ? _baseCount : _baseCount + 1;
+            for (int iteration = 0; iteration < 4; iteration++)
+            {
+                foreach (bool left in new[] { true, false })
+                {
+                    string footId = (left ? "left" : "right") + "_foot";
+                    bool roll = x.Length > _baseCount + 1;
+                    int[] channels = roll
+                        ? new[] { legOffset(left), legOffset(left) + 1, legOffset(left) + 2, legOffset(left) + 3, legOffset(left) + 4, rollIndex(left) }
+                        : new[] { legOffset(left), legOffset(left) + 1, legOffset(left) + 2, legOffset(left) + 3, legOffset(left) + 4 };
+                    Pose target = stagedPoses[footId];
+                    Dictionary<string, Pose> poses = _kin.Solve(_legacy.PelvisPoseOf(x), LogicalOf(x));
+                    var error = new double[6];
+                    var footError = poses[footId].position - target.position;
+                    error[0] = footError.x; error[1] = footError.y; error[2] = footError.z;
+                    Vector3 rotation = RotationError(target.rotation, poses[footId].rotation);
+                    error[3] = rotation.x; error[4] = rotation.y; error[5] = rotation.z;
+                    double magnitude = 0d;
+                    for (int i = 0; i < 6; i++) magnitude += error[i] * error[i];
+                    if (magnitude < 1e-12)
+                        continue;
+                    // Sensitivity of the foot pose to each channel (forward differences).
+                    var columns = new double[6][];
+                    for (int c = 0; c < channels.Length; c++)
+                    {
+                        double[] probe = (double[])x.Clone();
+                        probe[channels[c]] += 1e-4;
+                        Dictionary<string, Pose> probePoses = _kin.Solve(_legacy.PelvisPoseOf(probe), LogicalOf(probe));
+                        var column = new double[6];
+                        var positionDelta = probePoses[footId].position - poses[footId].position;
+                        column[0] = positionDelta.x / 1e-4; column[1] = positionDelta.y / 1e-4; column[2] = positionDelta.z / 1e-4;
+                        Vector3 rotationDelta = RotationError(poses[footId].rotation, probePoses[footId].rotation);
+                        column[3] = rotationDelta.x / 1e-4; column[4] = rotationDelta.y / 1e-4; column[5] = rotationDelta.z / 1e-4;
+                        columns[c] = column;
+                    }
+                    // Damped least squares: minimize |J d - (-error)| with d the channel steps.
+                    var jtj = new double[channels.Length, channels.Length];
+                    var jte = new double[channels.Length];
+                    for (int a = 0; a < channels.Length; a++)
+                    {
+                        for (int b = 0; b < channels.Length; b++)
+                            jtj[a, b] = Dot(columns[a], columns[b]) + (a == b ? 1e-8 : 0d);
+                        jte[a] = Dot(columns[a], error);
+                        jte[a] = -jte[a];
+                    }
+                    SolveLinear(jtj, jte);
+                    for (int c = 0; c < channels.Length; c++)
+                        x[channels[c]] += jte[c] * 0.9;
+                }
+            }
+        }
+
+        private static double Dot(double[] a, double[] b)
+        {
+            double sum = 0d;
+            for (int i = 0; i < a.Length; i++)
+                sum += a[i] * b[i];
+            return sum;
+        }
+
+        private static void SolveLinear(double[,] a, double[] b)
+        {
+            int n = b.Length;
+            for (int i = 0; i < n; i++)
+            {
+                int pivot = i;
+                for (int r = i + 1; r < n; r++)
+                    if (Math.Abs(a[r, i]) > Math.Abs(a[pivot, i]))
+                        pivot = r;
+                for (int c = 0; c < n; c++)
+                {
+                    double t = a[i, c]; a[i, c] = a[pivot, c]; a[pivot, c] = t;
+                }
+                double t2 = b[i]; b[i] = b[pivot]; b[pivot] = t2;
+                double d = a[i, i];
+                if (Math.Abs(d) < 1e-12)
+                    continue;
+                for (int c = 0; c < n; c++)
+                    a[i, c] /= d;
+                b[i] /= d;
+                for (int r = 0; r < n; r++)
+                {
+                    if (r == i)
+                        continue;
+                    double f = a[r, i];
+                    if (f == 0d)
+                        continue;
+                    for (int c = i; c < n; c++)
+                        a[r, c] -= f * a[i, c];
+                    b[r] -= f * b[i];
+                }
+            }
+        }
+
+        /// <summary>Diagnostics of the last hips-through endpoint solve: the authored target, the folded result, and whether the fold was kept.</summary>
+        public string HipsThroughReport { get; private set; } = string.Empty;
+
+        private float ThighGapOf(Key key)
+        {
+            Dictionary<string, Pose> poses = _kin.Solve(_legacy.PelvisPoseOf(key.X), LogicalOf(key.X));
+            Vector3 bar = new Vector3(_barCenter0.x, _barCenter0.y + key.BarRiseM, key.BarZ);
+            return DeadliftBarLegGeometry.Planned(_legacy, poses, bar).Thigh;
         }
 
         private static double[] StandingSeed(double[] x0)

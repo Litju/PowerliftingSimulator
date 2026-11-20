@@ -43,6 +43,17 @@ namespace PowerliftingSimulator.Deadlift.Unity
         /// (<see cref="DeadliftLiftPath.BarProximity"/>). Static so the A/B can run the control path on a matched plant.
         /// </summary>
         public static bool BarProximityPath = BarProximityPathDefault;
+        /// <summary>
+        /// Shipped value of <see cref="HipsThroughPath"/>: the GAM-70 final close-bar lockout
+        /// mechanism (C) - the hips come through to the bar.
+        /// </summary>
+        public const bool HipsThroughPathDefault = true;
+        /// <summary>
+        /// Solve the close-bar continuation's terminal lockout with the hips-through task term
+        /// (<see cref="DeadliftLiftPath.HipsThroughEngagement"/>). Static so the A/B can run the
+        /// previous hips-behind endpoint on a matched plant.
+        /// </summary>
+        public static bool HipsThroughPath = HipsThroughPathDefault;
 
         private readonly FoundationBootstrap _foundation;
         private readonly PhysicalAthleteRig _rig;

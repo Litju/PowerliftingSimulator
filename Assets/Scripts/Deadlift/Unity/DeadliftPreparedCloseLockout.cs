@@ -54,7 +54,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     Install();
                 return;
             }
-            var path = new DeadliftLiftPath(rig, runtime.Measurements, runtime.Model, runtime.Bar.mass) { BarProximity = true };
+            var path = new DeadliftLiftPath(rig, runtime.Measurements, runtime.Model, runtime.Bar.mass)
+                { BarProximity = true, HipsThroughEngagement = DeadliftAttemptRuntime.HipsThroughPath };
             var endpoint = path.SolveEndpoint();
             Plan = DeadliftPreparedAscentPlan.ContinueToLockout(runtime, rig, endpoint, BarRotation, incremental);
             if (!incremental)
