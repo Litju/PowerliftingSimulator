@@ -11,7 +11,7 @@ The deadlift is a physically simulated 75 kg sumo pull on the canonical athlete.
 | Preparation (`PrepareForPull`) | It starts once Drive is held and the plant is measured ready: pretension at target, and bar and athlete+bar COM below the rulebook motionless speed (20 mm/s). Plates loaded, both feet flat, support margin ≥ 40 mm. The shoulders are then set by 2°, then the hand load and trunk brace are checked. | all conditions hold, then Pulling |
 | Pulling | `DeadliftPullController` ramps the bar-break extension while the plates unload. Releasing Drive or ESC aborts and re-arms. | both plates below 2 N on two ticks with the bar rising |
 | Ascent below the knee | The prepared ascent reference is admitted at separation (below). | bar rise ≥ knee passage |
-| Ascent above the knee | The post-knee continuation into the suspended close-bar endpoint is admitted at knee passage. It adds contact-consistent COP targets, the planned COM and a suspended-bar preload. | progress 1 → Lockout |
+| Ascent above the knee | The post-knee continuation is admitted at knee passage. It runs into the hips-through close-bar endpoint (contract v2): the bar keeps its supportable fore-aft place while the pelvis advances about 53 mm through the planted leg chains. It adds contact-consistent COP targets, the planned COM and a suspended-bar preload. | progress 1 → Lockout |
 | Lockout | The referee watches. It gives Down after 0.3 s motionless with knees locked, an erect torso and shoulders back. | Down |
 | Lowering | The bar brakes at the measured knee waypoint, checks the motionless bar plus bilateral and active support, then blends into the stock lower reference. | plates ≥ 600 N |
 | Returned | The grips are released after supported rest and a completed referee decision. | — |
@@ -37,7 +37,9 @@ The progress rate is bounded by Drive × 0.30 /s and by an acceleration of 0.6 /
 
 | Key | Effect |
 | --- | --- |
-| W / Up | Drive, through the foundation intent pipeline. Drive is the raw command source; no override is used in the shipped path. |
+| Space | Brace, one tap: it braces the trunk, sets the lats and stays set for the attempt. |
+| Left Shift | Grip, held: it takes the slack out and is kept held through the pull. |
+| W / Up | Drive, through the foundation intent pipeline. Drive is the raw command source; the shipped path uses no `IntentOverride01`. |
 | ESC | Aborts before liftoff. |
 | R | Reloads the station once. |
 | V | Toggles the side view. |
@@ -51,7 +53,11 @@ The progress rate is bounded by Drive × 0.30 /s and by an acceleration of 0.6 /
 
 ## Known limitations
 
-- **Onset marginality.** About 47 ticks after separation, the prefix reference's pelvis motion changes slope sharply. This happens where the 24 mm planned shin clearance becomes active. Whether support holds there depends on sub-millimetre state. Six of eight player Drive onsets complete (1, 228, 260, 284, 300, 400); 320 and 350 lose support. Two A/B fixes were negative (see `docs/evidence/GAM-70/reference-cache-admission.md`).
+- **Lockout geometry.** At the qualified onset the shaft finishes 42.38 mm from the thigh colliders on average over lockout. The isolated hold measured 5.56 mm from the visible thigh surface. On the way down the bar slides along the shins, with a minimum gap of 0.74 mm and no contact force.
+- **Onset marginality (blocks merge).** Contract v2 completes 3 of 8 player Drive onsets (1, 228, 284) and 1 of 5 PULL onsets (301).
+  - *Before the knee.* About 47 ticks after separation, the prefix reference's pelvis motion changes slope sharply. This happens where the 24 mm planned shin clearance becomes active. PULL 320 and 350 and Drive 320 fail there, unchanged from v1.
+  - *After the knee.* 16–24 ticks after the continuation is admitted with a corrected anchor, one foot's COP reaches its sole edge and the heel or toe lifts. Drive 260, 300, 350 and 400 and PULL 302 and 305 fail there; this failure is new in v2.
+  - *Correction attempts.* A rate-continuous hand-off was negative (same count, different members). The causal trace and the open identification step are in `docs/evidence/GAM-70/reference-cache-admission.md`.
 - **Rejected admission.** A reference rejected after separation returns the bar without Down. That path is only qualified as "reported, no lift, no suspension". The hand-load reference keeps carrying the bar near the floor, so the grips are not released.
 - **Allocation.** The managed heap grows about 38 MB during a lift from dictionary-based kinematics. No gen-0 collection was observed during the lift.
 
