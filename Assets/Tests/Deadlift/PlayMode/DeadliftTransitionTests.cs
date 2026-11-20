@@ -392,6 +392,28 @@ namespace PowerliftingSimulator.Deadlift
             Assert.That(rejected.Good, Is.False);
         }
 
+        /// <summary>
+        /// Realistic input timing under the measured readiness contract: Drive first given at different
+        /// ticks after the grip is set; the internal preparation decides when the pull starts.
+        /// </summary>
+        [UnityTest, Timeout(3600000), Explicit("GAM-70 cached close-bar attempts across Drive onsets after measured readiness")]
+        public IEnumerator GAM70_CACHED_CLOSE_BAR_DRIVE_ONSETS()
+        {
+            var summary = new StringBuilder();
+            foreach (int drive in OnsetsFromEnvironment(new[] { 1, 228, 260, 284, 300, 320, 350, 400 }))
+            {
+                var candidate = new Run();
+                yield return Trace($"cached-close-drive-{drive}", drive, candidate, throughKnee: true, complete: true,
+                    runtimeClose: true, lastTick: 2400, useCache: true);
+                summary.AppendLine($"Drive {drive}: pull {candidate.Pull}, separation {candidate.ConfirmedSeparation}, knee {candidate.ContinuationTick}, DOWN {candidate.Down}, " +
+                    $"stop {candidate.Stop} ({candidate.StopReason}), release {candidate.Released}, nearer thigh {candidate.MeanLockoutGap * 1000d:F2} mm, " +
+                    $"min airborne foot {candidate.MinAirborneFootN:F1} N, suspended {candidate.Suspended}, max tick {candidate.MaxTickMs:F2} ms. {candidate.RefereeSummary}\n" +
+                    $"   ascent: {candidate.AscentAdmission?.Describe()}\n   post-knee: {candidate.PostKneeAdmission?.Describe()}");
+                F.WriteEvidence("cached-close-drive-onsets.txt", summary.ToString());
+                Assert.That(candidate.Suspended, Is.False);
+            }
+        }
+
         private static IEnumerable<int> OnsetsFromEnvironment(int[] fallback)
         {
             string value = System.Environment.GetEnvironmentVariable("GAM70_ONSETS");
@@ -595,7 +617,7 @@ namespace PowerliftingSimulator.Deadlift
                     result.PrefixSweptGap = result.Sweep.MinBound;
                     atContinuation?.Invoke(rt);
                 }
-                if (tick < 280)
+                if (tick < Mathf.Min(280, driveTick))
                     continue;
 
                 rt.Monitor.Update(); // Read current capture point, then use this tick's foot impulses for the hull.

@@ -47,3 +47,29 @@ The live-solve traces at onsets 301, 302, 305, 320 and 350 were aligned at bar s
 Sub-millimetre differences at separation decide the outcome, so the onset tick is not the cause. The margin of this window is.
 
 Negative A/B: feeding the prefix's planned COM velocity to the ankle regulator, as the post-knee continuation does, made all five onsets fail earlier (296–496). That variant was removed.
+
+## Measured readiness and player Drive onsets
+
+The tick-283 Drive gate is replaced by measured readiness. Preparation begins when two conditions hold:
+
+- the grip pretension has reached its target;
+- the bar and the athlete-plus-bar COM are below the rulebook motionless speed (20 mm/s).
+
+The existing plate, foot, balance, hand-load, shoulder and trunk conditions follow. In the B2 attempt readiness first holds at tick 227. `GAM70_CACHED_CLOSE_BAR_DRIVE_ONSETS` gives real Drive at varied ticks, with no acceptance delay, the cached references and the runtime unchanged:
+
+| Drive from | PULL | DOWN | Result |
+| ---: | ---: | ---: | --- |
+| 1 (held from load) | 245 | 711 | GOOD LIFT, release, 95.94 mm, 555.7 N |
+| 228 | 245 | 711 | GOOD LIFT, release |
+| 260 | 277 | 743 | GOOD LIFT, release, 95.85 mm |
+| 284 (qualified) | 301 | 762 | GOOD LIFT, exact admission, 95.66 mm, 558.8 N |
+| 300 | 317 | 783 | GOOD LIFT, release, 95.78 mm |
+| 320 | 337 | — | support loss at 549 (before knee passage) |
+| 350 | 368 | — | support loss at 635 (after knee passage) |
+| 400 | 418 | 883 | GOOD LIFT, release, 95.74 mm |
+
+Six of eight player onsets complete judged lifts. None of the eight runs was suspended, and the attempt's post-physics work peaked at 9.6 ms. The two failures are the known prefix-window support marginality described above, not a readiness or timing gate.
+
+Also negative: bounding the lift rate by the measured inverted-pendulum COP capacity at each key boundary of the piecewise-linear reference turned onset 301 into a support loss (tick 589). It left 302 and 305 unchanged, and that variant was removed.
+
+The real-keyboard station test (`CLOSE_BAR_STATION_USES_HELD_KEYBOARD_DRIVE`) presses W at the Ready cue (tick 227). Drive reaches the simulation at 228 and preparation starts on that tick. Then PULL 244, DOWN 711, GOOD LIFT and supported release follow, with `IntentOverride01` null throughout. Load takes 520 ms. The largest render frame after separation is 18.8 ms. No gen-0 collection occurred during the lift, while the managed heap grew 38 MB. `R_RESTARTS_THE_STATION_ONCE_WITH_A_FRESH_CLOCK_AND_INPUT` reloads exactly once and delivers held W to the new clock.
