@@ -94,11 +94,6 @@ public static class GAM70DeadliftSceneBuilder
     [MenuItem("Powerlifting Simulator/GAM-70/2. Build Windows Player From Committed Scenes")]
     public static void BuildWindowsPlayerFromCommittedScenes() => BuildWindowsPlayer(WindowsExecutablePath);
 
-    public static void BuildWindowsPreparedRehearsal() =>
-        BuildWindowsPlayer("Builds/GAM70/PreparedRehearsal/PowerliftingSimulator.exe");
-
-    public static void BuildWindowsCloseLockout() =>
-        BuildWindowsPlayer("Builds/GAM70/CloseLockout/PowerliftingSimulator.exe");
 
     private static void BuildWindowsPlayer(string output)
     {
