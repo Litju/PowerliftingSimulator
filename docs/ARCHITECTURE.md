@@ -88,3 +88,7 @@ and overlay provenance refer to prior measurements, not required repository
 files; retrieve tracked originals from Git history with `git log --all -- <path>`
 and `git show <commit>:<path>`. The imported athlete retains its license and
 source provenance beside the asset.
+
+## Deadlift
+
+The physical deadlift (control phases, offline reference generation and runtime admission, input, referee, limitations and the game-history handoff contract) is documented in [DEADLIFT.md](DEADLIFT.md).
