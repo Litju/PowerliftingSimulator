@@ -70,7 +70,11 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public bool PreparedClearanceRejoin { get; set; }
         /// <summary>Opt-in prepared ascent into the suspended close-bar endpoint.</summary>
         public bool PreparedCloseLockout { get; set; }
-        public const ulong PreparedDriveReadyTick = 283;
+        /// <summary>The grip pretension servo has reached its final target (the grip is set).</summary>
+        public bool PretensionEstablished => _tick > PretensionStartTick + PretensionRampTicks &&
+            Mathf.Min(LeftGrip.ForceOnBarWorld.y, RightGrip.ForceOnBarWorld.y) >= 0.95f * _pretensionTargetN;
+        /// <summary>What the internal preparation is waiting for while the player asks to pull (HUD).</summary>
+        public string PreparationStatus { get; private set; } = string.Empty;
         public DeadliftPreparedAscentPlan PreparedAscentPlan =>
             _preparedRejoin?.IsReady == true ? _preparedRejoin.Plan : null;
         internal bool SolvePreparedPlanAcrossFrames { get; set; }
@@ -373,12 +377,19 @@ namespace PowerliftingSimulator.Deadlift.Unity
             // Rearmed pulls keep the measured hand-load owner established on the first pull.
             if (Hold.HandLoadClaimed)
                 return true;
-            if (PreparedCloseLockout && _tick < PreparedDriveReadyTick)
-                return false;
-
-            if (PlateLeftN <= DeadliftPullController.SeparationPlateN || PlateRightN <= DeadliftPullController.SeparationPlateN ||
-                !LoadedCop("left_foot") || !LoadedCop("right_foot") || Monitor.Update() < Pull.MinSupportMarginM)
-                return false;
+            // Measured readiness (no tick gate): the grip pretension is set and the athlete and bar are
+            // quasi-static by the rulebook's own motionless criterion, before the shoulders are set.
+            if (!PretensionEstablished)
+                return Preparing("setting the grip pretension");
+            if (PlateLeftN <= DeadliftPullController.SeparationPlateN || PlateRightN <= DeadliftPullController.SeparationPlateN)
+                return Preparing("the bar must rest on both plates");
+            if (!LoadedCop("left_foot") || !LoadedCop("right_foot"))
+                return Preparing("both feet must be loaded flat");
+            if (Monitor.Update() < Pull.MinSupportMarginM)
+                return Preparing("balance over the feet");
+            if (_shoulderStarts.Count == 0 && (Bar.linearVelocity.magnitude >= DeadliftRulebook.MotionlessSpeedMps ||
+                    Monitor.SystemVelocity.magnitude >= DeadliftRulebook.MotionlessSpeedMps))
+                return Preparing("settling: bar and body must be still");
 
             // Use the grounded B2 transfer probe's bounded extension reference.
             if (_shoulderStarts.Count == 0)
@@ -391,14 +402,14 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     _shoulderStarts.Add(shoulder, (shoulder.PostPhysicsDiagnostic.ActualRelative, axis));
                     Hold.PreparationOffsets.Add(shoulder.Id, Quaternion.AngleAxis(2f, axis));
                 }
-                return false;
+                return Preparing("setting the shoulders");
             }
 
             // Gate 5 measured ~270 N per hand at the grounded endpoint. The transfer
             // experiment retained ~265 N with both plates supported.
             Vector3 left = LeftGrip.ForceOnBarWorld, right = RightGrip.ForceOnBarWorld;
             if (Mathf.Min(left.y, right.y) < 0.95f * _pretensionTargetN || left.z + right.z >= -10f)
-                return false;
+                return Preparing("loading the hands");
 
             foreach (var shoulder in _shoulderStarts)
             {
@@ -406,7 +417,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 var start = shoulder.Value;
                 float realized = PoweredJointController.SignedTwistRadians(Quaternion.Inverse(start.Initial) * d.ActualRelative, start.Axis) * Mathf.Rad2Deg;
                 if (realized < 0.5f || d.ModeledDemand >= 1f)
-                    return false;
+                    return Preparing("setting the shoulders");
             }
 
             foreach (var trunk in _rig.PoweredController.Joints)
@@ -415,9 +426,16 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     continue;
                 var d = trunk.PostPhysicsDiagnostic;
                 if (d.ModeledDemand >= 1f || Quaternion.Angle(Model.SetupLogical[trunk.Id], d.ActualRelative) > 3f)
-                    return false;
+                    return Preparing("bracing the trunk");
             }
+            PreparationStatus = "ready";
             return true;
+        }
+
+        private bool Preparing(string reason)
+        {
+            PreparationStatus = reason;
+            return false;
         }
 
         private void RejectIfNotAdmitted()

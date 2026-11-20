@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Globalization;
+using System.Linq;
 using PowerliftingSimulator.Athlete;
 using PowerliftingSimulator.Equipment;
 using PowerliftingSimulator.Foundation.Unity;
@@ -15,10 +16,19 @@ namespace PowerliftingSimulator.Deadlift.Unity
     /// GAM-70 playable deadlift station. It owns no physics: it composes the
     /// qualified <see cref="DeadliftAttemptRuntime"/> on the scene's athlete,
     /// bar and platform, lets the foundation's authoritative clock run, and
-    /// presents the attempt (instructions, phase, bar height, referee signal
-    /// and decision). The player's Brace, Grip and Drive reach the pull
-    /// controller through the foundation's intent pipeline, exactly as the
-    /// squat and bench. R reloads the scene for another attempt.
+    /// presents the attempt (instructions, preparation, phase, bar height,
+    /// referee signal and decision).
+    ///
+    /// The shipped attempt is the close-bar deadlift: the offline-generated
+    /// reference family is validated while the station loads, and admitted on
+    /// the measured plant at bar separation and knee passage without pausing
+    /// the simulation. The player's Drive (W / Up) reaches the pull controller
+    /// through the foundation's intent pipeline, exactly as the squat and
+    /// bench; the internal preparation (grip pretension and shoulder set)
+    /// starts the pull only when the measured plant is ready. R reloads the
+    /// scene, V toggles the side view, ESC aborts (before liftoff) or returns
+    /// the bar (after liftoff). "-deadliftStockPath" runs the stock qualified
+    /// path as a negative control.
     /// </summary>
     public sealed class DeadliftStationController : MonoBehaviour
     {
@@ -32,31 +42,25 @@ namespace PowerliftingSimulator.Deadlift.Unity
         private string _status = "Preparing the lifter...";
         private string _failure = string.Empty;
         private GUIStyle _big, _body, _lightOn, _lightOff;
-        private ulong _downShownTick;
         private bool _sideView;
-        private bool _experimentalPath;
-        private bool _preparedRejoin, _preparedRehearsal, _rehearsalStarted;
-        private bool _closeLockout, _waitingForDrive;
-        private DeadliftPullPhase _rehearsalPhase;
-        private float _rehearsalMinGap = float.PositiveInfinity, _rehearsalMinFoot = float.PositiveInfinity;
-        private double _rehearsalThighGapSum;
-        private int _rehearsalLockoutTicks;
-
-        /// <summary>
-        /// Owner comparison only: "-deadliftBarProximity" on the player command line runs the
-        /// experimental bar-proximity ascent path (DeadliftLiftPath.BarProximity), which is
-        /// measured NOT to complete the lift reliably; "-deadliftSideView" starts in the side view.
-        /// The default is the qualified path.
-        /// </summary>
-        public const string ExperimentalPathArgument = "-deadliftBarProximity", SideViewArgument = "-deadliftSideView";
-        public const string PreparedRejoinArgument = "-deadliftPreparedRejoin";
-        public const string PreparedCloseLockoutArgument = "-deadliftCloseLockout";
-        public const string PreparedRehearsalArgument = "-deadliftPreparedRehearsal";
+        private bool _stockPath;
+        private bool _reloading;
         private DeadliftPullPhase _loggedPhase = DeadliftPullPhase.Grounded;
+        private ulong _loggedRejection;
+
+        /// <summary>Negative control: the stock qualified ascent path instead of the close-bar reference.</summary>
+        public const string StockPathArgument = "-deadliftStockPath";
+        /// <summary>Test seam: selects the stock control without a command-line argument (null: use the arguments).</summary>
+        public static bool? StockPathOverride { get; set; }
+        /// <summary>Start in the low side view.</summary>
+        public const string SideViewArgument = "-deadliftSideView";
 
         public DeadliftAttemptRuntime Runtime { get; private set; }
         public bool IsInitialized { get; private set; }
         public string StartupFailure => _failure;
+        public string Status => _status;
+        /// <summary>Wall time of the loading stage (scene composition), ms.</summary>
+        public double LoadMilliseconds { get; private set; }
 
         private void Awake()
         {
@@ -64,16 +68,17 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 foundation = FindFirstObjectByType<FoundationBootstrap>();
             if (foundation != null && foundation.Runtime != null && foundation.Runtime.IsInitialized)
                 foundation.Runtime.HoldPhysicsUntilInitialStateValidated();
-            // The render clock must not try to step a held plant while the attempt is composed.
+            // Loading stage: the render clock must not step a held plant while the attempt is composed.
             if (foundation != null)
                 foundation.enabled = false;
         }
 
         private IEnumerator Start()
         {
-            // Render the preparing message first: the ascent path solve takes seconds.
+            // Render the loading message before the composition frame.
             yield return null;
             yield return null;
+            var clock = System.Diagnostics.Stopwatch.StartNew();
             try
             {
                 if (foundation == null) foundation = FindFirstObjectByType<FoundationBootstrap>();
@@ -87,84 +92,31 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     barbell.Build();
                 barbell.SetGameplayPerformanceProfile(true);
                 string[] args = Environment.GetCommandLineArgs();
-                _closeLockout = Array.IndexOf(args, PreparedCloseLockoutArgument) >= 0;
-                _preparedRehearsal = !_closeLockout && Array.IndexOf(args, PreparedRehearsalArgument) >= 0;
-                _preparedRejoin = _closeLockout || _preparedRehearsal || Array.IndexOf(args, PreparedRejoinArgument) >= 0;
-                _experimentalPath = !_preparedRejoin && Array.IndexOf(args, ExperimentalPathArgument) >= 0;
+                _stockPath = StockPathOverride ?? Array.IndexOf(args, StockPathArgument) >= 0;
                 _sideView = Array.IndexOf(args, SideViewArgument) >= 0;
-                DeadliftAttemptRuntime.BarProximityPath = _experimentalPath;
                 Runtime = new DeadliftAttemptRuntime(foundation, athleteRig, barbell)
                 {
-                    PreparedClearanceRejoin = _preparedRejoin && !_closeLockout,
-                    PreparedCloseLockout = _closeLockout,
-                    SolvePreparedPlanAcrossFrames = _preparedRejoin
+                    PreparedCloseLockout = !_stockPath,
+                    UseReferenceCache = true
                 };
-                try { Runtime.Initialize(); }
-                finally { DeadliftAttemptRuntime.BarProximityPath = DeadliftAttemptRuntime.BarProximityPathDefault; }
+                Runtime.Initialize();
                 SquatPresentationGrip grip = athleteRig.GetComponent<SquatPresentationGrip>() ?? athleteRig.gameObject.AddComponent<SquatPresentationGrip>();
                 grip.Configure(athleteRig, barbell);
                 grip.ThumbAroundShaft = true;   // IPF 4.3(1): the grip is optional; thumbs around the bar
                 PlaceCamera(_sideView);
-                if (_preparedRehearsal)
-                {
-                    Runtime.Pull.IntentOverride01 = 0f;
-                    Runtime.TickCompleted += RehearsePreparedPull;
-                    foundation.Runtime.TicksSuspended = true;
-                }
-                if (_closeLockout)
-                    Runtime.TickCompleted += WaitForPreparedDrive;
                 IsInitialized = true;
+                LoadMilliseconds = clock.Elapsed.TotalMilliseconds;
                 foundation.enabled = true;
-                Debug.Log("GAM-70 deadlift station ready. Tick-0 penetration " +
-                          (Runtime.TickZeroMaxPenetrationM * 1000f).ToString("F2", CultureInfo.InvariantCulture) + " mm\n" + Runtime.PathReport);
+                Debug.Log(string.Format(CultureInfo.InvariantCulture,
+                    "GAM-70 deadlift station ready ({0}) in {1:F0} ms: {2}. Tick-0 penetration {3:F2} mm\n{4}",
+                    _stockPath ? "stock path control" : "close-bar reference", LoadMilliseconds,
+                    string.Join(", ", Runtime.InitializationMilliseconds.Select(kv => $"{kv.Key} {kv.Value:F0} ms")),
+                    Runtime.TickZeroMaxPenetrationM * 1000f, Runtime.PathReport));
             }
             catch (Exception e)
             {
                 _failure = e.Message;
                 Debug.LogError("GAM-70 deadlift station startup failed: " + e);
-            }
-        }
-
-        private void WaitForPreparedDrive(DeadliftAttemptRuntime runtime)
-        {
-            if (runtime.Tick != DeadliftAttemptRuntime.PreparedDriveReadyTick)
-                return;
-            runtime.TickCompleted -= WaitForPreparedDrive;
-            if (runtime.Pull.LastRawDrive01 > 0.05f)
-                return;
-
-            _waitingForDrive = true;
-            foundation.Runtime.TicksSuspended = true;
-        }
-
-        private void RehearsePreparedPull(DeadliftAttemptRuntime runtime)
-        {
-            if (runtime.Tick == 283)
-                runtime.Pull.IntentOverride01 = 1f;
-            if (runtime.Pull.Phase != _rehearsalPhase)
-            {
-                _rehearsalPhase = runtime.Pull.Phase;
-                Debug.Log($"GAM-70 prepared rehearsal tick {runtime.Tick}: {_rehearsalPhase} | {runtime.Referee.Summary()}");
-            }
-            if (runtime.Pull.SeparationTick != 0)
-            {
-                DeadliftBarLegGeometry.Realized(athleteRig, runtime.Bar, out var gaps);
-                _rehearsalMinGap = Mathf.Min(_rehearsalMinGap, gaps.Leg);
-                if (runtime.PlateLeftN + runtime.PlateRightN < 600f)
-                    _rehearsalMinFoot = Mathf.Min(_rehearsalMinFoot, runtime.FootLoadMinN);
-                if (runtime.Pull.Phase == DeadliftPullPhase.Lockout)
-                {
-                    _rehearsalThighGapSum += gaps.Thigh;
-                    _rehearsalLockoutTicks++;
-                }
-            }
-            if (runtime.GripsReleased)
-            {
-                Debug.Log(string.Format(CultureInfo.InvariantCulture,
-                    "GAM-70 prepared rehearsal returned and released at {0}: {1} | min shaft gap {2:F2} mm | min airborne foot {3:F1} N | mean lockout thigh gap {4:F2} mm",
-                    runtime.Tick, runtime.Referee.Summary(), _rehearsalMinGap * 1000f, _rehearsalMinFoot,
-                    _rehearsalLockoutTicks == 0 ? double.NaN : _rehearsalThighGapSum * 1000d / _rehearsalLockoutTicks));
-                runtime.TickCompleted -= RehearsePreparedPull;
             }
         }
 
@@ -189,12 +141,24 @@ namespace PowerliftingSimulator.Deadlift.Unity
             cam.fieldOfView = 45f;
         }
 
+        /// <summary>Reloads the station once; further requests while the load is pending are ignored.</summary>
+        public void RequestRestart()
+        {
+            if (_reloading)
+                return;
+            _reloading = true;
+            Debug.Log($"GAM-70 station: restart requested at tick {Runtime?.Tick ?? 0}");
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name, LoadSceneMode.Single);
+        }
+
         private void Update()
         {
             Keyboard keyboard = Keyboard.current;
+            if (_reloading)
+                return;
             if (keyboard != null && keyboard.rKey.wasPressedThisFrame)
             {
-                SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+                RequestRestart();
                 return;
             }
             if (keyboard != null && keyboard.vKey.wasPressedThisFrame && IsInitialized)
@@ -202,64 +166,34 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 _sideView = !_sideView;
                 PlaceCamera(_sideView);
             }
-            if (Runtime == null || !string.IsNullOrEmpty(_failure))
+            if (Runtime == null || !string.IsNullOrEmpty(_failure) || !IsInitialized)
                 return;
-            if (_waitingForDrive)
-            {
-                _status = "Hold W or Up to pull.";
-                if (keyboard != null && (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed))
-                {
-                    _waitingForDrive = false;
-                    foundation.Runtime.TicksSuspended = false;
-                }
-                return;
-            }
-            if (_preparedRehearsal && !_rehearsalStarted)
-            {
-                _status = "Press W or Up to start the rehearsal.";
-                if (keyboard != null && (keyboard.wKey.isPressed || keyboard.upArrowKey.isPressed))
-                {
-                    _rehearsalStarted = true;
-                    foundation.Runtime.TicksSuspended = false;
-                }
-                return;
-            }
-            if (Runtime.PendingPreparedPlan is DeadliftPreparedAscentPlan pending)
-            {
-                _status = $"Solving the ascent reference ({pending.SolvedKeys}/{pending.KeyCount}).";
-                try
-                {
-                    Runtime.AdvancePreparedSolve();
-                }
-                catch (Exception e)
-                {
-                    _failure = e.Message;
-                    Debug.LogError("GAM-70 prepared reference failed: " + e);
-                }
-                return;
-            }
 
             DeadliftPullController pull = Runtime.Pull;
             DeadliftReferee referee = Runtime.Referee;
+            bool driving = pull.LastRawDrive01 > 0.05f;
             switch (pull.Phase)
             {
                 case DeadliftPullPhase.Grounded:
-                    _status = Runtime.Tick < (ulong)(DeadliftAttemptRuntime.PretensionStartTick + DeadliftAttemptRuntime.PretensionRampTicks)
-                        ? "Setting the grip and taking the slack out of the bar..."
-                        : _preparedRehearsal ? "Rehearsal started. The bar will pull automatically." : "Ready. Hold W (or Up arrow) to pull.";
+                    _status = !Runtime.PretensionEstablished ? "Setting the grip and taking the slack out of the bar..."
+                        : driving ? "Preparing the pull: " + Runtime.PreparationStatus
+                        : "Ready. Hold W (or Up arrow) to pull.";
                     break;
                 case DeadliftPullPhase.Pulling: _status = "Pulling - the plates are unloading."; break;
-                case DeadliftPullPhase.Aborted: _status = "Pull released before the bar left the floor. R to reset."; break;
+                case DeadliftPullPhase.Aborted: _status = "Pull released before the bar left the floor. Release W, then pull again."; break;
                 case DeadliftPullPhase.Separated:
                 case DeadliftPullPhase.Lifting:
                     _status = pull.LiftHeld ? "Hold position (" + pull.LiftHoldReason + ")."
-                        : pull.Intent01 > 0.05f ? "Driving the bar up." : "Bar held.";
-                    if (!_preparedRehearsal && (pull.LiftHeld || pull.Intent01 <= 0.05f))
-                        _status += " Keep W held to drive.";
+                        : pull.AdmissionLimited ? "Hold position (reference admission)."
+                        : pull.Intent01 > 0.05f ? "Driving the bar up." : "Bar held. Keep W held to drive.";
                     break;
                 case DeadliftPullPhase.Lockout: _status = "Locked out - stand still for the referee."; break;
-                case DeadliftPullPhase.Lowering: _status = "DOWN - lowering under control."; break;
-                case DeadliftPullPhase.Returned: _status = referee.Completed ? "Attempt complete. R for another attempt." : "Bar on the platform."; break;
+                case DeadliftPullPhase.Lowering:
+                    _status = pull.DownReceived ? "DOWN - lowering under control."
+                        : !string.IsNullOrEmpty(Runtime.ReferenceRejection) ? "Returning the bar: " + Runtime.ReferenceRejection
+                        : "Returning the bar (attempt abandoned).";
+                    break;
+                case DeadliftPullPhase.Returned: _status = referee.Completed ? "Attempt complete. R for another attempt." : "Bar on the platform. R for another attempt."; break;
             }
             if (pull.Phase != _loggedPhase)
             {
@@ -267,8 +201,11 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     Runtime.Tick, _loggedPhase, pull.Phase, pull.LastRawDrive01, Runtime.LastObservation.BarY, referee.Summary()));
                 _loggedPhase = pull.Phase;
             }
-            if (referee.DownGiven && _downShownTick == 0)
-                _downShownTick = Runtime.Tick;
+            if (Runtime.ReferenceRejectionTick != 0 && _loggedRejection == 0)
+            {
+                _loggedRejection = Runtime.ReferenceRejectionTick;
+                Debug.LogWarning($"GAM-70 station: reference not admitted at tick {_loggedRejection}: {Runtime.ReferenceRejection}");
+            }
         }
 
         private void EnsureStyles()
@@ -277,7 +214,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 return;
             _big = new GUIStyle(GUI.skin.label) { fontSize = 40, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
             _big.normal.textColor = Color.white;
-            _body = new GUIStyle(GUI.skin.label) { fontSize = 18 };
+            _body = new GUIStyle(GUI.skin.label) { fontSize = 18, wordWrap = true };
             _body.normal.textColor = Color.white;
             _lightOn = new GUIStyle(GUI.skin.box) { fontSize = 20, alignment = TextAnchor.MiddleCenter };
             _lightOff = new GUIStyle(_lightOn);
@@ -289,36 +226,30 @@ namespace PowerliftingSimulator.Deadlift.Unity
             float s = Mathf.Max(1f, Screen.height / 1080f);
             GUI.matrix = Matrix4x4.Scale(new Vector3(s, s, 1f));
             float w = Screen.width / s;
-            GUI.Box(new Rect(16, 16, 560, _experimentalPath || _preparedRejoin ? 240 : 210), GUIContent.none);
-            if (_preparedRejoin)
-                GUI.Label(new Rect(30, 210, 540, 30), _preparedRehearsal ? "PREPARED REHEARSAL  |  scripted Drive"
-                    : _closeLockout ? "EXPERIMENTAL close-bar deadlift" : "EXPERIMENTAL prepared ascent", _body);
-            if (_experimentalPath)
-                GUI.Label(new Rect(30, 210, 540, 30), "EXPERIMENTAL bar-proximity path (not qualified)", _body);
-            GUI.Label(new Rect(30, 24, 540, 30), "DEADLIFT  -  " + DeadliftQualifiedSetup.BarKg.ToString("F0", CultureInfo.InvariantCulture) + " kg  (sumo, pronated)", _body);
+            GUI.Box(new Rect(16, 16, 600, 240), GUIContent.none);
+            GUI.Label(new Rect(30, 24, 580, 30), "DEADLIFT  -  " + DeadliftQualifiedSetup.BarKg.ToString("F0", CultureInfo.InvariantCulture) + " kg  (sumo, pronated)", _body);
+            if (_stockPath)
+                GUI.Label(new Rect(30, 222, 580, 30), "CONTROL: stock ascent path", _body);
             if (!string.IsNullOrEmpty(_failure))
             {
-                GUI.Label(new Rect(30, 60, 540, 140), "Station error. Press R to restart.\n" + _failure, _body);
+                GUI.Label(new Rect(30, 60, 580, 160), "Station error. Press R to restart.\n" + _failure, _body);
                 return;
             }
-            if (Runtime == null)
+            if (Runtime == null || !IsInitialized)
             {
-                GUI.Label(new Rect(30, 60, 540, 30), _status, _body);
+                GUI.Label(new Rect(30, 60, 580, 30), _status, _body);
                 return;
             }
             DeadliftObservation o = Runtime.LastObservation;
             DeadliftPullController pull = Runtime.Pull;
-            GUI.Label(new Rect(30, 56, 540, 30), _status, _body);
-            GUI.Label(new Rect(30, 88, 540, 30), string.Format(CultureInfo.InvariantCulture, "Bar height {0:F2} m   rise {1:F0} mm   drive {2:F0} %",
+            GUI.Label(new Rect(30, 56, 580, 52), _status, _body);
+            GUI.Label(new Rect(30, 110, 580, 30), string.Format(CultureInfo.InvariantCulture, "Bar height {0:F2} m   rise {1:F0} mm   drive {2:F0} %",
                 o.BarY, Runtime.Referee.MaxBarRiseM * 1000.0, pull.Intent01 * 100f), _body);
-            GUI.Label(new Rect(30, 118, 540, 30), string.Format(CultureInfo.InvariantCulture, "Knees {0:F0}/{1:F0} deg   torso {2:F0} deg   phase {3}",
+            GUI.Label(new Rect(30, 140, 580, 30), string.Format(CultureInfo.InvariantCulture, "Knees {0:F0}/{1:F0} deg   torso {2:F0} deg   phase {3}",
                 o.KneeFlexionLDeg, o.KneeFlexionRDeg, o.TorsoDeg, pull.Phase), _body);
-            GUI.Label(new Rect(30, 148, 540, 30), _preparedRehearsal
-                ? "W / Up start  |  R reset  |  V side view"
-                : "W / Up: pull and drive  |  ESC abort  |  R reset  |  V side view", _body);
-            if (!_preparedRehearsal)
-                GUI.Label(new Rect(30, 178, 540, 30), string.Format(CultureInfo.InvariantCulture, "input  drive {0:F2}  brace {1:F2}  grip {2:F2}",
-                    pull.LastRawDrive01, pull.LastBrace01, pull.LastGrip01), _body);
+            GUI.Label(new Rect(30, 170, 580, 30), "W / Up: pull and drive  |  ESC abort  |  R reset  |  V side view", _body);
+            GUI.Label(new Rect(30, 196, 580, 30), string.Format(CultureInfo.InvariantCulture, "input  drive {0:F2}  brace {1:F2}  grip {2:F2}",
+                pull.LastRawDrive01, pull.LastBrace01, pull.LastGrip01), _body);
 
             DeadliftReferee referee = Runtime.Referee;
             if (referee.DownGiven && !referee.Completed)
