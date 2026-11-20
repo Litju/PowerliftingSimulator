@@ -237,6 +237,10 @@ namespace PowerliftingSimulator.Deadlift.Unity
             DeadliftContactStatics s0 = SolveStatics(0f), sH = SolveStatics(h);
             _groundedRef = new DeadliftGroundedReference(s0, sH);
             Regulator = new DeadliftBalanceRegulator(_rig, _rig.PlatformCollider) { ComFeedback = true, KiDegPerMPerTick = 3f, RollLoop = true, ComPositionAnchor = false };
+            // The re-derived roll clamp belongs to the hips-through close-bar attempt only; every
+            // other path keeps the qualified clamp (DeadliftBalanceRegulator.HipsThroughMaxRollOffsetDeg).
+            if (PreparedCloseLockout && HipsThroughPath)
+                Regulator.MaxRollOffsetDeg = DeadliftBalanceRegulator.HipsThroughMaxRollOffsetDeg;
             Hold.Regulator = Regulator;
             Hold.UseGroundedReference(_rig, _groundedRef);
             _pretension = new DeadliftPretensionLoop(_groundedRef, MeasuredPerHandUpN);

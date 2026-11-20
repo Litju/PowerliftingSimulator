@@ -523,7 +523,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 // first-order channel of the world-forward pelvis advance: the fold needs a
                 // planned roll of about 6.2 deg), not the 3 deg the hips-behind path uses.
                 float rollPlanLimitDeg = HipsThroughEngagement
-                    ? DeadliftAnkleRoll.LimitDegrees - JointMarginDeg - DeadliftBalanceRegulator.DefaultMaxRollOffsetDeg
+                    ? DeadliftAnkleRoll.LimitDegrees - JointMarginDeg - DeadliftBalanceRegulator.HipsThroughMaxRollOffsetDeg
                     : RollPlanLimitDeg;
                 double rollPlanWeight = HipsThroughEngagement ? 600d : 60d;
                 for (int k = 0; k < 2; k++)

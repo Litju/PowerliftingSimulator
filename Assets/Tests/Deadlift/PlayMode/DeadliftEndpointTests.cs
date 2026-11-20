@@ -117,7 +117,7 @@ namespace PowerliftingSimulator.Deadlift
             if (close)
             {
                 // Plan + the regulator's clamp + the joint margin inside the physical limit.
-                float rollPlanEnvelope = DeadliftAnkleRoll.LimitDegrees - path.JointMarginDeg - DeadliftBalanceRegulator.DefaultMaxRollOffsetDeg;
+                float rollPlanEnvelope = DeadliftAnkleRoll.LimitDegrees - path.JointMarginDeg - DeadliftBalanceRegulator.HipsThroughMaxRollOffsetDeg;
                 Assert.That(Mathf.Abs(g.RollLeftDeg), Is.LessThanOrEqualTo(rollPlanEnvelope),
                     $"planned roll {g.RollLeftDeg:F3} deg leaves less than the regulator's clamp inside the limit");
                 Assert.That(Mathf.Abs(g.RollRightDeg), Is.LessThanOrEqualTo(rollPlanEnvelope),
@@ -131,6 +131,9 @@ namespace PowerliftingSimulator.Deadlift
                 {
                     RollLoop = true, ContactConsistentControl = true, ComPositionAnchor = positionAnchor,
                     CarriedBar = bar, IntegralLeakSeconds = 0.10f,
+                    // The hips-through hold runs under the clamp re-derived for its planned roll.
+                    MaxRollOffsetDeg = path.HipsThroughEngagement
+                        ? DeadliftBalanceRegulator.HipsThroughMaxRollOffsetDeg : DeadliftBalanceRegulator.DefaultMaxRollOffsetDeg,
                     FootCopTarget = id => id == "left_foot" ? statics.CopL : statics.CopR
                 };
             }

@@ -171,15 +171,23 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public float RollKpDegPerM { get; set; } = -IdentifiedCopGrowthPerTick / 0.0107f;
         public float RollKiDegPerMPerTick { get; set; } = -3f * (0.05f / 0.0107f);
         /// <summary>
-        /// The across-sole roll loop's clamp (deg). Re-derived for the GAM-70 final close-bar
-        /// lockout: the hips-through fold of the toed-out stance needs a planned roll of about
-        /// 6.2 deg (the world-forward pelvis advance decomposes into each foot's own sagittal
-        /// plane and its roll share is sin(toe-out) of the leg rotation), so plan + clamp +
-        /// the joint margin must fit the 15 deg physical limit. 5.5 leaves the plan 6.5 deg
-        /// and remains more than double the largest roll offset measured in any qualified
-        /// hold or ascent (the realized roll, plan included, peaked at 3.2 deg).
+        /// The across-sole roll loop's qualified clamp (deg). It stays in force wherever the
+        /// planned roll keeps the hips-behind 3 deg envelope (stock path, grounded hold, A
+        /// controls): plan + clamp + the 3 deg joint margin is 14 of the 15 deg physical limit.
         /// </summary>
-        public const float DefaultMaxRollOffsetDeg = 5.5f;
+        public const float DefaultMaxRollOffsetDeg = 8f;
+        /// <summary>
+        /// The roll clamp re-derived for the hips-through close-bar attempt (GAM-70 mechanism C).
+        /// The hips-through fold of the toed-out stance needs a planned roll of about 6.2 deg:
+        /// the world-forward pelvis advance decomposes into each foot's own sagittal plane, and
+        /// its roll share is sin(toe-out) of the leg rotation. Plan + clamp + the joint margin
+        /// must fit the 15 deg physical limit, so 5.5 leaves the plan 6.5 deg. It is still more
+        /// than double the largest roll offset measured in any qualified hold or ascent (the
+        /// realized roll, plan included, peaked at 3.2 deg). Applying it regulator-wide was
+        /// measured to break the stock-path judged lift (GATE7: foot travel, no Down), so the
+        /// runtime applies it only to the hips-through close-bar attempt.
+        /// </summary>
+        public const float HipsThroughMaxRollOffsetDeg = 5.5f;
         public float MaxRollOffsetDeg { get; set; } = DefaultMaxRollOffsetDeg;
 
         /// <summary>Ankle roll (joint z) offset (deg) for the given foot.</summary>
