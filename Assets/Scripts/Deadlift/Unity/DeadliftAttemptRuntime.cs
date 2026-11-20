@@ -80,6 +80,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
         /// Off, the qualified automatic schedule runs (tests and the stock control).
         /// </summary>
         public bool PlayerSetup { get; set; }
+        /// <summary>The player has braced (Space tapped once); it stays set for the attempt.</summary>
         public bool LastBraceHeld { get; private set; }
         /// <summary>What the internal preparation is waiting for while the player asks to pull (HUD).</summary>
         public string PreparationStatus { get; private set; } = string.Empty;
@@ -228,7 +229,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 RampPerSecond = 1f, ReleasePerSecond = 2f,
                 HipExtensionLimitDeg = 2.5f, KneeExtensionLimitDeg = 2f, TrunkExtensionLimitDeg = -1.5f,
                 MaxComShiftM = 0.05f, GovernorReleaseM = 0.03f,
-                RequireBraceAndGrip = PlayerSetup,   // player setup: Drive pulls only with Grip and Brace held
+                RequireBraceAndGrip = PlayerSetup,   // player setup: Drive pulls only braced and with Grip held
                 RearmAfterAbort = true,
                 LiftEnabled = true, LiftRatePerSecond = LiftRatePerSecond, LiftAccelPerSecond2 = LiftAccelPerSecond2
             };
@@ -272,6 +273,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 return potential;
             };
             Pull.ReferenceDemand = () => Hold.HandLoadReference.MaxDemandFraction;
+            if (PlayerSetup)
+                Pull.BraceSet = () => LastBraceHeld;
             if (UpperChainPreparation || PreparedClearanceRejoin || PreparedCloseLockout)
                 Pull.GroundedReady = PrepareForPull;
 
@@ -390,7 +393,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
             if (!PretensionEstablished)
                 return Preparing(PlayerSetup ? "hold Left Shift to take the slack out of the bar" : "setting the grip pretension");
             if (PlayerSetup && !LastBraceHeld)
-                return Preparing("hold Space to brace and set the lats");
+                return Preparing("tap Space to brace and set the lats");
             if (PlateLeftN <= DeadliftPullController.SeparationPlateN || PlateRightN <= DeadliftPullController.SeparationPlateN)
                 return Preparing("the bar must rest on both plates");
             if (!LoadedCop("left_foot") || !LoadedCop("right_foot"))
@@ -513,7 +516,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
                     ? _pretensionTargetN * (t - PretensionStartTick) / PretensionRampTicks : _pretensionTargetN;
             }
             _pretension.TrySetTarget(target);
-            LastBraceHeld = intent.Brace01 >= 0.5f;
+            // Brace (Space) is one tap: it stays set for the attempt.
+            if (intent.Brace01 >= 0.5f)
+                LastBraceHeld = true;
 
             LastObservation = Observer.Observe(time.Tick, time.Tick * dt);
             Referee.Observe(LastObservation);

@@ -187,6 +187,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public bool AdmissionLimited { get; private set; }
         public int AdmissionLimitedTicks { get; private set; }
 
+        /// <summary>Latched brace (one tap) replacing the held Brace channel in the pull gate (null: held channel).</summary>
+        public Func<bool> BraceSet { get; set; }
+
         /// <summary>Tick of a <see cref="CommandReturn"/> (0 when none).</summary>
         public ulong ReturnCommandedTick { get; private set; }
 
@@ -269,7 +272,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
             LastBrace01 = intent.Brace01;
             LastGrip01 = intent.Grip01;
             LastRawDrive01 = intent.Drive01;
-            bool gate = !RequireBraceAndGrip || (intent.Grip01 >= 0.5f && intent.Brace01 >= 0.5f);
+            bool braced = BraceSet != null ? BraceSet() : intent.Brace01 >= 0.5f;
+            bool gate = !RequireBraceAndGrip || (intent.Grip01 >= 0.5f && braced);
             if (RequireBraceAndGrip && IntentOverride01.HasValue)
                 gate = true;   // deterministic test seam still exercises the pull mapping
 

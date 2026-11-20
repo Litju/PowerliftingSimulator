@@ -74,7 +74,16 @@ namespace PowerliftingSimulator.Deadlift
                 Assert.That(rt.PlayerSetup, Is.True);
                 float deadline = Time.realtimeSinceStartup + 240f;
                 bool suspended = false;
-                // The player takes the slack out (Left Shift), then braces and sets the lats (Space).
+                // The player taps Space once to brace, then holds Left Shift to take the slack out.
+                input.currentTime = Time.realtimeSinceStartupAsDouble;
+                input.Press(keyboard.spaceKey);
+                for (int i = 0; i < 5; i++)
+                    yield return null;
+                input.currentTime = Time.realtimeSinceStartupAsDouble;
+                input.Release(keyboard.spaceKey);
+                for (int i = 0; i < 5; i++)
+                    yield return null;
+                Assert.That(rt.LastBraceHeld, Is.True, "one tap must set the brace");
                 input.currentTime = Time.realtimeSinceStartupAsDouble;
                 input.Press(keyboard.leftShiftKey);
                 while (!(rt.PretensionEstablished && rt.Pull.Phase == DeadliftPullPhase.Grounded) && Time.realtimeSinceStartup < deadline)
@@ -82,11 +91,7 @@ namespace PowerliftingSimulator.Deadlift
                     suspended |= foundation.Runtime.TicksSuspended;
                     yield return null;
                 }
-                Assert.That(rt.Pull.Phase, Is.EqualTo(DeadliftPullPhase.Grounded), "Grip alone must not pull");
-                input.currentTime = Time.realtimeSinceStartupAsDouble;
-                input.Press(keyboard.spaceKey);
-                for (int i = 0; i < 20; i++)
-                    yield return null;
+                Assert.That(rt.Pull.Phase, Is.EqualTo(DeadliftPullPhase.Grounded), "brace and grip alone must not pull");
                 ulong readyTick = rt.Tick;
 
                 input.currentTime = Time.realtimeSinceStartupAsDouble;

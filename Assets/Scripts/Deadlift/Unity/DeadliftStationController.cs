@@ -47,6 +47,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
         private bool _reloading;
         private DeadliftPullPhase _loggedPhase = DeadliftPullPhase.Grounded;
         private ulong _loggedRejection;
+        private string _loggedSetup;
 
         /// <summary>Negative control: the stock qualified ascent path instead of the close-bar reference.</summary>
         public const string StockPathArgument = "-deadliftStockPath";
@@ -177,10 +178,10 @@ namespace PowerliftingSimulator.Deadlift.Unity
             {
                 case DeadliftPullPhase.Grounded:
                     _status = Runtime.PlayerSetup
-                        ? (!Runtime.PretensionEstablished ? "Hold Left Shift: grip and take the slack out of the bar."
-                            : !Runtime.LastBraceHeld ? "Slack out. Hold Space: brace and set the lats."
+                        ? (!Runtime.LastBraceHeld ? "Tap Space to brace."
+                            : !Runtime.PretensionEstablished ? "Braced. Hold Left Shift: grip and take the slack out of the bar."
                             : driving ? "Preparing the pull: " + Runtime.PreparationStatus
-                            : "Set. Hold W to pull (keep Shift and Space held).")
+                            : "Slack out. Hold W to pull (keep Shift held).")
                         : !Runtime.PretensionEstablished ? "Setting the grip and taking the slack out of the bar..."
                         : driving ? "Preparing the pull: " + Runtime.PreparationStatus
                         : "Ready. Hold W (or Up arrow) to pull.";
@@ -200,6 +201,14 @@ namespace PowerliftingSimulator.Deadlift.Unity
                         : "Returning the bar (attempt abandoned).";
                     break;
                 case DeadliftPullPhase.Returned: _status = referee.Completed ? "Attempt complete. R for another attempt." : "Bar on the platform. R for another attempt."; break;
+            }
+            string setup = string.Format(CultureInfo.InvariantCulture, "grip {0} brace {1} drive {2} | slack out {3} | {4} | {5}",
+                pull.LastGrip01 >= 0.5f ? "held" : "off", Runtime.LastBraceHeld ? "set" : "off", pull.LastRawDrive01 > 0.05f ? "held" : "off",
+                Runtime.PretensionEstablished, Runtime.PreparationStatus, _status);
+            if (setup != _loggedSetup)
+            {
+                Debug.Log($"GAM-70 station setup at tick {Runtime.Tick}: {setup}");
+                _loggedSetup = setup;
             }
             if (pull.Phase != _loggedPhase)
             {
@@ -253,7 +262,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 o.BarY, Runtime.Referee.MaxBarRiseM * 1000.0, pull.Intent01 * 100f), _body);
             GUI.Label(new Rect(30, 140, 580, 30), string.Format(CultureInfo.InvariantCulture, "Knees {0:F0}/{1:F0} deg   torso {2:F0} deg   phase {3}",
                 o.KneeFlexionLDeg, o.KneeFlexionRDeg, o.TorsoDeg, pull.Phase), _body);
-            GUI.Label(new Rect(30, 170, 580, 30), "Shift grip/slack  |  Space brace/lats  |  W pull  |  ESC  |  R  |  V", _body);
+            GUI.Label(new Rect(30, 170, 580, 30), "Space brace (tap)  |  Shift grip/slack  |  W pull  |  ESC  |  R  |  V", _body);
             GUI.Label(new Rect(30, 196, 580, 30), string.Format(CultureInfo.InvariantCulture, "input  drive {0:F2}  brace {1:F2}  grip {2:F2}",
                 pull.LastRawDrive01, pull.LastBrace01, pull.LastGrip01), _body);
 
