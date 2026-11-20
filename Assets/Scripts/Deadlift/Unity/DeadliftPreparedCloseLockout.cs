@@ -22,6 +22,10 @@ namespace PowerliftingSimulator.Deadlift.Unity
         private readonly Vector3[] _soleAxes;
         public DeadliftPreparedAscentPlan Plan { get; }
         public bool IsReady { get; private set; }
+        public DeadliftReferenceAdmission.Session Session { get; }
+        public DeadliftReferenceAdmission.Result Admission => Session?.Result;
+        public bool Rejected => Session?.Rejected == true;
+        private bool _logged;
         private bool _active;
 
         public DeadliftPreparedCloseLockout(DeadliftAttemptRuntime runtime, PhysicalAthleteRig rig,
@@ -36,13 +40,29 @@ namespace PowerliftingSimulator.Deadlift.Unity
             var feet = new[] { (BoxCollider)rig.Segments["left_foot"].Collider, (BoxCollider)rig.Segments["right_foot"].Collider };
             _soleCenters = feet.Select(box => box.transform.TransformPoint(box.center - 0.5f * box.size.y * Vector3.up)).ToArray();
             _soleAxes = feet.Select(box => box.GetComponent<DeadliftFootPressureSensor>().Axis).ToArray();
+            if (runtime.Admission != null)
+            {
+                // Offline-generated continuation admitted on the plant measured at knee passage. The keys
+                // covering the moving reference's stopping distance are admitted on this tick, the rest
+                // a bounded number per tick ahead of the lift.
+                Session = runtime.Admission.BeginPostKnee(runtime, rig);
+                Plan = Session.Plan;
+                Session.AdvanceTo(DeadliftReferenceAdmission.StoppingHorizon(runtime.Pull));
+                Session.Advance(DeadliftPreparedRejoin.AdmissionKeysPerTick);
+                Log();
+                if (!Rejected)
+                    Install();
+                return;
+            }
             var path = new DeadliftLiftPath(rig, runtime.Measurements, runtime.Model, runtime.Bar.mass) { BarProximity = true };
             var endpoint = path.SolveEndpoint();
-            Quaternion barRotation = Quaternion.AngleAxis(180f / PhysicalBarbell.DefaultPlateColliderSides, Vector3.right);
-            Plan = DeadliftPreparedAscentPlan.ContinueToLockout(runtime, rig, endpoint, barRotation, incremental);
+            Plan = DeadliftPreparedAscentPlan.ContinueToLockout(runtime, rig, endpoint, BarRotation, incremental);
             if (!incremental)
                 AdvanceSolve();
         }
+
+        /// <summary>Facet-flat bar orientation of the suspended endpoint.</summary>
+        public static Quaternion BarRotation => Quaternion.AngleAxis(180f / PhysicalBarbell.DefaultPlateColliderSides, Vector3.right);
 
         public bool AdvanceSolve()
         {
@@ -50,9 +70,14 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 return false;
 
             var check = Plan.MeasureInterpolation();
-            if (!(check.SweptGap > 0f && check.PositionError < 0.001f && check.RotationError < 0.3f))
+            if (!DeadliftReferenceAdmission.Meets(check, true, out _))
                 throw new InvalidOperationException("The measured post-knee plant did not produce a closed, shaft-clear continuation.");
+            Install();
+            return true;
+        }
 
+        private void Install()
+        {
             _runtime.Hold.AscentReferenceOverride = (id, progress) =>
             {
                 if (progress > _startProgress)
@@ -74,11 +99,20 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 _runtime.Monitor.ActiveMarginM >= 0f && _runtime.Monitor.LoadedFeet == 2;
             _runtime.Pull.ReferenceDemand = () => Mathf.Max(_previousDemand(), Mathf.Max(AnkleDemand(left), AnkleDemand(right)));
             IsReady = _active = true;
-            return true;
+        }
+
+        private void Log()
+        {
+            if (_logged || !(Session.Complete || Session.Rejected))
+                return;
+            _logged = true;
+            Debug.Log($"GAM-70 post-knee reference admitted by tick {_runtime.Tick} over {Session.Ticks} ticks (max {Session.MaxTickMilliseconds:F2} ms per tick): {Session.Result.Describe()}");
         }
 
         public void Update()
         {
+            if (Session != null && Session.Advance(DeadliftPreparedRejoin.AdmissionKeysPerTick))
+                Log();
             if (!_active || _runtime.Pull.Phase != DeadliftPullPhase.Lowering || _runtime.Pull.LiftProgress01 > StockReturnProgress)
                 return;
             _runtime.Hold.SuspendedPlanReference = null;

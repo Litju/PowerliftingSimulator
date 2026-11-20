@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using PowerliftingSimulator.Athlete;
 using PowerliftingSimulator.Bench.Unity;
 using PowerliftingSimulator.Equipment;
@@ -84,6 +86,51 @@ namespace PowerliftingSimulator.Deadlift.Unity
             _foundation.Runtime.TicksSuspended = PendingPreparedPlan != null;
         }
 
+        /// <summary>
+        /// Admit the close-bar references from the offline-generated artifact instead
+        /// of solving them on the live plant (configure before Initialize). The
+        /// artifact is validated while the attempt is prepared; at separation and
+        /// knee passage the measured state is admitted inside the physics tick and
+        /// the simulation is never suspended.
+        /// </summary>
+        public bool UseReferenceCache { get; set; }
+        /// <summary>Artifact to admit; null loads <see cref="DeadliftCloseBarReference.ResourcePath"/>.</summary>
+        public DeadliftCloseBarReference ReferenceArtifact { get; set; }
+        public DeadliftReferenceAdmission Admission { get; private set; }
+        /// <summary>Hash of the declared model inputs, taken when the attempt is composed (before tick 0).</summary>
+        public string ModelFingerprint { get; private set; }
+        /// <summary>The stock lift path was restored from the validated artifact instead of solved at load.</summary>
+        public bool StockPathFromArtifact { get; private set; }
+        public DeadliftReferenceAdmission.Result AscentAdmission => _preparedRejoin?.AscentAdmission;
+        public DeadliftReferenceAdmission.Result PostKneeAdmission => _preparedRejoin?.PostKneeAdmission;
+        /// <summary>Why the measured plant was not admitted to the reference family (empty when admitted).</summary>
+        public string ReferenceRejection { get; private set; } = string.Empty;
+        public ulong ReferenceRejectionTick { get; private set; }
+
+        /// <summary>Load-stage wall time (ms) by stage, measured in Initialize.</summary>
+        public readonly Dictionary<string, double> InitializationMilliseconds = new Dictionary<string, double>();
+        /// <summary>Wall time (ms) of the attempt's post-physics work on the last tick, and its maximum.</summary>
+        public double LastTickMilliseconds { get; private set; }
+        public double MaxTickMilliseconds { get; private set; }
+        public ulong MaxTickMillisecondsTick { get; private set; }
+        private readonly Stopwatch _tickClock = new Stopwatch();
+
+        /// <summary>Generator side: the solved references of this attempt as a versioned artifact.</summary>
+        public DeadliftCloseBarReference RecordReference(string generator)
+        {
+            if (_preparedRejoin?.Plan == null || PostKneeAscentPlan == null)
+                throw new InvalidOperationException("Both the ascent and the post-knee reference must be solved first.");
+            return new DeadliftCloseBarReference
+            {
+                Fingerprint = ModelFingerprint,
+                Generator = generator,
+                JointIds = _rig.PoweredController.Joints.Select(j => j.Id).ToArray(),
+                Prefix = DeadliftCloseBarReference.Record(_preparedRejoin.Plan),
+                PostKnee = DeadliftCloseBarReference.Record(PostKneeAscentPlan),
+                StockPath = Path.Capture()
+            };
+        }
+
         public DeadliftPlantModel Model { get; private set; }
         public DeadliftSetupSolver Measurements { get; private set; }
         public DeadliftSetupHold Hold { get; private set; }
@@ -129,6 +176,12 @@ namespace PowerliftingSimulator.Deadlift.Unity
         public void Initialize()
         {
             float dt = (float)SimulationConstants.FixedDeltaTimeSeconds;
+            var stage = Stopwatch.StartNew();
+            void Stage(string name)
+            {
+                InitializationMilliseconds[name] = stage.Elapsed.TotalMilliseconds;
+                stage.Restart();
+            }
             _foundation.Runtime.HoldPhysicsUntilInitialStateValidated();
             if (_rig.PoweredController == null)
                 _rig.Build();
@@ -138,10 +191,12 @@ namespace PowerliftingSimulator.Deadlift.Unity
             Measurements = feasibility.Measurements;
             DeadliftSetupSpec spec = DeadliftQualifiedSetup.SumoPronated();
             Model = Measurements.BuildModel(DeadliftQualifiedSetup.B2, spec);
+            Stage("setup model");
 
             PlaceAtSetup();
             DeadliftAnkleRoll.Enable(_rig);
             ValidateTickZero();
+            ModelFingerprint = DeadliftCloseBarReference.ComputeFingerprint(_rig, _barbell.Body);
 
             float wbHalf = 0.5f * _barbell.Body.mass * -Physics.gravity.y;
             float h = 0.75f * wbHalf;
@@ -154,6 +209,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
             Hold.Pretension = _pretension;
             _pretensionTargetN = h;
             Hold.UseHandLoadReference(new DeadliftHandLoadReference(SolveStatics, wbHalf, true), MeasuredPerHandUpN);
+            Stage("placement and grounded statics");
 
             Pull = new DeadliftPullController(_rig, _barbell, () => PlateLeftN, () => PlateRightN)
             {
@@ -168,7 +224,21 @@ namespace PowerliftingSimulator.Deadlift.Unity
 
             Path = new DeadliftLiftPath(_rig, Measurements, Model, _barbell.Body.mass) { BarProximity = BarProximityPath && !PreparedClearanceRejoin && !PreparedCloseLockout };
             Path.RollPlanLimitDeg = Mathf.Min(Path.RollPlanLimitDeg, DeadliftAnkleRoll.LimitDegrees - Path.JointMarginDeg - Regulator.MaxRollOffsetDeg);
-            Path.Solve();
+            DeadliftCloseBarReference artifact = null;
+            string artifactFailure = null;
+            if (UseReferenceCache)
+            {
+                artifact = ReferenceArtifact ?? DeadliftCloseBarReference.LoadResource(out artifactFailure);
+                Stage("reference artifact load");
+            }
+            // The stock path is state independent: restore it from a matching artifact, otherwise solve it here.
+            StockPathFromArtifact = artifact?.StockPath != null && !Path.BarProximity &&
+                string.Equals(ModelFingerprint, artifact.Fingerprint, StringComparison.Ordinal);
+            if (StockPathFromArtifact)
+                Path.Restore(artifact.StockPath);
+            else
+                Path.Solve();
+            Stage(StockPathFromArtifact ? "stock lift path (artifact)" : "stock lift path (solved)");
             if (Path.BarProximity)
             {
                 // Same joint speed and acceleration as the qualified Gate 6 path (deg/s), whatever this path's length.
@@ -192,6 +262,17 @@ namespace PowerliftingSimulator.Deadlift.Unity
             Pull.ReferenceDemand = () => Hold.HandLoadReference.MaxDemandFraction;
             if (UpperChainPreparation || PreparedClearanceRejoin || PreparedCloseLockout)
                 Pull.GroundedReady = PrepareForPull;
+
+            if (PreparedCloseLockout && UseReferenceCache)
+            {
+                string failure = artifactFailure;
+                if (artifact != null)
+                    Admission = DeadliftReferenceAdmission.Prepare(this, _rig, artifact, out failure);
+                Stage("reference validation and gains");
+                if (Admission == null)
+                    throw new InvalidOperationException("The close-bar reference family cannot be admitted for this athlete: " + failure);
+                Pull.AdmittedProgress = () => _preparedRejoin?.AdmittedProgress ?? 1f;
+            }
 
             Referee = new DeadliftReferee(_barbell.Body.worldCenterOfMass.y, _barbell.Body.mass * -Physics.gravity.y, dt);
             Observer = new DeadliftAttemptObserver(_rig, _barbell.Body, () => PlateLeftN + PlateRightN, () => BarOnLegN,
@@ -339,6 +420,16 @@ namespace PowerliftingSimulator.Deadlift.Unity
             return true;
         }
 
+        private void RejectIfNotAdmitted()
+        {
+            if (_preparedRejoin == null || !_preparedRejoin.Rejected || ReferenceRejectionTick != 0)
+                return;
+            ReferenceRejection = _preparedRejoin.RejectionReason;
+            ReferenceRejectionTick = _tick;
+            Pull.CommandReturn(_tick);
+            UnityEngine.Debug.LogWarning($"GAM-70 tick {_tick}: {ReferenceRejection}. Returning the bar.");
+        }
+
         private bool LoadedCop(string id)
         {
             var sensor = _rig.Segments[id].Body.GetComponent<DeadliftFootPressureSensor>();
@@ -349,6 +440,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
 
         private void OnPostPhysicsStep(SimulationTime time, PhysicalObservation observation, PlayerIntentFrame intent)
         {
+            _tickClock.Restart();
             double dt = SimulationConstants.FixedDeltaTimeSeconds;
             _tick = time.Tick;
             _barSensor.CompleteTick();
@@ -365,8 +457,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 {
                     if ((PreparedClearanceRejoin || PreparedCloseLockout) && Pull.Phase == DeadliftPullPhase.Separated)
                     {
-                        _preparedRejoin = new DeadliftPreparedRejoin(this, _rig, SolvePreparedPlanAcrossFrames);
-                        _foundation.Runtime.TicksSuspended = !_preparedRejoin.IsReady;
+                        _preparedRejoin = new DeadliftPreparedRejoin(this, _rig, SolvePreparedPlanAcrossFrames && Admission == null);
+                        _foundation.Runtime.TicksSuspended = PendingPreparedPlan != null;
+                        RejectIfNotAdmitted();
                     }
                 }
                 finally
@@ -391,10 +484,17 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 RightGrip.Release();
                 GripsReleased = true;
             }
-            if (_preparedRejoin?.IsReady == true)
+            if (_preparedRejoin?.IsReady == true && !_preparedRejoin.Rejected)
             {
                 _preparedRejoin.Update();
                 _foundation.Runtime.TicksSuspended = PendingPreparedPlan != null;
+                RejectIfNotAdmitted();
+            }
+            LastTickMilliseconds = _tickClock.Elapsed.TotalMilliseconds;
+            if (LastTickMilliseconds > MaxTickMilliseconds)
+            {
+                MaxTickMilliseconds = LastTickMilliseconds;
+                MaxTickMillisecondsTick = time.Tick;
             }
             TickCompleted?.Invoke(this);
         }

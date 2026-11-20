@@ -588,6 +588,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
         {
             Keys.Clear();
             _cumulativeDeg.Clear();
+            _evaluatedAs.Clear();
             double[] x0 = (double[])_setup.Solution.Clone();
             if (BarProximity)
                 Array.Resize(ref x0, _baseCount + 2);   // ankle roll starts at the setup's zero
@@ -613,6 +614,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 _scheduleLockoutRise = _plannedLockoutRise;
 
             Keys.Add(Evaluate(x0, 0f, false, 0d, 0d));
+            _evaluatedAs.Add((0f, false));
             double[] prev = x0;
             for (float rise = stepM; rise < lockKey.BarRiseM - 0.5f * stepM; rise += stepM)
             {
@@ -620,6 +622,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 double[] solved = BenchKinematics.LevenbergMarquardt(prev, v => Residuals(v, prev, target, false, out _), iterations, out double cost);
                 Residuals(solved, prev, target, false, out double hard);
                 Keys.Add(Evaluate(solved, target, false, cost, hard));
+                _evaluatedAs.Add((target, false));
                 prev = solved;
             }
             // Homotopy from the last swept pose to the lockout: every intermediate
@@ -643,6 +646,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 key.FreeRise = true;
                 key.Lockout = k == HomotopySteps;
                 Keys.Add(key);
+                _evaluatedAs.Add((0f, true));
                 prev = solved;
             }
             _lambda = 1f;
@@ -650,6 +654,62 @@ namespace PowerliftingSimulator.Deadlift.Unity
         }
 
         private readonly List<float> _cumulativeDeg = new List<float>();
+        private readonly List<(float Rise, bool Lockout)> _evaluatedAs = new List<(float Rise, bool Lockout)>();
+
+        /// <summary>The solved path as data: each key's solver vector and the arguments it was evaluated with.</summary>
+        public sealed class Snapshot
+        {
+            public readonly List<(double[] X, float Rise, bool EvaluatedAsLockout, bool Lockout, double Cost, double Hard, float Lambda, bool FreeRise)> Keys =
+                new List<(double[] X, float Rise, bool EvaluatedAsLockout, bool Lockout, double Cost, double Hard, float Lambda, bool FreeRise)>();
+            public float PlannedLockoutRise, ScheduleLockoutRise, HomotopyTorso0, HomotopyHip0;
+            public bool BarProximity;
+        }
+
+        public Snapshot Capture()
+        {
+            if (Keys.Count == 0 || _evaluatedAs.Count != Keys.Count)
+                throw new InvalidOperationException("Only a path solved by Solve can be captured.");
+            var s = new Snapshot
+            {
+                PlannedLockoutRise = _plannedLockoutRise, ScheduleLockoutRise = _scheduleLockoutRise,
+                HomotopyTorso0 = _homotopyTorso0, HomotopyHip0 = _homotopyHip0, BarProximity = BarProximity
+            };
+            for (int i = 0; i < Keys.Count; i++)
+            {
+                Key k = Keys[i];
+                s.Keys.Add(((double[])k.X.Clone(), _evaluatedAs[i].Rise, _evaluatedAs[i].Lockout, k.Lockout, k.Cost, k.HardCost, k.Lambda, k.FreeRise));
+            }
+            return s;
+        }
+
+        /// <summary>
+        /// Rebuilds a path solved offline: every key is re-evaluated from its stored
+        /// solver vector by the same <see cref="Evaluate"/> the solver used, so the
+        /// keys, joint targets and arc-length parameterization are those of the solve.
+        /// </summary>
+        public void Restore(Snapshot s)
+        {
+            if (s.BarProximity != BarProximity)
+                throw new InvalidOperationException("The stored path was solved with a different bar-proximity objective.");
+            Keys.Clear();
+            _cumulativeDeg.Clear();
+            _evaluatedAs.Clear();
+            _plannedLockoutRise = s.PlannedLockoutRise;
+            _scheduleLockoutRise = s.ScheduleLockoutRise;
+            _homotopyTorso0 = s.HomotopyTorso0;
+            _homotopyHip0 = s.HomotopyHip0;
+            foreach (var k in s.Keys)
+            {
+                Key key = Evaluate(k.X, k.Rise, k.EvaluatedAsLockout, k.Cost, k.Hard);
+                key.Lambda = k.Lambda;
+                key.FreeRise = k.FreeRise;
+                key.Lockout = k.Lockout;
+                Keys.Add(key);
+                _evaluatedAs.Add((k.Rise, k.EvaluatedAsLockout));
+            }
+            _lambda = 1f;
+            _minFreeRise = float.NegativeInfinity;
+        }
 
         /// <summary>Total joint-space length of the path: sum over keys of the largest single-joint rotation (deg).</summary>
         public float JointPathLengthDeg

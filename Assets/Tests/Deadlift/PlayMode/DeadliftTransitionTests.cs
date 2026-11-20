@@ -40,6 +40,12 @@ namespace PowerliftingSimulator.Deadlift
             public DeadliftRealizedClearanceSweep Sweep;
             public string SeparationState, SeparationChannels;
             public Quaternion LeftRequestAfterSeparation, RightRequestAfterSeparation;
+            public DeadliftReferenceAdmission.Result AscentAdmission, PostKneeAdmission;
+            public string Rejection = string.Empty;
+            public ulong RejectionTick;
+            public bool Suspended;
+            public double MaxTickMs;
+            public ulong MaxTickMsTick;
         }
 
         [UnityTearDown]
@@ -260,6 +266,138 @@ namespace PowerliftingSimulator.Deadlift
             }
         }
 
+        [UnityTest, Timeout(900000), Explicit("GAM-70 offline generation of the close-bar reference artifact")]
+        public IEnumerator GAM70_GENERATE_CLOSE_BAR_REFERENCE()
+        {
+            var generated = new Run();
+            DeadliftCloseBarReference artifact = null;
+            yield return Trace("generate-close-bar", 284, generated, throughKnee: true, complete: true, runtimeClose: true, lastTick: 2100,
+                atContinuation: rt =>
+                {
+                    artifact = rt.RecordReference("GAM70_GENERATE_CLOSE_BAR_REFERENCE: B2, Drive held from tick 284, measured PULL 301");
+                    // The stored stock path must rebuild the solved one exactly.
+                    var restored = new DeadliftLiftPath(_world.Rig, rt.Measurements, rt.Model, rt.Bar.mass) { RollPlanLimitDeg = rt.Path.RollPlanLimitDeg };
+                    restored.Restore(DeadliftCloseBarReference.FromJson(artifact.ToJson()).StockPath);
+                    Assert.That(restored.Keys.Count, Is.EqualTo(rt.Path.Keys.Count));
+                    for (int i = 0; i < restored.Keys.Count; i++)
+                        foreach (var q in rt.Path.Keys[i].Logical)
+                            Assert.That(restored.Keys[i].Logical[q.Key].Equals(q.Value) && restored.Keys[i].BarRiseM.Equals(rt.Path.Keys[i].BarRiseM) &&
+                                restored.Keys[i].SystemComZ.Equals(rt.Path.Keys[i].SystemComZ), Is.True, $"stock key {i} {q.Key}");
+                    Assert.That(restored.KneePassageRiseM, Is.EqualTo(rt.Path.KneePassageRiseM));
+                    Assert.That(restored.JointPathLengthDeg, Is.EqualTo(rt.Path.JointPathLengthDeg));
+                });
+            Assert.That(generated.Pull, Is.EqualTo(301ul));
+            Assert.That(generated.ContinuationTick, Is.EqualTo(538ul));
+            Assert.That(generated.Down, Is.EqualTo(762ul));
+            Assert.That(generated.Good && generated.Released, Is.True, generated.RefereeSummary);
+            Assert.That(artifact, Is.Not.Null);
+
+            string json = artifact.ToJson();
+            DeadliftCloseBarReference reread = DeadliftCloseBarReference.FromJson(json);
+            Assert.That(reread.ToJson(), Is.EqualTo(json), "bit-exact round trip");
+            Assert.That(reread.Prefix.State.IdenticalTo(artifact.Prefix.State) && reread.PostKnee.State.IdenticalTo(artifact.PostKnee.State), Is.True);
+            string path = Path.Combine(Directory.GetCurrentDirectory(), DeadliftCloseBarReference.AssetPath);
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            File.WriteAllText(path, json);
+            Debug.Log($"GAM-70 close-bar reference written to {path}: fingerprint {artifact.Fingerprint}, ascent {artifact.Prefix.Keys.Count} keys " +
+                $"(min gap {artifact.Prefix.MinGapM * 1000f:F2} mm, swept {artifact.Prefix.SweptGapM * 1000f:F2} mm), post-knee {artifact.PostKnee.Keys.Count} keys " +
+                $"(swept {artifact.PostKnee.SweptGapM * 1000f:F2} mm)");
+        }
+
+        [UnityTest, Timeout(600000)]
+        public IEnumerator GAM70_CACHED_CLOSE_BAR_ATTEMPT_RUNS_WITHOUT_SUSPENSION()
+        {
+            var cached = new Run();
+            yield return Trace("cached-close-bar", 284, cached, throughKnee: true, complete: true, runtimeClose: true, lastTick: 2100, useCache: true);
+            Debug.Log($"Cached ascent admission: {cached.AscentAdmission?.Describe()}\nCached post-knee admission: {cached.PostKneeAdmission?.Describe()}\n" +
+                $"Max attempt post-physics work {cached.MaxTickMs:F2} ms at tick {cached.MaxTickMsTick}");
+            Assert.That(cached.Suspended, Is.False, "the simulation was suspended");
+            Assert.That(cached.AscentAdmission.Outcome, Is.EqualTo(DeadliftReferenceAdmission.Outcome.Exact), cached.AscentAdmission.Describe());
+            Assert.That(cached.PostKneeAdmission.Outcome, Is.EqualTo(DeadliftReferenceAdmission.Outcome.Exact), cached.PostKneeAdmission.Describe());
+            // The exact receipts of the solved composition (GAM70_RUNTIME_CLOSE_BAR_ATTEMPT).
+            Assert.That(cached.Pull, Is.EqualTo(301ul));
+            Assert.That(cached.ContinuationTick, Is.EqualTo(538ul));
+            Assert.That(cached.Down, Is.EqualTo(762ul));
+            Assert.That(cached.Good && cached.Released, Is.True, cached.RefereeSummary);
+            Assert.That(cached.FirstPenetration, Is.Zero);
+            Assert.That(cached.Sweep.MinBound, Is.GreaterThan(0f));
+            Assert.That(cached.MeanLockoutGap, Is.InRange(0d, 0.12d));
+        }
+
+        [UnityTest, Timeout(1800000), Explicit("GAM-70 cached close-bar admission across PULL onsets")]
+        public IEnumerator GAM70_CACHED_CLOSE_BAR_ONSETS()
+        {
+            var summary = new StringBuilder();
+            foreach (int onset in OnsetsFromEnvironment(new[] { 302, 305, 320, 350 }))
+            {
+                var candidate = new Run();
+                yield return Trace($"cached-close-onset-{onset}", 284, candidate, throughKnee: true, complete: true,
+                    earliestPull: onset, runtimeClose: true, lastTick: 2100, useCache: true);
+                summary.AppendLine($"{onset}: pull {candidate.Pull}, separation {candidate.ConfirmedSeparation}, knee {candidate.ContinuationTick}, DOWN {candidate.Down}, " +
+                    $"stop {candidate.Stop} ({candidate.StopReason}), release {candidate.Released}, nearer thigh {candidate.MeanLockoutGap * 1000d:F2} mm, " +
+                    $"suspended {candidate.Suspended}, max tick {candidate.MaxTickMs:F2} ms @ {candidate.MaxTickMsTick}. {candidate.RefereeSummary}\n" +
+                    $"   ascent: {candidate.AscentAdmission?.Describe()}\n   post-knee: {candidate.PostKneeAdmission?.Describe()}\n   rejection: {candidate.Rejection}");
+                F.WriteEvidence("cached-close-onsets.txt", summary.ToString());
+                Assert.That(candidate.Pull, Is.EqualTo((ulong)onset));
+                Assert.That(candidate.Suspended, Is.False);
+            }
+        }
+
+        [UnityTest, Timeout(900000)]
+        public IEnumerator GAM70_REFERENCE_CACHE_REJECTS_AN_INCOMPATIBLE_MODEL_AND_STATE()
+        {
+            DeadliftCloseBarReference artifact = DeadliftCloseBarReference.LoadResource(out string failure);
+            Assert.That(artifact, Is.Not.Null, failure);
+
+            // A different declared model (fingerprint) is refused before the attempt is armed.
+            yield return DeadliftPlantWorld.Load();
+            _world = DeadliftPlantWorld.Current;
+            DeadliftCloseBarReference foreign = DeadliftCloseBarReference.FromJson(artifact.ToJson());
+            foreign.Fingerprint = new string('0', 64);
+            var refused = new DeadliftAttemptRuntime(_world.Foundation, _world.Rig, _world.Bar)
+            {
+                UpperChainPreparation = true, PreparedCloseLockout = true, UseReferenceCache = true, ReferenceArtifact = foreign
+            };
+            var miss = Assert.Throws<System.InvalidOperationException>(refused.Initialize);
+            StringAssert.Contains("fingerprint", miss.Message);
+            yield return _world.Teardown();
+            _world = null;
+
+            // A self-consistent family (it passes its contract when the attempt is prepared) generated for
+            // a plant turned 120 deg about the vertical: the measured plant at separation cannot be corrected
+            // onto it, so it is rejected there. The bar is returned without Down and no lift is awarded.
+            DeadliftCloseBarReference displaced = DeadliftCloseBarReference.FromJson(artifact.ToJson());
+            Quaternion turn = Quaternion.AngleAxis(120f, Vector3.up);
+            Pose Turn(Pose p) => new Pose(turn * p.position, turn * p.rotation);
+            var state = displaced.Prefix.State;
+            state.Root = Turn(state.Root);
+            state.Bar = Turn(state.Bar);
+            state.Feet = state.Feet.Select(Turn).ToArray();
+            for (int i = 0; i < displaced.Prefix.Keys.Count; i++)
+            {
+                var key = displaced.Prefix.Keys[i];
+                key.Root = Turn(key.Root);
+                key.Bar = Turn(key.Bar);
+                displaced.Prefix.Keys[i] = key;
+            }
+            var rejected = new Run();
+            yield return Trace("cached-close-rejected", 284, rejected, throughKnee: true, complete: true, runtimeClose: true,
+                lastTick: 1200, useCache: true, artifact: displaced);
+            Debug.Log($"Displaced-family admission: {rejected.AscentAdmission?.Describe()} | {rejected.Rejection} | {rejected.RefereeSummary}");
+            Assert.That(rejected.AscentAdmission.Outcome, Is.EqualTo(DeadliftReferenceAdmission.Outcome.Rejected));
+            Assert.That(rejected.Rejection, Does.StartWith("ascent reference"));
+            Assert.That(rejected.RejectionTick, Is.EqualTo(rejected.ConfirmedSeparation));
+            Assert.That(rejected.Suspended, Is.False);
+            Assert.That(rejected.Down, Is.Zero);
+            Assert.That(rejected.Good, Is.False);
+        }
+
+        private static IEnumerable<int> OnsetsFromEnvironment(int[] fallback)
+        {
+            string value = System.Environment.GetEnvironmentVariable("GAM70_ONSETS");
+            return string.IsNullOrWhiteSpace(value) ? fallback : value.Split(',').Select(v => int.Parse(v.Trim(), CultureInfo.InvariantCulture));
+        }
+
         private static void AssertClearance(Run prepared, string endpoint)
         {
             Assert.That(prepared.Pull, Is.EqualTo(301ul));
@@ -272,7 +410,7 @@ namespace PowerliftingSimulator.Deadlift
             Debug.Log($"Prepared realized substeps: {prepared.Sweep.Samples}, min gap {prepared.Sweep.MinGap * 1000f:F2} mm, swept bound {prepared.Sweep.MinBound * 1000f:F2} mm");
         }
 
-        private IEnumerator Trace(string arm, int driveTick, Run result, bool retainPreparation = false, bool closedPrefix = false, bool throughKnee = false, bool complete = false, bool centered = false, float rejoinEnd = 0f, float lateShoulderDeg = 0f, bool settledShoulder = false, bool runtimeRejoin = false, int earliestPull = 0, int lastTick = 800, bool postKneeProbe = false, bool suspendedPreload = false, bool runtimeClose = false)
+        private IEnumerator Trace(string arm, int driveTick, Run result, bool retainPreparation = false, bool closedPrefix = false, bool throughKnee = false, bool complete = false, bool centered = false, float rejoinEnd = 0f, float lateShoulderDeg = 0f, bool settledShoulder = false, bool runtimeRejoin = false, int earliestPull = 0, int lastTick = 800, bool postKneeProbe = false, bool suspendedPreload = false, bool runtimeClose = false, bool useCache = false, DeadliftCloseBarReference artifact = null, System.Action<DeadliftAttemptRuntime> atContinuation = null)
         {
             yield return DeadliftPlantWorld.Load();
             _world = DeadliftPlantWorld.Current;
@@ -280,7 +418,8 @@ namespace PowerliftingSimulator.Deadlift
             var rt = new DeadliftAttemptRuntime(_world.Foundation, _world.Rig, _world.Bar)
             {
                 UpperChainPreparation = driveTick < 301,
-                PreparedClearanceRejoin = runtimeRejoin, PreparedCloseLockout = runtimeClose
+                PreparedClearanceRejoin = runtimeRejoin, PreparedCloseLockout = runtimeClose,
+                UseReferenceCache = useCache, ReferenceArtifact = artifact
             };
             rt.Initialize();
             rt.Pull.EarliestPullTick = (ulong)earliestPull;
@@ -329,6 +468,12 @@ namespace PowerliftingSimulator.Deadlift
                 Quaternion rightOffset = rt.Hold.PreparationOffsetFor(rightShoulder.Id);
                 _world.Step(1);
                 substepContact?.CompleteTick();
+                result.Suspended |= _world.Foundation.Runtime.TicksSuspended;
+                if (rt.ReferenceRejectionTick != 0 && result.RejectionTick == 0)
+                {
+                    result.Rejection = rt.ReferenceRejection;
+                    result.RejectionTick = rt.ReferenceRejectionTick;
+                }
                 if ((runtimeRejoin || runtimeClose) && closed == null && rt.PreparedAscentPlan != null)
                 {
                     closed = rt.PreparedAscentPlan;
@@ -448,6 +593,7 @@ namespace PowerliftingSimulator.Deadlift
                     continuation = rt.PostKneeAscentPlan;
                     result.ContinuationTick = rt.Tick;
                     result.PrefixSweptGap = result.Sweep.MinBound;
+                    atContinuation?.Invoke(rt);
                 }
                 if (tick < 280)
                     continue;
@@ -589,6 +735,12 @@ namespace PowerliftingSimulator.Deadlift
 
             result.Good = rt.Referee.GoodLift;
             result.Released = rt.GripsReleased;
+            result.AscentAdmission = rt.AscentAdmission;
+            result.PostKneeAdmission = rt.PostKneeAdmission;
+            result.MaxTickMs = rt.MaxTickMilliseconds;
+            result.MaxTickMsTick = rt.MaxTickMillisecondsTick;
+            if (rt.InitializationMilliseconds.Count > 0)
+                Debug.Log($"{arm} initialization: " + string.Join(", ", rt.InitializationMilliseconds.Select(kv => $"{kv.Key} {kv.Value:F0} ms")));
             result.Down = rt.Pull.DownTick;
             result.RefereeSummary = rt.Referee.Summary();
             if (complete)

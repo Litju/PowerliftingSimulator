@@ -161,6 +161,35 @@ namespace PowerliftingSimulator.Deadlift.Unity
             Phase = DeadliftPullPhase.Lowering;
         }
 
+        /// <summary>
+        /// GAM-70: the reference that would continue the ascent was not admitted on
+        /// the measured plant. The bar is lowered back along the reference already
+        /// being tracked, under the same rate and acceleration bounds as after
+        /// Down; no Down is recorded, so the referee judges an incomplete attempt.
+        /// </summary>
+        public void CommandReturn(ulong tick)
+        {
+            if (Phase != DeadliftPullPhase.Separated && Phase != DeadliftPullPhase.Lifting)
+                return;
+            if (Phase == DeadliftPullPhase.Separated)
+            {
+                _breakApplied = Applied01;
+                if (_barYAtSeparation == 0f)
+                    _barYAtSeparation = _bar.Body.position.y;
+            }
+            ReturnCommandedTick = tick;
+            LowerHandoffProgress = 0f;
+            Phase = DeadliftPullPhase.Lowering;
+        }
+
+        /// <summary>Furthest progress covered by an admitted reference (null: no admission horizon).</summary>
+        public Func<float> AdmittedProgress { get; set; }
+        public bool AdmissionLimited { get; private set; }
+        public int AdmissionLimitedTicks { get; private set; }
+
+        /// <summary>Tick of a <see cref="CommandReturn"/> (0 when none).</summary>
+        public ulong ReturnCommandedTick { get; private set; }
+
         private void UpdateMovingPhase(float dt)
         {
             if (Phase == DeadliftPullPhase.Separated)
@@ -185,6 +214,19 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 // arrival is a stopping-distance law, so s reaches 1 at zero rate.
                 float wanted = LiftHeld ? 0f : LiftRatePerSecond * Intent01;
                 wanted = Mathf.Min(wanted, Mathf.Sqrt(2f * LiftAccelPerSecond2 * Mathf.Max(0f, 1f - LiftProgress01)) + 0.01f);
+                // Never run past the reference admitted so far: stop short of it within the same acceleration bound.
+                AdmissionLimited = false;
+                float horizon = AdmittedProgress != null ? AdmittedProgress() : 1f;
+                if (horizon < 1f)
+                {
+                    float allowed = Mathf.Sqrt(2f * LiftAccelPerSecond2 * Mathf.Max(0f, horizon - LiftProgress01));
+                    if (wanted > allowed)
+                    {
+                        wanted = allowed;
+                        AdmissionLimited = true;
+                        AdmissionLimitedTicks++;
+                    }
+                }
                 LiftRate01PerSecond = Mathf.MoveTowards(LiftRate01PerSecond, wanted, LiftAccelPerSecond2 * dt);
                 LiftProgress01 = Mathf.Min(1f, LiftProgress01 + LiftRate01PerSecond * dt);
                 if (LiftProgress01 >= 1f)
