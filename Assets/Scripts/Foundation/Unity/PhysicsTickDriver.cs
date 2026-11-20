@@ -58,6 +58,8 @@ namespace PowerliftingSimulator.Foundation.Unity
 
         public AttemptTrace AttemptTrace => _attemptTrace;
 
+        public bool TicksSuspended { get; set; }
+
         public int LastCatchUpTicks { get; private set; }
 
         public double AccumulatedRenderTimeSeconds => _accumulatedRenderTimeSeconds;
@@ -89,6 +91,8 @@ namespace PowerliftingSimulator.Foundation.Unity
 
         public void StepOne()
         {
+            if (TicksSuspended)
+                throw new InvalidOperationException("Cannot step suspended physics ticks.");
             if (!_initialPhysicalStateValidated)
                 throw new InvalidOperationException("The initial physical state must validate before the first simulation step.");
             if (!_authoritativeScene.IsValid)
@@ -170,7 +174,7 @@ namespace PowerliftingSimulator.Foundation.Unity
 
             double simulationStartSeconds = _clock.Current.SimulationTimeSeconds + _accumulatedRenderTimeSeconds;
             _preparedAccumulatedRenderTimeSeconds = Math.Min(
-                _accumulatedRenderTimeSeconds + renderDeltaTimeSeconds,
+                _accumulatedRenderTimeSeconds + (TicksSuspended ? 0d : renderDeltaTimeSeconds),
                 SimulationConstants.MaxAccumulatedTimeSeconds);
             InputRenderIntervalStartSeconds = simulationStartSeconds;
             InputRenderIntervalEndSeconds = _clock.Current.SimulationTimeSeconds + _preparedAccumulatedRenderTimeSeconds;
@@ -189,7 +193,7 @@ namespace PowerliftingSimulator.Foundation.Unity
             _completingRenderFrame = true;
             try
             {
-                while (_accumulatedRenderTimeSeconds + FoundationTolerances.RenderAccumulatorComparison >= SimulationConstants.FixedDeltaTimeSeconds &&
+                while (!TicksSuspended && _accumulatedRenderTimeSeconds + FoundationTolerances.RenderAccumulatorComparison >= SimulationConstants.FixedDeltaTimeSeconds &&
                        ticks < SimulationConstants.MaxCatchUpTicksPerRenderFrame)
                 {
                     try
@@ -248,6 +252,7 @@ namespace PowerliftingSimulator.Foundation.Unity
             _attemptTrace.Clear();
             LastIntentFrame = PlayerIntentFrame.Empty;
             LastCatchUpTicks = 0;
+            TicksSuspended = false;
             _accumulatedRenderTimeSeconds = 0d;
             _preparedAccumulatedRenderTimeSeconds = 0d;
             _renderFramePrepared = false;

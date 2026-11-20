@@ -29,6 +29,8 @@ namespace PowerliftingSimulator.Equipment
         private const string MeasurementArtifactPath = "Artifacts/Measurements/GAM-8-physical-barbell.json";
         private const int PlateVisualPoolPerSide = 40;
         private const float ImpulseApplicationXBarMeters = 0.250f;
+        public const int DefaultPlateColliderSides = 24;
+        public const int MaximumPlateColliderSides = 120;
 
         [SerializeField] private FoundationBootstrap foundation;
         [SerializeField] private float initialLoadKg = 105f;
@@ -59,6 +61,7 @@ namespace PowerliftingSimulator.Equipment
         private PhysicsMaterial _contactMaterial;
         private BarbellLoadPlan _loadPlan;
         private BarbellInertiaModel _inertiaModel;
+        private int _plateColliderSides = DefaultPlateColliderSides;
         private bool _trailVisible;
         private bool _gameplayPerformanceProfile;
         private bool _savedShowDebugLandmarks;
@@ -89,6 +92,22 @@ namespace PowerliftingSimulator.Equipment
         public bool IsRecordedTrailVisible => _trailVisible;
         public int RecordedTrailPointCount => _recordedTrail == null ? 0 : _recordedTrail.positionCount;
         public bool IsGameplayPerformanceProfileActive => _gameplayPerformanceProfile;
+
+        /// <summary>Number of rim facets of each convex plate-stack collider. The default (24) is the accepted squat and bench geometry;
+        /// the deadlift qualification (GAM-70) measures what that faceting does to a bar resting on its plates.</summary>
+        public int PlateColliderSides => _plateColliderSides;
+
+        public void ConfigurePlateColliderSides(int sides)
+        {
+            if (sides < DefaultPlateColliderSides || sides > MaximumPlateColliderSides)
+                throw new ArgumentOutOfRangeException(nameof(sides), "Convex plate colliders support 24 to 120 rim facets.");
+            _plateColliderSides = sides;
+            if (_loadPlan != null && _barBody != null)
+            {
+                ApplyPlateCollider(_leftPlateCollider, _loadPlan.Layout.Left);
+                ApplyPlateCollider(_rightPlateCollider, _loadPlan.Layout.Right);
+            }
+        }
 
         public void SetGameplayPerformanceProfile(bool enabled)
         {
@@ -739,7 +758,7 @@ namespace PowerliftingSimulator.Equipment
             collider.sharedMesh = null;
             if (previousMesh != null)
                 DestroyImmediate(previousMesh);
-            collider.sharedMesh = CreateCylinderMesh(stackLength, radius, 24);
+            collider.sharedMesh = CreateCylinderMesh(stackLength, radius, _plateColliderSides);
             collider.transform.localPosition = new Vector3(
                 (layout.PlateStartXBarMeters + layout.PlateStackOuterFaceXBarMeters) * 0.5f,
                 0f,

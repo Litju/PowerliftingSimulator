@@ -1,0 +1,87 @@
+GAM-70 Gate 3 - physical bar break: measured separation event, sustained acceptance FAILED
+2026-11-13, Unity 6000.3.22f1, exact qualified B2 plant, real 75 kg bar, both rigid grips
+
+Disposition: PARTIAL. A player-commanded PULL physically unloads both plates and the bar
+acquires real upward motion with both grips attached and both feet supporting the athlete.
+The sustained 900-tick acceptance FAILS after the separation window: the accepted A2/A3
+balance regulator commands both ankle channels beyond their finite ceilings and the athlete
+loses one-sided foot support. No knee passage, lockout, DOWN, return, referee, playable
+station or Windows build was attempted. The failing acceptance is preserved as an Explicit
+test; the event itself is a separate executable diagnostic. Gate 4 is blocked here.
+
+1. Player-to-physics mapping (measured, 60 ticks after an isolated offset, H = 368 N total
+   pretension baseline in each fresh plant):
+   hip X +2 deg : hand pull 183.6 -> 272.6 N (d +89.0) | plates 368.4 -> 183.1 N (d -185.3) |
+                  COM z -112.6 -> -125.2 mm (d -12.6) | bar Y +1.57 mm
+   hip X +4 deg : hand pull 183.6 -> 176.9 N (d -6.8)  | plates 368.4 -> 374.7 N (d +6.3)  |
+                  COM z -112.6 -> -53.0 mm (d +59.5)  | bar Y +1.42 mm
+   hip X +6 deg : hand pull 183.6 -> 283.2 N (d +99.5) | plates 368.4 -> 171.1 N (d -197.3)|
+                  COM z -112.6 -> +27.9 mm (d +140.5) | bar Y +1.14 mm
+   knee X -2 deg: hand pull 183.6 -> 329.5 N (d +145.8)| plates 368.4 -> 0.0 N (d -368.4)  |
+                  COM z -112.6 -> -253.0 mm (d -140.5)| bar Y +22.71 mm
+   trunk X +2 deg: hand pull 183.6 -> 103.7 N (d -80.0)| plates 368.4 -> 498.7 N (d +130.4)|
+                  COM z -112.6 -> -130.3 mm (d -17.8)| bar Y +0.83 mm
+   trunk X -2 deg: hand pull 183.6 -> 210.8 N (d +27.1)| plates 368.4 -> 337.6 N (d -30.7)|
+                  COM z -112.6 -> -89.3 mm (d +23.2) | bar Y +0.28 mm
+   trunk X +4 deg: hand pull 183.6 -> 35.6 N (d -148.0)| plates 368.4 -> 654.7 N (d +286.3)|
+                  COM z -112.6 -> -144.3 mm (d -31.8)| bar Y +1.13 mm
+   Positive hip X is extension and negative knee X is extension, as in the A3 pretension
+   helper. Positive trunk X reduces the hand pull; negative trunk X moves the COM forward
+   and slightly increases hand pull. The final pull uses hip +2.5, knee -2, trunk -1.5 deg
+   at full intent. The trunk sign was measured, not guessed.
+
+2. Implemented controller (reference shaper only; no body/bar/force write):
+   DeadliftPullController maps the player's Drive intent (Brace and Grip gates) to a
+   one-second bounded extension reference. A measured plate-unload transition enters the
+   Separated phase; the load schedule DeadliftBarBreakReference then transfers the static
+   reference from the pretension ply to the already-solved C4 bar-break boundary
+   (H = bar weight / 2, plates zero) over 0.1 s. This is an explicit support-mode change,
+   not an integral extension of the grounded reference. A COM governor releases the pull
+   when the horizontal COM moves beyond 50 mm. The bar remains dynamic; PoweredJointController
+   is the only joint writer.
+
+3. Measured separation event (Explicit diagnostic GATE3_BAR_SEPARATION_EVENT_IS_PHYSICALLY_OBSERVED):
+   pretension 275.9 N per hand (plates 194.3 N), pull from tick 301, separation at tick 396.
+   At separation: plates 0.0 / 0.0 N, bar vertical velocity +0.016 m/s, bar Y 0.2231 m.
+   Over the 100 ticks after separation: bar rise 17.4 mm, min foot 104.3 N, COM deviation
+   79.8 mm, grip anchor separation 0.157 mm, max grip force sum 939.7 N, bar tilt 0.8 deg,
+   no bar-limb contact, no non-foot platform contact, both ankle Z channels present.
+   The bar was grounded before the pull (no-pull control: 900 ticks, plates 194.3 N,
+   displacement 0.0 mm, event none). The no-pull, 0.1-intent and abort controls do not
+   separate. The single-grip control is excluded from a clean bilateral break by definition
+   (only one physical grip attached); it produces a tilted, asymmetric path and is not used
+   to qualify the primitive.
+
+4. Sustained acceptance failure (Explicit GATE3_PLAYER_PULL_BREAKS_THE_GROUNDED_BAR_AND_NO_PULL_DOES_NOT):
+   same pull, 900-tick horizon. Separation at 396, bar rise 22.3 mm, then one-sided foot
+   support is lost (min foot 0.0 N) and the COM moves 131.8 mm. The limiting channels are
+   the ankles: X (flexion) demand 2.074 x 450 N m = 933 N m requested against a 450 N m
+   ceiling; Z (roll) demand 1.634 x 60 N m = 98 N m against 60 N m. The balance regulator
+   is the accepted A2/A3 static-hold law; its per-foot COP target follows the new support
+   mode but its response is not qualified for the moving transition.
+   The C4 bar-break boundary statics require only 79.3 N m ankle X and 0 N m roll, and
+   every joint is within its static ceiling (max abdomen 0.862). The 933 N m is therefore a
+   dynamic controller demand, not a static power deficit. No gain, limit, stiffness,
+   damping, friction or solver value was changed and no motor strength was increased.
+   Exact blocked mechanism: the balance regulator's ankle command during the bar-break
+   support-mode transition, at the measured 933 N m X / 98 N m Z request. A moving-phase
+   balance controller (or an event-driven hybrid balance policy) is required next.
+
+5. What is not claimed:
+   - no sustained bar break, no knee passage, lockout, referee DOWN, controlled return;
+   - no player-facing deadlift station, no Windows executable, no owner gameplay rehearsal;
+   - the A2/A3 subsystems remain green (rerun after this gate: A2 and A3 both PASS).
+   A failed primitive identifies the first causal physical boundary: the ankle channel
+   authority/balance transition above, measured at the first support loss.
+
+Receipts:
+  Logs/g3sep-results.xml (separation event 1/1 passed)
+  Logs/g3-results.xml (sustained acceptance 0/1 passed, preserved Explicit)
+  Logs/g3b-results.xml (mapping + earlier pull attempts)
+  Logs/GAM70/gate3-pull-mapping.txt
+  Logs/GAM70/gate3-separation-event.txt
+  Logs/GAM70/gate3-bar-break.txt
+  Logs/GAM70/gate3-*.csv (per-tick channels)
+  Test source: Assets/Tests/Deadlift/PlayMode/DeadliftBarBreakTests.cs
+  Controller: Assets/Scripts/Deadlift/Unity/DeadliftPullController.cs
+  Load schedule: Assets/Scripts/Deadlift/Unity/DeadliftBarBreakReference.cs

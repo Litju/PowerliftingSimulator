@@ -1,0 +1,176 @@
+GAM-70 grounded A3 pretension, 2026-11-13 - FINAL DISPOSITION: A3 PASS with the
+owner-approved deadlift-local ankle roll DOF (see last section). Earlier sections
+are the preserved history of the failed candidates.
+
+Source: A2 PASS commit df1060b plus DeadliftGroundedReference, DeadliftPretensionLoop.
+Plant: A2-qualified B2 hold (C4 reference + per-foot ankle COP regulator), 75 kg
+bar, both grips. Command: H per hand 0 for 1 s, ramp to 183.9 N (50 % of half the
+bar weight) over 1 s, hold 2 s. Target transfer 2H = 367.9 N.
+
+Reference: C4 torques and per-foot COP moments are exactly affine in H at the
+fixed configuration; two statics solutions give the reference for any H.
+Commands outside [0, Hmax] are rejected (invalid command control: over-max,
+negative and NaN all rejected).
+
+Results (Logs/GAM70/a3-*.csv):
+* Open-loop feedforward: transfer overshoots (plates -448.6 N for 2H 367.9 N),
+  creeps, bar lifts tick 257. With feet and both rigid grips grounded the
+  hand force is statically indeterminate from joint torques alone.
+* Closed-loop pretension (integral on measured hand-bar vertical force,
+  Joint.currentForce contract): realizes the target. Ticks 232-256: grip
+  353-371 N, plates 366-381 N (expected 368), feet 1337-1369 N, bar on plates.
+  Then a growing ~16-tick (~6 Hz) oscillation in ankle regulator offsets, COM z
+  and grip force; regulator saturates tick 288; bar lifts tick 304. Fresh repeat
+  identical.
+* Bounded A/Bs (A2 hold still PASSES in each): outer COM loop off -> bar lifts
+  tick 276; regulator integral off -> bar lifts tick 338. Neither is the cause.
+* Controls: no grip -> zero transfer (plates 735.6 N unchanged); left grip only
+  (same loop) -> settles at 367.8 N transfer, no tilt, no lift; drives off
+  (capacity 0; Hold.Enabled is ignored in Controlled mode, measured) ->
+  collapse, COM drop 302 mm.
+
+Conclusion: the rigid-grip load path and contact-consistent pretension reference
+work; the A2 balance regulator, identified at H = 0, is not qualified for the
+pretensioned contact mode (more foot load, bar-coupled hands). This disproves
+only the H = 0 regulator gains under pretension, not the plant.
+Next single action: identify the per-foot ankle->COP plant (a, b) at the
+pretensioned state (H = 184 N, fresh plants, +/-1 deg) and derive Kp for that
+contact mode (or schedule it on measured foot load), then rerun A3.
+Not started: bar break, knee passage, lockout, DOWN/return, referee, gym, Windows build.
+
+Receipts: a3b-results.xml 717f5efced0b84451109d20fffe9c4dbc42c94683df53046c6a0afb9a3f3d83d
+comab-results.xml 32547eb02f341c92e02c2b80cc71641d6aaa15c49c40b79cd60d0215d11429a6
+kiab-results.xml dae43133681bf64b5a10f1cd727f83f71f8180ff2503eac4aa48578db6f5d169
+
+--- Pretension-mode identification and predictive regulator (follow-up, same day) ---
+A3_PretensionModeAnkleIdentification (fresh plants; closed-loop pretension to H,
+then at tick 240 the pretension loop is removed and the regulator frozen with a
++1 deg ankle step; per-foot COP along the sole axis vs the frozen baseline):
+  H = 0     (feet 491 N/foot): step response 0 at t+1, +64.5 mm at t+2, +174 mm t+3
+  H = 182 N (feet 674 N/foot): 0 at t+1, +47.5 mm at t+2, +125 mm t+3
+  Unilateral steps stay on their own foot (cross-foot <= 5.5 mm by t+3).
+  b scales as 1/N_foot (0.0645 x 491/674 = 0.047 m/deg, measured 0.0475).
+  Frozen baselines diverge ~2.0-2.3x per tick. A target written at tick k first
+  shows in the COP measured after tick k+1.
+Fitted model x_{k+1} = a x_k + b u_{k-1} implies no stable proportional gain
+(Jury: a-1 < bK < 1 empty for a >= 2); a delay-compensated predictive law
+(a 2.1, b = 31.7/N_foot, lambda 0.8) is stable on that model in simulation.
+On the REAL plant it FAILS: A2 hold loses the plates (min 0.0 N, COM 62 mm,
+drive demand 1.03); A3 bar lifts tick 68. The proportional law that the model
+predicts unstable still passes A2. This REFUTES the first-order delayed COP
+model: the per-foot ankle/foot/COP plant is higher order (foot and shank angle
+and rate are states) and frozen-step identification cannot capture it.
+Predictive law kept in source as Predictive = false (rejected); qualified A2
+configuration restored and re-verified: A2 PASS, C5 negative control PASS,
+identical numbers (a2re-results.xml bef71df20dafa4603c31833f282d5647bb00371e73c17d893628ae5a93a36acf).
+a3id-results.xml 5d123f9e14afe8aab53a9523a8fa0764e4c195a3af324f6d47c974e1d19ba89d
+pred-results.xml 4d12961ff68044b00aa30338666e86af0aba67621b2db8f71d4e2dd149ccaf77
+
+Revised next action: closed-loop identification of a higher-order per-foot
+model (small excitation under the qualified regulator, ARX order 2-3 using
+foot/shank angle and rate plus COP), then a state-feedback regulator designed
+on it and verified on A2 before A3. A3 acceptance remains FAILED.
+
+--- Closed-loop identification, foot-roll actuators, two-loop regulator (2026-11-13, later) ---
+Robustness probe (A3_ClosedLoopArxIdentification): qualified regulator + independent
+deterministic PRBS +/-0.25 deg (hold 1-3 ticks) on each ankle. At H = 0 the hold
+oscillates with ankle offsets saturating at +/-4 deg, grip force swinging to ~630 N
+and COM moving ~5 cm (plates down to ~100 N); same under pretension.
+=> A2 PASS holds only UNDISTURBED; the qualified hold has almost no robustness
+   margin. This qualifies A2 as stated in its test and no further.
+Per-foot ARX(2..4) fits of along-sole COP on the unsaturated samples (88-166):
+R2 0.73-0.97, rms 11-25 mm, left/right models inconsistent -> not usable; the
+plant is dominated by contact saturation and transitions.
+Foot-roll actuator identification (frozen regulator at tick 100, +1 deg step,
+first effective tick, deltas vs frozen baseline):
+  ankle L x: along +63.4 mm, across -9.1   | ankle R x: along +70.7, across +3.5
+  hip L x:   along +14.1, across +2.7      | hip L z:   along -3.4, across +18.5
+  hip L y:   along +4.3,  across +45.4     | hip R y:   along +2.8, across +54.4
+  Frozen baseline drifts 37 mm ACROSS the left sole in 10 ticks: foot roll about
+  the sole long axis is unstable and unactuated by the hinge ankle/knee.
+Two-loop regulator (ankle along + hip-y across, same law): A2 still passes
+undisturbed, but A3 bar lifts tick 263 (COM 573 mm), the PRBS probe fails within
+~120 ticks, the no-grip control collapses. REJECTED (AcrossLoop = false).
+Qualified A2 configuration re-verified: A2 PASS, C4 PASS, C5 control PASS,
+identical numbers (a2final-results.xml d1b08dc12735e9516201e38db1669d0cd8b8321830a6e3b5612bb9c2ea906ef3).
+Receipts: roll-results.xml a37249d534e97ed5915ba4ef03bb32d59d4fbef1f35744f687188490759de4ac
+rollid-results.xml 70a7943e1b814283951aa6ff657785a8cb38af2c92a4fd241198d81d390c08fb
+rollid2-results.xml ee4666c300412fa76b3889be0a648b98e065d8f60176c7dfff59a5b3e84b9c49
+arx-results.xml b1c1376356a6c0dffd641b50c29d0b9c2a209951d444b5a1f5ca649a9a5bc3a4
+
+DEMONSTRATED LIMITATION (current A3 boundary)
+The grounded gripped B2 setup has a fast per-foot contact mode (e-folding about one
+10 ms tick) that includes foot roll about the sole long axis. With the canonical
+hinge ankle and knee, roll is reachable only through the hip ball drive. Four
+reference-shaping regulator structures were measured and rejected (COP integral;
+combined COP proportional; delay-compensated predictive; ankle+hip two-loop); the
+per-foot along-sole proportional law holds only undisturbed. Within the brief's
+constraints (no new joints, no profile/strength/limit/solver/contact changes, no
+reopening B2 without new evidence) no further evidence-supported regulator remains
+at the 100 Hz command rate. The bar-break and later primitives are blocked on this.
+Evidence now exists for owner decisions the brief reserved:
+  (a) an ankle inversion/eversion DOF (measured: roll unactuated, unstable);
+  (b) a B2 stance with less toe-out (42 deg couples AP sway into foot roll);
+  (c) the foot contact/inertia model (mode timescale ~ one tick).
+A3 acceptance remains FAILED.
+
+--- Ankle inversion/eversion DOF (owner decision "Add ankle roll DOF") -> A3 PASS ---
+Change (deadlift-local, default off; canonical rig, squat and bench unchanged):
+* PhysicalAthleteRig.EnableAnkleRoll(limit): unlocks only each ankle hinge's joint
+  Z axis (flexion axis x secondary ~ sole long axis = inversion/eversion); axial
+  rotation (Y) stays locked. Applied after build, before tick 0.
+* PoweredJointController.EnableSecondaryChannel: a hinge may power its unlocked
+  secondary axis with its own profile; write, per-tick drive validation and the
+  modeled demand all honour it. Canonical joints never call it.
+* DeadliftAnkleRoll: +/-15 deg, ceiling 60 N m, spring/damper = ankle family x
+  60/450 (306.7 N m/rad, 17.6 N m s/rad). Declared game approximation.
+* C4 statics treat the ankle roll moment as a driven channel against 60 N m;
+  at B2 it is 0.0 N m (COP on the sole centreline). Per-axis reference offsets.
+Measured A/B on the identical plant (ankle-roll-ab.txt):
+  roll on, no across loop: unregulated plates lost tick 36 (vs 81 roll off);
+  regulated hold passes but noisier; the DOF alone is not the fix.
+Roll actuator identification (frozen +1 deg roll steps): -10.6 / -10.7 mm across
+  own sole at first effective tick, <= 0.4 mm on the other foot or along the sole
+  (local, decoupled). With roll on, hip y now moves the COP across with the
+  opposite sign (-34 mm by t+3): the leg rolls over a flat foot.
+Across-sole loop on ankle roll (Kp = -1.8/0.0107 deg/m, +/-8 deg): undisturbed
+  hold becomes a true equilibrium: settled COM speed 0.03 mm/s (was 0.55), max
+  0.9 mm/s (was 7.5), max offset 0.59 deg (was 1.38), COM deviation 0.14 mm.
+Remaining A3 failure with roll: slow symmetric along-sole oscillation at the
+  pretensioned state (bar lift tick 349). Cause per the measured plant: ankle COP
+  gain b ~ 1/N_foot (64.5 -> 47.5 mm/deg, 491 -> 674 N), so fixed gains lose K b.
+Fix: gain schedule K = K0 N_foot(H)/N_foot(0) using the C4 statics foot load at
+  the commanded H (deterministic), on the along and roll loops.
+
+A3 acceptance (A3_GROUNDED_BILATERAL_PRETENSION_TRANSFERS_PLATE_LOAD_TO_GRIPS_AND_FEET), PASS:
+  bilateral (and fresh repeat, identical): target 2H 367.9 N; plates
+  735.5 -> 367.8 N (d -367.6); feet 980.9 -> 1348.6 N (d +367.6); grip up on bar
+  +367.8 N; min plate 179.9 N; bar displacement 0.00 mm, tilt 0.00 deg; COM
+  deviation 0.36 mm; grip drift 0.032 mm; regulator never saturated.
+  Controls: no grip -> grip 0 N, no hand transfer, athlete then falls (reference
+  expects the bar to load the hands); left grip only -> one hand carries 367.7 N
+  through an asymmetric path (plate L-R -53.8 N vs +5.4 N bilateral); drives off
+  (capacity 0) -> collapse, feet unloaded tick 97; invalid commands (over-max,
+  negative, NaN) rejected.
+CORRECTION of an earlier claim in this file: open-loop feedforward now also
+  realizes the transfer (d -362.4 N, 1.5 % short). The earlier open-loop overshoot
+  was caused by the unstable balance loop, not by closed-chain indeterminacy.
+  The force loop is kept: it is at least as accurate (0.3 N vs 5.5 N error).
+Not qualified: robustness to the +/-0.25 deg PRBS ankle probe (roll on: survives
+  104/800 ticks). Undisturbed hold and controlled pretension are qualified; a
+  disturbance-rejection margin is not claimed. Bar break will be the first test of it.
+A2 acceptance now runs the roll-on plant: 2 fresh plants x 1000 ticks, min plate
+  360.6 N, min foot 483.4 N, COM deviation 0.14 mm, settled COM speed 0.03 mm/s,
+  bar 0.00 mm, max demand 0.324, limit proximity 0.9774, offsets 0.59 deg.
+
+Regressions (Unity 6000.3.22f1, rendering on):
+  PlayMode 31/31 passed, 0 failed, 0 skipped (reg-results.xml
+    1d667789d17c0278ac702f9533380cde66ff607c646ad765626de6dd3e622450): deadlift A1
+    gates (8), grip gates (5), A2, A3, C1, C4, C5 control; bench press gates (7) and
+    plant gates (5); GAM63 squat ten fresh attempts.
+  EditMode 303 cases: 300 passed, 0 failed, 3 skipped (pre-existing GAM-44 Explicit)
+    (edit-results.xml e324b3ffb948a1eabf92b350711f1d5d50d3f759dcfce573458271678adaaba0).
+Receipts: roll-ab2-results.xml, rollz-results.xml, a3sched-results.xml (local, Logs/ ignored).
+c0ef6e1a2ca17ff82ad8234c2b476b2735f1d62e7b0863a3403425ee481f1d92 *roll-ab2-results.xml
+c19a0aac17098ee0c448744ecc49eb9c9a75f64b3887adb48aed2b40df5c2d4c *rollz-results.xml
+ed650eb7f6458a999f99381efd345602e1219be8cef04389527f0e1e42947886 *a3sched-results.xml

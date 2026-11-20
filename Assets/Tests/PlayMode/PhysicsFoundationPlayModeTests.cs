@@ -89,6 +89,31 @@ namespace PowerliftingSimulator.Tests
         }
 
         [UnityTest]
+        public IEnumerator SuspendedTicksKeepTheAcceptedInputHorizonAndResumeRemainingTicks()
+        {
+            _runtime = CreateRuntime();
+            _runtime.RegisterPostPhysicsStep((time, _, __) =>
+            {
+                if (time.Tick == 1)
+                    _runtime.TicksSuspended = true;
+            });
+
+            Assert.That(_runtime.AdvanceRenderFrame(0.04d), Is.EqualTo(1));
+            Assert.That(_runtime.CurrentTime.Tick, Is.EqualTo(1ul));
+            Assert.Throws<InvalidOperationException>(() => _runtime.StepOne());
+
+            _runtime.PrepareRenderFrame(1d);
+            Assert.That(_runtime.InputRenderIntervalStartSeconds, Is.EqualTo(0.04d).Within(1e-9d));
+            Assert.That(_runtime.InputRenderIntervalEndSeconds, Is.EqualTo(0.04d).Within(1e-9d));
+            Assert.That(_runtime.CompleteRenderFrame(), Is.Zero);
+
+            _runtime.TicksSuspended = false;
+            Assert.That(_runtime.AdvanceRenderFrame(0d), Is.EqualTo(3));
+            Assert.That(_runtime.CurrentTime.Tick, Is.EqualTo(4ul));
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator InputRenderWindowTracksTheAuthoritativeCatchUpHorizon()
         {
             _runtime = CreateRuntime();

@@ -151,6 +151,7 @@ namespace PowerliftingSimulator.Athlete
 
         public void PrePhysicsStep(SimulationTime time, PlayerIntentFrame intent)
         {
+            HasPhysicsStepped = true;
             if (_commandSource != null)
             {
                 PhysicalObservation previousObservation = (foundation != null && foundation.Runtime != null && foundation.Runtime.IsInitialized)
@@ -665,6 +666,109 @@ namespace PowerliftingSimulator.Athlete
             if (proxyMaterial != null)
                 renderer.sharedMaterial = proxyMaterial;
             return renderer;
+        }
+
+        /// <summary>
+        /// GAM-70 deadlift-local option (never used by squat or bench): unlocks each
+        /// ankle hinge's Z axis (joint frame z = flexion axis x secondary ~ the foot's
+        /// long axis, i.e. inversion/eversion) with a symmetric limit, keeping axial
+        /// rotation (Y) locked. Allowed only on a dynamic rig at rest before tick 0.
+        /// The caller must then power the axis through
+        /// PoweredJointController.EnableSecondaryChannel.
+        /// </summary>
+        public void EnableAnkleRoll(float limitDegrees)
+        {
+            if (!(limitDegrees > 0f && limitDegrees <= 30f))
+                throw new ArgumentOutOfRangeException(nameof(limitDegrees));
+            if (HasPhysicsStepped)
+                throw new InvalidOperationException("The deadlift ankle-roll topology can only be enabled before the first physics tick.");
+            if (AnkleRollLimitDegrees.HasValue)
+            {
+                if (Mathf.Abs(AnkleRollLimitDegrees.Value - limitDegrees) > 0.0001f)
+                    throw new InvalidOperationException(
+                        $"The ankle-roll topology is already active at +/-{AnkleRollLimitDegrees.Value:F3} deg; it cannot be redefined to +/-{limitDegrees:F3} deg.");
+                return; // idempotent: repeated activation with the same declared limit writes nothing
+            }
+            foreach (JointRuntime j in _joints)
+            {
+                if (j.Recipe.ChildId != "left_foot" && j.Recipe.ChildId != "right_foot")
+                    continue;
+                if (j.Recipe.Kind != PhysicalJointKind.Hinge)
+                    throw new InvalidOperationException("Ankle roll requires the canonical hinge ankle.");
+                j.Joint.angularZMotion = ConfigurableJointMotion.Limited;
+                j.Joint.angularZLimit = Limit(limitDegrees);
+            }
+            AnkleRollLimitDegrees = limitDegrees;
+            ValidateAnkleRollTopology();
+        }
+
+        /// <summary>Null on the canonical rig; the deadlift ankle-roll limit when enabled.</summary>
+        public float? AnkleRollLimitDegrees { get; private set; }
+
+        /// <summary>True once the rig's single pre-physics command/drive path has run for a tick.</summary>
+        public bool HasPhysicsStepped { get; private set; }
+
+        public const string AnkleRollTopologyVersion = "GAM70_DEADLIFT_ANKLE_ROLL_V1";
+        public const string CanonicalTopologyVersion = "GAM6_CANONICAL_16_BODY_15_JOINT_V1";
+
+        /// <summary>
+        /// Canonical (squat/bench) contract: every hinge keeps both swing axes
+        /// locked; no deadlift-local variant is active. Safe to call at runtime.
+        /// </summary>
+        public void ValidateCanonicalTopology()
+        {
+            if (AnkleRollLimitDegrees.HasValue)
+                throw new InvalidOperationException("The canonical topology has a deadlift ankle-roll variant active.");
+            if (_segments.Count != 16 || _joints.Count != 15)
+                throw new InvalidOperationException("Runtime topology is not the canonical 16-body/15-joint graph.");
+            if (_physicalRoot == null || _physicalRoot.GetComponentsInChildren<Rigidbody>(true).Length != 16)
+                throw new InvalidOperationException(
+                    $"The physical rig contains an extra rigid body ({(_physicalRoot == null ? 0 : _physicalRoot.GetComponentsInChildren<Rigidbody>(true).Length)} bodies).");
+            foreach (JointRuntime j in _joints)
+            {
+                ConfigurableJoint cj = j.Joint;
+                if (cj.xMotion != ConfigurableJointMotion.Locked || cj.yMotion != ConfigurableJointMotion.Locked || cj.zMotion != ConfigurableJointMotion.Locked ||
+                    cj.angularXMotion != ConfigurableJointMotion.Limited || cj.projectionMode != JointProjectionMode.None)
+                    throw new InvalidOperationException($"Canonical joint '{j.Recipe.ChildId}' violates its translational/angular contract.");
+                bool hinge = j.Recipe.Kind == PhysicalJointKind.Hinge;
+                ConfigurableJointMotion swing = hinge ? ConfigurableJointMotion.Locked : ConfigurableJointMotion.Limited;
+                if (cj.angularYMotion != swing || cj.angularZMotion != swing)
+                    throw new InvalidOperationException($"Canonical joint '{j.Recipe.ChildId}' no longer has its declared swing topology.");
+            }
+        }
+
+        /// <summary>
+        /// Deadlift variant contract: the canonical 16/15 graph, both ankle
+        /// hinges with X flexion limited, Y locked and only Z unlocked at the
+        /// declared symmetric limit. No extra body, joint or hidden support.
+        /// </summary>
+        public void ValidateAnkleRollTopology()
+        {
+            if (!AnkleRollLimitDegrees.HasValue)
+                throw new InvalidOperationException("The deadlift ankle-roll topology is not active.");
+            if (_segments.Count != 16 || _joints.Count != 15 ||
+                _physicalRoot == null || _physicalRoot.GetComponentsInChildren<Rigidbody>(true).Length != 16)
+                throw new InvalidOperationException(
+                    $"The deadlift variant contains an extra rigid body ({(_physicalRoot == null ? 0 : _physicalRoot.GetComponentsInChildren<Rigidbody>(true).Length)} bodies, {_segments.Count} segments, {_joints.Count} rig joints).");
+            float declared = AnkleRollLimitDegrees.Value;
+            foreach (string footId in new[] { "left_foot", "right_foot" })
+            {
+                SegmentRuntime foot = _segments[footId];
+                ConfigurableJoint[] joints = foot.Body.GetComponents<ConfigurableJoint>();
+                if (joints.Length != 1 || joints[0].connectedBody != _segments[foot.Recipe.ParentId].Body)
+                    throw new InvalidOperationException($"Foot '{footId}' does not have exactly its one canonical ankle constraint.");
+                ConfigurableJoint cj = joints[0];
+                if (cj.angularXMotion != ConfigurableJointMotion.Limited ||
+                    cj.angularYMotion != ConfigurableJointMotion.Locked ||
+                    cj.angularZMotion != ConfigurableJointMotion.Limited ||
+                    Mathf.Abs(cj.angularZLimit.limit - declared) > 0.001f ||
+                    cj.xMotion != ConfigurableJointMotion.Locked || cj.yMotion != ConfigurableJointMotion.Locked || cj.zMotion != ConfigurableJointMotion.Locked ||
+                    cj.projectionMode != JointProjectionMode.None)
+                    throw new InvalidOperationException($"Ankle '{footId}' does not match the declared Z-limited/Y-locked variant.");
+                if (foot.Body.GetComponents<FixedJoint>().Length != 0 || foot.Body.GetComponents<HingeJoint>().Length != 0 ||
+                    foot.Body.GetComponents<CharacterJoint>().Length != 0 || foot.Body.GetComponents<SpringJoint>().Length != 0)
+                    throw new InvalidOperationException($"Foot '{footId}' carries a hidden constraint.");
+            }
         }
 
         private void ValidateRuntime()

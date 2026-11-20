@@ -1,0 +1,111 @@
+GAM-70 grounded contact equilibrium and A2 dynamic hold, 2026-11-13
+
+Disposition: A2 dynamic PASS (exact B2, 75 kg bar on plates, both rigid grips,
+no pull). C1-C5 executed in order. Grounded A3 is the next gate.
+Base: 6d1f315a4417c7d012fe213e6aacac79ebf99dbc (eight prior GAM-70 commits kept).
+Unity 6000.3.22f1, Windows, batchmode with D3D12 rendering (no -nographics).
+Unchanged: athlete, joint limits, actuator profiles (K, D, ceilings), grip
+topology (BenchGrip 6-DOF weld), physics settings, B2 joint references, bar,
+platform. Squat and bench sources untouched.
+Frames/units: world +Y up, +Z athlete forward; m, N, N m, rad/s; dt 0.01 s,
+two PhysX substeps per tick.
+
+C1 - six-dimensional wrench measurement (DeadliftWrenchBalanceTests)
+* Unity ContactPoint.impulse carries the NORMAL impulse only: every foot and
+  plate impulse measured with exactly zero X/Z. Friction is therefore not
+  observable from contacts; horizontal balance is inferred as a residual.
+* Joint.currentForce (wrist and grip) = force on the joint's own body, world
+  frame: the hand linear Newton residual closes to <= 0.23 N (control A) and
+  <= 0.70 N (C5). It reports the LAST substep only: bar and athlete vertical
+  residuals are equal and opposite (tick 5 control A: -68.9 / +69.0 N); the
+  athlete+bar vertical balance closes (max 0.36 N control A, 3.55 N C5; RMS
+  < 1 % of total weight in all runs; 54.5 N single-tick max in control B at
+  tick 94 while the bar rolls back at 0.16 m/s on its faceted plates).
+* Joint.currentTorque is NOT validated: no frame/point hypothesis (world,
+  negated, owner-local, connected-local, zero; about anchor or COM) closes
+  the hand Euler equation non-degenerately (best 2.8 N m RMS); ball-joint
+  currentTorque reads ~0 under load, so it excludes the drive. It is
+  recorded as a raw engine value only and no conclusion depends on it.
+* Grip moments during the first 7 ticks: <= 18.6 N m (control A), 0.0-0.1
+  N m while the C5 equilibrium holds. Grip horizontal force <= 100 N in
+  control A arises with the bar lift, not before it.
+
+C2 - original static gravity reference (2^3 factorial, unchanged values)
+  hip knee trunk -> first plate unload tick (300-tick horizon)
+   1    1    1   -> 7      (control A)
+   1    1    0   -> 8
+   1    0    1   -> none
+   1    0    0   -> 32     (hip without trunk: late coupling)
+   0    1    1   -> 9
+   0    1    0   -> 23
+   0    0    1   -> none   (athlete leans on the bar: plates 1047 N tick 5)
+   0    0    0   -> 144 single plate (control B: plates 1227.5 N, feet 512 N
+                   at tick 5 -> the gripped bar is used as a crutch)
+  Causal group: KNEE. Original knee offset 2.48 deg = -122.3 N m vs the
+  contact-consistent -53.0 N m (C4): ~69 N m excess knee drive per knee.
+  Trunk offsets equal C4 (0.91 / 0.60 deg). Mechanism: the 50/50
+  upper-body split ignores foot reactions and assumes joint axes parallel to
+  world X; in the 42 deg toe-out stance knee/hip axes have large world-Z
+  components, so lateral lever arms enter the knee moment.
+
+C3 - grip topology: NOT run. Evidence does not require it: the C5 divergence
+  is numerically identical with and without grips (COM vz 0.0009 / 0.0017 /
+  0.0031 / 0.0059 / 0.0114 m/s, ticks 5-9, both), and grip moments are ~0 while
+  the equilibrium holds. BenchGrip unchanged.
+
+C4 - contact-consistent inverse statics (DeadliftContactStatics)
+  Declared wrench set: vertical grip force H per hand, zero grip moment;
+  vertical plate normals; vertical foot normals at COPs on each sole
+  centreline at equal Z; zero friction and free moment. Per joint
+  tau = -(gravity + contact moments of the child subtree) on child joint
+  axes, same frame/sign as the original reference.
+  H = 0: FEASIBLE. Plates 367.9/367.9 N, feet 490.5/490.5 N, COP
+  (+-0.3092, -0.1129) m, 65 mm inside each sole. Demand fractions <= 0.32
+  (abdomen 125.0 N m, hip 105.6, knee -53.0, ankle 7.2, thorax -82.6).
+  H = 92 / 184 / 276 N: FEASIBLE (max demand 0.46 / 0.59 / 0.73, abdomen).
+  H = 368 N (plates 0): feasible as statics; it is the bar-break boundary.
+
+C5 - real plant
+* C4 reference alone (2 fresh plants): realized exactly at ticks 1-5 (plates
+  735.3 N, feet 490.0/491.4 N, grips ~0, COM speed ~1 mm/s), then an unstable
+  mode: per-foot COP runs heelward/medially (~2x per tick), COP pinned at a
+  sole corner by tick ~25, forward lean onto the bar, plate unload tick 81.
+  Retained as negative-control test.
+* Without grips: same early divergence -> not the closed bar chain.
+* Composition A/B (b q* vs q* b): left composition breaks statics (feet 811
+  N vs 490 N, plates lost tick 9). REJECTED; q* b is the correct drive frame.
+* Ankle identification (fresh, +/-1 deg from tick 1): bilateral +1 deg moves
+  combined COP +44 mm (tick 1, no tick delay), +116 mm (tick 2), saturating
+  at the toe extent; -1 deg -43 mm. Unilateral +1 deg: +22 mm AP and +-16 mm
+  ML toward that foot (toe-out coupling); per foot ~54 mm along its long
+  axis. Model c_{k+1} = a c_k + b u_k, a ~ 1.8, b ~ 0.054 m/deg per foot.
+  All 8 foot contact points loaded per tick: no early foot contact-mode change.
+* Rejected regulator laws (measured): combined-COP integral G 0.044/kappa 1
+  (limit cycle, +-4 deg bang); G 0.12/kappa 0.5 (too slow, plates lost tick
+  69); combined-COP proportional (AP held, L/R differential runaway, tick 163).
+* Accepted: DeadliftBalanceRegulator, per-foot COP proportional
+  Kp = a/b = 33.3 deg/m (centre of |a - b Kp| < 1), Ki 3 deg/m/tick, outer COM
+  term d = 1.4 (z - z0) + 0.25 vz, +-4 deg clamp, writes only ankle reference
+  offsets via DeadliftSetupHold; PoweredJointController sole joint writer.
+
+A2 dynamic acceptance (A2_DYN_GRIPPED_B2_HELD_BY_CONTACT_CONSISTENT_REFERENCE_AND_ANKLE_REGULATOR), 2 fresh plants x 1000 ticks:
+  min plate 357.6 N (>= 92.0), min foot 467.0 N (>= 245.2), grip drift
+  0.005 mm (< 1), COM deviation 0.27 mm (< 5), settled mean COM speed
+  0.55 mm/s (< 2), bar displacement 0.01 mm (< 2), max demand 0.327 (< 0.95),
+  max limit proximity 0.9774 right hip (< 0.9848 stop-contact bound),
+  regulator max 1.38 deg never saturated, no bar-limb or non-foot contact.
+  Game-engine qualification of a measured hold; not a physiological claim.
+
+Receipts (local, Logs/ ignored; raw traces Logs/GAM70/*.csv):
+  a2-results.xml 66d0a8ee4f88d662e5c6bb482bfe24471a2b5bfc876a32e1a3d5680dccb68676
+    (A2 PASS, C1 PASS, C4 PASS, C5 negative control PASS: 4/4)
+  c125-results.xml 60d2752f92fccb48c983ad873c4141b75fb671909be90e4e03f076c0e34e529b
+  c5ab-results.xml 801dd1465345d1d1a56ccb4f283034f6992aee8bdfec4676126e879102e6b3a1
+  c5lr-results.xml 8695a34148c344edbfc56ee5882f28ec55819d25ce78e2c176b9acaa6d415ebd
+  c5id-results.xml 47ecfdaddc5a43506facda43c1670bf462df0c6433e69c0b03015a94bc2d6d24
+  a2-dynamic-hold.txt 425c2b288b6bd50fa8eabfff970f3ba720f257d0e40c600718b78443ccada243
+  c4-statics.txt e26d438baa4c5f3619909cb3fdc709e5117ce907f6b5d8c52ff02bbeea21f227
+  wrench-c2-summary.csv 7fae23bd7bf30ba85c6a20c9555d404a8c5546632e7afd9106886169c6dc5523
+Reproduce: -testFilter with the test names above (Explicit diagnostics:
+C2_StaticReferenceGroupAblation, C5_ClosedChainAB_SameReferenceWithoutGrips,
+C5_ReferenceCompositionAB, C5_AnkleTargetIdentification, C5_RegulatedHold).

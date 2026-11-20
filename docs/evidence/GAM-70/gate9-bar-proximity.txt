@@ -1,0 +1,141 @@
+GAM-70 Gate 9 - bar-to-leg distance: geometry diagnosis, correction attempt, controlled A/B
+2026-11-17, Unity 6000.3.22f1, fresh B2 plants (DeadliftPlantWorld), shipped DeadliftAttemptRuntime,
+100 kg athlete, real 75 kg bar, both rigid grips, deadlift ankle-roll DOF, Drive onset tick 301.
+No gain, strength, stiffness, solver, friction, contact, collider or joint-limit value was changed.
+PoweredJointController stays the only joint writer; the welded grips are untouched.
+
+Owner observation: in the Windows game the bar is visibly too far forward through the lift,
+especially at lockout.
+
+1. Measurement (DeadliftBarLegGeometry, one definition for plan and plant)
+   Surface gap = sagittal (Y-Z) distance from the bar axis to a leg capsule's core segment
+   - capsule radius - shaft radius (14.5 mm = the 29 mm shaft collider). Shins and thighs
+   separately, both sides. Planned: solver poses of each DeadliftLiftPath key. Realized: the
+   live capsule colliders and the live shaft collider every tick. Check 1: the 3D
+   shaft-capsule segment distance. Check 2: the visible skinned mesh (baked with the rig's own
+   rotation-only follower, vertices whose dominant bone is a thigh or shank, inside the
+   shaft's span), every 10th tick. Test: DeadliftBarProximityTests (Explicit).
+
+2. Control (the shipped Gate 6 path), realized vs planned, min/mean mm, onset 301, GOOD LIFT
+   (Down 834, bar rise 803.3 mm, min foot 557.7 N, feet travel 0.5 mm, bar-leg force 0.0 N):
+   window        ticks  shin real  shin plan  shin vis | thigh real  thigh plan  thigh vis
+   Setup           318   45/ 45     45/ 45     85/ 85  |  241/241     241/241     239/240
+   BelowKnee       139    1/ 22      6/ 19     28/ 55  |  113/174      95/170      68/165
+   KneePassage      31   28/ 48     18/ 46     23/ 26  |   99/104      94/ 95      38/ 44
+   UpperThigh      201   70/314     76/316     40/273  |   97/173      98/165      37/144
+   Lockout         144  435/444    446/446    403/412  |  167/177     179/179     145/156
+   LoweringAbove   227   60/311     50/308     28/272  |   81/155      95/162      23/127
+   LoweringBelow   390    5/ 39      6/ 35     20/ 72  |   91/209      94/210      37/201
+   Returned         59   48/ 48     45/ 45     88/ 88  |  242/243     241/241     241/241
+   3D shaft-capsule gaps equal the sagittal ones within 1-5 mm (the shaft spans both legs).
+   Mean world Z at lockout (m, +Z forward): bar -0.018 (plan -0.036), grip anchors -0.018,
+   shoulders -0.285, hip joint centres -0.303, knees -0.194; ankles -0.125, midfoot -0.068.
+
+   Findings:
+   a. The plant tracks the plan: lockout thigh gap 177 mm realized vs 179 mm planned. Joint
+      tracking contributes at most -19..+36 mm (upper-thigh ascent) and -12..+26 mm (lockout).
+   b. The athlete does not move rearward during the lift. The hip joint centres stay at
+      world Z -0.329 m from setup through knee passage to within 0.1 mm while the knees go
+      119 -> 42 deg, and end at -0.32 m, 0.20 m behind the ankles. At lockout the legs lean
+      back (shin -10 deg, thigh -16.6 deg) and the shoulders sit over the hips, so the bar
+      hangs 0.27 m in front of the shoulders (arms ~25 deg forward; shoulder demand 0.86).
+   c. Below the knee the plan already runs the bar at the declared 6 mm hard clearance from
+      the shin capsules (realized min 1 mm).
+   d. Visual vs collider. The visible shin is ~30-40 mm thinner than its 65 mm-radius
+      capsule (setup gap 85 mm visual vs 45 mm collider), so the bar can never visibly touch
+      the shin. The visible thigh is ~20 mm proud of its 90 mm-radius capsule (lockout
+      156 vs 177 mm). Neither explains the lockout gap: the thigh error has the opposite sign.
+
+3. Root cause (kinematic, in the planner and in the plant)
+   The ascent planner uses the setup solver's leg parameterization: hip ball, knee hinge,
+   ankle hinge. With both feet planted at the B2 42 deg toe-out, each leg is then a planar
+   ankle+knee chain in its own toed-out foot plane, so each hip joint centre must lie in that
+   plane. With the pelvis width fixed, the two planes allow one hip Z: -0.33 m, for every knee
+   angle. The only way to stand up is to lean the straight legs back, and balance (COM over
+   the feet, shoulders not ahead of the hips) then puts the bar 0.18 m off the thighs. The
+   missing proximity objective is not the cause: no objective can move a pinned hip.
+   The plant has the DOF that removes the pin: the owner-approved, powered, +/-15 deg ankle
+   inversion/eversion channel (DeadliftAnkleRoll, Gate 1). The planner did not use it.
+
+4. Correction (DeadliftLiftPath.BarProximity, opt-in, default OFF)
+   a. The planner also uses the ankle roll (joint Z channel, composed exactly as the hold
+      composes the regulator's roll offset; still one joint writer), bounded.
+   b. Bar-thigh proximity preference toward the declared 6 mm clearance + 19 mm measured
+      tracking allowance (finding 2a), ramped in after knee passage. The clearance stays a
+      hard inequality, so the plan never rests the bar on the legs. A shin term (run 1) drove
+      the bar into the shins and is off (finding 2c).
+   c. Below the ramp the path equals the Gate 6 path: same coordination schedule (normalized
+      by the Gate 6 lockout rise), roll held at zero, same joint speed (progress rates scaled
+      to the Gate 6 46.5 deg/s), and the bar's fore-aft travel bounds the progress (3 deg/cm).
+   Planned lockout bar-thigh gap: 179 mm (Gate 6) -> 34 mm (roll 4), 40 (roll 2), 51 (roll 1),
+   82 mm (roll 3, near-vertical bar). Static lumbar demand at lockout drops 0.48 -> 0.16-0.25
+   (bar closer to the hips).
+
+5. Controlled A/B: 15 matched fresh-plant runs, onset 301 (control = GOOD LIFT every time)
+   run  change (cumulative)                                   proximity outcome
+    1   roll<=8, shin+thigh terms to 6 mm                      bar into shins 3.9 kN, ThighSupport @387, FootMoved @456
+    2   shin off, thigh target 25 mm                           plan+regulator roll 16.3 deg > 15 deg stop, FootMoved @611
+    3   roll<=4 (15 - 3 margin - 8 regulator range)            roll swung -2 -> +3 deg after passage, FootMoved @524
+    4,5 roll held below knee, ramp 0.23 m                      lateral COP excursion @520, FootMoved @532
+    6   ramp 0.30 m                                            reached s 0.80; roll-loop oscillation, foot over its edge @616
+    7   roll<=2                                                FootMoved @536
+    8   ramp delayed past the lumbar-saturation window         reached s 0.84; near-standing roll oscillation @631
+    9   roll<=1                                                FootMoved @535 (schedule compressed by the lower lockout)
+   10   schedule normalized by the Gate 6 lockout, roll 2      plan moved bar back 0.11 m/s; FootMoved @547
+   11   bar-travel arc length, matched joint speed             identical to control through tick 536; FootMoved @568
+   12   near-vertical bar on the whole path (error)            FootMoved @512
+   13   near-vertical bar ramped in, roll<=3                   ascent realized: thigh gap 75 mm at s 0.76 (control ~170);
+                                                               left foot rolled over at s 0.795, FootMoved @646
+   14   roll<=2                                                reached path end @719 after FootMoved @687
+   15   roll<=1                                                FootMoved @622
+   Outcomes are not monotonic in the roll bound. Two plant limits bind:
+   - the Gate 6 plant already saturates the lumbar drive just after knee passage (abdomen
+     1.39, ticks 518-533), and any change to the plan there tipped a lateral COP excursion;
+   - near standing, the ankle regulator's roll loop (identified crouched; the Gate 8 known
+     limitation) oscillates. The proximity posture carries ~5 deg actual roll there, against
+     ~2 deg on the control, and a foot rolls over its edge.
+   Removing either needs ankle-regulator re-identification near standing (gains, excluded
+   from this scope) or a different setup stance (B2, qualified).
+
+6. Disposition
+   The shipped attempt keeps the qualified Gate 6 path (DeadliftAttemptRuntime.
+   BarProximityPathDefault = false): the correction must not trade a physically completed
+   lift for appearance, and on this plant it does. The owner-visible bar position in the
+   default game is unchanged. The experimental path can be shown in the Windows player with
+   -deadliftBarProximity (HUD: "EXPERIMENTAL"); -deadliftSideView or V gives a true side view.
+
+7. Final tree (proximity path off by default), Unity batch, -nographics
+   Deadlift EditMode 10/10 PASS.
+   Deadlift PlayMode (normal, 72): 67 PASS, 5 FAIL. The 5 failures are the same tests that
+   failed before Gates 6-8 (Logs/g7deadlift-results.xml, 2026-11-16): A2_DYN_ACCEPTED_SETUP...,
+   A3_GROUNDED_BILATERAL..., GATE3_BAR_SEPARATION..., GATE3_PLAYER_PULL_BREAKS..., A2_GATE_THE_
+   FLOOR_SETUP...; none uses the lift path or the attempt runtime. PASS, numbers identical to
+   Gate 7/8: RUNTIME_PLAYER_DEADLIFT_IS_A_GOOD_LIFT (onset 301 Down 834, rise 803.3 mm, min
+   foot 557.7 N; onset 305 Down 839), GATE7_PLAYER_DEADLIFT_ATTEMPT_IS_A_GOOD_LIFT,
+   STATION_SCENE_RUNS_A_GOOD_LIFT_ON_THE_FOUNDATION_CLOCK (Down 834, grips released 1458).
+   Existing five-onset robustness (RUNTIME_DRIVE_ONSET_ROBUSTNESS_AB), unchanged from Gate 8:
+   accel 0.6 4/5 (302 loses a foot at 665), accel 0.3 0/5.
+   Bar-proximity onset A/B (GAM70_BAR_PROXIMITY_ONSET_ROBUSTNESS_AB), onsets 301/302/305/320/350:
+   control 4/5 good lifts, realized lockout thigh gap 167/177 mm (min/mean) in each good lift;
+   proximity 0/5 - FootMoved @646/563/651/668/714, bar rise 0.83/0.74/0.83/0.84/0.81 m.
+   Proximity onset 301, realized upper-thigh ascent: thigh gap 75/131 mm (control 97/173),
+   visual 38/106 (control 37/144), bar-leg force 0.0 N, but ankle 3.20, roll 5.47 and abdomen
+   3.10 demand and 145 saturated ticks (control 16), measured through the failure.
+
+8. Owner-visible outcome: none in the default game. The bar position is unchanged because
+   the corrected path does not complete the lift on the current plant. See section 9 for the
+   Windows side-view capture.
+
+9. Windows gameplay capture (player built from this tree with the 6000.3.22f1-gam65-il2cpp
+   editor: Build Finished, Result: Success; real W key held via keybd_event; desktop-duplication
+   capture of the player window, 1280x720). View: V / -deadliftSideView, a low side-quarter
+   view ~50 deg off the bar axis. A true side view looks straight through the near 450 mm plate.
+   Control (default game): Pulling 531, Lifting 549, Lockout 920 (bar 1.020 m), DOWN 1064,
+   bar returned 1687, GOOD LIFT. An earlier control take with a later real-keyboard onset
+   (556) reached lockout and DOWN but the referee faulted FootMoved during lowering (1282):
+   the same onset sensitivity of the shipped plant, not a change here.
+   Experimental (-deadliftBarProximity): lifted to 0.82 m (rise 817 mm) with the bar visibly
+   against the thighs, held on the support margin, then lost a foot and fell: NO LIFT.
+   Still: docs/evidence/GAM-70/gate9-windows-side-ab.png (left control, right experimental,
+   same moment near lockout). Clips outside history: Logs/GAM70/capture/control-side.mp4,
+   proximity-side.mp4 (trimmed to the attempt; checked frame by frame).

@@ -1,0 +1,77 @@
+GAM-70 Gate 2 - ankle-target robustness: causal isolation and representative admission
+2026-11-13, Unity 6000.3.22f1, exact qualified B2 plant, 75 kg bar, both rigid grips
+
+Disposition: the reported failure is a target-command bandwidth/contact-mode limit, not a
+wrong roll-channel feedback sign, an actuator-authority deficit, or an invalid controller
+transition. Single isolated 0.25 deg steps and 0.25 deg transitions slew-limited to 5 deg/s
+pass at both H = 0 and H = 183.9 N per hand, with the qualified nominal hold unchanged.
+No gain, limit, stiffness, damping, friction or solver value was changed. The PRBS is kept
+as an adversarial diagnostic; a separate executable admission contract now covers
+physically representative player inputs and movement disturbances.
+
+1. Bounded A/B/C/D (fresh plants, same B2 placement, same regulator, same 75 kg bar)
+   H = 0 N per hand, perturb from tick 21, 800-tick window:
+     A quiet:      survived 821/821, min plate 359.4 N, min foot 487.8 N, COM dev 0.1 mm,
+                   COM speed 0.7 mm/s, max regulator offset 0.16 deg, never saturated
+     B PRBS:       plate-lost@115, min foot 401.1 N, COM dev 36.4 mm, COM speed 312.5 mm/s,
+                   grip sum 874.9 N, regulator offset and integral both clamped at 4.00 deg,
+                   saturated true, X demand 1.693, Z demand 0.961, bar lift 19.9 mm
+     C +0.25 step: survived 821/821, min plate 354.9 N, min foot 485.1 N, COM dev 0.3 mm,
+                   COM speed 6.8 mm/s, grip transient 11.8 N, offset 0.45 deg, not saturated
+     D slew (5 deg/s, 0.25 deg in 50 ms): survived 821/821, min plate 355.1 N,
+                   min foot 486.1 N, COM dev 0.3 mm, speed 5.7 mm/s, offset 0.37 deg
+   H = 183.9 N per hand, perturb from tick 250 after the qualified pretension hold:
+     A quiet:      survived 1050/1050, min plate 179.6 N, COM dev 0.4 mm, offset 0.19 deg
+     C step:       survived 1050/1050, min plate 176.6 N, COM dev 0.4 mm, offset 0.58 deg
+     D slew:       survived 1050/1050, min plate 176.6 N, COM dev 0.4 mm, offset 0.43 deg
+   Both C/D retain both plates, both feet, both grips, zero bar displacement and zero tilt.
+
+2. Causal controls (all from tick 21 at H = 0, 800-tick window):
+   - Z-only PRBS (+/-0.25 deg about the ankle roll axis): survived 821/821, min plate 358.3 N,
+     COM dev 0.1 mm, Z demand 0.073, no saturation. The instability is not the roll channel.
+   - 10-tick-hold PRBS (10 Hz instead of 100-333 Hz): survived 821/821, min plate 350.0 N,
+     COM dev 0.7 mm, COM speed 17.0 mm/s, offset 1.76 deg, no saturation.
+   - Frozen-regulator PRBS: plate-lost@54. A frozen-regulator quiet control also loses at
+     tick 54, so this control does not isolate the feedback loop; it only confirms that the
+     open-loop plant is already outside its qualified mode. It is preserved, not used as proof.
+   - The 1-3 tick PRBS reverses a 0.25 deg target every 10-30 ms. The plant's foot/contact
+     mode is at the order of one 10 ms tick (measured previously), so this is faster than the
+     contact mode can follow. The failure is bandwidth and contact-mode saturation, not the
+     0.25 deg amplitude: 10-tick holds of the same amplitude pass.
+   - At failure the X ankle demand is 1.693 of its 450 N m ceiling (saturated) and the
+     regulator's offset and integral are both at their 4.00 deg clamps. These are consequences
+     of the high-frequency chatter, not a missing actuator: the same joints, gains and
+     ceilings hold the representative step/slew cases with demand <= 0.116.
+
+3. Executable admission contract (non-Explicit, must pass in the suite):
+   GATE2_ROBUSTNESS_ADMISSION_PHYSICALLY_REPRESENTATIVE_ANKLE_TRANSITIONS
+   A quiet hold, a single +0.25 deg isolated step and a 0.25 deg transition slew-limited to
+   5 deg/s, at H = 0 and H = 183.9 N per hand, each 800 ticks after the disturbance.
+   All six retain support; COM deviation < 20 mm (measured <= 0.4 mm), grip transient
+   < 120 N above the pretension load (measured <= 12 N at H = 0 and <= 7 N above the
+   pretension load at H = 183.9), X/Z demand below the 0.95
+   saturation contract (measured <= 0.116 / 0.080), regulator never saturated.
+   The 5 deg/s rate is a player/posture transition, not the actuator's 114.6 deg/s slew
+   contract; 0.25 deg takes 50 ms, while the adversarial PRBS reverses in 10-30 ms.
+   Contract receipt: Logs/g2-results.xml (1/1 passed).
+
+4. Controlled pretension review (same representative slew, H = 183.9 N per hand):
+     open-loop contact-consistent reference: plates 373.5 N, error 5.9 N = 1.59 % of 2H
+     integral hand-force loop:                plates 367.7 N, error 0.1 N = 0.03 % of 2H
+   target plates 367.6 N. Both retain support for 1050 ticks, neither saturates, COM dev 0.4 mm.
+   The force loop is retained: it is materially more accurate and introduces no destabilizing
+   interaction under the representative transition. This matches the earlier A3 conclusion.
+
+5. Controller repair: none required under the evidence. The nominal A2/A3 mechanisms are
+   preserved. The PRBS test remains executable (Explicit adversarial control) and fails at
+   tick 115/821; it is not removed or redefined as a pass. The admission contract is the
+   release-facing requirement for player-commanded motion.
+
+Receipts:
+  Logs/g2-results.xml (admission 1/1 passed)
+  Logs/g2b-results.xml (PRBS controls + pretension review 2/2 passed)
+  Logs/GAM70/gate2-prbs-controls.txt
+  Logs/GAM70/gate2-robustness-admission.txt
+  Logs/GAM70/gate2-pretension-review.txt
+  Full per-tick traces: Logs/GAM70/gate2-*.csv (ignored raw traces; 45 channels/tick)
+  Test source: Assets/Tests/Deadlift/PlayMode/DeadliftRobustnessTests.cs

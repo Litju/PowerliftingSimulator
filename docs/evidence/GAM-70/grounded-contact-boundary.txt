@@ -1,0 +1,133 @@
+GAM-70 grounded contact-mode qualification, 2026-11-12 (America/Buenos_Aires)
+
+Disposition: A2 dynamic FAIL; grounded A3 BLOCKED. No feedback controller added.
+Source tested: 637aa21ddfc6e93fc314f517c0f38368d688f95f
+Original six commits remain ancestors, beginning with fec1c8f and ending at
+297dbe94b40a4dccaf9cc6c4409b003d61da5a76. Draft PR #32 remains unmerged.
+
+Unity 6000.3.22f1, Windows, batchmode WITH Direct3D 12 rendering on AMD Radeon.
+Exact accepted QualifiedB2 replay; independent acceptance table checked before
+all fresh plants. No posture optimization, strength/limit/friction/solver change.
+
+A0: same fixed references including original static gravity reference; no grips.
+First both-feet-unloaded event: tick 11 (0.11 s). Plate sum 735.608 N,
+COM (0.000479, 0.561360, -0.130913) m, COM velocity
+(0.011032, 0.041070, -0.263353) m/s. COP undefined, explicitly recorded as NaN.
+No claim that maximum segment displacement establishes backward fall direction.
+
+A1: both physical hand constraints, otherwise identical references, no extra pull.
+Both plates unload with positive bar vertical velocity at tick 7 (0.07 s).
+Independent fresh repeat reproduces identical COM/velocity/reaction trace.
+Tick 1/5/6/7 plate sums: 692.042 / 248.362 / 38.648 / 0 N.
+Tick 7 feet 1947.824 N; hand reactions on athlete Y: -406.144 / -427.652 N;
+bar velocity (0.000305, 0.021116, -0.079482) m/s.
+Bar Y rises from 0.223075 m to 0.223397 m. Grip separation max at boundary
+0.047831 mm. COM (0.000035, 0.549984, -0.119245) m;
+COM velocity (0.003691, 0.124184, -0.207118) m/s;
+combined foot COP (-0.003000, 0, 0.040902) m.
+These are dynamic reactions, not quasi-static free-body closure claims.
+
+First ankle command-demand ceiling crossing precedes plate separation: tick 5.
+Left actual twist -3.285 deg, applied target -10.295 deg, velocity +2.384 rad/s,
+modeled twist demand 596.032 N m vs active ceiling 450 N m.
+At tick 7 ankle demands L/R 750.743 / 763.701 N m vs 450 N m each.
+Hip maximum limit proximity reaches 0.995289 by tick 7. Per-joint actual,
+requested/applied quaternion, error, angular velocity, solver total torque,
+modeled per-channel demand and active ceiling are recorded separately.
+Modeled demand is not a measurement of isolated motor torque; currentTorque
+contains constraint effects and must not be relabeled motor torque.
+
+Causal control: bilateral grips with only static-gravity reference disabled.
+Plates remain supported to observation horizon (600 ticks), which is inconclusive,
+not a stability pass. Final COM velocity (0.008031, -0.098176, -0.372271) m/s;
+feet 682.632 N, plates 939.172 N, bar velocity Z -0.159680 m/s.
+Early ankle demand <=40.534 N m through tick 7. This rejects the hypothesis
+that mere bilateral attachment necessarily causes the early plate unload.
+It implicates the fixed gravity reference/contact equilibrium mismatch in
+that early failure; removing the term alone does not qualify a steady hold.
+
+Exploratory ankle identification used fresh +/-2 deg left/right, equal and
+differential target offsets. It was stopped as a qualification effort when the
+baseline proved to leave grounded support at tick 7. Early left twist at tick 5:
+zero -3.285 deg; left +2 target -0.751 deg; left -2 target -7.242 deg.
+Left target +2 gives applied -8.295 deg; -2 gives -12.295 deg.
+Positive command advances positive rotation; negative reduces it. Left/right
+coupling and simultaneous demand-ceiling crossings are present. No sustained
+COP gain, delay, monotonic operating range, or adequate loaded corrective
+authority is qualified. Post-separation sweep samples are excluded from any
+grounded inference. Exploratory harness was uncommitted; these numbers are
+context only, not the reproducible gate receipt. Raw sweep remains ignored.
+No squat gain was imported. No proximal actuator strategy was introduced.
+
+Diagnostics: combined COP is (J_L*p_L + J_R*p_R)/(J_L+J_R) on each completed
+physics tick, omitting unloaded sides; no load returns NaN. Summary averages
+valid per-tick COP values and uses minimum contemporaneous COP-to-contact-hull
+margin, not averaged loads times averaged positions or the final patch.
+Sensor retains actual positive-normal-impulse contact points; patch hull is
+their XZ convex hull. The legacy heel/toe/drift cause assertion was replaced with a negative control
+that stops at actual bilateral foot unloading. No hard-coded world-Z heel/toe
+threshold or maximum-segment-drift fall-direction assertion remains in it.
+COP inside its own positive-contact hull is geometric consistency, not balance
+acceptance. No capture estimate is claimed: rigid-grip horizontal reactions,
+rapid height change and contact transitions violate the simple unforced LIPM.
+
+Mechanism established: the original fixed-reference gripped plant exits the
+required grounded contact mode before a settled hold. The static gravity term
+is inappropriate as a qualified contact equilibrium here. Geometric feasibility
+and rigid bilateral grip do not establish dynamic balance or physiological grip.
+A2 dynamic remains failed; A3 controlled pretension, moment balance and its
+required controls remain blocked. This does not disprove the B2 skeleton/pose.
+
+Single next action: identify a contact-consistent fixed posture/gravity reference
+on the grounded bilateral-grip B2 plant, retaining the current reference as
+negative control, before identifying sustained ankle balance authority.
+No bar separation gameplay, knee passage, lockout, referee or Windows gameplay.
+
+Reproduction: Unity -batchmode -projectPath <worktree> -runTests
+-testPlatform PlayMode
+-testFilter ContactModeBoundary;CombinedCopUsesContemporaneousImpulsesAndHandlesUnloadedFeet
+-testResults <worktree>/Logs/boundary-results.xml -logFile <worktree>/Logs/boundary-unity.log
+(no -nographics, no -quit). DOTNET_EnableDiagnostics=0 and
+COMPlus_EnableDiagnostics=0 were used after initial ILPP IPC startup retries.
+
+Raw traces remain in ignored Logs/GAM70/contact-*.csv and joints-*.csv.
+SHA256 boundary-results.xml:
+3253f7269c37503af2e39fc751e6669e70c9b2e19f5b8cf3133118a5d10ff2ac
+SHA256 contact-summary.csv:
+0b662cf27d2bebdbd2b0e747a47899da5800e06c709b6a4ab16f245dd2371af5
+Boundary diagnostics: 2 passed, 0 failed; these are not A2/A3 acceptance passes.
+
+Regression results (rendering enabled; no Explicit acceptance failure suppressed):
+Logs/regression-results.xml: 35 run, 30 passed, 5 failed, zero skipped.
+BenchPressQualificationTests 7/7; BenchPlantQualificationTests 4/5;
+DeadliftGripQualificationTests 5/5; DeadliftGroundSupportQualificationTests 8/8;
+DeadliftSetupDynamicTests 5/9; GAM63HybridSquatFlowTests 1/1 (10 fresh attempts).
+Failures:
+- GATE_B_AB_ONE_HAND_CARRIES_THE_WHOLE_BAR_UNTIL_IT_TIPS: left grip Y 142.853 N
+  against threshold >144.367 N. No production bench changes made.
+- A2_DYN_ACCEPTED_SETUP_IS_HELD_BY_THE_MODELED_ACTUATORS_ON_THE_REAL_PLANT:
+  explicit hold acceptance remains failed.
+- A2_DYN_CAUSE_THE_HELD_SETUP_ROCKS_HEEL_TO_TOE_AND_TIPS_WITHOUT_A_BALANCE_LOOP:
+  invalid heel-to-toe mechanism assertion rejected by measured patch geometry.
+  Replaced with actual bilateral-foot-unload negative control, not acceptance.
+- A2_DYN_REPEAT_A_FRESH_PLANT_REPRODUCES_THE_HOLD: unrelated editor service
+  error log connection.state_change, Process exited unexpectedly, code=0.
+- A3_GROUNDED_BILATERAL_GRIP_AND_PRETENSION_LOAD_PATH: explicit acceptance
+  fails bar vertical free-body closure. Its post-failure legacy pretension
+  sequence is not used to qualify a grounded mechanism.
+
+Logs/final-focused-results.xml: 5 run, 5 passed, zero skipped. Reruns corrected
+negative control, COP test, ContactModeBoundary, repeatability and bench one-hand
+control. The latter two pass without production changes or log suppression;
+initial failures remain in the receipt. This is not an all-green combined suite.
+Remaining physical acceptance failures: A2 dynamic and grounded A3.
+Bench rendered grip capture inspected: Logs/GAM69/gateB-hold-hands-left-above.png.
+No Windows player build or owner gameplay qualification attempted at this gate.
+SHA256 Logs/regression-results.xml:
+62cadb629705c2c40ea7e1a515b186f4c9e379269358f2af2900ce29dae42fe6
+SHA256 Logs/final-focused-results.xml:
+58d893d0958aae1f81064d106a7de1299b3472e55edd20033dacd03f5e5b8bf6
+SHA256 Assets/Tests/Deadlift/PlayMode/DeadliftSetupDynamicTests.cs:
+0da7728f02e9cb6a203286c0bd77605ca7219191c56997065cffee71f0b91ac0
+SHA256 Assets/Tests/Deadlift/PlayMode/DeadliftContactModeTests.cs:
+3e5193ba858ac012c3777882fe916c668170a17e914522d2beeb84f08c546e40

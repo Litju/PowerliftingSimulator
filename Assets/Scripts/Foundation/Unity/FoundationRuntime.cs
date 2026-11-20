@@ -189,6 +189,13 @@ namespace PowerliftingSimulator.Foundation.Unity
             _tickDriver.MarkInitialPhysicalStateValidated();
         }
 
+        /// <summary>Pause new physics ticks while continuing to capture render-frame input.</summary>
+        public bool TicksSuspended
+        {
+            get => _tickDriver.TicksSuspended;
+            set => _tickDriver.TicksSuspended = value;
+        }
+
         public int AdvanceRenderFrame(double renderDeltaTimeSeconds)
         {
             EnsureInitialized();
