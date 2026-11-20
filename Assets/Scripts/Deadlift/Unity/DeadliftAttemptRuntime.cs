@@ -71,8 +71,16 @@ namespace PowerliftingSimulator.Deadlift.Unity
         /// <summary>Opt-in prepared ascent into the suspended close-bar endpoint.</summary>
         public bool PreparedCloseLockout { get; set; }
         /// <summary>The grip pretension servo has reached its final target (the grip is set).</summary>
-        public bool PretensionEstablished => _tick > PretensionStartTick + PretensionRampTicks &&
+        public bool PretensionEstablished => _pretension != null && _pretension.TargetPerHandN >= _pretensionTargetN &&
+            (PlayerSetup || _tick > PretensionStartTick + PretensionRampTicks) &&
             Mathf.Min(LeftGrip.ForceOnBarWorld.y, RightGrip.ForceOnBarWorld.y) >= 0.95f * _pretensionTargetN;
+        /// <summary>
+        /// Player-owned setup (configure before Initialize): Grip takes the slack out of the bar,
+        /// Brace braces the trunk and sets the lats, and Drive pulls only while both are held.
+        /// Off, the qualified automatic schedule runs (tests and the stock control).
+        /// </summary>
+        public bool PlayerSetup { get; set; }
+        public bool LastBraceHeld { get; private set; }
         /// <summary>What the internal preparation is waiting for while the player asks to pull (HUD).</summary>
         public string PreparationStatus { get; private set; } = string.Empty;
         public DeadliftPreparedAscentPlan PreparedAscentPlan =>
@@ -220,7 +228,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 RampPerSecond = 1f, ReleasePerSecond = 2f,
                 HipExtensionLimitDeg = 2.5f, KneeExtensionLimitDeg = 2f, TrunkExtensionLimitDeg = -1.5f,
                 MaxComShiftM = 0.05f, GovernorReleaseM = 0.03f,
-                RequireBraceAndGrip = false,   // game control: Drive alone pulls
+                RequireBraceAndGrip = PlayerSetup,   // player setup: Drive pulls only with Grip and Brace held
                 RearmAfterAbort = true,
                 LiftEnabled = true, LiftRatePerSecond = LiftRatePerSecond, LiftAccelPerSecond2 = LiftAccelPerSecond2
             };
@@ -380,7 +388,9 @@ namespace PowerliftingSimulator.Deadlift.Unity
             // Measured readiness (no tick gate): the grip pretension is set and the athlete and bar are
             // quasi-static by the rulebook's own motionless criterion, before the shoulders are set.
             if (!PretensionEstablished)
-                return Preparing("setting the grip pretension");
+                return Preparing(PlayerSetup ? "hold Left Shift to take the slack out of the bar" : "setting the grip pretension");
+            if (PlayerSetup && !LastBraceHeld)
+                return Preparing("hold Space to brace and set the lats");
             if (PlateLeftN <= DeadliftPullController.SeparationPlateN || PlateRightN <= DeadliftPullController.SeparationPlateN)
                 return Preparing("the bar must rest on both plates");
             if (!LoadedCop("left_foot") || !LoadedCop("right_foot"))
@@ -488,9 +498,22 @@ namespace PowerliftingSimulator.Deadlift.Unity
 
             // Grounded setup: build upward hand load while the plates still support the bar.
             long t = (long)time.Tick;
-            float target = t <= PretensionStartTick ? 0f : t <= PretensionStartTick + PretensionRampTicks
-                ? _pretensionTargetN * (t - PretensionStartTick) / PretensionRampTicks : _pretensionTargetN;
+            float target;
+            if (PlayerSetup)
+            {
+                // Grip (Left Shift) takes the slack out: the hand-load target rises at the qualified
+                // ramp rate while it is held and relaxes at the same rate when it is released.
+                float step = _pretensionTargetN / PretensionRampTicks;
+                bool hold = intent.Grip01 >= 0.5f || Hold.HandLoadClaimed;
+                target = Mathf.Clamp(_pretension.TargetPerHandN + (hold ? step : -step), 0f, _pretensionTargetN);
+            }
+            else
+            {
+                target = t <= PretensionStartTick ? 0f : t <= PretensionStartTick + PretensionRampTicks
+                    ? _pretensionTargetN * (t - PretensionStartTick) / PretensionRampTicks : _pretensionTargetN;
+            }
             _pretension.TrySetTarget(target);
+            LastBraceHeld = intent.Brace01 >= 0.5f;
 
             LastObservation = Observer.Observe(time.Tick, time.Tick * dt);
             Referee.Observe(LastObservation);

@@ -71,13 +71,22 @@ namespace PowerliftingSimulator.Deadlift
                 var foundation = Object.FindFirstObjectByType<FoundationBootstrap>();
                 DeadliftAttemptRuntime rt = station.Runtime;
                 Assert.That(rt.PreparedCloseLockout && rt.Admission != null && rt.StockPathFromArtifact, Is.True);
+                Assert.That(rt.PlayerSetup, Is.True);
                 float deadline = Time.realtimeSinceStartup + 240f;
                 bool suspended = false;
+                // The player takes the slack out (Left Shift), then braces and sets the lats (Space).
+                input.currentTime = Time.realtimeSinceStartupAsDouble;
+                input.Press(keyboard.leftShiftKey);
                 while (!(rt.PretensionEstablished && rt.Pull.Phase == DeadliftPullPhase.Grounded) && Time.realtimeSinceStartup < deadline)
                 {
                     suspended |= foundation.Runtime.TicksSuspended;
                     yield return null;
                 }
+                Assert.That(rt.Pull.Phase, Is.EqualTo(DeadliftPullPhase.Grounded), "Grip alone must not pull");
+                input.currentTime = Time.realtimeSinceStartupAsDouble;
+                input.Press(keyboard.spaceKey);
+                for (int i = 0; i < 20; i++)
+                    yield return null;
                 ulong readyTick = rt.Tick;
 
                 input.currentTime = Time.realtimeSinceStartupAsDouble;

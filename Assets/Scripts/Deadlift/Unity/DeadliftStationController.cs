@@ -97,7 +97,8 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 Runtime = new DeadliftAttemptRuntime(foundation, athleteRig, barbell)
                 {
                     PreparedCloseLockout = !_stockPath,
-                    UseReferenceCache = true
+                    UseReferenceCache = true,
+                    PlayerSetup = !_stockPath
                 };
                 Runtime.Initialize();
                 SquatPresentationGrip grip = athleteRig.GetComponent<SquatPresentationGrip>() ?? athleteRig.gameObject.AddComponent<SquatPresentationGrip>();
@@ -175,7 +176,12 @@ namespace PowerliftingSimulator.Deadlift.Unity
             switch (pull.Phase)
             {
                 case DeadliftPullPhase.Grounded:
-                    _status = !Runtime.PretensionEstablished ? "Setting the grip and taking the slack out of the bar..."
+                    _status = Runtime.PlayerSetup
+                        ? (!Runtime.PretensionEstablished ? "Hold Left Shift: grip and take the slack out of the bar."
+                            : !Runtime.LastBraceHeld ? "Slack out. Hold Space: brace and set the lats."
+                            : driving ? "Preparing the pull: " + Runtime.PreparationStatus
+                            : "Set. Hold W to pull (keep Shift and Space held).")
+                        : !Runtime.PretensionEstablished ? "Setting the grip and taking the slack out of the bar..."
                         : driving ? "Preparing the pull: " + Runtime.PreparationStatus
                         : "Ready. Hold W (or Up arrow) to pull.";
                     break;
@@ -247,7 +253,7 @@ namespace PowerliftingSimulator.Deadlift.Unity
                 o.BarY, Runtime.Referee.MaxBarRiseM * 1000.0, pull.Intent01 * 100f), _body);
             GUI.Label(new Rect(30, 140, 580, 30), string.Format(CultureInfo.InvariantCulture, "Knees {0:F0}/{1:F0} deg   torso {2:F0} deg   phase {3}",
                 o.KneeFlexionLDeg, o.KneeFlexionRDeg, o.TorsoDeg, pull.Phase), _body);
-            GUI.Label(new Rect(30, 170, 580, 30), "W / Up: pull and drive  |  ESC abort  |  R reset  |  V side view", _body);
+            GUI.Label(new Rect(30, 170, 580, 30), "Shift grip/slack  |  Space brace/lats  |  W pull  |  ESC  |  R  |  V", _body);
             GUI.Label(new Rect(30, 196, 580, 30), string.Format(CultureInfo.InvariantCulture, "input  drive {0:F2}  brace {1:F2}  grip {2:F2}",
                 pull.LastRawDrive01, pull.LastBrace01, pull.LastGrip01), _body);
 
