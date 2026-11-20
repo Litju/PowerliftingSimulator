@@ -79,14 +79,18 @@ public static class GAM70DeadliftSceneBuilder
         Debug.Log($"GAM-70: built {path} from {SquatScenePath}.");
     }
 
+    /// <summary>
+    /// Appends the deadlift scene to the editor build list. It must not become scene 0:
+    /// squat, menu and walkout tests open the build list's first scene (measured: prepending
+    /// it made the GAM-12/63/65/68 squat scenes boot the deadlift station). The Windows player
+    /// passes its own ordered <see cref="PlayerScenes"/> (deadlift first) to the build.
+    /// </summary>
     public static void EnsureBuildSettings()
     {
-        var scenes = new List<EditorBuildSettingsScene>();
+        var scenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
         foreach (string p in PlayerScenes)
-            scenes.Add(new EditorBuildSettingsScene(p, true));
-        foreach (EditorBuildSettingsScene entry in EditorBuildSettings.scenes)
-            if (Array.IndexOf(PlayerScenes, entry.path) < 0)
-                scenes.Add(entry);
+            if (!scenes.Exists(entry => entry.path == p))
+                scenes.Add(new EditorBuildSettingsScene(p, true));
         EditorBuildSettings.scenes = scenes.ToArray();
     }
 
