@@ -31,8 +31,13 @@ namespace PowerliftingSimulator.Deadlift.Unity
     /// </summary>
     public sealed class DeadliftCloseBarReference
     {
-        /// <summary>Bump when the reference objective, its sampling or its admission contract changes.</summary>
-        public const string ContractVersion = "GAM-70/close-bar-reference/v1";
+        /// <summary>
+        /// Bump when the reference objective, its sampling or its admission contract changes.
+        /// v2: the post-knee continuation's terminal lockout is the hips-through mechanism C
+        /// (the pelvis advances to the bar's near-contact place; the bar keeps its supportable
+        /// fore-aft position), and the planned ankle roll uses the re-derived envelope.
+        /// </summary>
+        public const string ContractVersion = "GAM-70/close-bar-reference/v2";
         public const string ResourcePath = "Deadlift/GAM70CloseBarReference";
         public const string AssetPath = "Assets/Resources/Deadlift/GAM70CloseBarReference.json";
 

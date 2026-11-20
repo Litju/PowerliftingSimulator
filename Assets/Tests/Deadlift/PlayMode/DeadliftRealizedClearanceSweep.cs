@@ -13,6 +13,24 @@ namespace PowerliftingSimulator.Deadlift
         public int Samples { get; private set; }
         public float MinGap { get; private set; } = float.PositiveInfinity;
         public float MinBound { get; private set; } = float.PositiveInfinity;
+        /// <summary>
+        /// The sweep split at the referee's DOWN: the ascent and lockout window keeps the conservative
+        /// key-travel bound as its no-contact contract, while the return (which may ride the shins, as a
+        /// real lowering does) is reported separately so its bound never hides behind the ascent's.
+        /// </summary>
+        public bool ReturnStarted { get; private set; }
+        public float AscentMinGap { get; private set; } = float.PositiveInfinity;
+        public float AscentMinBound { get; private set; } = float.PositiveInfinity;
+        public float ReturnMinGap { get; private set; } = float.PositiveInfinity;
+        public float ReturnMinBound { get; private set; } = float.PositiveInfinity;
+        /// <summary>
+        /// Return clearance extrapolated one substep ahead at its latest sampled closing rate: the
+        /// smallest of (nearest gap minus the decrease of that gap since the previous substep).
+        /// </summary>
+        public float ReturnMinExtrapolatedGap { get; private set; } = float.PositiveInfinity;
+        private float _previousNearest = float.NaN;
+
+        public void BeginReturn() => ReturnStarted = true;
 
         public DeadliftRealizedClearanceSweep(Rigidbody bar, PhysicalAthleteRig rig)
         {
@@ -30,16 +48,29 @@ namespace PowerliftingSimulator.Deadlift
         public void Read()
         {
             CapsulePose[] current = _colliders.Select(c => new CapsulePose(c)).ToArray();
+            float nearest = float.PositiveInfinity;
             for (int i = 1; i < current.Length; i++)
             {
                 float gap = current[0].Gap(current[i]);
+                nearest = Mathf.Min(nearest, gap);
                 MinGap = Mathf.Min(MinGap, gap);
+                if (ReturnStarted)
+                    ReturnMinGap = Mathf.Min(ReturnMinGap, gap);
+                else
+                    AscentMinGap = Mathf.Min(AscentMinGap, gap);
                 if (_previous == null)
                     continue;
                 float bound = Mathf.Min(gap, _previous[0].Gap(_previous[i]))
                     - 0.5f * (current[0].TravelFrom(_previous[0]) + current[i].TravelFrom(_previous[i]));
                 MinBound = Mathf.Min(MinBound, bound);
+                if (ReturnStarted)
+                    ReturnMinBound = Mathf.Min(ReturnMinBound, bound);
+                else
+                    AscentMinBound = Mathf.Min(AscentMinBound, bound);
             }
+            if (ReturnStarted && !float.IsNaN(_previousNearest))
+                ReturnMinExtrapolatedGap = Mathf.Min(ReturnMinExtrapolatedGap, nearest - Mathf.Max(0f, _previousNearest - nearest));
+            _previousNearest = nearest;
             _previous = current;
             Samples++;
         }

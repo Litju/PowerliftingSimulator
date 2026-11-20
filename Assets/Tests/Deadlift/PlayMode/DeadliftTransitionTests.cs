@@ -52,6 +52,8 @@ namespace PowerliftingSimulator.Deadlift
             public float MaxAnkleX, MaxAnkleZ, MaxAbdomen, MaxThorax, MaxShoulder;
             /// <summary>Measured vertical thigh assistance and shin contact over the continuation window (N).</summary>
             public float MaxThighAssistN, MaxShinN;
+            /// <summary>Largest reported bar-on-leg contact force over the whole traced attempt (N).</summary>
+            public float MaxBarOnLegN;
         }
 
         [UnityTearDown]
@@ -288,11 +290,11 @@ namespace PowerliftingSimulator.Deadlift
             yield return Trace("runtime-close-bar", 284, candidate, throughKnee: true, complete: true, runtimeClose: true, lastTick: 2100);
             Assert.That(candidate.Pull, Is.EqualTo(301ul));
             Assert.That(candidate.ContinuationTick, Is.EqualTo(538ul));
-            Assert.That(candidate.Down, Is.EqualTo(762ul));
+            // The hips-through arrival (mechanism C) settles 28 ticks after the hips-behind
+            // control (A, DOWN 762): the pelvis advances 53 mm through the continuation.
+            Assert.That(candidate.Down, Is.EqualTo(790ul));
             Assert.That(candidate.Good && candidate.Released, Is.True, candidate.RefereeSummary);
-            Assert.That(candidate.FirstPenetration, Is.Zero);
-            Assert.That(candidate.Sweep.MinBound, Is.GreaterThan(0f));
-            Assert.That(candidate.MeanLockoutGap, Is.InRange(0d, 0.12d));
+            AssertCloseBarContact(candidate);
         }
 
         [UnityTest, Timeout(1800000), Explicit("GAM-70 close-bar runtime onset sensitivity")]
@@ -333,7 +335,7 @@ namespace PowerliftingSimulator.Deadlift
                 });
             Assert.That(generated.Pull, Is.EqualTo(301ul));
             Assert.That(generated.ContinuationTick, Is.EqualTo(538ul));
-            Assert.That(generated.Down, Is.EqualTo(762ul));
+            Assert.That(generated.Down, Is.EqualTo(790ul));
             Assert.That(generated.Good && generated.Released, Is.True, generated.RefereeSummary);
             Assert.That(artifact, Is.Not.Null);
 
@@ -362,11 +364,35 @@ namespace PowerliftingSimulator.Deadlift
             // The exact receipts of the solved composition (GAM70_RUNTIME_CLOSE_BAR_ATTEMPT).
             Assert.That(cached.Pull, Is.EqualTo(301ul));
             Assert.That(cached.ContinuationTick, Is.EqualTo(538ul));
-            Assert.That(cached.Down, Is.EqualTo(762ul));
+            Assert.That(cached.Down, Is.EqualTo(790ul));
             Assert.That(cached.Good && cached.Released, Is.True, cached.RefereeSummary);
-            Assert.That(cached.FirstPenetration, Is.Zero);
-            Assert.That(cached.Sweep.MinBound, Is.GreaterThan(0f));
-            Assert.That(cached.MeanLockoutGap, Is.InRange(0d, 0.12d));
+            AssertCloseBarContact(cached);
+        }
+
+        /// <summary>
+        /// The close-bar contact contract, split at DOWN. Ascent and lockout keep the v1 acceptance:
+        /// the conservative key-travel bound (nearest sampled gap minus half of both capsules' full
+        /// substep travel) must stay positive. The lowering is allowed to ride the shins, as a real
+        /// return does, but only without contact: no sampled penetration, zero reported bar-on-leg
+        /// force at every tick, and a gap that would stay open for one more substep even if it kept
+        /// closing at its latest sampled rate. The key-travel bound is reported for the return, not
+        /// asserted: it charges the bar's whole tangential descent along the near-vertical shin
+        /// (0.31 m/s, 1.5 mm per 5 ms substep) as approach.
+        /// </summary>
+        private static void AssertCloseBarContact(Run run)
+        {
+            DeadliftRealizedClearanceSweep sweep = run.Sweep;
+            Debug.Log($"Close-bar contact: ascent min gap {sweep.AscentMinGap * 1000f:F2} mm, ascent bound {sweep.AscentMinBound * 1000f:F2} mm; " +
+                $"return min gap {sweep.ReturnMinGap * 1000f:F2} mm, return bound {sweep.ReturnMinBound * 1000f:F2} mm, " +
+                $"return one-substep extrapolation {sweep.ReturnMinExtrapolatedGap * 1000f:F3} mm; max bar-on-leg {run.MaxBarOnLegN:F1} N");
+            Assert.That(run.FirstPenetration, Is.Zero);
+            Assert.That(run.StopReason, Is.EqualTo("judged return"), run.RefereeSummary);
+            Assert.That(run.MaxBarOnLegN, Is.Zero, "bar-on-leg contact force");
+            Assert.That(sweep.ReturnStarted, Is.True);
+            Assert.That(sweep.AscentMinBound, Is.GreaterThan(0f), "ascent and lockout conservative swept clearance");
+            Assert.That(sweep.ReturnMinGap, Is.GreaterThan(0f), "return sampled clearance");
+            Assert.That(sweep.ReturnMinExtrapolatedGap, Is.GreaterThan(0f), "return clearance one substep ahead at its sampled closing rate");
+            Assert.That(run.MeanLockoutGap, Is.LessThan(0.05d), "the hips-behind A control averages 95.66 mm here");
         }
 
         [UnityTest, Timeout(1800000), Explicit("GAM-70 cached close-bar admission across PULL onsets")]
@@ -535,6 +561,8 @@ namespace PowerliftingSimulator.Deadlift
                 Quaternion rightOffset = rt.Hold.PreparationOffsetFor(rightShoulder.Id);
                 _world.Step(1);
                 substepContact?.CompleteTick();
+                if (result.Sweep != null && !result.Sweep.ReturnStarted && rt.Pull.DownTick != 0)
+                    result.Sweep.BeginReturn();
                 result.Suspended |= _world.Foundation.Runtime.TicksSuspended;
                 if (rt.ReferenceRejectionTick != 0 && result.RejectionTick == 0)
                 {
@@ -803,6 +831,7 @@ namespace PowerliftingSimulator.Deadlift
                 if (result.Pull == 0)
                     continue;
                 result.MinGap = Mathf.Min(result.MinGap, gap.Leg);
+                result.MaxBarOnLegN = Mathf.Max(result.MaxBarOnLegN, rt.BarOnLegN);
                 if (rt.Pull.Phase == DeadliftPullPhase.Lockout)
                 {
                     result.LockoutGapSum += gap.Thigh;
